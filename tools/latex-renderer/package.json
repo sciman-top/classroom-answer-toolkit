@@ -1,0 +1,14 @@
+{
+  "name": "physics-answer-latex-renderer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render-md-latex.mjs"
+  },
+  "dependencies": {
+    "katex": "^0.16.25",
+    "markdown-it": "^14.1.0",
+    "playwright-core": "^1.57.0"
+  }
+}

@@ -1,0 +1,16 @@
+# Local automation/runtime caches
+.playwright-mcp/
+_pdf_render_check/
+_docx_render_check/
+
+# Node dependency folders
+node_modules/
+tools/latex-renderer/node_modules/
+
+# Temporary render files
+*.render.html
+.*.render.html
+
+# OS/editor noise
+Thumbs.db
+.DS_Store
