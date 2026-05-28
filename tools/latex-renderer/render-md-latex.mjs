@@ -39,6 +39,34 @@ const md = new MarkdownIt({
 
 const mathBlocks = [];
 
+function normalizeQuestionLeadLines(markdown) {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const normalized = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const questionOnly = line.match(/^(\s*\d{1,3}[.．、])\s*$/u);
+
+    if (questionOnly) {
+      let nextIndex = index + 1;
+      while (nextIndex < lines.length && lines[nextIndex].trim() === "") {
+        nextIndex += 1;
+      }
+
+      const nextLine = lines[nextIndex] ?? "";
+      if (/^\s*[（(][一二三四五六七八九十\d]+[）)]/u.test(nextLine)) {
+        normalized.push(`${questionOnly[1]} ${nextLine.trimStart()}`);
+        index = nextIndex;
+        continue;
+      }
+    }
+
+    normalized.push(line);
+  }
+
+  return normalized.join("\n");
+}
+
 function stashMath(tex, displayMode) {
   const html = katex.renderToString(tex.trim(), {
     displayMode,
@@ -75,7 +103,8 @@ function injectMath(html) {
 }
 
 const source = fs.readFileSync(inputPath, "utf8");
-const renderedMarkdown = md.render(replaceMath(source));
+const normalizedSource = normalizeQuestionLeadLines(source);
+const renderedMarkdown = md.render(replaceMath(normalizedSource));
 const body = injectMath(renderedMarkdown);
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
