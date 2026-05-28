@@ -4,11 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "render": "node render-md-latex.mjs"
+    "render": "node render-md-latex.mjs",
+    "review-source-pdf": "node review-source-pdf.mjs"
   },
   "dependencies": {
     "katex": "^0.16.25",
     "markdown-it": "^14.1.0",
-    "playwright-core": "^1.57.0"
+    "pdfjs-dist": "^5.7.284",
+    "playwright-core": "^1.57.0",
+    "tesseract.js": "^7.0.0"
   }
 }

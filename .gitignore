@@ -6,6 +6,8 @@ _docx_render_check/
 # Node dependency folders
 node_modules/
 tools/latex-renderer/node_modules/
+tools/latex-renderer/.tessdata/
+tools/latex-renderer/*.traineddata
 
 # Temporary render files
 *.render.html
