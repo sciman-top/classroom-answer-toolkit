@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "physics-answer",
+  "displayName": "初中物理试卷参考答案生成与渲染",
+  "version": "v8.7",
+  "status": "active",
+  "locale": "zh-CN",
+  "domain": "junior-high-school-physics",
+  "sourceOfTruth": {
+    "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_v8.7_生产完整版.md",
+    "mirroredSpec": "./spec.md",
+    "runtimeConfig": "./config.json",
+    "acceptanceChecklist": "./checklists/acceptance.md"
+  },
+  "evaluation": {
+    "dataset": "../../eval/physics-answer/dataset.json",
+    "casesDir": "../../eval/physics-answer/cases",
+    "resultsDir": "../../eval/physics-answer/results",
+    "visualBaselinesDir": "../../eval/physics-answer/baselines/visual"
+  },
+  "tooling": {
+    "validator": "../../tools/latex-renderer/validate-answer-markdown.mjs",
+    "evalRunner": "../../tools/latex-renderer/eval-answer-fixtures.mjs",
+    "renderer": "../../tools/latex-renderer/render-md-latex.mjs",
+    "deliver": "../../tools/latex-renderer/deliver-answer.mjs",
+    "visualSmoke": "../../tools/latex-renderer/visual-regression-smoke.mjs"
+  }
+}

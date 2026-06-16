@@ -1,0 +1,16 @@
+{
+  "caseId": "smoke-answer",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "Shared smoke fixture for validator, renderer, review, and first-page visual regression."
+  ]
+}

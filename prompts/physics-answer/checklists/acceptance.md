@@ -1,14 +1,17 @@
 # Acceptance Checklist
 
-This checklist distills the most important runtime gates from the current v8.6 production spec.
+This checklist distills the most important runtime gates from the current v8.7 production spec.
 
 ## Hard gates
 
 - Final deliverables keep only answer `.md` and answer `.pdf`.
+- Classroom-display answer is the default output posture.
 - Math must be rendered by a true LaTeX-capable path.
 - Display formulas are left-aligned.
 - Question number and first sub-question stay on the same first line.
-- Choice answers use the format `1—5：A、B、C、D、A`.
+- Choice answers keep the compact `1—5：A、B、C、D、A` format with 5 answers per line.
+- Non-choice answers must avoid drifting into lecture-note style long prose.
+- Prefer single-page compaction only when readability is preserved.
 - No raw LaTeX markers appear in the final PDF.
 - Render and source-review steps both succeed before transient cleanup.
 
@@ -26,7 +29,7 @@ This checklist distills the most important runtime gates from the current v8.6 p
 - backtick-wrapped math or units
 - unbalanced dollar signs
 - profile-based long-line warnings
-- smoke render/review chain
+- smoke validator/render/review chain
 - minimal first-page visual regression for the smoke fixture
 
 ## Still manual or future automated coverage

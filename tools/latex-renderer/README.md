@@ -132,8 +132,9 @@ Current checks focus on the most common hard failures:
 - unbalanced LaTeX dollar signs
 - overly long plain-text lines as warnings
 
-These automated checks are derived from the current v8.6 production spec and
-are beginning to move into structured assets under `prompts/physics-answer/`.
+These automated checks are derived from the current v8.7 production spec and
+now anchor to structured assets under `prompts/physics-answer/` plus fixed eval
+cases under `eval/physics-answer/`.
 
 ## Smoke test
 
@@ -162,3 +163,15 @@ Behavior:
 - first run creates a baseline image;
 - later runs compare the current first-page render against that baseline;
 - failure indicates a visual change large enough to inspect manually.
+
+## Eval suite
+
+Run the fixed prompt-asset regression suite with:
+
+```powershell
+npm --prefix tools/latex-renderer run eval:answer
+```
+
+This reads `eval/physics-answer/dataset.json`, runs validator checks for each
+listed case/profile pair, and writes a local summary to
+`eval/physics-answer/results/latest.json`.

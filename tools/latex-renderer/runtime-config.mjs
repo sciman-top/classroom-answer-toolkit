@@ -14,6 +14,14 @@ export function loadRuntimeConfig() {
   return JSON.parse(fs.readFileSync(defaultConfigPath, "utf8"));
 }
 
+export function getRuntimeConfigPath() {
+  return defaultConfigPath;
+}
+
+export function resolveRuntimeConfigRelativePath(relativePath) {
+  return path.resolve(path.dirname(defaultConfigPath), relativePath);
+}
+
 export function getDefaultProfileName() {
   return loadRuntimeConfig().profiles?.default ?? "classroom";
 }

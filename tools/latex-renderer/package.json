@@ -6,6 +6,7 @@
   "scripts": {
     "cleanup": "node cleanup-answer-artifacts.mjs",
     "deliver": "node deliver-answer.mjs",
+    "eval:answer": "node eval-answer-fixtures.mjs",
     "render": "node render-md-latex.mjs",
     "review-source-pdf": "node review-source-pdf.mjs",
     "smoke": "node smoke-test.mjs",

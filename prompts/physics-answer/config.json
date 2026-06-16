@@ -1,7 +1,11 @@
 {
-  "version": "v8.6-derived",
+  "schemaVersion": "1.0",
+  "assetId": "physics-answer",
+  "version": "v8.7-derived",
   "sourceOfTruth": {
-    "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_v8.6_生产完整版.md"
+    "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_v8.7_生产完整版.md",
+    "mirroredSpec": "./spec.md",
+    "acceptanceChecklist": "./checklists/acceptance.md"
   },
   "deliveryRules": {
     "finalDeliverables": [
@@ -11,17 +15,25 @@
     "forbiddenFinalArtifacts": [
       ".txt",
       ".zip",
-      "image-answer-pages"
+      "image-answer-pages",
+      "review-page-images"
     ],
     "cleanupAfterSuccessfulDeliver": true
   },
   "formatRules": {
     "choiceAnswerLine": {
       "required": true,
-      "formatExample": "1—5：A、B、C、D、A"
+      "formatExample": "1—5：A、B、C、D、A",
+      "answersPerLine": 5,
+      "compactLayoutRequired": true
     },
     "questionLead": {
       "firstSubQuestionSameLineRequired": true
+    },
+    "nonChoiceAnswer": {
+      "classroomDisplayDefault": true,
+      "avoidLectureStyle": true,
+      "preferSinglePageWithinReadability": true
     },
     "math": {
       "trueLatexRenderingRequired": true,
@@ -38,5 +50,10 @@
       "plainTextCjkTarget": 24,
       "plainTextCjkMax": 30
     }
+  },
+  "evaluation": {
+    "dataset": "../../eval/physics-answer/dataset.json",
+    "casesDir": "../../eval/physics-answer/cases",
+    "visualBaselinesDir": "../../eval/physics-answer/baselines/visual"
   }
 }

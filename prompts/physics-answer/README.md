@@ -1,22 +1,38 @@
 # Physics Answer Prompt Assets
 
-This directory is the start of the structured prompt asset layout.
+`prompts/physics-answer/` is the canonical prompt-asset root for the junior-high
+physics answer workflow.
 
-Current state:
+## Current baseline
 
-- The full authoritative human-readable production spec is still the repository-root file:
-  - `初中物理试卷参考答案生成与渲染交付提示词_v8.6_生产完整版.md`
-- Runtime delivery behavior is beginning to move into structured assets:
-  - render profiles under `tools/latex-renderer/profiles/`
-  - baseline validation gates in `tools/latex-renderer/validate-answer-markdown.mjs`
-  - distilled structured runtime rules in `config.json`
+- Human-readable production spec: repository-root `v8.7` production file
+- Mirrored in-repo prompt spec: `spec.md`
+- Structured runtime config consumed by tools: `config.json`
+- Asset manifest and ownership map: `manifest.json`
+- Acceptance gates distilled from the full spec: `checklists/acceptance.md`
+- Fixed regression/eval dataset: `../../eval/physics-answer/`
 
-Planned steady-state layout:
+## Directory contract
 
-- `spec.md`: current full production spec
-- `config.json` or future `config.yaml`: structured rules directly consumed by tools
-- `checklists/acceptance.md`: distilled acceptance gates
-- `evals/`: fixed regression samples and expected checks
-- future structured config: style/profile/output rules consumed by tools
+- `spec.md`: synced mirror of the current full production prompt spec
+- `config.json`: tool-facing structured rules and profile defaults
+- `manifest.json`: asset metadata, authoritative paths, and eval/tool bindings
+- `checklists/acceptance.md`: distilled hard gates and review reminders
 
-Until the full migration is complete, treat the root `v8.6` file as the source of truth for wording and policy.
+## Change policy
+
+1. Update the repository-root production spec first when wording or policy changes.
+2. Sync `spec.md`, `config.json`, and `checklists/acceptance.md` in the same pass.
+3. Add or update a fixed case under `eval/physics-answer/` whenever the change
+   affects validation, rendering, or delivery behavior.
+
+## Current migration state
+
+The asset layer is now standardized enough for tools to reference stable paths:
+
+- prompt policy lives under `prompts/physics-answer/`
+- eval fixtures and visual baselines live under `eval/physics-answer/`
+- rendering/runtime code stays under `tools/latex-renderer/`
+
+Further work should extend the structured rules and eval coverage rather than
+adding new ad hoc root-level prompt variants.

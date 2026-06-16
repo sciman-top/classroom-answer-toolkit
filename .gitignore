@@ -16,9 +16,14 @@ __pycache__/
 
 # Temporary render files
 .smoke-work/
+.smoke-visual/
 _tmp_*
 *.render.html
 .*.render.html
+
+# Eval outputs
+eval/**/results/*
+!eval/**/results/README.md
 
 # OS/editor noise
 Thumbs.db

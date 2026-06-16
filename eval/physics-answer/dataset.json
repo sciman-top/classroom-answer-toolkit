@@ -1,0 +1,25 @@
+{
+  "suiteId": "physics-answer",
+  "version": "1.0",
+  "assetVersion": "v8.7",
+  "defaultProfiles": [
+    "classroom",
+    "compact"
+  ],
+  "resultsFile": "results/latest.json",
+  "cases": [
+    {
+      "id": "smoke-answer",
+      "input": "cases/smoke-answer.md",
+      "expected": "cases/smoke-answer.expected.json",
+      "visualBaseline": "baselines/visual/smoke-classroom.page-001.png",
+      "tags": [
+        "smoke",
+        "validator",
+        "render",
+        "review",
+        "visual-baseline"
+      ]
+    }
+  ]
+}
