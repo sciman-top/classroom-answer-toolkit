@@ -4,11 +4,43 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
+import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
 
-const [, , inputArg, outputArg] = process.argv;
+function parseArgs(argv) {
+  const positional = [];
+  const options = {
+    profile: DEFAULT_PROFILE_NAME
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === "--help" || arg === "-h") {
+      options.help = true;
+      continue;
+    }
+
+    if (arg === "--profile") {
+      options.profile = argv[++index];
+      continue;
+    }
+
+    if (arg.startsWith("--profile=")) {
+      options.profile = arg.slice("--profile=".length);
+      continue;
+    }
+
+    positional.push(arg);
+  }
+
+  return { positional, options };
+}
+
+const { positional, options } = parseArgs(process.argv.slice(2));
+const [inputArg, outputArg] = positional;
 
 if (!inputArg) {
-  console.error("Usage: npm run render -- <input.md> [output.pdf]");
+  console.error(`Usage: npm run render -- <input.md> [output.pdf] [--profile classroom|compact]\nBuilt-in profiles: ${listBuiltInProfiles().join(", ")}`);
   process.exit(2);
 }
 
@@ -17,6 +49,7 @@ const inputPath = path.resolve(callerCwd, inputArg);
 const outputPath = path.resolve(
   outputArg ? path.resolve(callerCwd, outputArg) : inputPath.replace(/\.md$/i, ".pdf")
 );
+const renderProfile = loadRenderProfile(options.profile, callerCwd);
 
 const browserCandidates = [
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
@@ -121,8 +154,8 @@ const html = `<!doctype html>
 ${katexCss}
 
 @page {
-  size: A4;
-  margin: 16mm 17mm;
+  size: ${renderProfile.page.size};
+  margin: ${renderProfile.page.margin.topMm}mm ${renderProfile.page.margin.rightMm}mm ${renderProfile.page.margin.bottomMm}mm ${renderProfile.page.margin.leftMm}mm;
 }
 
 html,
@@ -130,32 +163,32 @@ body {
   margin: 0;
   padding: 0;
   color: #111;
-  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
-  font-size: 13.5pt;
-  line-height: 1.55;
+  font-family: ${renderProfile.typography.fontFamily};
+  font-size: ${renderProfile.typography.bodyFontSizePt}pt;
+  line-height: ${renderProfile.typography.lineHeight};
 }
 
 body {
-  max-width: 158mm;
+  max-width: ${renderProfile.typography.maxBodyWidthMm}mm;
 }
 
 h1 {
-  font-size: 21pt;
-  line-height: 1.25;
-  margin: 0 0 9pt;
+  font-size: ${renderProfile.typography.h1FontSizePt}pt;
+  line-height: ${renderProfile.typography.h1LineHeight};
+  margin: 0 0 ${renderProfile.typography.h1MarginBottomPt}pt;
   font-weight: 700;
 }
 
 h2 {
-  font-size: 16pt;
-  line-height: 1.35;
-  margin: 15pt 0 7pt;
+  font-size: ${renderProfile.typography.h2FontSizePt}pt;
+  line-height: ${renderProfile.typography.h2LineHeight};
+  margin: ${renderProfile.typography.h2MarginTopPt}pt 0 ${renderProfile.typography.h2MarginBottomPt}pt;
   color: #164a7a;
   font-weight: 700;
 }
 
 p {
-  margin: 0 0 6pt;
+  margin: 0 0 ${renderProfile.typography.paragraphMarginBottomPt}pt;
 }
 
 strong {
@@ -163,12 +196,12 @@ strong {
 }
 
 .katex {
-  font-size: 1.02em;
+  font-size: ${renderProfile.typography.katexScale}em;
 }
 
 .katex-display {
   text-align: left !important;
-  margin: 0.18em 0 0.35em;
+  margin: ${renderProfile.typography.displayMathMarginTopEm}em 0 ${renderProfile.typography.displayMathMarginBottomEm}em;
 }
 
 .katex-display > .katex {
@@ -201,13 +234,13 @@ try {
   await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: "load" });
   await page.pdf({
     path: outputPath,
-    format: "A4",
+    format: renderProfile.page.size,
     printBackground: true,
     margin: {
-      top: "16mm",
-      right: "17mm",
-      bottom: "16mm",
-      left: "17mm"
+      top: `${renderProfile.page.margin.topMm}mm`,
+      right: `${renderProfile.page.margin.rightMm}mm`,
+      bottom: `${renderProfile.page.margin.bottomMm}mm`,
+      left: `${renderProfile.page.margin.leftMm}mm`
     }
   });
 } finally {

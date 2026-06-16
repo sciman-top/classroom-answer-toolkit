@@ -4,8 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "cleanup": "node cleanup-answer-artifacts.mjs",
+    "deliver": "node deliver-answer.mjs",
     "render": "node render-md-latex.mjs",
-    "review-source-pdf": "node review-source-pdf.mjs"
+    "review-source-pdf": "node review-source-pdf.mjs",
+    "smoke": "node smoke-test.mjs",
+    "validate:answer": "node validate-answer-markdown.mjs",
+    "ocr:rapid": "..\\ocr\\.venv\\Scripts\\python.exe ..\\ocr\\batch_ocr.py"
   },
   "dependencies": {
     "katex": "^0.16.25",

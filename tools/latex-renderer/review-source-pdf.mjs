@@ -178,6 +178,7 @@ function escapeHtml(value) {
 }
 
 function writeReviewHtml({ outputDir, inputPath, manifest }) {
+  fs.mkdirSync(outputDir, { recursive: true });
   const imageItems = manifest.pages.map((page) => {
     const imageName = path.basename(page.imagePath);
     const textLayer = page.textLayerPath

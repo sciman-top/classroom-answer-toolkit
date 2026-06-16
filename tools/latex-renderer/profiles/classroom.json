@@ -1,0 +1,16 @@
+{
+  "name": "classroom",
+  "typography": {
+    "bodyFontSizePt": 14,
+    "lineHeight": 1.55,
+    "maxBodyWidthMm": 148,
+    "h1FontSizePt": 21,
+    "h2FontSizePt": 16,
+    "paragraphMarginBottomPt": 7,
+    "katexScale": 1.04
+  },
+  "answerRules": {
+    "targetPlainTextCjkPerLine": 20,
+    "maxPlainTextCjkPerLine": 24
+  }
+}

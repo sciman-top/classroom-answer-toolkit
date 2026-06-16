@@ -1,5 +1,6 @@
 # Local automation/runtime caches
 .playwright-mcp/
+.pdf-review/
 _pdf_render_check/
 _docx_render_check/
 
@@ -8,8 +9,14 @@ node_modules/
 tools/latex-renderer/node_modules/
 tools/latex-renderer/.tessdata/
 tools/latex-renderer/*.traineddata
+tools/ocr/.venv/
+tools/ocr/.model-cache/
+_ocr_work/
+__pycache__/
 
 # Temporary render files
+.smoke-work/
+_tmp_*
 *.render.html
 .*.render.html
 

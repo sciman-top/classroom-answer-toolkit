@@ -1,0 +1,42 @@
+{
+  "version": "v8.6-derived",
+  "sourceOfTruth": {
+    "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_v8.6_生产完整版.md"
+  },
+  "deliveryRules": {
+    "finalDeliverables": [
+      ".md",
+      ".pdf"
+    ],
+    "forbiddenFinalArtifacts": [
+      ".txt",
+      ".zip",
+      "image-answer-pages"
+    ],
+    "cleanupAfterSuccessfulDeliver": true
+  },
+  "formatRules": {
+    "choiceAnswerLine": {
+      "required": true,
+      "formatExample": "1—5：A、B、C、D、A"
+    },
+    "questionLead": {
+      "firstSubQuestionSameLineRequired": true
+    },
+    "math": {
+      "trueLatexRenderingRequired": true,
+      "displayMathLeftAligned": true
+    }
+  },
+  "profiles": {
+    "default": "classroom",
+    "classroom": {
+      "plainTextCjkTarget": 20,
+      "plainTextCjkMax": 24
+    },
+    "compact": {
+      "plainTextCjkTarget": 24,
+      "plainTextCjkMax": 30
+    }
+  }
+}
