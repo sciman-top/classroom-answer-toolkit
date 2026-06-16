@@ -147,3 +147,18 @@ Run a minimal end-to-end smoke check for:
 ```powershell
 npm --prefix tools/latex-renderer run smoke
 ```
+
+## Minimal visual regression
+
+The repository now includes a lightweight first-page regression for the smoke
+fixture:
+
+```powershell
+npm --prefix tools/latex-renderer run visual:smoke
+```
+
+Behavior:
+
+- first run creates a baseline image;
+- later runs compare the current first-page render against that baseline;
+- failure indicates a visual change large enough to inspect manually.

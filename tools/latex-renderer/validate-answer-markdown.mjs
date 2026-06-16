@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
+import { loadRuntimeConfig } from "./runtime-config.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact]
@@ -166,6 +167,7 @@ function main() {
   }
 
   const profile = loadRenderProfile(options.profile, callerCwd);
+  const runtimeConfig = loadRuntimeConfig();
   const source = fs.readFileSync(inputPath, "utf8");
   const lines = source.replace(/\r\n/g, "\n").split("\n");
 
@@ -182,7 +184,11 @@ function main() {
     validateBacktickWrappedMath(line, lineNumber, errors);
   }
 
-  validateLineLengths(lines, profile.answerRules.maxPlainTextCjkPerLine, warnings);
+  validateLineLengths(
+    lines,
+    profile.answerRules.maxPlainTextCjkPerLine ?? runtimeConfig.profiles?.[profile.name]?.plainTextCjkMax ?? runtimeConfig.profiles?.classroom?.plainTextCjkMax ?? 24,
+    warnings
+  );
 
   if (warnings.length > 0) {
     console.warn(`Warnings (${warnings.length}):`);

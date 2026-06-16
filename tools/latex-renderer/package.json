@@ -10,6 +10,8 @@
     "review-source-pdf": "node review-source-pdf.mjs",
     "smoke": "node smoke-test.mjs",
     "validate:answer": "node validate-answer-markdown.mjs",
+    "visual:compare": "node visual-regression.mjs",
+    "visual:smoke": "node visual-regression-smoke.mjs",
     "ocr:rapid": "..\\ocr\\.venv\\Scripts\\python.exe ..\\ocr\\batch_ocr.py"
   },
   "dependencies": {

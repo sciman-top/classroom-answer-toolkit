@@ -2,12 +2,14 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getDefaultProfileName, loadRuntimeConfig } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const packageJsonPath = path.join(toolDir, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const packageName = packageJson.name ?? "physics-answer-latex-renderer";
+const runtimeConfig = loadRuntimeConfig();
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--keep-review] [--keep-ocr] [--review-scale 2] [--skip-validate]
@@ -35,7 +37,7 @@ function resolveToolScript(scriptFileName) {
 function parseArgs(argv) {
   const positional = [];
   const options = {
-    profile: "classroom",
+    profile: getDefaultProfileName(),
     keepReview: false,
     keepOcr: false,
     reviewScale: "2",
@@ -196,7 +198,11 @@ function main() {
   }
 
   console.log(`[${packageName}] cleanup`);
-  runNodeScript("cleanup-answer-artifacts.mjs", cleanupArgs);
+  if (runtimeConfig.deliveryRules?.cleanupAfterSuccessfulDeliver !== false) {
+    runNodeScript("cleanup-answer-artifacts.mjs", cleanupArgs);
+  } else {
+    console.log(`[${packageName}] cleanup skipped by runtime config`);
+  }
 
   console.log(`[${packageName}] deliver complete: ${path.relative(repoRoot, outputPath)}`);
 }

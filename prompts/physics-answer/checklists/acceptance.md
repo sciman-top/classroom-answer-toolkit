@@ -26,6 +26,8 @@ This checklist distills the most important runtime gates from the current v8.6 p
 - backtick-wrapped math or units
 - unbalanced dollar signs
 - profile-based long-line warnings
+- smoke render/review chain
+- minimal first-page visual regression for the smoke fixture
 
 ## Still manual or future automated coverage
 

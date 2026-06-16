@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getDefaultProfileName, loadRuntimeConfig } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const profilesDir = path.join(toolDir, "profiles");
 
-export const DEFAULT_PROFILE_NAME = "classroom";
+export const DEFAULT_PROFILE_NAME = getDefaultProfileName();
+const runtimeConfig = loadRuntimeConfig();
 
 const defaultProfile = {
   name: DEFAULT_PROFILE_NAME,
@@ -36,8 +38,8 @@ const defaultProfile = {
     displayMathMarginBottomEm: 0.35
   },
   answerRules: {
-    targetPlainTextCjkPerLine: 20,
-    maxPlainTextCjkPerLine: 24
+    targetPlainTextCjkPerLine: runtimeConfig.profiles?.classroom?.plainTextCjkTarget ?? 20,
+    maxPlainTextCjkPerLine: runtimeConfig.profiles?.classroom?.plainTextCjkMax ?? 24
   }
 };
 
