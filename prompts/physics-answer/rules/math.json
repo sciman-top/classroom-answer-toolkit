@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "physics-answer.math",
+  "packVersion": "v8.10",
+  "kind": "rule-pack",
+  "metadata": {
+    "subject": "physics-answer",
+    "priority": 90
+  },
+  "rules": [
+    {
+      "id": "physics-answer.math.true-latex",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 90,
+      "engine": "render",
+      "appliesTo": [
+        "answer-md",
+        "pdf"
+      ],
+      "params": {
+        "trueLatexRenderingRequired": true,
+        "displayMathLeftAligned": true
+      },
+      "source": {
+        "path": "./rules/math.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "physics-answer.math.direct-equivalent-path",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 85,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md",
+        "computation"
+      ],
+      "params": {
+        "preferMoreDirectEquivalentPath": true,
+        "allowNecessaryDerivationForDifficultSubQuestion": true,
+        "dropUnusedOriginalFormulaHintLine": true,
+        "preferMovePrimaryUnknownBeforeWrap": true
+      },
+      "source": {
+        "path": "./rules/math.json",
+        "layer": "subject-pack"
+      }
+    }
+  ]
+}

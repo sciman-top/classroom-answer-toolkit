@@ -1,0 +1,16 @@
+{
+  "caseId": "instrument-reading-priority",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "v8.10 requires instrument-reading answers to come from the original figure reading, with calculation used only as a cross-check."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "caseId": "backtick-math",
+  "profiles": {
+    "classroom": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "Backtick-wrapped formulas or units must fail because they block LaTeX rendering."
+  ]
+}

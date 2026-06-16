@@ -1,0 +1,9 @@
+{
+  "name": "classroom",
+  "inherits": [
+    "../../platform-core/profiles/classroom.json"
+  ],
+  "review": {
+    "enabled": true
+  }
+}

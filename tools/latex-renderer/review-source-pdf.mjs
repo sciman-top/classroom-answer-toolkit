@@ -10,6 +10,7 @@ const require = createRequire(import.meta.url);
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 
 const browserCandidates = [
+  path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -354,7 +355,7 @@ async function main() {
 
   const browserPath = browserCandidates.find((candidate) => fs.existsSync(candidate));
   if (!browserPath) {
-    fail("No local Chrome or Edge executable found for PDF source review.", 3);
+    fail("No local Chromium, Chrome, or Edge executable found for PDF source review.", 3);
   }
 
   const pdfJsPath = require.resolve("pdfjs-dist/build/pdf.mjs");

@@ -1,0 +1,16 @@
+{
+  "caseId": "necessary-derivation",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "v8.9 allows necessary derivation for difficult sub-questions instead of forcing a collapsed final-result-only answer."
+  ]
+}

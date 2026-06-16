@@ -1,0 +1,16 @@
+{
+  "caseId": "instrument-range-scale-check",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "v8.12 requires instrument reading to confirm the bound figure first, then re-check range and scale before finalizing the value."
+  ]
+}

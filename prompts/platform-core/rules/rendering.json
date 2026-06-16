@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "platform-core.rendering",
+  "packVersion": "v1.0",
+  "kind": "rule-pack",
+  "metadata": {
+    "scope": "cross-subject",
+    "priority": 90
+  },
+  "rules": [
+    {
+      "id": "rendering.true-latex",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 90,
+      "engine": "render",
+      "appliesTo": [
+        "render",
+        "validate"
+      ],
+      "params": {
+        "requireTrueLatex": true,
+        "displayMathLeftAligned": true
+      },
+      "source": {
+        "path": "./rules/rendering.json",
+        "layer": "platform-core"
+      }
+    }
+  ]
+}

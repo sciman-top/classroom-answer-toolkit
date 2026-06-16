@@ -54,35 +54,47 @@ function main() {
   ensureDir(smokeDir);
   fs.mkdirSync(baselineDir, { recursive: true });
 
-  const pdfPath = path.join(smokeDir, "smoke-classroom.pdf");
-  const reviewDir = path.join(smokeDir, "review");
-  const baselineImagePath = path.join(baselineDir, "smoke-classroom.page-001.png");
+  for (const profile of ["classroom", "compact"]) {
+    const pdfPath = path.join(smokeDir, `smoke-${profile}.pdf`);
+    const reviewDir = path.join(smokeDir, `review-${profile}`);
+    const snapshotPath = path.join(smokeDir, `resolved-snapshot.${profile}.json`);
+    const baselineImagePath = path.join(baselineDir, `smoke-${profile}.page-001.png`);
 
-  runNodeScript("render-md-latex.mjs", [
-    path.relative(repoRoot, fixturePath),
-    path.relative(repoRoot, pdfPath),
-    "--profile",
-    "classroom"
-  ]);
-
-  runNodeScript("review-source-pdf.mjs", [
-    path.relative(repoRoot, pdfPath),
-    "--out",
-    path.relative(repoRoot, reviewDir),
-    "--scale",
-    "2"
-  ]);
-
-  const actualImagePath = firstPageImagePath(reviewDir);
-
-  if (!fs.existsSync(baselineImagePath)) {
-    fs.copyFileSync(actualImagePath, baselineImagePath);
-    console.log(`Created baseline: ${baselineImagePath}`);
-  } else {
-    runNodeScript("visual-regression.mjs", [
-      path.relative(repoRoot, actualImagePath),
-      path.relative(repoRoot, baselineImagePath)
+    runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
+      "--profile",
+      profile,
+      "--out",
+      path.relative(repoRoot, snapshotPath)
     ]);
+
+    runNodeScript("render-md-latex.mjs", [
+      path.relative(repoRoot, fixturePath),
+      path.relative(repoRoot, pdfPath),
+      "--profile",
+      profile,
+      "--snapshot",
+      path.relative(repoRoot, snapshotPath)
+    ]);
+
+    runNodeScript("review-source-pdf.mjs", [
+      path.relative(repoRoot, pdfPath),
+      "--out",
+      path.relative(repoRoot, reviewDir),
+      "--scale",
+      "2"
+    ]);
+
+    const actualImagePath = firstPageImagePath(reviewDir);
+
+    if (!fs.existsSync(baselineImagePath)) {
+      fs.copyFileSync(actualImagePath, baselineImagePath);
+      console.log(`Created baseline: ${baselineImagePath}`);
+    } else {
+      runNodeScript("visual-regression.mjs", [
+        path.relative(repoRoot, actualImagePath),
+        path.relative(repoRoot, baselineImagePath)
+      ]);
+    }
   }
 
   fs.rmSync(smokeDir, { recursive: true, force: true });

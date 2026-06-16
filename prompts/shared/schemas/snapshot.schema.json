@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ResolvedSnapshot",
+  "type": "object",
+  "required": [
+    "snapshotId",
+    "generatedAt",
+    "layers",
+    "subjectPack",
+    "activeProfile",
+    "rules",
+    "profiles",
+    "toolchain",
+    "inputRefs",
+    "meta"
+  ],
+  "properties": {
+    "snapshotId": { "type": "string" },
+    "generatedAt": { "type": "string" },
+    "layers": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "subjectPack": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "activeProfile": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "rules": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "inputRefs": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

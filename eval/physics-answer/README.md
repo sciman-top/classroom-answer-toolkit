@@ -15,7 +15,18 @@ render workflow.
 
 - validator smoke coverage
 - shared smoke fixture for render/review
-- first-page visual baseline for classroom profile
+- first-page visual baselines for classroom and compact profiles
+- orphan question-number first-line regression
+- choice-answer compact-layout hard-gate regression
+- classroom long-line warning regression
+- classroom long-line visual baselines for classroom and compact layout contrast
+- display-math layout visual baselines for heading, formula block, and paragraph rhythm
+- figure-binding sample aligned with v8.11 multi-figure sub-question binding guidance
+- necessary-derivation computation sample aligned with v8.9 difficult-subquestion guidance
+- instrument-reading-priority sample aligned with v8.10 original-figure-reading guidance
+- instrument-range-scale-check sample aligned with v8.12 range/division double-check guidance
+- backtick-wrapped math hard-gate regression
+- unbalanced LaTeX dollar hard-gate regression
 
 ## Run
 

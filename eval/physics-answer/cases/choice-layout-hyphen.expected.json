@@ -1,0 +1,16 @@
+{
+  "caseId": "choice-layout-hyphen",
+  "profiles": {
+    "classroom": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "Choice answer ranges must use a Chinese dash instead of an ASCII hyphen."
+  ]
+}

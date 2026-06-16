@@ -31,7 +31,9 @@ function fail(message, code = 2) {
 }
 
 function resolveToolScript(scriptFileName) {
-  return path.join(toolDir, scriptFileName);
+  return path.isAbsolute(scriptFileName)
+    ? scriptFileName
+    : path.resolve(toolDir, scriptFileName);
 }
 
 function parseArgs(argv) {
@@ -133,6 +135,10 @@ function makeReviewOutputDir(pdfPath) {
   return path.join(repoRoot, ".pdf-review", folderName);
 }
 
+function loadJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
 function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
 
@@ -162,13 +168,31 @@ function main() {
   }
 
   const reviewOutputDir = makeReviewOutputDir(outputPath);
+  const snapshotPath = runtimeConfig.snapshot?.cachePath
+    ? path.resolve(path.dirname(path.join(repoRoot, "prompts", "physics-answer", "config.json")), runtimeConfig.snapshot.cachePath)
+    : path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json");
+
+  console.log(`[${packageName}] validate-assets`);
+  runNodeScript(path.join("..", "rule-compiler", "validate-assets.mjs"), []);
+
+  console.log(`[${packageName}] compile-snapshot`);
+  runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
+    "--profile",
+    options.profile,
+    "--out",
+    path.relative(repoRoot, snapshotPath)
+  ]);
+
+  const snapshot = loadJson(snapshotPath);
 
   if (!options.skipValidate) {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
     runNodeScript("validate-answer-markdown.mjs", [
       path.relative(repoRoot, inputPath),
       "--profile",
-      options.profile
+      options.profile,
+      "--snapshot",
+      path.relative(repoRoot, snapshotPath)
     ]);
   }
 
@@ -177,7 +201,9 @@ function main() {
     path.relative(repoRoot, inputPath),
     path.relative(repoRoot, outputPath),
     "--profile",
-    options.profile
+    options.profile,
+    "--snapshot",
+    path.relative(repoRoot, snapshotPath)
   ]);
 
   console.log(`[${packageName}] review: ${path.relative(repoRoot, outputPath)}`);
@@ -203,6 +229,27 @@ function main() {
   } else {
     console.log(`[${packageName}] cleanup skipped by runtime config`);
   }
+
+  const reviewManifestPath = path.join(reviewOutputDir, "manifest.json");
+  console.log(`[${packageName}] write-delivery-manifest`);
+  runNodeScript("write-delivery-manifest.mjs", [
+    "--input",
+    path.relative(repoRoot, inputPath),
+    "--output",
+    path.relative(repoRoot, outputPath),
+    "--profile",
+    options.profile,
+    "--snapshot-path",
+    path.relative(repoRoot, snapshotPath),
+    "--snapshot-id",
+    snapshot.snapshotId,
+    "--review-dir",
+    path.relative(repoRoot, reviewOutputDir),
+    "--review-manifest",
+    path.relative(repoRoot, reviewManifestPath),
+    "--review-scale",
+    options.reviewScale
+  ]);
 
   console.log(`[${packageName}] deliver complete: ${path.relative(repoRoot, outputPath)}`);
 }

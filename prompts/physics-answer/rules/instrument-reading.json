@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "physics-answer.instrument-reading",
+  "packVersion": "v8.12",
+  "kind": "rule-pack",
+  "metadata": {
+    "subject": "physics-answer",
+    "priority": 88
+  },
+  "rules": [
+    {
+      "id": "physics-answer.instrument-reading.original-image-priority",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 88,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md",
+        "instrument-reading"
+      ],
+      "params": {
+        "preferOriginalImageReading": true,
+        "calculationOnlyForCrossCheck": true,
+        "requireFigureBindingBeforeReading": true,
+        "requireSecondaryRangeAndScaleCheck": true
+      },
+      "source": {
+        "path": "./rules/instrument-reading.json",
+        "layer": "subject-pack"
+      }
+    }
+  ]
+}

@@ -5,11 +5,13 @@ import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
 import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
+import { loadResolvedSnapshot } from "./runtime-config.mjs";
 
 function parseArgs(argv) {
   const positional = [];
   const options = {
-    profile: DEFAULT_PROFILE_NAME
+    profile: DEFAULT_PROFILE_NAME,
+    snapshot: null
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -27,6 +29,16 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--profile=")) {
       options.profile = arg.slice("--profile=".length);
+      continue;
+    }
+
+    if (arg === "--snapshot") {
+      options.snapshot = argv[++index];
+      continue;
+    }
+
+    if (arg.startsWith("--snapshot=")) {
+      options.snapshot = arg.slice("--snapshot=".length);
       continue;
     }
 
@@ -49,9 +61,12 @@ const inputPath = path.resolve(callerCwd, inputArg);
 const outputPath = path.resolve(
   outputArg ? path.resolve(callerCwd, outputArg) : inputPath.replace(/\.md$/i, ".pdf")
 );
-const renderProfile = loadRenderProfile(options.profile, callerCwd);
+const snapshot = options.snapshot ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot)) : loadResolvedSnapshot();
+const renderProfile = loadRenderProfile(options.profile, callerCwd, snapshot);
+fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 const browserCandidates = [
+  path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -60,7 +75,7 @@ const browserCandidates = [
 
 const browserPath = browserCandidates.find((candidate) => fs.existsSync(candidate));
 if (!browserPath) {
-  console.error("No local Chrome or Edge executable found for PDF rendering.");
+  console.error("No local Chromium, Chrome, or Edge executable found for PDF rendering.");
   process.exit(3);
 }
 

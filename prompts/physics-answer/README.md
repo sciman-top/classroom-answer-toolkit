@@ -5,7 +5,7 @@ physics answer workflow.
 
 ## Current baseline
 
-- Human-readable production spec: repository-root `v8.7` production file
+- Human-readable production spec: repository-root `v8.12` production file
 - Mirrored in-repo prompt spec: `spec.md`
 - Structured runtime config consumed by tools: `config.json`
 - Asset manifest and ownership map: `manifest.json`

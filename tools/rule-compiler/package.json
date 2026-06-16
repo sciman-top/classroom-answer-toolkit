@@ -1,0 +1,12 @@
+{
+  "name": "physics-answer-rule-compiler",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile:snapshot": "node compile-snapshot.mjs",
+    "merge:rules": "node merge-rules.mjs",
+    "validate:assets": "node validate-assets.mjs",
+    "resolve:profile": "node resolve-profile.mjs"
+  }
+}

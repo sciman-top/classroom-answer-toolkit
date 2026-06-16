@@ -13,10 +13,13 @@ tools/ocr/.venv/
 tools/ocr/.model-cache/
 _ocr_work/
 __pycache__/
+**/bin/
+**/obj/
 
 # Temporary render files
 .smoke-work/
 .smoke-visual/
+.snapshot-cache/
 _tmp_*
 *.render.html
 .*.render.html

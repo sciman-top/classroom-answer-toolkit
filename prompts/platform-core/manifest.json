@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "platform-core",
+  "displayName": "ClassroomToolkit Platform Core",
+  "version": "v1.0",
+  "status": "active",
+  "locale": "zh-CN",
+  "kind": "platform-core",
+  "sourceOfTruth": {
+    "humanSpec": "../../工程终态与平台化路线图.md",
+    "mirroredSpec": "./README.md"
+  },
+  "entry": {
+    "rulesDir": "./rules",
+    "profilesDir": "./profiles",
+    "migrationsDir": "./migrations",
+    "renderBaseProfile": "./profiles/render-base.json"
+  }
+}

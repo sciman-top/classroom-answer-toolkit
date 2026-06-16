@@ -1,0 +1,20 @@
+{
+  "name": "classroom",
+  "inherits": [
+    "./render-base.json"
+  ],
+  "layout": {
+    "plainTextCjkTarget": 20,
+    "plainTextCjkMax": 24,
+    "bodyFontSizePt": 14,
+    "lineHeight": 1.55,
+    "maxBodyWidthMm": 148
+  },
+  "answerRules": {
+    "targetPlainTextCjkPerLine": 20,
+    "maxPlainTextCjkPerLine": 24
+  },
+  "review": {
+    "enabled": true
+  }
+}

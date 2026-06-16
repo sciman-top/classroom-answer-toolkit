@@ -39,43 +39,63 @@ function ensureCleanSmokeDir() {
 function main() {
   ensureCleanSmokeDir();
 
-  const classroomPdf = path.join(smokeDir, "smoke-classroom.pdf");
-  const compactPdf = path.join(smokeDir, "smoke-compact.pdf");
   const reviewDir = path.join(smokeDir, "review-classroom");
+  const snapshotPaths = {
+    classroom: path.join(smokeDir, "resolved-snapshot.classroom.json"),
+    compact: path.join(smokeDir, "resolved-snapshot.compact.json")
+  };
+
+  for (const profile of ["classroom", "compact"]) {
+    console.log(`[smoke] compile snapshot ${profile}`);
+    runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
+      "--profile",
+      profile,
+      "--out",
+      path.relative(repoRoot, snapshotPaths[profile])
+    ]);
+  }
 
   console.log("[smoke] validate classroom");
   runNodeScript("validate-answer-markdown.mjs", [
     path.relative(repoRoot, fixturePath),
     "--profile",
-    "classroom"
+    "classroom",
+    "--snapshot",
+    path.relative(repoRoot, snapshotPaths.classroom)
   ]);
 
   console.log("[smoke] validate compact");
   runNodeScript("validate-answer-markdown.mjs", [
     path.relative(repoRoot, fixturePath),
     "--profile",
-    "compact"
+    "compact",
+    "--snapshot",
+    path.relative(repoRoot, snapshotPaths.compact)
   ]);
 
   console.log("[smoke] render classroom");
   runNodeScript("render-md-latex.mjs", [
     path.relative(repoRoot, fixturePath),
-    path.relative(repoRoot, classroomPdf),
+    path.relative(repoRoot, path.join(smokeDir, "smoke-classroom.pdf")),
     "--profile",
-    "classroom"
+    "classroom",
+    "--snapshot",
+    path.relative(repoRoot, snapshotPaths.classroom)
   ]);
 
   console.log("[smoke] render compact");
   runNodeScript("render-md-latex.mjs", [
     path.relative(repoRoot, fixturePath),
-    path.relative(repoRoot, compactPdf),
+    path.relative(repoRoot, path.join(smokeDir, "smoke-compact.pdf")),
     "--profile",
-    "compact"
+    "compact",
+    "--snapshot",
+    path.relative(repoRoot, snapshotPaths.compact)
   ]);
 
   console.log("[smoke] review classroom pdf");
   runNodeScript("review-source-pdf.mjs", [
-    path.relative(repoRoot, classroomPdf),
+    path.relative(repoRoot, path.join(smokeDir, "smoke-classroom.pdf")),
     "--out",
     path.relative(repoRoot, reviewDir),
     "--scale",

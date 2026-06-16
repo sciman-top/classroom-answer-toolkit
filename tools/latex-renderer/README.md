@@ -10,7 +10,7 @@ npm --prefix tools/latex-renderer run render -- "习题PDF/能量-效率参考�
 ```
 
 The renderer keeps LaTeX as real math by using Markdown-It, KaTeX, and a local
-Chrome or Edge browser through Playwright.
+Chromium, Chrome, or Edge browser through Playwright.
 
 Built-in render profiles:
 
@@ -19,8 +19,8 @@ Built-in render profiles:
 
 Current structured profile files live under:
 
-- `tools/latex-renderer/profiles/classroom.json`
-- `tools/latex-renderer/profiles/compact.json`
+- `prompts/physics-answer/profiles/classroom.json`
+- `prompts/physics-answer/profiles/compact.json`
 
 ## One-command deliver flow
 
@@ -50,7 +50,7 @@ npm --prefix tools/latex-renderer run review-source-pdf -- "习题PDF/能量-效
 ```
 
 The source-review command renders the original PDF pages into PNG files with
-PDF.js inside local Chrome or Edge. By default the files are written under the
+PDF.js inside local Chromium, Chrome, or Edge. By default the files are written under the
 system temp folder, so the answer directory is not polluted by intermediate
 page images.
 
@@ -132,7 +132,7 @@ Current checks focus on the most common hard failures:
 - unbalanced LaTeX dollar signs
 - overly long plain-text lines as warnings
 
-These automated checks are derived from the current v8.7 production spec and
+These automated checks are derived from the current v8.12 production spec and
 now anchor to structured assets under `prompts/physics-answer/` plus fixed eval
 cases under `eval/physics-answer/`.
 
@@ -160,8 +160,8 @@ npm --prefix tools/latex-renderer run visual:smoke
 
 Behavior:
 
-- first run creates a baseline image;
-- later runs compare the current first-page render against that baseline;
+- first run creates baseline images for both `classroom` and `compact`;
+- later runs compare the current first-page render against those baselines;
 - failure indicates a visual change large enough to inspect manually.
 
 ## Eval suite

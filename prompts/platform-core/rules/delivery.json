@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "platform-core.delivery",
+  "packVersion": "v1.0",
+  "kind": "rule-pack",
+  "metadata": {
+    "scope": "cross-subject",
+    "priority": 100
+  },
+  "rules": [
+    {
+      "id": "delivery.final-artifacts",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 100,
+      "engine": "deliver",
+      "appliesTo": [
+        "delivery"
+      ],
+      "params": {
+        "finalArtifacts": [
+          ".md",
+          ".pdf"
+        ]
+      },
+      "source": {
+        "path": "./rules/delivery.json",
+        "layer": "platform-core"
+      }
+    }
+  ]
+}

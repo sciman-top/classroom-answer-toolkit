@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SubjectPackManifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "assetId",
+    "displayName",
+    "version",
+    "status",
+    "locale",
+    "kind",
+    "sourceOfTruth"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "assetId": { "type": "string" },
+    "displayName": { "type": "string" },
+    "version": { "type": "string" },
+    "status": { "type": "string" },
+    "locale": { "type": "string" },
+    "domain": { "type": "string" },
+    "kind": { "type": "string" },
+    "inherits": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sourceOfTruth": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "tooling": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

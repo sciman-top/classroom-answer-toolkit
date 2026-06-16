@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const defaultConfigPath = path.join(repoRoot, "prompts", "physics-answer", "config.json");
+const defaultSnapshotPath = path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json");
 
 export function loadRuntimeConfig() {
   if (!fs.existsSync(defaultConfigPath)) {
@@ -20,6 +21,23 @@ export function getRuntimeConfigPath() {
 
 export function resolveRuntimeConfigRelativePath(relativePath) {
   return path.resolve(path.dirname(defaultConfigPath), relativePath);
+}
+
+export function getDefaultSnapshotPath() {
+  const config = loadRuntimeConfig();
+  if (config.snapshot?.cachePath) {
+    return resolveRuntimeConfigRelativePath(config.snapshot.cachePath);
+  }
+
+  return defaultSnapshotPath;
+}
+
+export function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath()) {
+  if (!fs.existsSync(snapshotPath)) {
+    return null;
+  }
+
+  return JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
 }
 
 export function getDefaultProfileName() {

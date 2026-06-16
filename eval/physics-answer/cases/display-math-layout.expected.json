@@ -1,0 +1,18 @@
+{
+  "caseId": "display-math-layout",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/display-math-layout.classroom.page-001.png"
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/display-math-layout.compact.page-001.png"
+    }
+  },
+  "notes": [
+    "Covers heading spacing, display-math spacing, and paragraph rhythm in both classroom and compact profiles."
+  ]
+}

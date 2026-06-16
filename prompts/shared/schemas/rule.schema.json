@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rule",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "enabled",
+    "severity",
+    "priority",
+    "engine",
+    "appliesTo",
+    "params",
+    "source"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "version": { "type": "string" },
+    "enabled": { "type": "boolean" },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "hard",
+        "soft",
+        "hint"
+      ]
+    },
+    "priority": { "type": "integer" },
+    "engine": { "type": "string" },
+    "appliesTo": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "notes": { "type": "string" },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

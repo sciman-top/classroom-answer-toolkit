@@ -1,11 +1,18 @@
 {
   "schemaVersion": "1.0",
   "assetId": "physics-answer",
-  "version": "v8.7-derived",
+  "version": "v8.12-derived",
   "sourceOfTruth": {
-    "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_v8.7_生产完整版.md",
+    "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_v8.12_生产完整版.md",
     "mirroredSpec": "./spec.md",
     "acceptanceChecklist": "./checklists/acceptance.md"
+  },
+  "kind": "subject-pack-runtime-config",
+  "inherits": [
+    "../platform-core/manifest.json"
+  ],
+  "snapshot": {
+    "cachePath": "../../.snapshot-cache/resolved-snapshot.json"
   },
   "deliveryRules": {
     "finalDeliverables": [
@@ -30,14 +37,33 @@
     "questionLead": {
       "firstSubQuestionSameLineRequired": true
     },
+    "figureBinding": {
+      "requireQuestionFigureBinding": true,
+      "forbidCrossFigureAnswering": true
+    },
     "nonChoiceAnswer": {
       "classroomDisplayDefault": true,
       "avoidLectureStyle": true,
-      "preferSinglePageWithinReadability": true
+      "preferSinglePageWithinReadability": true,
+      "preferStepwiseFundamentalFormula": true,
+      "preferMoreDirectEquivalentPath": true,
+      "allowNecessaryDerivationForDifficultSubQuestion": true,
+      "requireUnitSubstitution": true,
+      "dropUnusedOriginalFormulaHintLine": true,
+      "preferMovePrimaryUnknownBeforeWrap": true
     },
     "math": {
       "trueLatexRenderingRequired": true,
       "displayMathLeftAligned": true
+    },
+    "instrumentReading": {
+      "preferOriginalImageReading": true,
+      "calculationOnlyForCrossCheck": true,
+      "requireFigureBindingBeforeReading": true,
+      "requireSecondaryRangeAndScaleCheck": true
+    },
+    "experimentDesign": {
+      "scoreSentenceStyleRequired": true
     }
   },
   "profiles": {

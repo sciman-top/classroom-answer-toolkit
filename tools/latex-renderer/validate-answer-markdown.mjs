@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
-import { loadRuntimeConfig } from "./runtime-config.mjs";
+import { loadResolvedSnapshot, loadRuntimeConfig } from "./runtime-config.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact]
@@ -22,7 +22,8 @@ function fail(message, code = 2) {
 function parseArgs(argv) {
   const positional = [];
   const options = {
-    profile: DEFAULT_PROFILE_NAME
+    profile: DEFAULT_PROFILE_NAME,
+    snapshot: null
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -40,6 +41,16 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--profile=")) {
       options.profile = arg.slice("--profile=".length);
+      continue;
+    }
+
+    if (arg === "--snapshot") {
+      options.snapshot = argv[++index];
+      continue;
+    }
+
+    if (arg.startsWith("--snapshot=")) {
+      options.snapshot = arg.slice("--snapshot=".length);
       continue;
     }
 
@@ -166,7 +177,8 @@ function main() {
     fail(`Answer Markdown not found: ${inputPath}`);
   }
 
-  const profile = loadRenderProfile(options.profile, callerCwd);
+  const snapshot = options.snapshot ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot)) : loadResolvedSnapshot();
+  const profile = loadRenderProfile(options.profile, callerCwd, snapshot);
   const runtimeConfig = loadRuntimeConfig();
   const source = fs.readFileSync(inputPath, "utf8");
   const lines = source.replace(/\r\n/g, "\n").split("\n");
@@ -186,7 +198,12 @@ function main() {
 
   validateLineLengths(
     lines,
-    profile.answerRules.maxPlainTextCjkPerLine ?? runtimeConfig.profiles?.[profile.name]?.plainTextCjkMax ?? runtimeConfig.profiles?.classroom?.plainTextCjkMax ?? 24,
+    snapshot?.activeProfile?.answerRules?.maxPlainTextCjkPerLine
+      ?? snapshot?.profiles?.[profile.name]?.answerRules?.maxPlainTextCjkPerLine
+      ?? profile.answerRules.maxPlainTextCjkPerLine
+      ?? runtimeConfig.profiles?.[profile.name]?.plainTextCjkMax
+      ?? runtimeConfig.profiles?.classroom?.plainTextCjkMax
+      ?? 24,
     warnings
   );
 
