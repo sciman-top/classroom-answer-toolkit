@@ -2,17 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { resolveAnswerGraphicsRoot } from "./workspace-root.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const schemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "problem-figure-asset.schema.json");
+const answerGraphicsRoot = resolveAnswerGraphicsRoot(repoRoot);
 
 function parseArgs(argv) {
   const options = {
     figureId: "sample-lever-figure",
     sourceDocument: path.join(repoRoot, "eval", "physics-answer", "cases", "smoke-answer.md"),
     questionRef: "11",
-    output: path.join(repoRoot, ".answer-graphics", "problem-figure-asset.json")
+    output: path.join(answerGraphicsRoot, "problem-figure-asset.json")
   };
 
   for (let index = 0; index < argv.length; index += 1) {

@@ -1,4 +1,4 @@
-# Physics answer PDF tools
+# Answer PDF tools
 
 This folder contains the lightweight local toolchain used by the answer workflow.
 
@@ -19,8 +19,8 @@ Built-in render profiles:
 
 Current structured profile files live under:
 
-- `prompts/physics-answer/profiles/classroom.json`
-- `prompts/physics-answer/profiles/compact.json`
+- `prompts/<subject-pack>/profiles/classroom.json`
+- `prompts/<subject-pack>/profiles/compact.json`
 
 ## One-command deliver flow
 
@@ -175,3 +175,6 @@ npm --prefix tools/latex-renderer run eval:answer
 This reads `eval/physics-answer/dataset.json`, runs validator checks for each
 listed case/profile pair, and writes a local summary to
 `eval/physics-answer/results/latest.json`.
+
+For another subject pack, pass `--subject-pack <name>` and the evaluator will
+default to `eval/<name>/dataset.json`.

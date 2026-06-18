@@ -210,6 +210,18 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void OpenLastDiagnosticsBundle()
+    {
+        OpenPath(LastDiagnosticsBundlePath);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void OpenLastDiagnosticsManifest()
+    {
+        OpenPath(LastDiagnosticsManifestPath);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
     private void ExportDiagnostics()
     {
         try

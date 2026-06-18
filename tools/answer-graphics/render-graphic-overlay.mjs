@@ -2,10 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { resolveAnswerGraphicsRoot } from "./workspace-root.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const schemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "answer-graphic-artifact.schema.json");
+const answerGraphicsRoot = resolveAnswerGraphicsRoot(repoRoot);
 
 function primitiveToSvg(primitive) {
   switch (primitive.type) {
@@ -21,10 +23,10 @@ function primitiveToSvg(primitive) {
 }
 
 function main() {
-  const specPath = path.join(repoRoot, ".answer-graphics", "answer-graphic-spec.json");
-  const figurePath = path.join(repoRoot, ".answer-graphics", "problem-figure-asset.json");
-  const overlayPath = path.join(repoRoot, ".answer-graphics", "answer-graphic-overlay.svg");
-  const previewPath = path.join(repoRoot, ".answer-graphics", "answer-graphic-preview.svg");
+  const specPath = path.join(answerGraphicsRoot, "answer-graphic-spec.json");
+  const figurePath = path.join(answerGraphicsRoot, "problem-figure-asset.json");
+  const overlayPath = path.join(answerGraphicsRoot, "answer-graphic-overlay.svg");
+  const previewPath = path.join(answerGraphicsRoot, "answer-graphic-preview.svg");
 
   if (!fs.existsSync(specPath) || !fs.existsSync(figurePath)) {
     throw new Error("Graphic spec or figure asset missing.");
@@ -66,9 +68,10 @@ function main() {
     throw new Error(errors.join("\n"));
   }
 
+  fs.mkdirSync(path.dirname(overlayPath), { recursive: true });
   fs.writeFileSync(overlayPath, overlaySvg, "utf8");
   fs.writeFileSync(previewPath, overlaySvg, "utf8");
-  fs.writeFileSync(path.join(repoRoot, ".answer-graphics", "answer-graphic-artifact.json"), `${JSON.stringify(artifact, null, 2)}\n`, "utf8");
+  fs.writeFileSync(path.join(answerGraphicsRoot, "answer-graphic-artifact.json"), `${JSON.stringify(artifact, null, 2)}\n`, "utf8");
   console.log(overlayPath);
 }
 

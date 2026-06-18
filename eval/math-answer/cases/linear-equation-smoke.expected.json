@@ -1,0 +1,24 @@
+{
+  "caseId": "linear-equation-smoke",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/linear-equation-smoke.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/linear-equation-smoke.compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    }
+  },
+  "notes": [
+    "Minimal second-subject fixture that exercises shared markdown validation through the math-answer snapshot."
+  ]
+}

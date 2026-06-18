@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
-import { loadResolvedSnapshot, loadRuntimeConfig } from "./runtime-config.mjs";
+import { getDefaultProfileName, getDefaultSubjectPack, getDefaultSnapshotPath, loadResolvedSnapshot, loadRuntimeConfig } from "./runtime-config.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact]
@@ -22,8 +22,9 @@ function fail(message, code = 2) {
 function parseArgs(argv) {
   const positional = [];
   const options = {
-    profile: DEFAULT_PROFILE_NAME,
-    snapshot: null
+    profile: null,
+    snapshot: null,
+    subjectPack: getDefaultSubjectPack()
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -51,6 +52,16 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--snapshot=")) {
       options.snapshot = arg.slice("--snapshot=".length);
+      continue;
+    }
+
+    if (arg === "--subject-pack") {
+      options.subjectPack = argv[++index];
+      continue;
+    }
+
+    if (arg.startsWith("--subject-pack=")) {
+      options.subjectPack = arg.slice("--subject-pack=".length);
       continue;
     }
 
@@ -163,8 +174,12 @@ function validateLineLengths(lines, maxCjkPerLine, warnings) {
 function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
   if (options.help) {
-    console.log(`${usage}\nBuilt-in profiles: ${listBuiltInProfiles().join(", ")}`);
+    console.log(`${usage}\nBuilt-in profiles: ${listBuiltInProfiles(options.subjectPack).join(", ")}`);
     process.exit(0);
+  }
+
+  if (!options.profile) {
+    options.profile = getDefaultProfileName(options.subjectPack);
   }
 
   if (!positional[0]) {
@@ -179,9 +194,9 @@ function main() {
 
   const snapshot = options.snapshot
     ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot), { required: true })
-    : loadResolvedSnapshot();
-  const profile = loadRenderProfile(options.profile, callerCwd, snapshot);
-  const runtimeConfig = loadRuntimeConfig();
+    : loadResolvedSnapshot(getDefaultSnapshotPath(options.subjectPack));
+  const profile = loadRenderProfile(options.profile, callerCwd, snapshot, options.subjectPack);
+  const runtimeConfig = loadRuntimeConfig(options.subjectPack);
   const source = fs.readFileSync(inputPath, "utf8");
   const lines = source.replace(/\r\n/g, "\n").split("\n");
 

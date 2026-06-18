@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SubjectPackRuntimeConfig",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "assetId",
+    "version",
+    "kind",
+    "sourceOfTruth",
+    "snapshot",
+    "deliveryRules",
+    "profiles",
+    "evaluation"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "assetId": { "type": "string" },
+    "version": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "subject-pack-runtime-config"
+      ]
+    },
+    "inherits": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sourceOfTruth": {
+      "type": "object",
+      "required": [
+        "humanSpec"
+      ],
+      "properties": {
+        "humanSpec": { "type": "string" },
+        "mirroredSpec": { "type": "string" },
+        "runtimeConfig": { "type": "string" },
+        "acceptanceChecklist": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "snapshot": {
+      "type": "object",
+      "required": [
+        "cachePath"
+      ],
+      "properties": {
+        "cachePath": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "deliveryRules": {
+      "type": "object",
+      "required": [
+        "finalDeliverables",
+        "forbiddenFinalArtifacts",
+        "cleanupAfterSuccessfulDeliver"
+      ],
+      "properties": {
+        "finalDeliverables": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "forbiddenFinalArtifacts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "cleanupAfterSuccessfulDeliver": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "formatRules": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "profiles": {
+      "type": "object",
+      "required": [
+        "default"
+      ],
+      "properties": {
+        "default": { "type": "string" },
+        "classroom": {
+          "type": "object",
+          "required": [
+            "plainTextCjkTarget",
+            "plainTextCjkMax"
+          ],
+          "properties": {
+            "plainTextCjkTarget": { "type": "integer" },
+            "plainTextCjkMax": { "type": "integer" }
+          },
+          "additionalProperties": true
+        },
+        "compact": {
+          "type": "object",
+          "required": [
+            "plainTextCjkTarget",
+            "plainTextCjkMax"
+          ],
+          "properties": {
+            "plainTextCjkTarget": { "type": "integer" },
+            "plainTextCjkMax": { "type": "integer" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "required": [
+        "dataset",
+        "casesDir"
+      ],
+      "properties": {
+        "dataset": { "type": "string" },
+        "casesDir": { "type": "string" },
+        "resultsDir": { "type": "string" },
+        "visualBaselinesDir": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "tooling": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

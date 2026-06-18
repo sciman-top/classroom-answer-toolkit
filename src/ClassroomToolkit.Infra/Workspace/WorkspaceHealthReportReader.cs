@@ -7,7 +7,7 @@ namespace ClassroomToolkit.Infra.Workspace;
 public sealed class WorkspaceHealthReportReader
 {
     private static readonly Regex SpecPattern = new(
-        @"^初中物理试卷参考答案生成与渲染交付提示词_v(?<version>\d+\.\d+)_生产完整版\.md$",
+        @"^.*_v(?<version>\d+\.\d+)_.*\.md$",
         RegexOptions.Compiled);
 
     private readonly string _repositoryRoot;
@@ -19,19 +19,21 @@ public sealed class WorkspaceHealthReportReader
 
     public WorkspaceHealthReport Read()
     {
-        var manifestPath = Path.Combine(_repositoryRoot, "prompts", "physics-answer", "manifest.json");
-        var configPath = Path.Combine(_repositoryRoot, "prompts", "physics-answer", "config.json");
-        var evalResultsPath = Path.Combine(_repositoryRoot, "eval", "physics-answer", "results", "latest.json");
+        var subjectPack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(_repositoryRoot);
+        var manifestPath = subjectPack?.ManifestPath ?? Path.Combine(_repositoryRoot, "prompts", "physics-answer", "manifest.json");
+        var configPath = subjectPack?.ConfigPath ?? Path.Combine(_repositoryRoot, "prompts", "physics-answer", "config.json");
+        var evalResultsPath = subjectPack?.EvalResultsPath ?? Path.Combine(_repositoryRoot, "eval", "physics-answer", "results", "latest.json");
         var graphicsPath = Path.Combine(_repositoryRoot, ".answer-graphics");
 
         var latestVersion = FindLatestProductionSpecVersion();
         var manifestVersion = ReadManifestVersion(manifestPath);
-        var snapshotPath = ResolveSnapshotPath(configPath);
+        var snapshotPath = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath);
         var snapshotStatus = ReadSnapshotStatus(snapshotPath);
         var evalStatus = ReadEvalStatus(evalResultsPath);
         var graphicsStatus = ReadGraphicsStatus(graphicsPath);
 
         var issues = new List<string>();
+
         if (latestVersion is not null && manifestVersion is not null && manifestVersion != $"v{latestVersion}")
         {
             issues.Add($"最新规范 v{latestVersion} 与资产版本 {manifestVersion} 不一致。");
@@ -39,11 +41,11 @@ public sealed class WorkspaceHealthReportReader
 
         if (!snapshotStatus.Exists)
         {
-            issues.Add("默认 classroom 快照尚未生成。");
+            issues.Add("主 subject pack 的 snapshot 尚未生成。");
         }
         else if (snapshotStatus.Version is not null && manifestVersion is not null && snapshotStatus.Version != manifestVersion)
         {
-            issues.Add($"快照版本 {snapshotStatus.Version} 与资产版本 {manifestVersion} 不一致。");
+            issues.Add($"snapshot 版本 {snapshotStatus.Version} 与资产版本 {manifestVersion} 不一致。");
         }
 
         if (!evalStatus.Exists)
@@ -91,7 +93,7 @@ public sealed class WorkspaceHealthReportReader
             .Select(fileName => SpecPattern.Match(fileName ?? string.Empty))
             .Where(match => match.Success)
             .Select(match => match.Groups["version"].Value)
-            .OrderBy(static version => version, VersionComparer.Instance)
+            .OrderBy(version => version, VersionComparer.Instance)
             .LastOrDefault();
     }
 
@@ -106,24 +108,6 @@ public sealed class WorkspaceHealthReportReader
         return document.RootElement.TryGetProperty("version", out var versionElement)
             ? versionElement.GetString()
             : null;
-    }
-
-    private static string ResolveSnapshotPath(string configPath)
-    {
-        if (!File.Exists(configPath))
-        {
-            return Path.Combine(Path.GetTempPath(), ".snapshot-cache", "resolved-snapshot.json");
-        }
-
-        using var document = JsonDocument.Parse(File.ReadAllText(configPath));
-        if (document.RootElement.TryGetProperty("snapshot", out var snapshotElement)
-            && snapshotElement.TryGetProperty("cachePath", out var cachePathElement)
-            && !string.IsNullOrWhiteSpace(cachePathElement.GetString()))
-        {
-            return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, cachePathElement.GetString()!));
-        }
-
-        return Path.Combine(Path.GetDirectoryName(configPath)!, "..", "..", ".snapshot-cache", "resolved-snapshot.json");
     }
 
     private static (bool Exists, string? Version, string? Profile) ReadSnapshotStatus(string snapshotPath)
@@ -178,7 +162,7 @@ public sealed class WorkspaceHealthReportReader
         var placedExists = File.Exists(Path.Combine(graphicsPath, "placed-answer-graphic.json"));
 
         var summary = previewExists
-            ? $"图块产物已生成{(artifactExists ? "，含 artifact" : string.Empty)}{(placedExists ? "，含 placement 记录" : string.Empty)}。"
+            ? $"图块产物已生成{(artifactExists ? "，包含 artifact" : string.Empty)}{(placedExists ? "，包含 placement 记录" : string.Empty)}。"
             : "作图题图块产物缺少预览图。";
 
         return (true, previewExists, summary);

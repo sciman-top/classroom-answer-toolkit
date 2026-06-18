@@ -27,4 +27,25 @@ public sealed class RepositoryRootResolverTests
             Directory.Delete(tempRoot, recursive: true);
         }
     }
+
+    [Fact]
+    public void ResolveRepositoryRoot_HonorsExplicitOverride_WhenOverrideLooksLikeRepositoryRoot()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(tempRoot, "scripts"));
+        File.WriteAllText(Path.Combine(tempRoot, "global.json"), "{}");
+        File.WriteAllText(Path.Combine(tempRoot, "ClassroomToolkit.sln"), "");
+
+        try
+        {
+            var resolver = new RepositoryRootResolver(Path.Combine(tempRoot, "nested"), tempRoot);
+            var resolvedRoot = resolver.ResolveRepositoryRoot();
+
+            resolvedRoot.Should().Be(tempRoot);
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
 }

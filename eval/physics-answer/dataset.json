@@ -9,6 +9,8 @@
   "visualBaselines": [
     "baselines/visual/smoke-classroom.page-001.png",
     "baselines/visual/smoke-compact.page-001.png",
+    "baselines/visual/graphic-placement.classroom.page-001.png",
+    "baselines/visual/graphic-placement.compact.page-001.png",
     "baselines/visual/classroom-long-line-warning.classroom.page-001.png",
     "baselines/visual/classroom-long-line-warning.compact.page-001.png",
     "baselines/visual/display-math-layout.classroom.page-001.png",

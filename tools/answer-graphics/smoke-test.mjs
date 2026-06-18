@@ -1,22 +1,32 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { resolveAnswerGraphicsRoot } from "./workspace-root.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const require = createRequire(import.meta.url);
 const { createCanvas, loadImage } = require(path.join(repoRoot, "tools", "latex-renderer", "node_modules", "@napi-rs", "canvas"));
+const tempWorkspaceRoot = process.env.ANSWER_GRAPHICS_ROOT ? null : fs.mkdtempSync(path.join(os.tmpdir(), "ClassroomToolkit-answer-graphics-"));
+const answerGraphicsRoot = tempWorkspaceRoot ?? resolveAnswerGraphicsRoot(repoRoot);
 
-function runNode(scriptFile, args = []) {
+function buildEnv(extraEnv = {}) {
+  return {
+    ...process.env,
+    INIT_CWD: repoRoot,
+    ANSWER_GRAPHICS_ROOT: answerGraphicsRoot,
+    ...extraEnv
+  };
+}
+
+function runNode(scriptFile, args = [], options = {}) {
   const result = spawnSync(process.execPath, [path.join(toolDir, scriptFile), ...args], {
-    cwd: toolDir,
+    cwd: options.cwd ?? toolDir,
     encoding: "utf8",
-    env: {
-      ...process.env,
-      INIT_CWD: repoRoot
-    }
+    env: buildEnv(options.env)
   });
 
   if (result.error) {
@@ -32,11 +42,7 @@ function runCommand(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: options.cwd ?? toolDir,
     encoding: "utf8",
-    env: {
-      ...process.env,
-      INIT_CWD: repoRoot,
-      ...(options.env ?? {})
-    }
+    env: buildEnv(options.env)
   });
 
   if (result.error) {
@@ -49,24 +55,29 @@ function runCommand(command, args, options = {}) {
 }
 
 async function main() {
-  fs.rmSync(path.join(repoRoot, ".answer-graphics"), { recursive: true, force: true });
+  if (tempWorkspaceRoot) {
+    fs.rmSync(answerGraphicsRoot, { recursive: true, force: true });
+  }
+  fs.mkdirSync(answerGraphicsRoot, { recursive: true });
 
   runNode("extract-figure.mjs");
   runNode("build-graphic-spec.mjs");
   runNode("render-graphic-overlay.mjs");
   runNode("compose-answer-graphic.mjs");
 
-  const snapshotPath = path.join(repoRoot, ".answer-graphics", "resolved-snapshot.classroom.json");
+  const snapshotPath = path.join(answerGraphicsRoot, "resolved-snapshot.classroom.json");
   runNode(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
     "--profile",
     "classroom",
     "--out",
-    path.relative(repoRoot, snapshotPath)
-  ]);
+    snapshotPath
+  ], {
+    cwd: repoRoot
+  });
 
-  const demoMarkdownPath = path.join(repoRoot, ".answer-graphics", "graphic-placement.md");
-  const demoPdfPath = path.join(repoRoot, ".answer-graphics", "graphic-placement.pdf");
-  const reviewDir = path.join(repoRoot, ".answer-graphics", "graphic-placement.review");
+  const demoMarkdownPath = path.join(answerGraphicsRoot, "graphic-placement.md");
+  const demoPdfPath = path.join(answerGraphicsRoot, "graphic-placement.pdf");
+  const reviewDir = path.join(answerGraphicsRoot, "graphic-placement.review");
 
   fs.writeFileSync(
     demoMarkdownPath,
@@ -82,21 +93,21 @@ async function main() {
 
   runCommand(process.execPath, [
     path.join(repoRoot, "tools", "latex-renderer", "render-md-latex.mjs"),
-    path.relative(repoRoot, demoMarkdownPath),
-    path.relative(repoRoot, demoPdfPath),
+    demoMarkdownPath,
+    demoPdfPath,
     "--profile",
     "classroom",
     "--snapshot",
-    path.relative(repoRoot, snapshotPath)
+    snapshotPath
   ], {
     cwd: repoRoot
   });
 
   runCommand(process.execPath, [
     path.join(repoRoot, "tools", "latex-renderer", "review-source-pdf.mjs"),
-    path.relative(repoRoot, demoPdfPath),
+    demoPdfPath,
     "--out",
-    path.relative(repoRoot, reviewDir),
+    reviewDir,
     "--scale",
     "2"
   ], {
@@ -147,7 +158,7 @@ async function main() {
     throw new Error(`Placed graphic pixel check failed: ${JSON.stringify(counts)}`);
   }
 
-  const placed = path.join(repoRoot, ".answer-graphics", "placed-answer-graphic.json");
+  const placed = path.join(answerGraphicsRoot, "placed-answer-graphic.json");
   if (!fs.existsSync(placed)) {
     throw new Error("Placed answer graphic not produced.");
   }
@@ -159,5 +170,9 @@ try {
   await main();
 } catch (error) {
   console.error(error instanceof Error ? error.stack : error);
-  process.exit(2);
+  process.exitCode = 2;
+} finally {
+  if (tempWorkspaceRoot) {
+    fs.rmSync(tempWorkspaceRoot, { recursive: true, force: true });
+  }
 }

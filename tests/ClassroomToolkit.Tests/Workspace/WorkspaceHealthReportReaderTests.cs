@@ -1,3 +1,4 @@
+﻿using System.Text.Json;
 using ClassroomToolkit.Infra.Workspace;
 using FluentAssertions;
 
@@ -6,18 +7,17 @@ namespace ClassroomToolkit.Tests.Workspace;
 public sealed class WorkspaceHealthReportReaderTests
 {
     [Fact]
-    public void Read_ReturnsHealthyReport_WhenSpecSnapshotAndEvalAreAligned()
+    public void Read_ReturnsHealthyReport_WhenPhysicsWorkspaceIsAligned()
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.0");
-        workspace.WriteManifest("v11.0", "../../初中物理试卷参考答案生成与渲染交付提示词_v11.0_生产完整版.md");
-        workspace.WriteConfig("../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("v11.0", "classroom");
-        workspace.WriteEval("v11.0", ok: true, caseCount: 4);
+        workspace.WriteManifest("physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("physics-answer", "v11.0", ok: true, caseCount: 4);
         workspace.WriteGraphics();
 
         var reader = new WorkspaceHealthReportReader(workspace.Root);
-
         var result = reader.Read();
 
         result.Issues.Should().BeEmpty();
@@ -31,18 +31,40 @@ public sealed class WorkspaceHealthReportReaderTests
     }
 
     [Fact]
+    public void Read_PicksActivePhysicsPack_WhenMathPackExistsAlongsidePhysicsPack()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteRootSpec("11.0");
+        workspace.WriteManifest("physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("physics-answer", "v11.0", ok: true, caseCount: 4);
+
+        workspace.WriteManifest("math-answer", "v0.1", "./README.md");
+        workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
+        workspace.WriteSnapshot("math-answer", "v0.1", "classroom");
+        workspace.WriteEval("math-answer", "v0.1", ok: true, caseCount: 1);
+
+        var reader = new WorkspaceHealthReportReader(workspace.Root);
+        var result = reader.Read();
+
+        result.AssetVersion.Should().Be("v11.0");
+        result.SnapshotVersion.Should().Be("v11.0");
+        result.EvalCaseCount.Should().Be(4);
+    }
+
+    [Fact]
     public void Read_AddsIssue_WhenLatestProductionSpecIsNewerThanAssetVersion()
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.0");
         workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("v11.0", "../../初中物理试卷参考答案生成与渲染交付提示词_v11.0_生产完整版.md");
-        workspace.WriteConfig("../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("v11.0", "classroom");
-        workspace.WriteEval("v11.0", ok: true, caseCount: 4);
+        workspace.WriteManifest("physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("physics-answer", "v11.0", ok: true, caseCount: 4);
 
         var reader = new WorkspaceHealthReportReader(workspace.Root);
-
         var result = reader.Read();
 
         result.Issues.Should().ContainSingle(issue => issue.Contains("最新规范 v11.1", StringComparison.Ordinal));
@@ -50,6 +72,8 @@ public sealed class WorkspaceHealthReportReaderTests
 
     private sealed class TemporaryWorkspace : IDisposable
     {
+        private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+
         public TemporaryWorkspace()
         {
             Root = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-Health", Guid.NewGuid().ToString("N"));
@@ -61,73 +85,71 @@ public sealed class WorkspaceHealthReportReaderTests
         public void WriteRootSpec(string version)
         {
             File.WriteAllText(
-                Path.Combine(Root, $"初中物理试卷参考答案生成与渲染交付提示词_v{version}_生产完整版.md"),
+                Path.Combine(Root, $"spec_v{version}_release.md"),
                 $"# v{version}\n");
         }
 
-        public void WriteManifest(string version, string humanSpec)
+        public void WriteManifest(string subjectPack, string version, string humanSpec)
         {
-            var manifestPath = Path.Combine(Root, "prompts", "physics-answer", "manifest.json");
+            var manifestPath = Path.Combine(Root, "prompts", subjectPack, "manifest.json");
             Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
-            File.WriteAllText(
-                manifestPath,
-                $$"""
-                {
-                  "version": "{{version}}",
-                  "sourceOfTruth": {
-                    "humanSpec": "{{humanSpec}}"
-                  }
-                }
-                """);
+
+            var manifest = new
+            {
+                kind = "subject-pack",
+                assetId = subjectPack,
+                version,
+                status = subjectPack == "math-answer" ? "experimental" : "active",
+                sourceOfTruth = new { humanSpec },
+                evaluation = new { resultsDir = $"../../eval/{subjectPack}/results" }
+            };
+
+            File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, Indented));
         }
 
-        public void WriteConfig(string snapshotPath)
+        public void WriteConfig(string subjectPack, string snapshotPath)
         {
-            var configPath = Path.Combine(Root, "prompts", "physics-answer", "config.json");
+            var configPath = Path.Combine(Root, "prompts", subjectPack, "config.json");
             Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-            File.WriteAllText(
-                configPath,
-                $$"""
-                {
-                  "snapshot": {
-                    "cachePath": "{{snapshotPath}}"
-                  }
-                }
-                """);
+
+            var config = new
+            {
+                snapshot = new { cachePath = snapshotPath }
+            };
+
+            File.WriteAllText(configPath, JsonSerializer.Serialize(config, Indented));
         }
 
-        public void WriteSnapshot(string version, string profile)
+        public void WriteSnapshot(string subjectPack, string version, string profile)
         {
-            var snapshotPath = Path.Combine(Root, ".snapshot-cache", "resolved-snapshot.json");
+            var snapshotFileName = subjectPack == "math-answer"
+                ? "resolved-snapshot.math.json"
+                : "resolved-snapshot.json";
+            var snapshotPath = Path.Combine(Root, ".snapshot-cache", snapshotFileName);
             Directory.CreateDirectory(Path.GetDirectoryName(snapshotPath)!);
-            File.WriteAllText(
-                snapshotPath,
-                $$"""
-                {
-                  "subjectPack": {
-                    "version": "{{version}}"
-                  },
-                  "activeProfile": {
-                    "name": "{{profile}}"
-                  }
-                }
-                """);
+
+            var snapshot = new
+            {
+                subjectPack = new { version },
+                activeProfile = new { name = profile }
+            };
+
+            File.WriteAllText(snapshotPath, JsonSerializer.Serialize(snapshot, Indented));
         }
 
-        public void WriteEval(string assetVersion, bool ok, int caseCount)
+        public void WriteEval(string subjectPack, string assetVersion, bool ok, int caseCount)
         {
-            var evalPath = Path.Combine(Root, "eval", "physics-answer", "results", "latest.json");
+            var evalPath = Path.Combine(Root, "eval", subjectPack, "results", "latest.json");
             Directory.CreateDirectory(Path.GetDirectoryName(evalPath)!);
-            var cases = string.Join(",", Enumerable.Range(0, caseCount).Select(_ => "{}"));
-            File.WriteAllText(
-                evalPath,
-                $$"""
-                {
-                  "assetVersion": "{{assetVersion}}",
-                  "ok": {{ok.ToString().ToLowerInvariant()}},
-                  "cases": [{{cases}}]
-                }
-                """);
+
+            var eval = new
+            {
+                assetVersion,
+                ok,
+                cases = Enumerable.Range(0, caseCount).Select(_ => new { }).ToArray()
+            };
+
+            File.WriteAllText(evalPath, JsonSerializer.Serialize(eval, Indented));
         }
 
         public void WriteGraphics()

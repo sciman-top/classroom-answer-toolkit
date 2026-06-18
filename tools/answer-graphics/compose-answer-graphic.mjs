@@ -2,14 +2,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { resolveAnswerGraphicsRoot } from "./workspace-root.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const schemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "placed-answer-graphic.schema.json");
+const answerGraphicsRoot = resolveAnswerGraphicsRoot(repoRoot);
 
 function main() {
-  const artifactPath = path.join(repoRoot, ".answer-graphics", "answer-graphic-artifact.json");
-  const placedPath = path.join(repoRoot, ".answer-graphics", "placed-answer-graphic.json");
+  const artifactPath = path.join(answerGraphicsRoot, "answer-graphic-artifact.json");
+  const placedPath = path.join(answerGraphicsRoot, "placed-answer-graphic.json");
 
   if (!fs.existsSync(artifactPath)) {
     throw new Error(`Answer graphic artifact not found: ${artifactPath}`);
@@ -39,6 +41,7 @@ function main() {
     throw new Error(errors.join("\n"));
   }
 
+  fs.mkdirSync(path.dirname(placedPath), { recursive: true });
   fs.writeFileSync(placedPath, `${JSON.stringify(placed, null, 2)}\n`, "utf8");
   console.log(placedPath);
 }

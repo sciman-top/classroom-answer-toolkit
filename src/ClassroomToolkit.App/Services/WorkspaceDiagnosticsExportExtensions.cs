@@ -8,6 +8,7 @@ public static class WorkspaceDiagnosticsExportExtensions
     {
         services.AddSingleton<IPathOpener, WindowsPathOpener>();
         services.AddSingleton<IWorkspaceDiagnosticsExporter, WorkspaceDiagnosticsExporter>();
+        services.AddSingleton<IHeadlessSmokeRunner, HeadlessSmokeRunner>();
         return services;
     }
 }

@@ -5,13 +5,14 @@ import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
 import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
-import { loadResolvedSnapshot } from "./runtime-config.mjs";
+import { getDefaultProfileName, getDefaultSnapshotPath, getDefaultSubjectPack, loadResolvedSnapshot } from "./runtime-config.mjs";
 
 function parseArgs(argv) {
   const positional = [];
   const options = {
-    profile: DEFAULT_PROFILE_NAME,
-    snapshot: null
+    profile: null,
+    snapshot: null,
+    subjectPack: getDefaultSubjectPack()
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -42,6 +43,16 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === "--subject-pack") {
+      options.subjectPack = argv[++index];
+      continue;
+    }
+
+    if (arg.startsWith("--subject-pack=")) {
+      options.subjectPack = arg.slice("--subject-pack=".length);
+      continue;
+    }
+
     positional.push(arg);
   }
 
@@ -52,8 +63,12 @@ const { positional, options } = parseArgs(process.argv.slice(2));
 const [inputArg, outputArg] = positional;
 
 if (!inputArg) {
-  console.error(`Usage: npm run render -- <input.md> [output.pdf] [--profile classroom|compact]\nBuilt-in profiles: ${listBuiltInProfiles().join(", ")}`);
+  console.error(`Usage: npm run render -- <input.md> [output.pdf] [--profile classroom|compact]\nBuilt-in profiles: ${listBuiltInProfiles(options.subjectPack).join(", ")}`);
   process.exit(2);
+}
+
+if (!options.profile) {
+  options.profile = getDefaultProfileName(options.subjectPack);
 }
 
 const callerCwd = process.env.INIT_CWD || process.cwd();
@@ -63,8 +78,8 @@ const outputPath = path.resolve(
 );
 const snapshot = options.snapshot
   ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot), { required: true })
-  : loadResolvedSnapshot();
-const renderProfile = loadRenderProfile(options.profile, callerCwd, snapshot);
+  : loadResolvedSnapshot(getDefaultSnapshotPath(options.subjectPack));
+const renderProfile = loadRenderProfile(options.profile, callerCwd, snapshot, options.subjectPack);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 const browserCandidates = [

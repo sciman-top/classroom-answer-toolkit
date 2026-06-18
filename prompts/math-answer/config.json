@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "math-answer",
+  "version": "v0.1-derived",
+  "sourceOfTruth": {
+    "humanSpec": "./README.md"
+  },
+  "kind": "subject-pack-runtime-config",
+  "inherits": [
+    "../platform-core/manifest.json"
+  ],
+  "snapshot": {
+    "cachePath": "../../.snapshot-cache/resolved-snapshot.math.json"
+  },
+  "deliveryRules": {
+    "finalDeliverables": [
+      ".md",
+      ".pdf"
+    ],
+    "forbiddenFinalArtifacts": [
+      ".txt",
+      ".zip"
+    ],
+    "cleanupAfterSuccessfulDeliver": true
+  },
+  "profiles": {
+    "default": "classroom",
+    "classroom": {
+      "plainTextCjkTarget": 20,
+      "plainTextCjkMax": 24
+    },
+    "compact": {
+      "plainTextCjkTarget": 24,
+      "plainTextCjkMax": 30
+    }
+  },
+  "evaluation": {
+    "dataset": "../../eval/math-answer/dataset.json",
+    "casesDir": "../../eval/math-answer/cases"
+  }
+}

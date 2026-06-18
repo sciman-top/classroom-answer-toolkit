@@ -6,6 +6,7 @@ import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./sch
 
 function collectValidationTargets() {
   const manifestSchema = resolveRepoPath("prompts/shared/schemas/manifest.schema.json");
+  const runtimeConfigSchema = resolveRepoPath("prompts/shared/schemas/runtime-config.schema.json");
   const rulePackSchema = resolveRepoPath("prompts/shared/schemas/rule-pack.schema.json");
   const profileSchema = resolveRepoPath("prompts/shared/schemas/profile.schema.json");
   const snapshotSchema = resolveRepoPath("prompts/shared/schemas/snapshot.schema.json");
@@ -21,27 +22,46 @@ function collectValidationTargets() {
   return {
     manifests: [
       resolveRepoPath("prompts/platform-core/manifest.json"),
-      resolveRepoPath("prompts/physics-answer/manifest.json")
+      ...listSubjectPackDirectories().map((directoryPath) => path.join(directoryPath, "manifest.json"))
     ].map((filePath) => ({ filePath, schemaPath: manifestSchema })),
+    runtimeConfigs: listSubjectPackDirectories().map((directoryPath) => path.join(directoryPath, "config.json")).map((filePath) => ({ filePath, schemaPath: runtimeConfigSchema })),
     rulePacks: [
       ...listJsonFiles(resolveRepoPath("prompts/platform-core/rules")),
-      ...listJsonFiles(resolveRepoPath("prompts/physics-answer/rules"))
+      ...listSubjectPackDirectories().flatMap((directoryPath) => listJsonFiles(path.join(directoryPath, "rules")))
     ].map((filePath) => ({ filePath, schemaPath: rulePackSchema })),
     profiles: [
       ...listJsonFiles(resolveRepoPath("prompts/platform-core/profiles")),
-      ...listJsonFiles(resolveRepoPath("prompts/physics-answer/profiles"))
+      ...listSubjectPackDirectories().flatMap((directoryPath) => listJsonFiles(path.join(directoryPath, "profiles")))
     ].map((filePath) => ({ filePath, schemaPath: profileSchema })),
+    schemaFiles: [
+      manifestSchema,
+      runtimeConfigSchema,
+      rulePackSchema,
+      profileSchema,
+      snapshotSchema,
+      deliveryManifestSchema,
+      ...figureSchemas
+    ],
     snapshotSchema,
     deliveryManifestSchema,
     figureSchemas
   };
 }
 
+function listSubjectPackDirectories() {
+  const promptsRoot = resolveRepoPath("prompts");
+  return fs
+    .readdirSync(promptsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(promptsRoot, entry.name))
+    .filter((directoryPath) => fs.existsSync(path.join(directoryPath, "manifest.json")) && fs.existsSync(path.join(directoryPath, "config.json")));
+}
+
 function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.rulePacks, targets.profiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -52,6 +72,16 @@ function validateFiles(targets) {
   }
 
   return { errors, validatedFileCount };
+}
+
+function validateSchemaFiles(schemaFiles) {
+  const errors = [];
+
+  for (const schemaPath of schemaFiles) {
+    errors.push(...validateSchemaFile(schemaPath));
+  }
+
+  return errors;
 }
 
 function validateSnapshot(snapshotSchema) {
@@ -135,18 +165,16 @@ function validateLatestSpecAlignment(manifest, config) {
 function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
-  const mergedAssets = buildMergedAssets();
+  const mergedAssets = buildMergedAssets({ subjectPack: "physics-answer" });
   const snapshotValidation = validateSnapshot(targets.snapshotSchema);
   const specAlignmentErrors = validateLatestSpecAlignment(mergedAssets.manifest.subject, mergedAssets.config);
-  const deliveryManifestSchemaErrors = validateSchemaFile(targets.deliveryManifestSchema);
-  const figureSchemaErrors = targets.figureSchemas.flatMap((schemaPath) => validateSchemaFile(schemaPath));
+  const schemaFileErrors = validateSchemaFiles(targets.schemaFiles);
 
   const errors = [
     ...fileValidation.errors,
     ...snapshotValidation.errors.map((error) => `ResolvedSnapshot: ${error}`),
     ...specAlignmentErrors,
-    ...deliveryManifestSchemaErrors,
-    ...figureSchemaErrors
+    ...schemaFileErrors
   ];
 
   if (!mergedAssets.rules.length) {

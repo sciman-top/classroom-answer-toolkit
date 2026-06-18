@@ -49,9 +49,17 @@ Assert-CommandSuccess { npm --prefix tools/rule-compiler run validate:assets } "
 Write-Host "rule snapshots:"
 Assert-CommandSuccess { npm --prefix tools/rule-compiler run compile:snapshot -- --profile classroom --out .snapshot-cache/resolved-snapshot.json } "Classroom snapshot compilation failed."
 Assert-CommandSuccess { npm --prefix tools/rule-compiler run compile:snapshot -- --profile compact --out .snapshot-cache/resolved-snapshot.compact.json } "Compact snapshot compilation failed."
+Write-Host "cross-subject contract:"
+Assert-CommandSuccess { npm --prefix tools/rule-compiler run validate:cross-subject } "Cross-subject validation failed."
 
 Write-Host "latex renderer smoke:"
 Assert-CommandSuccess { npm --prefix tools/latex-renderer run smoke } "LaTeX renderer smoke failed."
+
+Write-Host "physics answer eval:"
+Assert-CommandSuccess { npm --prefix tools/latex-renderer run eval:answer } "Physics answer eval failed."
+
+Write-Host "math answer eval:"
+Assert-CommandSuccess { npm --prefix tools/latex-renderer run eval:math } "Math answer eval failed."
 
 Write-Host "answer graphics smoke:"
 Assert-CommandSuccess { npm --prefix tools/answer-graphics run smoke } "Answer graphics smoke failed."

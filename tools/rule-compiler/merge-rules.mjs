@@ -129,14 +129,20 @@ function resolveProfileInheritance(profileKey, profileGraph, seen = new Set()) {
 }
 
 export function buildMergedAssets(options = {}) {
+  const subjectPack = options.subjectPack ?? "physics-answer";
+  const subjectRoot = `prompts/${subjectPack}`;
   const platformManifest = readJsonFile(resolveRepoPath(options.platformManifest ?? "prompts/platform-core/manifest.json"));
-  const subjectManifest = readJsonFile(resolveRepoPath(options.subjectManifest ?? "prompts/physics-answer/manifest.json"));
-  const subjectConfig = readJsonFile(resolveRepoPath(options.subjectConfig ?? "prompts/physics-answer/config.json"));
+  const subjectManifestPath = options.subjectManifest ?? `${subjectRoot}/manifest.json`;
+  const subjectConfigPath = options.subjectConfig ?? `${subjectRoot}/config.json`;
+  const subjectManifest = readJsonFile(resolveRepoPath(subjectManifestPath));
+  const subjectConfig = readJsonFile(resolveRepoPath(subjectConfigPath));
 
   const platformRulePacks = loadRulePackFiles(options.platformRulesDir ?? "prompts/platform-core/rules");
-  const subjectRulePacks = loadRulePackFiles(options.subjectRulesDir ?? "prompts/physics-answer/rules");
+  const subjectRulesDir = options.subjectRulesDir ?? `${subjectRoot}/rules`;
+  const subjectProfilesDirPath = options.subjectProfilesDir ?? `${subjectRoot}/profiles`;
+  const subjectRulePacks = loadRulePackFiles(subjectRulesDir);
   const platformProfilesDir = resolveRepoPath(options.platformProfilesDir ?? "prompts/platform-core/profiles");
-  const subjectProfilesDir = resolveRepoPath(options.subjectProfilesDir ?? "prompts/physics-answer/profiles");
+  const subjectProfilesDir = resolveRepoPath(subjectProfilesDirPath);
 
   const profileFiles = [
     ...listProfileFiles(platformProfilesDir),
@@ -176,6 +182,12 @@ export function buildMergedAssets(options = {}) {
       subject: subjectManifest
     },
     config: subjectConfig,
+    refs: {
+      subjectManifest: subjectManifestPath,
+      subjectConfig: subjectConfigPath,
+      subjectRulesDir,
+      subjectProfilesDir: subjectProfilesDirPath
+    },
     rules,
     profiles: resolvedProfiles
   };
@@ -202,8 +214,10 @@ export function compileResolvedSnapshot(options = {}) {
       compiler: "tools/rule-compiler/compile-snapshot.mjs"
     },
     inputRefs: {
-      subjectManifest: "prompts/physics-answer/manifest.json",
-      subjectConfig: "prompts/physics-answer/config.json"
+      subjectManifest: assets.refs.subjectManifest,
+      subjectConfig: assets.refs.subjectConfig,
+      subjectRulesDir: assets.refs.subjectRulesDir,
+      subjectProfilesDir: assets.refs.subjectProfilesDir
     },
     meta: {
       ruleCount: assets.rules.length,

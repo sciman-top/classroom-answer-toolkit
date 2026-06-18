@@ -99,6 +99,8 @@
                                     <Button Content="打开 Manifest" Command="{Binding OpenLastDeliveryManifestCommand}" />
                                     <Button Content="打开 Review" Command="{Binding OpenLastReviewDirectoryCommand}" />
                                     <Button Content="导出诊断包" Command="{Binding ExportDiagnosticsCommand}" />
+                                    <Button Content="打开诊断包" Command="{Binding OpenLastDiagnosticsBundleCommand}" />
+                                    <Button Content="打开诊断清单" Command="{Binding OpenLastDiagnosticsManifestCommand}" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>

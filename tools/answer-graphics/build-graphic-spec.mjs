@@ -2,14 +2,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { resolveAnswerGraphicsRoot } from "./workspace-root.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const schemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "answer-graphic-spec.schema.json");
+const answerGraphicsRoot = resolveAnswerGraphicsRoot(repoRoot);
 
 function main() {
-  const inputPath = path.join(repoRoot, ".answer-graphics", "problem-figure-asset.json");
-  const outputPath = path.join(repoRoot, ".answer-graphics", "answer-graphic-spec.json");
+  const inputPath = path.join(answerGraphicsRoot, "problem-figure-asset.json");
+  const outputPath = path.join(answerGraphicsRoot, "answer-graphic-spec.json");
 
   if (!fs.existsSync(inputPath)) {
     throw new Error(`Problem figure asset not found: ${inputPath}`);
@@ -76,6 +78,7 @@ function main() {
     throw new Error(errors.join("\n"));
   }
 
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${JSON.stringify(spec, null, 2)}\n`, "utf8");
   console.log(outputPath);
 }

@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.IO;
 using ClassroomToolkit.Domain.Toolchain;
+using ClassroomToolkit.Infra.Workspace;
 
 namespace ClassroomToolkit.App.Services;
 
@@ -18,31 +20,37 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             repositoryRoot,
             "artifacts",
             "diagnostics",
-            DateTimeOffset.Now.ToString("yyyyMMdd-HHmmss"));
+            $"{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}");
 
         Directory.CreateDirectory(bundleRoot);
 
         var assets = new List<WorkspaceDiagnosticsAssetRecord>();
         var workspaceRoot = Path.Combine(bundleRoot, "workspace");
         var deliveryRoot = Path.Combine(bundleRoot, "delivery");
+        var primarySubjectPack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(repositoryRoot);
+        var subjectPackManifestPath = primarySubjectPack?.ManifestPath ?? Path.Combine(repositoryRoot, "prompts", "physics-answer", "manifest.json");
+        var subjectPackConfigPath = primarySubjectPack?.ConfigPath ?? Path.Combine(repositoryRoot, "prompts", "physics-answer", "config.json");
+        var subjectPackEvalPath = primarySubjectPack?.EvalResultsPath ?? Path.Combine(repositoryRoot, "eval", "physics-answer", "results", "latest.json");
+        var subjectPackSnapshotPath = primarySubjectPack?.SnapshotPath ?? Path.Combine(repositoryRoot, ".snapshot-cache", "resolved-snapshot.json");
+        var subjectPackAssetId = primarySubjectPack?.AssetId ?? "physics-answer";
 
         CopyFileIfExists(
-            Path.Combine(repositoryRoot, "prompts", "physics-answer", "manifest.json"),
-            Path.Combine(workspaceRoot, "prompts", "physics-answer", "manifest.json"),
+            subjectPackManifestPath,
+            Path.Combine(workspaceRoot, "prompts", subjectPackAssetId, "manifest.json"),
             "manifest",
             assets);
         CopyFileIfExists(
-            Path.Combine(repositoryRoot, "prompts", "physics-answer", "config.json"),
-            Path.Combine(workspaceRoot, "prompts", "physics-answer", "config.json"),
+            subjectPackConfigPath,
+            Path.Combine(workspaceRoot, "prompts", subjectPackAssetId, "config.json"),
             "config",
             assets);
         CopyFileIfExists(
-            Path.Combine(repositoryRoot, ".snapshot-cache", "resolved-snapshot.json"),
-            Path.Combine(workspaceRoot, "snapshot", "resolved-snapshot.json"),
+            subjectPackSnapshotPath,
+            Path.Combine(workspaceRoot, "snapshot", Path.GetFileName(subjectPackSnapshotPath)),
             "snapshot",
             assets);
         CopyFileIfExists(
-            Path.Combine(repositoryRoot, "eval", "physics-answer", "results", "latest.json"),
+            subjectPackEvalPath,
             Path.Combine(workspaceRoot, "eval", "latest.json"),
             "eval",
             assets);
@@ -68,6 +76,13 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             "latest-review",
             assets);
 
+        var manifestPath = Path.Combine(bundleRoot, "diagnostic-manifest.json");
+        assets.Add(new WorkspaceDiagnosticsAssetRecord(
+            "diagnostic-manifest",
+            manifestPath,
+            manifestPath,
+            true));
+
         var manifest = new
         {
             schemaVersion = "1.0",
@@ -83,17 +98,10 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             assets
         };
 
-        var manifestPath = Path.Combine(bundleRoot, "diagnostic-manifest.json");
         File.WriteAllText(
             manifestPath,
             JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine,
             System.Text.Encoding.UTF8);
-
-        assets.Add(new WorkspaceDiagnosticsAssetRecord(
-            "diagnostic-manifest",
-            manifestPath,
-            manifestPath,
-            true));
 
         return new WorkspaceDiagnosticsExportResult(bundleRoot, manifestPath, assets.Count);
     }

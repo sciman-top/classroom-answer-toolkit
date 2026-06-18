@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "math-answer",
+  "displayName": "Junior Math Answer Scaffold",
+  "version": "v0.1",
+  "status": "experimental",
+  "locale": "zh-CN",
+  "domain": "junior-high-school-math",
+  "kind": "subject-pack",
+  "inherits": [
+    "../platform-core/manifest.json"
+  ],
+  "sourceOfTruth": {
+    "humanSpec": "./README.md",
+    "runtimeConfig": "./config.json"
+  },
+  "entry": {
+    "rulesDir": "./rules",
+    "profilesDir": "./profiles",
+    "overridesDir": "./overrides",
+    "migrationsDir": "./migrations",
+    "snapshotCache": "../../.snapshot-cache/resolved-snapshot.math.json"
+  },
+  "evaluation": {
+    "dataset": "../../eval/math-answer/dataset.json",
+    "casesDir": "../../eval/math-answer/cases",
+    "resultsDir": "../../eval/math-answer/results"
+  },
+  "tooling": {
+    "ruleCompiler": "../../tools/rule-compiler/compile-snapshot.mjs",
+    "validator": "../../tools/latex-renderer/validate-answer-markdown.mjs"
+  }
+}

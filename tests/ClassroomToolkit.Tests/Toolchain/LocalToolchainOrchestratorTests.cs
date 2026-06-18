@@ -1,3 +1,4 @@
+﻿using System.Text.Json;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
@@ -13,10 +14,10 @@ public sealed class LocalToolchainOrchestratorTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("v11.1");
-        workspace.WriteConfig();
-        workspace.WriteSnapshot("v11.1", "classroom");
-        workspace.WriteEval("v11.1", ok: true, caseCount: 5);
+        workspace.WriteManifest("physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("physics-answer", "v11.1", ok: true, caseCount: 5);
         workspace.WriteSupportFiles();
 
         var resolver = new RepositoryRootResolver(workspace.Root);
@@ -26,7 +27,7 @@ public sealed class LocalToolchainOrchestratorTests
 
         result.IsHealthy.Should().BeTrue();
         result.EvalCaseCount.Should().Be(5);
-        result.Summary.Should().Contain("已对齐");
+        result.LatestProductionSpecVersion.Should().Be("v11.1");
     }
 
     [Fact]
@@ -34,10 +35,10 @@ public sealed class LocalToolchainOrchestratorTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("v11.1");
-        workspace.WriteConfig();
-        workspace.WriteSnapshot("v11.1", "classroom");
-        workspace.WriteEval("v11.1", ok: true, caseCount: 5);
+        workspace.WriteManifest("physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("physics-answer", "v11.1", ok: true, caseCount: 5);
         workspace.WriteSupportFiles();
         workspace.WriteAnswerMarkdown();
         workspace.WriteDeliveryManifest("snapshot-test");
@@ -78,40 +79,38 @@ public sealed class LocalToolchainOrchestratorTests
             CancellationToken cancellationToken = default)
         {
             if (string.Equals(fileName, "npm", StringComparison.OrdinalIgnoreCase)
-                && arguments.Count >= 3
+                && arguments.Count >= 4
                 && arguments[0] == "--prefix"
                 && arguments[2] == "run"
                 && arguments[3] == "deliver")
             {
-                var manifestPath = Path.Combine(
-                    workingDirectory,
-                    "习题PDF",
-                    "sample-answer.delivery-manifest.json");
+                var manifestPath = Path.Combine(workingDirectory, "sample-answer.delivery-manifest.json");
 
-                File.WriteAllText(
-                    manifestPath,
-                    """
+                var manifest = new
+                {
+                    schemaVersion = "1.0",
+                    kind = "delivery-manifest",
+                    generatedAt = "2026-06-18T00:00:00Z",
+                    snapshotId = "snapshot-test",
+                    snapshotPath = "D:\\repo\\.snapshot-cache\\resolved-snapshot.json",
+                    snapshot = new
                     {
-                      "schemaVersion": "1.0",
-                      "kind": "delivery-manifest",
-                      "generatedAt": "2026-06-18T00:00:00Z",
-                      "snapshotId": "snapshot-test",
-                      "snapshotPath": "D:\\repo\\.snapshot-cache\\resolved-snapshot.json",
-                      "snapshot": {
-                        "id": "snapshot-test",
-                        "version": "v11.1",
-                        "profile": "classroom"
-                      },
-                      "profile": "classroom",
-                      "input": "D:\\repo\\习题PDF\\sample-answer.md",
-                      "output": "D:\\repo\\习题PDF\\sample-answer.pdf",
-                      "review": {
-                        "outputDir": "D:\\repo\\.pdf-review\\sample-answer",
-                        "manifestPath": "D:\\repo\\.pdf-review\\sample-answer\\manifest.json",
-                        "scale": "2"
-                      }
+                        id = "snapshot-test",
+                        version = "v11.1",
+                        profile = "classroom"
+                    },
+                    profile = "classroom",
+                    input = "D:\\repo\\sample-answer.md",
+                    output = "D:\\repo\\sample-answer.pdf",
+                    review = new
+                    {
+                        outputDir = "D:\\repo\\.pdf-review\\sample-answer",
+                        manifestPath = "D:\\repo\\.pdf-review\\sample-answer\\manifest.json",
+                        scale = "2"
                     }
-                    """);
+                };
+
+                File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
             }
 
             return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));
@@ -120,6 +119,8 @@ public sealed class LocalToolchainOrchestratorTests
 
     private sealed class TemporaryWorkspace : IDisposable
     {
+        private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+
         public TemporaryWorkspace()
         {
             Root = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-Orchestrator", Guid.NewGuid().ToString("N"));
@@ -128,76 +129,54 @@ public sealed class LocalToolchainOrchestratorTests
 
         public string Root { get; }
 
-        public string AnswerMarkdownPath => Path.Combine(Root, "习题PDF", "sample-answer.md");
+        public string AnswerMarkdownPath => Path.Combine(Root, "sample-answer.md");
 
         public void WriteRootSpec(string version)
         {
-            File.WriteAllText(Path.Combine(Root, $"初中物理试卷参考答案生成与渲染交付提示词_v{version}_生产完整版.md"), $"# v{version}\n");
+            File.WriteAllText(Path.Combine(Root, $"spec_v{version}_release.md"), $"# v{version}\n");
         }
 
-        public void WriteManifest(string version)
+        public void WriteManifest(string subjectPack, string version, string humanSpec)
         {
-            var manifestPath = Path.Combine(Root, "prompts", "physics-answer", "manifest.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
-            File.WriteAllText(
-                manifestPath,
-                $$"""
-                {
-                  "version": "{{version}}",
-                  "sourceOfTruth": {
-                    "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_{{version.Replace("v", "_v")}}_生产完整版.md"
-                  }
-                }
-                """);
+            WriteJson(Path.Combine(Root, "prompts", subjectPack, "manifest.json"), new
+            {
+                kind = "subject-pack",
+                assetId = subjectPack,
+                version,
+                status = "active",
+                sourceOfTruth = new { humanSpec },
+                evaluation = new { resultsDir = $"../../eval/{subjectPack}/results" }
+            });
         }
 
-        public void WriteConfig()
+        public void WriteConfig(string subjectPack, string snapshotPath)
         {
-            var configPath = Path.Combine(Root, "prompts", "physics-answer", "config.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-            File.WriteAllText(
-                configPath,
-                """
-                {
-                  "snapshot": {
-                    "cachePath": "../../.snapshot-cache/resolved-snapshot.json"
-                  }
-                }
-                """);
+            WriteJson(Path.Combine(Root, "prompts", subjectPack, "config.json"), new
+            {
+                snapshot = new { cachePath = snapshotPath }
+            });
         }
 
-        public void WriteSnapshot(string version, string profile)
+        public void WriteSnapshot(string subjectPack, string version, string profile)
         {
-            var snapshotPath = Path.Combine(Root, ".snapshot-cache", "resolved-snapshot.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(snapshotPath)!);
-            File.WriteAllText(
-                snapshotPath,
-                $$"""
-                {
-                  "subjectPack": {
-                    "version": "{{version}}"
-                  },
-                  "activeProfile": {
-                    "name": "{{profile}}"
-                  }
-                }
-                """);
+            var snapshotFileName = subjectPack == "math-answer"
+                ? "resolved-snapshot.math.json"
+                : "resolved-snapshot.json";
+            WriteJson(Path.Combine(Root, ".snapshot-cache", snapshotFileName), new
+            {
+                subjectPack = new { version },
+                activeProfile = new { name = profile }
+            });
         }
 
-        public void WriteEval(string assetVersion, bool ok, int caseCount)
+        public void WriteEval(string subjectPack, string assetVersion, bool ok, int caseCount)
         {
-            var evalPath = Path.Combine(Root, "eval", "physics-answer", "results", "latest.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(evalPath)!);
-            var cases = string.Join(",", Enumerable.Range(0, caseCount).Select(_ => "{}"));
-            File.WriteAllText(
-                evalPath,
-                $$"""
-                {
-                  "assetVersion": "{{assetVersion}}",
-                  "ok": {{ok.ToString().ToLowerInvariant()}},
-                  "cases": [{{cases}}]
-                }
-                """);
+            WriteJson(Path.Combine(Root, "eval", subjectPack, "results", "latest.json"), new
+            {
+                assetVersion,
+                ok,
+                cases = Enumerable.Range(0, caseCount).Select(_ => new { }).ToArray()
+            });
         }
 
         public void WriteAnswerMarkdown()
@@ -209,32 +188,29 @@ public sealed class LocalToolchainOrchestratorTests
 
         public void WriteDeliveryManifest(string snapshotId)
         {
-            var manifestPath = Path.Combine(Root, "习题PDF", "sample-answer.delivery-manifest.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
-            File.WriteAllText(
-                manifestPath,
-                $$"""
+            WriteJson(Path.Combine(Root, "sample-answer.delivery-manifest.json"), new
+            {
+                schemaVersion = "1.0",
+                kind = "delivery-manifest",
+                generatedAt = "2026-06-18T00:00:00Z",
+                snapshotId,
+                snapshotPath = "../../.snapshot-cache/resolved-snapshot.json",
+                snapshot = new
                 {
-                  "schemaVersion": "1.0",
-                  "kind": "delivery-manifest",
-                  "generatedAt": "2026-06-18T00:00:00Z",
-                  "snapshotId": "{{snapshotId}}",
-                  "snapshotPath": "../../.snapshot-cache/resolved-snapshot.json",
-                  "snapshot": {
-                    "id": "{{snapshotId}}",
-                    "version": "v11.1",
-                    "profile": "classroom"
-                  },
-                  "profile": "classroom",
-                  "input": "{{AnswerMarkdownPath}}",
-                  "output": "{{Path.ChangeExtension(AnswerMarkdownPath, ".pdf")}}",
-                  "review": {
-                    "outputDir": "{{Path.Combine(Root, ".pdf-review", "sample-answer")}}",
-                    "manifestPath": "{{Path.Combine(Root, ".pdf-review", "sample-answer", "manifest.json")}}",
-                    "scale": "2"
-                  }
+                    id = snapshotId,
+                    version = "v11.1",
+                    profile = "classroom"
+                },
+                profile = "classroom",
+                input = AnswerMarkdownPath,
+                output = Path.ChangeExtension(AnswerMarkdownPath, ".pdf"),
+                review = new
+                {
+                    outputDir = Path.Combine(Root, ".pdf-review", "sample-answer"),
+                    manifestPath = Path.Combine(Root, ".pdf-review", "sample-answer", "manifest.json"),
+                    scale = "2"
                 }
-                """);
+            });
         }
 
         public void WriteSupportFiles()
@@ -244,6 +220,12 @@ public sealed class LocalToolchainOrchestratorTests
             File.WriteAllText(Path.Combine(Root, "scripts", "check-toolchain.ps1"), "# check\n");
             File.WriteAllText(Path.Combine(Root, "global.json"), "{}\n");
             File.WriteAllText(Path.Combine(Root, "ClassroomToolkit.sln"), "solution\n");
+        }
+
+        private static void WriteJson(string path, object value)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, JsonSerializer.Serialize(value, Indented));
         }
 
         public void Dispose()

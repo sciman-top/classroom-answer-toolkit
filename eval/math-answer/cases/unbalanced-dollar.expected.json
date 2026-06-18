@@ -1,0 +1,16 @@
+{
+  "caseId": "unbalanced-dollar",
+  "profiles": {
+    "classroom": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "Negative gate case that confirms math-answer shares the same unbalanced dollar rejection behavior as physics-answer."
+  ]
+}

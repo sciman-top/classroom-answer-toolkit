@@ -38,6 +38,12 @@ public sealed class MainViewModelTests
         viewModel.LastDiagnosticsBundlePath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001");
         viewModel.LastDiagnosticsManifestPath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001\diagnostic-manifest.json");
         viewModel.LastResultSummary.Should().Contain("诊断包已导出");
+
+        viewModel.OpenLastDiagnosticsBundleCommand.Execute(null);
+        pathOpener.LastOpenedPath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001");
+
+        viewModel.OpenLastDiagnosticsManifestCommand.Execute(null);
+        pathOpener.LastOpenedPath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001\diagnostic-manifest.json");
     }
 
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator

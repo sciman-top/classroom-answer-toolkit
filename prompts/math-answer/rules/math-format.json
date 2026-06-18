@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "math-answer.math-format",
+  "packVersion": "v0.1",
+  "kind": "rule-pack",
+  "metadata": {
+    "subject": "math-answer",
+    "priority": 80
+  },
+  "rules": [
+    {
+      "id": "math-answer.derivation.stepwise",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 80,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "preferStepwiseDerivation": true,
+        "allowEquivalentTransform": true
+      },
+      "source": {
+        "path": "./rules/math-format.json",
+        "layer": "subject-pack"
+      }
+    }
+  ]
+}

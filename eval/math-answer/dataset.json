@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "suiteId": "math-answer",
+  "subjectPack": "math-answer",
+  "assetVersion": "v0.1",
+  "visualBaselines": [
+    "baselines/visual/linear-equation-smoke.classroom.page-001.png",
+    "baselines/visual/linear-equation-smoke.compact.page-001.png"
+  ],
+  "resultsFile": "results/latest.json",
+  "cases": [
+    {
+      "id": "linear-equation-smoke",
+      "input": "cases/linear-equation-smoke.md",
+      "expected": "cases/linear-equation-smoke.expected.json",
+      "visualBaseline": "baselines/visual/linear-equation-smoke.classroom.page-001.png",
+      "tags": [
+        "cross-subject",
+        "validator",
+        "smoke"
+      ]
+    },
+    {
+      "id": "unbalanced-dollar",
+      "input": "cases/unbalanced-dollar.md",
+      "expected": "cases/unbalanced-dollar.expected.json",
+      "tags": [
+        "cross-subject",
+        "validator",
+        "hard-gate"
+      ]
+    }
+  ]
+}

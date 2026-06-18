@@ -2,17 +2,16 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getDefaultProfileName, loadRuntimeConfig } from "./runtime-config.mjs";
+import { getDefaultProfileName, getDefaultSubjectPack, loadRuntimeConfig } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const packageJsonPath = path.join(toolDir, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const packageName = packageJson.name ?? "physics-answer-latex-renderer";
-const runtimeConfig = loadRuntimeConfig();
 
 const usage = `Usage:
-  npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--keep-review] [--keep-ocr] [--review-scale 2] [--skip-validate]
+  npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--keep-ocr] [--review-scale 2] [--skip-validate]
 
 Examples:
   npm --prefix tools/latex-renderer run deliver -- "习题PDF/能量-效率参考答案.md"
@@ -39,11 +38,13 @@ function resolveToolScript(scriptFileName) {
 function parseArgs(argv) {
   const positional = [];
   const options = {
-    profile: getDefaultProfileName(),
+    profile: null,
+    snapshotPath: null,
     keepReview: false,
     keepOcr: false,
     reviewScale: "2",
-    skipValidate: false
+    skipValidate: false,
+    subjectPack: getDefaultSubjectPack()
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -79,6 +80,16 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (arg === "--snapshot-path") {
+      options.snapshotPath = argv[++index];
+      continue;
+    }
+
+    if (arg.startsWith("--snapshot-path=")) {
+      options.snapshotPath = arg.slice("--snapshot-path=".length);
+      continue;
+    }
+
     if (arg === "--review-scale") {
       options.reviewScale = argv[++index];
       continue;
@@ -86,6 +97,16 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--review-scale=")) {
       options.reviewScale = arg.slice("--review-scale=".length);
+      continue;
+    }
+
+    if (arg === "--subject-pack") {
+      options.subjectPack = argv[++index];
+      continue;
+    }
+
+    if (arg.startsWith("--subject-pack=")) {
+      options.subjectPack = arg.slice("--subject-pack=".length);
       continue;
     }
 
@@ -148,6 +169,12 @@ function loadJson(filePath) {
 
 function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
+  const runtimeConfig = loadRuntimeConfig(options.subjectPack);
+  const callerCwd = process.env.INIT_CWD || process.cwd();
+
+  if (!options.profile) {
+    options.profile = getDefaultProfileName(options.subjectPack);
+  }
 
   if (options.help) {
     console.log(usage);
@@ -175,20 +202,32 @@ function main() {
   }
 
   const reviewOutputDir = makeReviewOutputDir(outputPath);
-  const snapshotPath = runtimeConfig.snapshot?.cachePath
-    ? path.resolve(path.dirname(path.join(repoRoot, "prompts", "physics-answer", "config.json")), runtimeConfig.snapshot.cachePath)
+  const snapshotPath = options.snapshotPath
+    ? path.resolve(callerCwd, options.snapshotPath)
+    : runtimeConfig.snapshot?.cachePath
+    ? path.resolve(path.dirname(path.join(repoRoot, "prompts", options.subjectPack, "config.json")), runtimeConfig.snapshot.cachePath)
     : path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json");
 
   console.log(`[${packageName}] validate-assets`);
   runNodeScript(path.join("..", "rule-compiler", "validate-assets.mjs"), []);
 
-  console.log(`[${packageName}] compile-snapshot`);
-  runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
-    "--profile",
-    options.profile,
-    "--out",
-    path.relative(repoRoot, snapshotPath)
-  ]);
+  if (!options.snapshotPath) {
+    console.log(`[${packageName}] compile-snapshot`);
+    runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
+      "--subject-pack",
+      options.subjectPack,
+      "--profile",
+      options.profile,
+      "--out",
+      path.relative(repoRoot, snapshotPath)
+    ]);
+  } else {
+    console.log(`[${packageName}] reuse snapshot`);
+  }
+
+  if (!fs.existsSync(snapshotPath)) {
+    fail(`Resolved snapshot not found: ${snapshotPath}`);
+  }
 
   const snapshot = loadJson(snapshotPath);
 
@@ -196,6 +235,8 @@ function main() {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
     runNodeScript("validate-answer-markdown.mjs", [
       path.relative(repoRoot, inputPath),
+      "--subject-pack",
+      options.subjectPack,
       "--profile",
       options.profile,
       "--snapshot",
@@ -207,6 +248,8 @@ function main() {
   runNodeScript("render-md-latex.mjs", [
     path.relative(repoRoot, inputPath),
     path.relative(repoRoot, outputPath),
+    "--subject-pack",
+    options.subjectPack,
     "--profile",
     options.profile,
     "--snapshot",
@@ -223,16 +266,23 @@ function main() {
   ]);
 
   const cleanupArgs = [];
-  if (options.keepReview) {
-    cleanupArgs.push("--keep-review");
-  }
   if (options.keepOcr) {
     cleanupArgs.push("--keep-ocr");
+  }
+  cleanupArgs.push("--keep-review");
+  if (!options.keepReview) {
+    cleanupArgs.push(path.relative(repoRoot, reviewOutputDir));
   }
 
   console.log(`[${packageName}] cleanup`);
   if (runtimeConfig.deliveryRules?.cleanupAfterSuccessfulDeliver !== false) {
     runNodeScript("cleanup-answer-artifacts.mjs", cleanupArgs);
+    if (!options.keepReview) {
+      const reviewRoot = path.join(repoRoot, ".pdf-review");
+      if (fs.existsSync(reviewRoot) && fs.readdirSync(reviewRoot).length === 0) {
+        fs.rmSync(reviewRoot, { recursive: true, force: true });
+      }
+    }
   } else {
     console.log(`[${packageName}] cleanup skipped by runtime config`);
   }
