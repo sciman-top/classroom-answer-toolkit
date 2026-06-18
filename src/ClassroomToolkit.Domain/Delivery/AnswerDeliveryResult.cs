@@ -4,4 +4,5 @@ public sealed record AnswerDeliveryResult(
     string AnswerMarkdownPath,
     string OutputPdfPath,
     string DeliveryManifestPath,
-    string ReviewDirectoryPath);
+    string ReviewDirectoryPath,
+    string? SnapshotId);

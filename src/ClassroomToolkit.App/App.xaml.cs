@@ -1,4 +1,5 @@
 using System.Windows;
+using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ public partial class App : System.Windows.Application
             .ConfigureServices(services =>
             {
                 services.AddClassroomToolkitServices();
+                services.AddWorkspaceDiagnosticsExport();
                 services.AddSingleton<MainViewModel>();
                 services.AddSingleton<MainWindow>();
             })

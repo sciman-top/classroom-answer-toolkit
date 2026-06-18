@@ -140,6 +140,11 @@ Assert-DotNetSdk
 Assert-Browser
 Install-NodeDependencies
 Compile-RuleSnapshots
+Write-Host "Installing Node dependencies for tools/answer-graphics..."
+& npm ci --no-fund --no-audit --prefix tools/answer-graphics
+if ($LASTEXITCODE -ne 0) {
+    throw "npm ci failed for tools/answer-graphics."
+}
 Install-PythonOcrEnv
 
 Write-Host "Bootstrap complete."

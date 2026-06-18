@@ -442,11 +442,13 @@ async function main() {
 
       const pageLabel = String(pageNumber).padStart(3, "0");
       const imagePath = path.join(outputDir, `${inputBase}.page-${pageLabel}.png`);
+      fs.mkdirSync(path.dirname(imagePath), { recursive: true });
       fs.writeFileSync(imagePath, dataUrlToBuffer(rendered.dataUrl));
 
       let textLayerPath = null;
       if (rendered.text) {
         textLayerPath = path.join(outputDir, `${inputBase}.page-${pageLabel}.text-layer.txt`);
+        fs.mkdirSync(path.dirname(textLayerPath), { recursive: true });
         fs.writeFileSync(textLayerPath, `${rendered.text}\n`, "utf8");
       }
 

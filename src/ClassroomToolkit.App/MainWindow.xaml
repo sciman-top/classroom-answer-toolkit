@@ -91,6 +91,15 @@
                                 <TextBlock Margin="0,8,0,0" Text="{Binding LastOutputPdfPath}" TextWrapping="Wrap" FontSize="13" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding LastDeliveryManifestPath}" TextWrapping="Wrap" FontSize="13" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding LastReviewDirectoryPath}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastSnapshotId}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsBundlePath}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsManifestPath}" TextWrapping="Wrap" FontSize="13" />
+                                <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                                    <Button Content="打开 PDF" Command="{Binding OpenLastOutputPdfCommand}" />
+                                    <Button Content="打开 Manifest" Command="{Binding OpenLastDeliveryManifestCommand}" />
+                                    <Button Content="打开 Review" Command="{Binding OpenLastReviewDirectoryCommand}" />
+                                    <Button Content="导出诊断包" Command="{Binding ExportDiagnosticsCommand}" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "problem-figure-asset",
+  "figureId": "sample-lever-figure",
+  "sourceDocument": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\eval\\physics-answer\\cases\\smoke-answer.md",
+  "sourceKind": "pdf-review",
+  "pageNumber": 1,
+  "questionRef": "11",
+  "imagePath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\eval\\physics-answer\\cases\\figure-crop.png",
+  "cropBox": {
+    "x": 0,
+    "y": 0,
+    "width": 1200,
+    "height": 800
+  },
+  "pixelSize": {
+    "width": 1200,
+    "height": 800
+  },
+  "dpi": 144
+}

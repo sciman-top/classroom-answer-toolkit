@@ -19,34 +19,195 @@
     "generatedAt": { "type": "string" },
     "layers": {
       "type": "object",
-      "additionalProperties": true
+      "required": [
+        "platformCore",
+        "subjectPack"
+      ],
+      "properties": {
+        "platformCore": { "type": "string" },
+        "subjectPack": { "type": "string" }
+      },
+      "additionalProperties": false
     },
     "subjectPack": {
       "type": "object",
+      "required": [
+        "schemaVersion",
+        "assetId",
+        "displayName",
+        "version",
+        "status",
+        "locale",
+        "kind",
+        "sourceOfTruth"
+      ],
+      "properties": {
+        "schemaVersion": { "type": "string" },
+        "assetId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "version": { "type": "string" },
+        "status": { "type": "string" },
+        "locale": { "type": "string" },
+        "domain": { "type": "string" },
+        "kind": { "type": "string" },
+        "inherits": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sourceOfTruth": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "entry": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "evaluation": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tooling": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
       "additionalProperties": true
     },
     "activeProfile": {
       "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": { "type": "string" },
+        "inherits": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "graphics": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "review": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "page": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "typography": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "answerRules": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
       "additionalProperties": true
     },
     "rules": {
       "type": "array",
-      "items": { "type": "object", "additionalProperties": true }
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "enabled",
+          "severity",
+          "priority",
+          "engine",
+          "appliesTo",
+          "params",
+          "source"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "version": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "hard",
+              "soft",
+              "hint"
+            ]
+          },
+          "priority": { "type": "integer" },
+          "engine": { "type": "string" },
+          "appliesTo": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "source": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
     },
     "profiles": {
       "type": "object",
-      "additionalProperties": true
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
     },
     "toolchain": {
       "type": "object",
+      "required": [
+        "compiler"
+      ],
+      "properties": {
+        "compiler": { "type": "string" }
+      },
       "additionalProperties": true
     },
     "inputRefs": {
       "type": "object",
+      "required": [
+        "subjectManifest",
+        "subjectConfig"
+      ],
+      "properties": {
+        "subjectManifest": { "type": "string" },
+        "subjectConfig": { "type": "string" }
+      },
       "additionalProperties": true
     },
     "meta": {
       "type": "object",
+      "required": [
+        "ruleCount",
+        "profileCount"
+      ],
+      "properties": {
+        "ruleCount": { "type": "integer" },
+        "profileCount": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "compat": {
+      "type": "object",
+      "properties": {
+        "deliveryManifestVersion": { "type": "string" }
+      },
       "additionalProperties": true
     }
   },

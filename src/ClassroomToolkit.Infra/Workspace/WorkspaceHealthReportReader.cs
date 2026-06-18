@@ -22,12 +22,14 @@ public sealed class WorkspaceHealthReportReader
         var manifestPath = Path.Combine(_repositoryRoot, "prompts", "physics-answer", "manifest.json");
         var configPath = Path.Combine(_repositoryRoot, "prompts", "physics-answer", "config.json");
         var evalResultsPath = Path.Combine(_repositoryRoot, "eval", "physics-answer", "results", "latest.json");
+        var graphicsPath = Path.Combine(_repositoryRoot, ".answer-graphics");
 
         var latestVersion = FindLatestProductionSpecVersion();
         var manifestVersion = ReadManifestVersion(manifestPath);
         var snapshotPath = ResolveSnapshotPath(configPath);
         var snapshotStatus = ReadSnapshotStatus(snapshotPath);
         var evalStatus = ReadEvalStatus(evalResultsPath);
+        var graphicsStatus = ReadGraphicsStatus(graphicsPath);
 
         var issues = new List<string>();
         if (latestVersion is not null && manifestVersion is not null && manifestVersion != $"v{latestVersion}")
@@ -57,6 +59,11 @@ public sealed class WorkspaceHealthReportReader
             issues.Add($"评测结果版本 {evalStatus.AssetVersion} 与资产版本 {manifestVersion} 不一致。");
         }
 
+        if (graphicsStatus.Exists && !graphicsStatus.HasPreview)
+        {
+            issues.Add("作图题图块产物缺少预览图。");
+        }
+
         var summary = issues.Count == 0
             ? "规则快照、评测结果与最新规范已对齐。"
             : string.Join("；", issues);
@@ -70,6 +77,8 @@ public sealed class WorkspaceHealthReportReader
             EvalExists: evalStatus.Exists,
             EvalOk: evalStatus.Ok,
             EvalCaseCount: evalStatus.CaseCount,
+            GraphicsExists: graphicsStatus.Exists,
+            GraphicsSummary: graphicsStatus.Summary,
             Summary: summary,
             Issues: issues);
     }
@@ -153,6 +162,26 @@ public sealed class WorkspaceHealthReportReader
         var ok = root.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
 
         return (true, ok, assetVersion, caseCount);
+    }
+
+    private static (bool Exists, bool HasPreview, string Summary) ReadGraphicsStatus(string graphicsPath)
+    {
+        if (!Directory.Exists(graphicsPath))
+        {
+            return (false, false, "作图题图块产物目录尚未生成。");
+        }
+
+        var previewExists = File.Exists(Path.Combine(graphicsPath, "answer-graphic-preview.svg"))
+            || File.Exists(Path.Combine(graphicsPath, "placed-answer-graphic.json"));
+
+        var artifactExists = File.Exists(Path.Combine(graphicsPath, "answer-graphic-artifact.json"));
+        var placedExists = File.Exists(Path.Combine(graphicsPath, "placed-answer-graphic.json"));
+
+        var summary = previewExists
+            ? $"图块产物已生成{(artifactExists ? "，含 artifact" : string.Empty)}{(placedExists ? "，含 placement 记录" : string.Empty)}。"
+            : "作图题图块产物缺少预览图。";
+
+        return (true, previewExists, summary);
     }
 
     private sealed class VersionComparer : IComparer<string>

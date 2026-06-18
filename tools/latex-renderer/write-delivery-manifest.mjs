@@ -1,5 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+
+const toolDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(toolDir, "..", "..");
+const deliveryManifestSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
 
 function parseArgs(argv) {
   const options = {
@@ -125,9 +131,15 @@ function main() {
 
   const manifest = {
     schemaVersion: "1.0",
+    kind: "delivery-manifest",
     generatedAt: new Date().toISOString(),
     snapshotId: options.snapshotId,
     snapshotPath,
+    snapshot: {
+      id: options.snapshotId,
+      version: null,
+      profile: options.profile
+    },
     profile: options.profile,
     input: inputPath,
     output: outputPath,
@@ -137,6 +149,23 @@ function main() {
       scale: options.reviewScale
     }
   };
+
+  if (fs.existsSync(snapshotPath)) {
+    try {
+      const snapshot = JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
+      manifest.snapshot.version = snapshot?.subjectPack?.version ?? null;
+      manifest.snapshot.profile = snapshot?.activeProfile?.name ?? options.profile;
+    } catch {
+      manifest.snapshot.version = null;
+    }
+  } else {
+    fail(`Resolved snapshot not found: ${snapshotPath}`);
+  }
+
+  const errors = validateValueAgainstSchema(manifest, deliveryManifestSchemaPath);
+  if (errors.length > 0) {
+    fail(`Delivery manifest failed schema validation:\n${errors.map((error) => `- ${error}`).join("\n")}`, 1);
+  }
 
   fs.mkdirSync(path.dirname(manifestOutPath), { recursive: true });
   fs.writeFileSync(manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");

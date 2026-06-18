@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "answer-graphic-artifact",
+  "artifactId": "sample-lever-figure-answer-artifact",
+  "graphicId": "sample-lever-figure-answer",
+  "baseImagePath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\eval\\physics-answer\\cases\\figure-crop.png",
+  "overlaySvgPath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\.answer-graphics\\answer-graphic-overlay.svg",
+  "compositedPreviewPath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\.answer-graphics\\answer-graphic-preview.svg",
+  "widthPx": 1200,
+  "heightPx": 800,
+  "boundingBoxes": [
+    {
+      "id": "pivot",
+      "x": 168,
+      "y": 608,
+      "width": 24,
+      "height": 24
+    },
+    {
+      "id": "force",
+      "x": 908,
+      "y": 224,
+      "width": 24,
+      "height": 24
+    }
+  ]
+}

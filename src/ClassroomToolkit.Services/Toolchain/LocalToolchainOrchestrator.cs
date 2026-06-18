@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
@@ -111,13 +112,16 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             return (execution, null);
         }
 
+        var snapshotId = ReadSnapshotIdFromDeliveryManifest(deliveryManifestPath);
+
         return (
             execution,
             new AnswerDeliveryResult(
                 answerMarkdownPath,
                 outputPdfPath,
                 deliveryManifestPath,
-                reviewDirectoryPath));
+                reviewDirectoryPath,
+                snapshotId));
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(
@@ -186,5 +190,28 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
 
         return builder.ToString().TrimEnd();
+    }
+
+    private static string? ReadSnapshotIdFromDeliveryManifest(string deliveryManifestPath)
+    {
+        if (!File.Exists(deliveryManifestPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(deliveryManifestPath));
+        var root = document.RootElement;
+        if (root.TryGetProperty("snapshot", out var snapshotElement)
+            && snapshotElement.TryGetProperty("id", out var snapshotIdElement))
+        {
+            return snapshotIdElement.GetString();
+        }
+
+        if (root.TryGetProperty("snapshotId", out var fallbackSnapshotId))
+        {
+            return fallbackSnapshotId.GetString();
+        }
+
+        return null;
     }
 }

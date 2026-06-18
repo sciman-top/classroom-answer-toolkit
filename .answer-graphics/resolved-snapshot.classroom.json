@@ -1,0 +1,381 @@
+{
+  "snapshotId": "snapshot-c14cd06a3a7d71a5",
+  "generatedAt": "2026-06-18T04:20:49.610Z",
+  "layers": {
+    "platformCore": "v1.0",
+    "subjectPack": "v8.12"
+  },
+  "subjectPack": {
+    "schemaVersion": "1.0",
+    "assetId": "physics-answer",
+    "displayName": "初中物理试卷参考答案生成与渲染",
+    "version": "v8.12",
+    "status": "active",
+    "locale": "zh-CN",
+    "domain": "junior-high-school-physics",
+    "kind": "subject-pack",
+    "inherits": [
+      "../platform-core/manifest.json"
+    ],
+    "sourceOfTruth": {
+      "humanSpec": "../../初中物理试卷参考答案生成与渲染交付提示词_v8.12_生产完整版.md",
+      "mirroredSpec": "./spec.md",
+      "runtimeConfig": "./config.json",
+      "acceptanceChecklist": "./checklists/acceptance.md"
+    },
+    "entry": {
+      "rulesDir": "./rules",
+      "profilesDir": "./profiles",
+      "overridesDir": "./overrides",
+      "migrationsDir": "./migrations",
+      "snapshotCache": "../../.snapshot-cache/resolved-snapshot.json"
+    },
+    "evaluation": {
+      "dataset": "../../eval/physics-answer/dataset.json",
+      "casesDir": "../../eval/physics-answer/cases",
+      "resultsDir": "../../eval/physics-answer/results",
+      "visualBaselinesDir": "../../eval/physics-answer/baselines/visual"
+    },
+    "tooling": {
+      "ruleCompiler": "../../tools/rule-compiler/compile-snapshot.mjs",
+      "validator": "../../tools/latex-renderer/validate-answer-markdown.mjs",
+      "evalRunner": "../../tools/latex-renderer/eval-answer-fixtures.mjs",
+      "renderer": "../../tools/latex-renderer/render-md-latex.mjs",
+      "deliver": "../../tools/latex-renderer/deliver-answer.mjs",
+      "visualSmoke": "../../tools/latex-renderer/visual-regression-smoke.mjs"
+    }
+  },
+  "activeProfile": {
+    "name": "classroom",
+    "page": {
+      "size": "A4",
+      "margin": {
+        "topMm": 16,
+        "rightMm": 17,
+        "bottomMm": 16,
+        "leftMm": 17
+      }
+    },
+    "typography": {
+      "fontFamily": "\"Microsoft YaHei\", \"SimHei\", \"Noto Sans CJK SC\", sans-serif",
+      "bodyFontSizePt": 14,
+      "lineHeight": 1.55,
+      "maxBodyWidthMm": 148,
+      "h1FontSizePt": 21,
+      "h1LineHeight": 1.25,
+      "h1MarginBottomPt": 9,
+      "h2FontSizePt": 16,
+      "h2LineHeight": 1.35,
+      "h2MarginTopPt": 15,
+      "h2MarginBottomPt": 7,
+      "paragraphMarginBottomPt": 7,
+      "katexScale": 1.04,
+      "displayMathMarginTopEm": 0.18,
+      "displayMathMarginBottomEm": 0.35
+    },
+    "answerRules": {
+      "targetPlainTextCjkPerLine": 20,
+      "maxPlainTextCjkPerLine": 24
+    },
+    "inherits": [
+      "../../platform-core/profiles/classroom.json"
+    ],
+    "layout": {
+      "plainTextCjkTarget": 20,
+      "plainTextCjkMax": 24,
+      "bodyFontSizePt": 14,
+      "lineHeight": 1.55,
+      "maxBodyWidthMm": 148
+    },
+    "review": {
+      "enabled": true
+    }
+  },
+  "rules": [
+    {
+      "id": "delivery.final-artifacts",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 100,
+      "engine": "deliver",
+      "appliesTo": [
+        "delivery"
+      ],
+      "params": {
+        "finalArtifacts": [
+          ".md",
+          ".pdf"
+        ]
+      },
+      "source": {
+        "path": "./rules/delivery.json",
+        "layer": "platform-core"
+      }
+    },
+    {
+      "id": "physics-answer.choice-answer.compact-line",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 100,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "answersPerLine": 5,
+        "formatExample": "1—5：A、B、C、D、A"
+      },
+      "source": {
+        "path": "./rules/answer-format.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "physics-answer.question-lead.same-line",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 95,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "firstSubQuestionSameLineRequired": true
+      },
+      "source": {
+        "path": "./rules/answer-format.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "physics-answer.figure-binding.question-figure-map",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 92,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md",
+        "multi-figure-question"
+      ],
+      "params": {
+        "requireQuestionFigureBinding": true,
+        "forbidCrossFigureAnswering": true
+      },
+      "source": {
+        "path": "./rules/figure-binding.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "physics-answer.math.true-latex",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 90,
+      "engine": "render",
+      "appliesTo": [
+        "answer-md",
+        "pdf"
+      ],
+      "params": {
+        "trueLatexRenderingRequired": true,
+        "displayMathLeftAligned": true
+      },
+      "source": {
+        "path": "./rules/math.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "rendering.true-latex",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 90,
+      "engine": "render",
+      "appliesTo": [
+        "render",
+        "validate"
+      ],
+      "params": {
+        "requireTrueLatex": true,
+        "displayMathLeftAligned": true
+      },
+      "source": {
+        "path": "./rules/rendering.json",
+        "layer": "platform-core"
+      }
+    },
+    {
+      "id": "physics-answer.instrument-reading.original-image-priority",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 88,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md",
+        "instrument-reading"
+      ],
+      "params": {
+        "preferOriginalImageReading": true,
+        "calculationOnlyForCrossCheck": true,
+        "requireFigureBindingBeforeReading": true,
+        "requireSecondaryRangeAndScaleCheck": true
+      },
+      "source": {
+        "path": "./rules/instrument-reading.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "physics-answer.math.direct-equivalent-path",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 85,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md",
+        "computation"
+      ],
+      "params": {
+        "preferMoreDirectEquivalentPath": true,
+        "allowNecessaryDerivationForDifficultSubQuestion": true,
+        "dropUnusedOriginalFormulaHintLine": true,
+        "preferMovePrimaryUnknownBeforeWrap": true
+      },
+      "source": {
+        "path": "./rules/math.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "physics-answer.experiment-design.score-sentence",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 80,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "scoreSentenceStyleRequired": true
+      },
+      "source": {
+        "path": "./rules/experiment-design.json",
+        "layer": "subject-pack"
+      }
+    }
+  ],
+  "profiles": {
+    "classroom": {
+      "name": "classroom",
+      "page": {
+        "size": "A4",
+        "margin": {
+          "topMm": 16,
+          "rightMm": 17,
+          "bottomMm": 16,
+          "leftMm": 17
+        }
+      },
+      "typography": {
+        "fontFamily": "\"Microsoft YaHei\", \"SimHei\", \"Noto Sans CJK SC\", sans-serif",
+        "bodyFontSizePt": 14,
+        "lineHeight": 1.55,
+        "maxBodyWidthMm": 148,
+        "h1FontSizePt": 21,
+        "h1LineHeight": 1.25,
+        "h1MarginBottomPt": 9,
+        "h2FontSizePt": 16,
+        "h2LineHeight": 1.35,
+        "h2MarginTopPt": 15,
+        "h2MarginBottomPt": 7,
+        "paragraphMarginBottomPt": 7,
+        "katexScale": 1.04,
+        "displayMathMarginTopEm": 0.18,
+        "displayMathMarginBottomEm": 0.35
+      },
+      "answerRules": {
+        "targetPlainTextCjkPerLine": 20,
+        "maxPlainTextCjkPerLine": 24
+      },
+      "inherits": [
+        "../../platform-core/profiles/classroom.json"
+      ],
+      "layout": {
+        "plainTextCjkTarget": 20,
+        "plainTextCjkMax": 24,
+        "bodyFontSizePt": 14,
+        "lineHeight": 1.55,
+        "maxBodyWidthMm": 148
+      },
+      "review": {
+        "enabled": true
+      }
+    },
+    "compact": {
+      "name": "compact",
+      "page": {
+        "size": "A4",
+        "margin": {
+          "topMm": 16,
+          "rightMm": 17,
+          "bottomMm": 16,
+          "leftMm": 17
+        }
+      },
+      "typography": {
+        "fontFamily": "\"Microsoft YaHei\", \"SimHei\", \"Noto Sans CJK SC\", sans-serif",
+        "bodyFontSizePt": 13,
+        "lineHeight": 1.48,
+        "maxBodyWidthMm": 158,
+        "h1FontSizePt": 19.5,
+        "h1LineHeight": 1.25,
+        "h1MarginBottomPt": 9,
+        "h2FontSizePt": 15,
+        "h2LineHeight": 1.35,
+        "h2MarginTopPt": 15,
+        "h2MarginBottomPt": 7,
+        "paragraphMarginBottomPt": 6,
+        "katexScale": 1.02,
+        "displayMathMarginTopEm": 0.18,
+        "displayMathMarginBottomEm": 0.35
+      },
+      "answerRules": {
+        "targetPlainTextCjkPerLine": 24,
+        "maxPlainTextCjkPerLine": 30
+      },
+      "inherits": [
+        "../../platform-core/profiles/compact.json"
+      ],
+      "layout": {
+        "plainTextCjkTarget": 24,
+        "plainTextCjkMax": 30,
+        "bodyFontSizePt": 13,
+        "lineHeight": 1.48,
+        "maxBodyWidthMm": 158
+      },
+      "review": {
+        "enabled": true
+      }
+    }
+  },
+  "toolchain": {
+    "compiler": "tools/rule-compiler/compile-snapshot.mjs"
+  },
+  "inputRefs": {
+    "subjectManifest": "prompts/physics-answer/manifest.json",
+    "subjectConfig": "prompts/physics-answer/config.json"
+  },
+  "meta": {
+    "ruleCount": 9,
+    "profileCount": 2
+  }
+}

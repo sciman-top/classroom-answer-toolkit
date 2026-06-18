@@ -14,6 +14,7 @@ public sealed class WorkspaceHealthReportReaderTests
         workspace.WriteConfig("../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("v11.0", "classroom");
         workspace.WriteEval("v11.0", ok: true, caseCount: 4);
+        workspace.WriteGraphics();
 
         var reader = new WorkspaceHealthReportReader(workspace.Root);
 
@@ -25,6 +26,8 @@ public sealed class WorkspaceHealthReportReaderTests
         result.SnapshotExists.Should().BeTrue();
         result.EvalOk.Should().BeTrue();
         result.EvalCaseCount.Should().Be(4);
+        result.GraphicsExists.Should().BeTrue();
+        result.GraphicsSummary.Should().Contain("图块产物");
     }
 
     [Fact]
@@ -125,6 +128,14 @@ public sealed class WorkspaceHealthReportReaderTests
                   "cases": [{{cases}}]
                 }
                 """);
+        }
+
+        public void WriteGraphics()
+        {
+            var graphicsPath = Path.Combine(Root, ".answer-graphics");
+            Directory.CreateDirectory(graphicsPath);
+            File.WriteAllText(Path.Combine(graphicsPath, "answer-graphic-preview.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\" />");
+            File.WriteAllText(Path.Combine(graphicsPath, "placed-answer-graphic.json"), "{}");
         }
 
         public void Dispose()

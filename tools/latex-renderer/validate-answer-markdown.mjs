@@ -177,7 +177,9 @@ function main() {
     fail(`Answer Markdown not found: ${inputPath}`);
   }
 
-  const snapshot = options.snapshot ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot)) : loadResolvedSnapshot();
+  const snapshot = options.snapshot
+    ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot), { required: true })
+    : loadResolvedSnapshot();
   const profile = loadRenderProfile(options.profile, callerCwd, snapshot);
   const runtimeConfig = loadRuntimeConfig();
   const source = fs.readFileSync(inputPath, "utf8");

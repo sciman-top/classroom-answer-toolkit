@@ -1,3 +1,4 @@
+using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
 using ClassroomToolkit.Services.Toolchain;
@@ -28,6 +29,34 @@ public sealed class LocalToolchainOrchestratorTests
         result.Summary.Should().Contain("已对齐");
     }
 
+    [Fact]
+    public async Task RunDeliverAsync_PreservesSnapshotId_FromWrittenDeliveryManifest()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteRootSpec("11.1");
+        workspace.WriteManifest("v11.1");
+        workspace.WriteConfig();
+        workspace.WriteSnapshot("v11.1", "classroom");
+        workspace.WriteEval("v11.1", ok: true, caseCount: 5);
+        workspace.WriteSupportFiles();
+        workspace.WriteAnswerMarkdown();
+        workspace.WriteDeliveryManifest("snapshot-test");
+
+        var resolver = new RepositoryRootResolver(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(resolver, new FakeDeliverProcessRunner());
+
+        var (execution, delivery) = await orchestrator.RunDeliverAsync(
+            new AnswerDeliveryRequest(
+                workspace.AnswerMarkdownPath,
+                null,
+                "classroom",
+                KeepReviewArtifacts: true));
+
+        execution.Succeeded.Should().BeTrue();
+        delivery.Should().NotBeNull();
+        delivery!.SnapshotId.Should().Be("snapshot-test");
+    }
+
     private sealed class FakeProcessRunner : IProcessRunner
     {
         public Task<ProcessRunResult> RunAsync(
@@ -36,6 +65,55 @@ public sealed class LocalToolchainOrchestratorTests
             string workingDirectory,
             CancellationToken cancellationToken = default)
         {
+            return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));
+        }
+    }
+
+    private sealed class FakeDeliverProcessRunner : IProcessRunner
+    {
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.Equals(fileName, "npm", StringComparison.OrdinalIgnoreCase)
+                && arguments.Count >= 3
+                && arguments[0] == "--prefix"
+                && arguments[2] == "run"
+                && arguments[3] == "deliver")
+            {
+                var manifestPath = Path.Combine(
+                    workingDirectory,
+                    "习题PDF",
+                    "sample-answer.delivery-manifest.json");
+
+                File.WriteAllText(
+                    manifestPath,
+                    """
+                    {
+                      "schemaVersion": "1.0",
+                      "kind": "delivery-manifest",
+                      "generatedAt": "2026-06-18T00:00:00Z",
+                      "snapshotId": "snapshot-test",
+                      "snapshotPath": "D:\\repo\\.snapshot-cache\\resolved-snapshot.json",
+                      "snapshot": {
+                        "id": "snapshot-test",
+                        "version": "v11.1",
+                        "profile": "classroom"
+                      },
+                      "profile": "classroom",
+                      "input": "D:\\repo\\习题PDF\\sample-answer.md",
+                      "output": "D:\\repo\\习题PDF\\sample-answer.pdf",
+                      "review": {
+                        "outputDir": "D:\\repo\\.pdf-review\\sample-answer",
+                        "manifestPath": "D:\\repo\\.pdf-review\\sample-answer\\manifest.json",
+                        "scale": "2"
+                      }
+                    }
+                    """);
+            }
+
             return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));
         }
     }
@@ -49,6 +127,8 @@ public sealed class LocalToolchainOrchestratorTests
         }
 
         public string Root { get; }
+
+        public string AnswerMarkdownPath => Path.Combine(Root, "习题PDF", "sample-answer.md");
 
         public void WriteRootSpec(string version)
         {
@@ -116,6 +196,43 @@ public sealed class LocalToolchainOrchestratorTests
                   "assetVersion": "{{assetVersion}}",
                   "ok": {{ok.ToString().ToLowerInvariant()}},
                   "cases": [{{cases}}]
+                }
+                """);
+        }
+
+        public void WriteAnswerMarkdown()
+        {
+            var answerPath = AnswerMarkdownPath;
+            Directory.CreateDirectory(Path.GetDirectoryName(answerPath)!);
+            File.WriteAllText(answerPath, "# sample answer\n");
+        }
+
+        public void WriteDeliveryManifest(string snapshotId)
+        {
+            var manifestPath = Path.Combine(Root, "习题PDF", "sample-answer.delivery-manifest.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
+            File.WriteAllText(
+                manifestPath,
+                $$"""
+                {
+                  "schemaVersion": "1.0",
+                  "kind": "delivery-manifest",
+                  "generatedAt": "2026-06-18T00:00:00Z",
+                  "snapshotId": "{{snapshotId}}",
+                  "snapshotPath": "../../.snapshot-cache/resolved-snapshot.json",
+                  "snapshot": {
+                    "id": "{{snapshotId}}",
+                    "version": "v11.1",
+                    "profile": "classroom"
+                  },
+                  "profile": "classroom",
+                  "input": "{{AnswerMarkdownPath}}",
+                  "output": "{{Path.ChangeExtension(AnswerMarkdownPath, ".pdf")}}",
+                  "review": {
+                    "outputDir": "{{Path.Combine(Root, ".pdf-review", "sample-answer")}}",
+                    "manifestPath": "{{Path.Combine(Root, ".pdf-review", "sample-answer", "manifest.json")}}",
+                    "scale": "2"
+                  }
                 }
                 """);
         }

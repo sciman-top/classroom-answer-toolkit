@@ -30,6 +30,18 @@
       ]
     },
     {
+      "id": "graphic-placement",
+      "input": "cases/graphic-placement.md",
+      "expected": "cases/graphic-placement.expected.json",
+      "visualBaseline": "baselines/visual/graphic-placement.classroom.page-001.png",
+      "tags": [
+        "graphic-placement",
+        "answer-graphic",
+        "visual-baseline",
+        "delivery"
+      ]
+    },
+    {
       "id": "orphan-question-lead",
       "input": "cases/orphan-question-lead.md",
       "expected": "cases/orphan-question-lead.expected.json",

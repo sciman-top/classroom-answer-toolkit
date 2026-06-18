@@ -53,6 +53,9 @@ Assert-CommandSuccess { npm --prefix tools/rule-compiler run compile:snapshot --
 Write-Host "latex renderer smoke:"
 Assert-CommandSuccess { npm --prefix tools/latex-renderer run smoke } "LaTeX renderer smoke failed."
 
+Write-Host "answer graphics smoke:"
+Assert-CommandSuccess { npm --prefix tools/answer-graphics run smoke } "Answer graphics smoke failed."
+
 $venvPython = Join-Path $repoRoot "tools\ocr\.venv\Scripts\python.exe"
 if (Test-Path -LiteralPath $venvPython) {
     Write-Host "ocr venv imports:"

@@ -1,0 +1,13 @@
+{
+  "name": "physics-answer-answer-graphics",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "extract:figure": "node extract-figure.mjs",
+    "build:graphic-spec": "node build-graphic-spec.mjs",
+    "render:overlay": "node render-graphic-overlay.mjs",
+    "compose:graphic": "node compose-answer-graphic.mjs",
+    "smoke": "node smoke-test.mjs"
+  }
+}

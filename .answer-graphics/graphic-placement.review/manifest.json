@@ -1,0 +1,27 @@
+{
+  "inputPath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\.answer-graphics\\graphic-placement.pdf",
+  "outputDir": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\.answer-graphics\\graphic-placement.review",
+  "generatedAt": "2026-06-18T04:20:52.953Z",
+  "renderer": "pdfjs-dist + local Chrome/Edge via Playwright",
+  "browserPath": "C:\\Users\\sciman\\AppData\\Local\\Chromium\\Application\\chrome.exe",
+  "scale": 2,
+  "requestedPages": "all",
+  "selectedPages": [
+    1
+  ],
+  "pageCount": 1,
+  "pages": [
+    {
+      "pageNumber": 1,
+      "imagePath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\.answer-graphics\\graphic-placement.review\\graphic-placement.page-001.png",
+      "width": 1192,
+      "height": 1686,
+      "textLayerPath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\.answer-graphics\\graphic-placement.review\\graphic-placement.page-001.text-layer.txt",
+      "textLayerChars": 29
+    }
+  ],
+  "ocrLanguage": null,
+  "ocrStatus": "not-requested",
+  "fingerprint": "caa7f2d1f50378763a986e657070535e",
+  "reviewHtmlPath": "D:\\CODE\\初中物理试卷参考答案生成与渲染\\.answer-graphics\\graphic-placement.review\\review.html"
+}

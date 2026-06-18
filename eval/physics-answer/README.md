@@ -21,6 +21,7 @@ render workflow.
 - classroom long-line warning regression
 - classroom long-line visual baselines for classroom and compact layout contrast
 - display-math layout visual baselines for heading, formula block, and paragraph rhythm
+- answer-graphic placement sample for marker-based figure insertion and delivery validation
 - figure-binding sample aligned with v8.11 multi-figure sub-question binding guidance
 - necessary-derivation computation sample aligned with v8.9 difficult-subquestion guidance
 - instrument-reading-priority sample aligned with v8.10 original-figure-reading guidance

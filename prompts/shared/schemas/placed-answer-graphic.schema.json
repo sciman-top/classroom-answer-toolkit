@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PlacedAnswerGraphic",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "placedGraphicId",
+    "graphicId",
+    "artifactId",
+    "questionRef",
+    "placementMode",
+    "targetBlock",
+    "figureWidthMm",
+    "captionMode",
+    "pageBreakPolicy",
+    "previewPath"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "placed-answer-graphic"
+      ]
+    },
+    "placedGraphicId": { "type": "string" },
+    "graphicId": { "type": "string" },
+    "artifactId": { "type": "string" },
+    "questionRef": { "type": "string" },
+    "placementMode": { "type": "string" },
+    "targetBlock": { "type": "string" },
+    "figureWidthMm": { "type": "number" },
+    "captionMode": { "type": "string" },
+    "pageBreakPolicy": { "type": "string" },
+    "previewPath": { "type": "string" },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

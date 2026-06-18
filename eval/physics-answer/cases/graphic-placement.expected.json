@@ -1,0 +1,24 @@
+{
+  "caseId": "graphic-placement",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/graphic-placement.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/graphic-placement.compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    }
+  },
+  "notes": [
+    "Covers answer-graphic marker expansion, placement rendering, and delivery manifest validation."
+  ]
+}

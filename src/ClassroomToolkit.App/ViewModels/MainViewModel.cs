@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
+using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Domain.Toolchain;
@@ -13,12 +14,19 @@ namespace ClassroomToolkit.App.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private readonly IToolchainOrchestrator _toolchainOrchestrator;
+    private readonly IPathOpener _pathOpener;
+    private readonly IWorkspaceDiagnosticsExporter _workspaceDiagnosticsExporter;
     private readonly StringBuilder _activityLog = new();
     private WorkspaceHealthReport _healthReport;
 
-    public MainViewModel(IToolchainOrchestrator toolchainOrchestrator)
+    public MainViewModel(
+        IToolchainOrchestrator toolchainOrchestrator,
+        IPathOpener pathOpener,
+        IWorkspaceDiagnosticsExporter workspaceDiagnosticsExporter)
     {
         _toolchainOrchestrator = toolchainOrchestrator;
+        _pathOpener = pathOpener;
+        _workspaceDiagnosticsExporter = workspaceDiagnosticsExporter;
         StatusCards = new ObservableCollection<StatusCardViewModel>();
         Issues = new ObservableCollection<string>();
 
@@ -78,6 +86,15 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string lastReviewDirectoryPath = string.Empty;
+
+    [ObservableProperty]
+    private string lastSnapshotId = string.Empty;
+
+    [ObservableProperty]
+    private string lastDiagnosticsBundlePath = string.Empty;
+
+    [ObservableProperty]
+    private string lastDiagnosticsManifestPath = string.Empty;
 
     public ObservableCollection<StatusCardViewModel> StatusCards { get; }
 
@@ -148,12 +165,14 @@ public partial class MainViewModel : ObservableObject
                 LastOutputPdfPath = delivery.OutputPdfPath;
                 LastDeliveryManifestPath = delivery.DeliveryManifestPath;
                 LastReviewDirectoryPath = delivery.ReviewDirectoryPath;
+                LastSnapshotId = delivery.SnapshotId ?? string.Empty;
 
                 AppendLine(string.Empty);
                 AppendLine("交付产物:");
                 AppendLine($"- PDF: {delivery.OutputPdfPath}");
                 AppendLine($"- Delivery Manifest: {delivery.DeliveryManifestPath}");
                 AppendLine($"- Review Directory: {delivery.ReviewDirectoryPath}");
+                AppendLine($"- Snapshot: {delivery.SnapshotId ?? "未知"}");
             }
 
             StatusMessage = execution.Succeeded ? "答案交付完成" : "答案交付失败";
@@ -169,6 +188,51 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void OpenLastOutputPdf()
+    {
+        OpenPath(LastOutputPdfPath);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void OpenLastDeliveryManifest()
+    {
+        OpenPath(LastDeliveryManifestPath);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void OpenLastReviewDirectory()
+    {
+        OpenPath(LastReviewDirectoryPath);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void ExportDiagnostics()
+    {
+        try
+        {
+            var result = _workspaceDiagnosticsExporter.Export(new WorkspaceDiagnosticsExportRequest(
+                RepositoryRoot,
+                _healthReport,
+                LastOutputPdfPath,
+                LastDeliveryManifestPath,
+                LastReviewDirectoryPath,
+                LastSnapshotId));
+
+            LastDiagnosticsBundlePath = result.BundleDirectoryPath;
+            LastDiagnosticsManifestPath = result.ManifestPath;
+
+            AppendLine($"已导出诊断包: {result.BundleDirectoryPath}");
+            AppendLine($"诊断清单: {result.ManifestPath}");
+            LastResultSummary = $"诊断包已导出 · {result.FileCount} 个产物";
+        }
+        catch (Exception ex)
+        {
+            AppendLine(ex.Message);
+            LastResultSummary = ex.Message;
         }
     }
 
@@ -222,6 +286,11 @@ public partial class MainViewModel : ObservableObject
             _healthReport.EvalExists ? (_healthReport.EvalOk ? "通过" : "失败") : "缺失",
             _healthReport.EvalExists ? $"共 {_healthReport.EvalCaseCount} 组" : "尚未生成 latest.json",
             _healthReport.EvalExists && _healthReport.EvalOk));
+        StatusCards.Add(new StatusCardViewModel(
+            "图块产物",
+            _healthReport.GraphicsExists ? "已生成" : "缺失",
+            _healthReport.GraphicsSummary ?? "尚未生成 answer graphics 产物",
+            _healthReport.GraphicsExists));
 
         Issues.Clear();
         foreach (var issue in _healthReport.Issues)
@@ -242,6 +311,7 @@ public partial class MainViewModel : ObservableObject
         AppendLine($"规范 / 资产: {_healthReport.LatestProductionSpecVersion ?? "未知"} / {_healthReport.AssetVersion ?? "未知"}");
         AppendLine($"快照: {(_healthReport.SnapshotExists ? $"{_healthReport.SnapshotVersion} / {_healthReport.SnapshotProfile}" : "缺失")}");
         AppendLine($"回归: {(_healthReport.EvalExists ? $"{(_healthReport.EvalOk ? "通过" : "失败")} / {_healthReport.EvalCaseCount} 组" : "缺失")}");
+        AppendLine($"图块: {(_healthReport.GraphicsExists ? _healthReport.GraphicsSummary : "缺失")}");
 
         if (_healthReport.Issues.Count > 0)
         {
@@ -277,6 +347,23 @@ public partial class MainViewModel : ObservableObject
     {
         AppendLine(string.Empty);
         AppendLine($"=== {title} ===");
+    }
+
+    private void OpenPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            AppendLine("没有可打开的产物路径。");
+            return;
+        }
+
+        if (_pathOpener.TryOpenPath(path, out var errorMessage))
+        {
+            AppendLine($"已打开: {path}");
+            return;
+        }
+
+        AppendLine(errorMessage ?? $"无法打开: {path}");
     }
 
     private void AppendLine(string line)

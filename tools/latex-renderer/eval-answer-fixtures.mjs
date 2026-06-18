@@ -83,6 +83,10 @@ function firstPageImagePath(reviewDir) {
   return path.join(reviewDir, candidates[0]);
 }
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
 function makeCaseWorkDir(caseId, profile) {
   return path.join(repoRoot, ".smoke-work", "eval", caseId, profile);
 }
@@ -124,6 +128,10 @@ function main() {
     };
 
     for (const profile of profiles) {
+      const workDir = makeCaseWorkDir(caseEntry.id, profile);
+      fs.rmSync(workDir, { recursive: true, force: true });
+      fs.mkdirSync(workDir, { recursive: true });
+
       const snapshotRelativePath = path.join(".snapshot-cache", `resolved-snapshot.${profile}.json`);
       const snapshotCompile = spawnSync(
         process.execPath,
@@ -152,6 +160,8 @@ function main() {
         throw new Error(snapshotCompile.stderr || snapshotCompile.stdout || `Snapshot compile failed for profile ${profile}.`);
       }
 
+      const compiledSnapshot = readJson(path.resolve(repoRoot, snapshotRelativePath));
+
       const expectation = expected.profiles[profile];
       const run = runValidator(path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)), profile, snapshotRelativePath);
       const passed = run.status === 0;
@@ -161,10 +171,6 @@ function main() {
       let visualOk = true;
 
       if (expectation.visualBaseline) {
-        const workDir = makeCaseWorkDir(caseEntry.id, profile);
-        fs.rmSync(workDir, { recursive: true, force: true });
-        fs.mkdirSync(workDir, { recursive: true });
-
         const pdfPath = path.join(workDir, `${caseEntry.id}.${profile}.pdf`);
         const reviewDir = path.join(workDir, "review");
         const renderRun = runNodeTool("render-md-latex.mjs", [
@@ -204,14 +210,76 @@ function main() {
           baseline: expectation.visualBaseline,
           actualImage: path.relative(repoRoot, actualImagePath),
           passed: visualOk,
-          status: visualRun.status
+          status: visualRun.status,
+          stdout: visualRun.stdout || undefined,
+          stderr: visualRun.stderr || undefined
         };
+
+        if (!visualOk) {
+          console.warn(`[eval] ${caseEntry.id}/${profile} visual compare failed`);
+          if (visualRun.stdout) {
+            console.warn(visualRun.stdout.trimEnd());
+          }
+          if (visualRun.stderr) {
+            console.warn(visualRun.stderr.trimEnd());
+          }
+        }
+      }
+
+      let delivery = null;
+      let deliveryOk = true;
+
+      if (expectation.delivery) {
+        const deliverPdfPath = path.join(workDir, `${caseEntry.id}.${profile}.deliver.pdf`);
+        const deliverRun = runNodeTool("deliver-answer.mjs", [
+          path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
+          path.relative(repoRoot, deliverPdfPath),
+          "--profile",
+          profile,
+          ...(expectation.delivery.keepReview ? ["--keep-review"] : [])
+        ]);
+
+        deliveryOk = deliverRun.status === 0;
+        const deliveryManifestPath = path.resolve(
+          workDir,
+          `${caseEntry.id}.${profile}.deliver.delivery-manifest.json`
+        );
+
+        if (deliveryOk) {
+          if (!fs.existsSync(deliveryManifestPath)) {
+            throw new Error(`Delivery manifest not found: ${deliveryManifestPath}`);
+          }
+
+          const deliveryManifest = readJson(deliveryManifestPath);
+          const snapshotMatch = deliveryManifest.snapshotId === compiledSnapshot.snapshotId
+            && deliveryManifest.snapshot?.id === compiledSnapshot.snapshotId
+            && deliveryManifest.snapshot?.version === compiledSnapshot.subjectPack?.version
+            && deliveryManifest.snapshot?.profile === profile;
+
+          deliveryOk = snapshotMatch;
+          delivery = {
+            manifestPath: path.relative(repoRoot, deliveryManifestPath),
+            pdfPath: path.relative(repoRoot, deliverPdfPath),
+            snapshotId: deliveryManifest.snapshotId,
+            snapshotMatch,
+            keepReview: Boolean(expectation.delivery.keepReview)
+          };
+        } else {
+          delivery = {
+            manifestPath: path.relative(repoRoot, deliveryManifestPath),
+            pdfPath: path.relative(repoRoot, deliverPdfPath),
+            snapshotId: null,
+            snapshotMatch: false,
+            keepReview: Boolean(expectation.delivery.keepReview)
+          };
+        }
       }
 
       const profileOk =
         passed === Boolean(expectation.shouldPass)
         && warningCount <= (expectation.maxWarnings ?? Number.POSITIVE_INFINITY)
-        && visualOk;
+        && visualOk
+        && deliveryOk;
 
       caseResult.profiles[profile] = {
         expected: expectation,
@@ -219,7 +287,8 @@ function main() {
           passed,
           warningCount,
           status: run.status,
-          visual
+          visual,
+          delivery
         },
         ok: profileOk
       };

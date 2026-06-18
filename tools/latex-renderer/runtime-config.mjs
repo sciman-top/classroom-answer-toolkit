@@ -32,8 +32,12 @@ export function getDefaultSnapshotPath() {
   return defaultSnapshotPath;
 }
 
-export function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath()) {
+export function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath(), options = {}) {
   if (!fs.existsSync(snapshotPath)) {
+    if (options.required) {
+      throw new Error(`Resolved snapshot not found: ${snapshotPath}`);
+    }
+
     return null;
   }
 

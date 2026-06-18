@@ -36,10 +36,16 @@ function ensureCleanSmokeDir() {
   fs.mkdirSync(smokeDir, { recursive: true });
 }
 
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
 function main() {
   ensureCleanSmokeDir();
 
   const reviewDir = path.join(smokeDir, "review-classroom");
+  const deliverPdfPath = path.join(smokeDir, "smoke-deliver.pdf");
+  const deliverManifestPath = path.join(smokeDir, "smoke-deliver.delivery-manifest.json");
   const snapshotPaths = {
     classroom: path.join(smokeDir, "resolved-snapshot.classroom.json"),
     compact: path.join(smokeDir, "resolved-snapshot.compact.json")
@@ -101,6 +107,25 @@ function main() {
     "--scale",
     "2"
   ]);
+
+  console.log("[smoke] deliver classroom");
+  runNodeScript("deliver-answer.mjs", [
+    path.relative(repoRoot, fixturePath),
+    path.relative(repoRoot, deliverPdfPath),
+    "--profile",
+    "classroom",
+    "--keep-review"
+  ]);
+
+  if (!fs.existsSync(deliverManifestPath)) {
+    throw new Error(`Deliver manifest not found: ${deliverManifestPath}`);
+  }
+
+  const deliverManifest = readJson(deliverManifestPath);
+  const classroomSnapshot = readJson(snapshotPaths.classroom);
+  if (deliverManifest.snapshotId !== classroomSnapshot.snapshotId) {
+    throw new Error(`Deliver manifest snapshotId mismatch: expected ${classroomSnapshot.snapshotId}, got ${deliverManifest.snapshotId}`);
+  }
 
   console.log("[smoke] cleanup");
   fs.rmSync(smokeDir, { recursive: true, force: true });

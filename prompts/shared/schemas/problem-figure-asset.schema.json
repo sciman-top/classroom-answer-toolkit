@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProblemFigureAsset",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "figureId",
+    "sourceDocument",
+    "pageNumber",
+    "questionRef",
+    "imagePath",
+    "cropBox",
+    "pixelSize",
+    "dpi"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "problem-figure-asset"
+      ]
+    },
+    "figureId": { "type": "string" },
+    "sourceDocument": { "type": "string" },
+    "sourceKind": { "type": "string" },
+    "pageNumber": { "type": "integer" },
+    "questionRef": { "type": "string" },
+    "imagePath": { "type": "string" },
+    "cropBox": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "pixelSize": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": { "type": "integer" },
+        "height": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "dpi": { "type": "number" }
+  },
+  "additionalProperties": true
+}

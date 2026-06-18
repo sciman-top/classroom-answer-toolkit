@@ -13,6 +13,7 @@
     "validate:answer": "node validate-answer-markdown.mjs",
     "visual:compare": "node visual-regression.mjs",
     "visual:smoke": "node visual-regression-smoke.mjs",
+    "validate:delivery-manifest": "node validate-delivery-manifest.mjs",
     "write:delivery-manifest": "node write-delivery-manifest.mjs",
     "ocr:rapid": "..\\ocr\\.venv\\Scripts\\python.exe ..\\ocr\\batch_ocr.py"
   },

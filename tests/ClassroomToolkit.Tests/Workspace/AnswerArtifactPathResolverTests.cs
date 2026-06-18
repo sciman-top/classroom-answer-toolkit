@@ -25,4 +25,14 @@ public sealed class AnswerArtifactPathResolverTests
 
         result.Should().Be(@"D:\repo\.pdf-review\习题PDF_folder__sample-answer");
     }
+
+    [Fact]
+    public void ResolveDeliveryManifestPath_UsesPdfStemWithDeliveryManifestSuffix()
+    {
+        var outputPdfPath = @"D:\repo\习题PDF\folder\sample-answer.pdf";
+
+        var result = AnswerArtifactPathResolver.ResolveDeliveryManifestPath(outputPdfPath);
+
+        result.Should().Be(@"D:\repo\习题PDF\folder\sample-answer.delivery-manifest.json");
+    }
 }

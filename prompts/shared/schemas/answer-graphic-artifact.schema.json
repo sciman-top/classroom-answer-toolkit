@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AnswerGraphicArtifact",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "artifactId",
+    "graphicId",
+    "baseImagePath",
+    "overlaySvgPath",
+    "compositedPreviewPath",
+    "widthPx",
+    "heightPx",
+    "boundingBoxes"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "answer-graphic-artifact"
+      ]
+    },
+    "artifactId": { "type": "string" },
+    "graphicId": { "type": "string" },
+    "baseImagePath": { "type": "string" },
+    "overlaySvgPath": { "type": "string" },
+    "compositedPreviewPath": { "type": "string" },
+    "widthPx": { "type": "integer" },
+    "heightPx": { "type": "integer" },
+    "boundingBoxes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "width": { "type": "number" },
+          "height": { "type": "number" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

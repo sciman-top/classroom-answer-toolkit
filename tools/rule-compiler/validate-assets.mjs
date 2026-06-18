@@ -9,6 +9,14 @@ function collectValidationTargets() {
   const rulePackSchema = resolveRepoPath("prompts/shared/schemas/rule-pack.schema.json");
   const profileSchema = resolveRepoPath("prompts/shared/schemas/profile.schema.json");
   const snapshotSchema = resolveRepoPath("prompts/shared/schemas/snapshot.schema.json");
+  const deliveryManifestSchema = resolveRepoPath("prompts/shared/schemas/delivery-manifest.schema.json");
+  const figureSchemas = [
+    resolveRepoPath("prompts/shared/schemas/problem-figure-asset.schema.json"),
+    resolveRepoPath("prompts/shared/schemas/figure-understanding-result.schema.json"),
+    resolveRepoPath("prompts/shared/schemas/answer-graphic-spec.schema.json"),
+    resolveRepoPath("prompts/shared/schemas/answer-graphic-artifact.schema.json"),
+    resolveRepoPath("prompts/shared/schemas/placed-answer-graphic.schema.json")
+  ];
 
   return {
     manifests: [
@@ -23,7 +31,9 @@ function collectValidationTargets() {
       ...listJsonFiles(resolveRepoPath("prompts/platform-core/profiles")),
       ...listJsonFiles(resolveRepoPath("prompts/physics-answer/profiles"))
     ].map((filePath) => ({ filePath, schemaPath: profileSchema })),
-    snapshotSchema
+    snapshotSchema,
+    deliveryManifestSchema,
+    figureSchemas
   };
 }
 
@@ -48,6 +58,21 @@ function validateSnapshot(snapshotSchema) {
   const snapshot = compileResolvedSnapshot();
   const errors = validateValueAgainstSchema(snapshot, snapshotSchema);
   return { snapshot, errors };
+}
+
+function validateSchemaFile(schemaPath) {
+  const schema = readJsonFile(schemaPath);
+  const errors = [];
+
+  if (schema.type !== "object") {
+    errors.push(`${path.relative(resolveRepoPath("."), schemaPath)}: schema root should declare object type.`);
+  }
+
+  if (!Array.isArray(schema.required) || schema.required.length === 0) {
+    errors.push(`${path.relative(resolveRepoPath("."), schemaPath)}: schema should define required fields.`);
+  }
+
+  return errors;
 }
 
 function compareVersion(a, b) {
@@ -113,11 +138,15 @@ function main() {
   const mergedAssets = buildMergedAssets();
   const snapshotValidation = validateSnapshot(targets.snapshotSchema);
   const specAlignmentErrors = validateLatestSpecAlignment(mergedAssets.manifest.subject, mergedAssets.config);
+  const deliveryManifestSchemaErrors = validateSchemaFile(targets.deliveryManifestSchema);
+  const figureSchemaErrors = targets.figureSchemas.flatMap((schemaPath) => validateSchemaFile(schemaPath));
 
   const errors = [
     ...fileValidation.errors,
     ...snapshotValidation.errors.map((error) => `ResolvedSnapshot: ${error}`),
-    ...specAlignmentErrors
+    ...specAlignmentErrors,
+    ...deliveryManifestSchemaErrors,
+    ...figureSchemaErrors
   ];
 
   if (!mergedAssets.rules.length) {

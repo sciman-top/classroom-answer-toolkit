@@ -4,12 +4,18 @@
     "classroom": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/smoke-classroom.page-001.png"
+      "visualBaseline": "baselines/visual/smoke-classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
     },
     "compact": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/smoke-compact.page-001.png"
+      "visualBaseline": "baselines/visual/smoke-compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
     }
   },
   "notes": [

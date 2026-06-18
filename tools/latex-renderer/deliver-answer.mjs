@@ -135,6 +135,13 @@ function makeReviewOutputDir(pdfPath) {
   return path.join(repoRoot, ".pdf-review", folderName);
 }
 
+function makeDeliveryManifestPath(pdfPath) {
+  return path.resolve(
+    path.dirname(pdfPath),
+    `${path.basename(pdfPath, path.extname(pdfPath))}.delivery-manifest.json`
+  );
+}
+
 function loadJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
@@ -249,6 +256,12 @@ function main() {
     path.relative(repoRoot, reviewManifestPath),
     "--review-scale",
     options.reviewScale
+  ]);
+
+  console.log(`[${packageName}] validate-delivery-manifest`);
+  runNodeScript("validate-delivery-manifest.mjs", [
+    "--manifest",
+    path.relative(repoRoot, makeDeliveryManifestPath(outputPath))
   ]);
 
   console.log(`[${packageName}] deliver complete: ${path.relative(repoRoot, outputPath)}`);

@@ -61,7 +61,9 @@ const inputPath = path.resolve(callerCwd, inputArg);
 const outputPath = path.resolve(
   outputArg ? path.resolve(callerCwd, outputArg) : inputPath.replace(/\.md$/i, ".pdf")
 );
-const snapshot = options.snapshot ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot)) : loadResolvedSnapshot();
+const snapshot = options.snapshot
+  ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot), { required: true })
+  : loadResolvedSnapshot();
 const renderProfile = loadRenderProfile(options.profile, callerCwd, snapshot);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
@@ -150,9 +152,73 @@ function injectMath(html) {
   return output;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function sanitizePlacementMode(placementMode) {
+  const safeMode = String(placementMode ?? "inline-medium")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return safeMode || "inline-medium";
+}
+
+function renderAnswerGraphicHtml(placementPath) {
+  const placement = JSON.parse(fs.readFileSync(placementPath, "utf8"));
+  if (placement?.kind !== "placed-answer-graphic") {
+    throw new Error(`Unsupported answer graphic placement kind in ${placementPath}`);
+  }
+
+  const previewPath = placement.previewPath
+    ? path.resolve(path.dirname(placementPath), placement.previewPath)
+    : null;
+
+  if (!previewPath || !fs.existsSync(previewPath)) {
+    throw new Error(`Answer graphic preview not found: ${previewPath ?? "<missing previewPath>"}`);
+  }
+
+  const placementMode = sanitizePlacementMode(placement.placementMode);
+  const widthMm = Number(placement.figureWidthMm);
+  const figureWidthStyle = Number.isFinite(widthMm) && widthMm > 0
+    ? `width: ${widthMm}mm; max-width: 100%;`
+    : "width: 100%; max-width: 100%;";
+  const figureStyle = [
+    figureWidthStyle,
+    "break-inside: avoid",
+    "page-break-inside: avoid",
+    "margin: 0.75em 0"
+  ].join(" ");
+  const figureClass = `answer-graphic answer-graphic-${placementMode}`;
+  const altText = escapeHtml(placement.graphicId || placement.questionRef || "answer graphic");
+
+  let mediaHtml;
+  if (/\.svg$/i.test(previewPath)) {
+    mediaHtml = fs.readFileSync(previewPath, "utf8").replace(/^<\?xml[^>]+>\s*/u, "");
+  } else {
+    mediaHtml = `<img src="${escapeHtml(pathToFileURL(previewPath).href)}" alt="${altText}" />`;
+  }
+
+  return `<div class="answer-graphic-shell ${escapeHtml(figureClass)}" style="${escapeHtml(figureStyle)}">${mediaHtml}</div>`;
+}
+
+function expandAnswerGraphicMarkers(markdown, sourcePath) {
+  return markdown.replace(/<!--\s*answer-graphic:\s*(.+?)\s*-->/g, (_match, placementPath) => {
+    const resolvedPlacementPath = path.resolve(path.dirname(sourcePath), placementPath.trim());
+    return `\n\n${renderAnswerGraphicHtml(resolvedPlacementPath)}\n\n`;
+  });
+}
+
 const source = fs.readFileSync(inputPath, "utf8");
 const normalizedSource = normalizeQuestionLeadLines(source);
-const renderedMarkdown = md.render(replaceMath(normalizedSource));
+const renderedMarkdown = md.render(replaceMath(expandAnswerGraphicMarkers(normalizedSource, inputPath)));
 const body = injectMath(renderedMarkdown);
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -208,6 +274,39 @@ p {
 
 strong {
   font-weight: 700;
+}
+
+div.answer-graphic-shell {
+  margin: 0.75em 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+div.answer-graphic-shell.answer-graphic-inline-small {
+  width: 72mm;
+  max-width: 100%;
+}
+
+div.answer-graphic-shell.answer-graphic-inline-medium {
+  width: 120mm;
+  max-width: 100%;
+}
+
+div.answer-graphic-shell.answer-graphic-inline-large {
+  width: 150mm;
+  max-width: 100%;
+}
+
+div.answer-graphic-shell.answer-graphic-full-width {
+  width: 100%;
+  max-width: 100%;
+}
+
+div.answer-graphic-shell > svg,
+div.answer-graphic-shell > img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .katex {
