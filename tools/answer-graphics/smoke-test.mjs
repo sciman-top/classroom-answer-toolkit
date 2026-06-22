@@ -61,6 +61,7 @@ async function main() {
   fs.mkdirSync(answerGraphicsRoot, { recursive: true });
 
   runNode("extract-figure.mjs");
+  runNode("understand-figure.mjs");
   runNode("build-graphic-spec.mjs");
   runNode("render-graphic-overlay.mjs");
   runNode("compose-answer-graphic.mjs");
@@ -159,6 +160,11 @@ async function main() {
   }
 
   const placed = path.join(answerGraphicsRoot, "placed-answer-graphic.json");
+  const understanding = path.join(answerGraphicsRoot, "figure-understanding-result.json");
+  if (!fs.existsSync(understanding)) {
+    throw new Error("Figure understanding result not produced.");
+  }
+
   if (!fs.existsSync(placed)) {
     throw new Error("Placed answer graphic not produced.");
   }

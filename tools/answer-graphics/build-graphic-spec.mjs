@@ -9,15 +9,46 @@ const repoRoot = path.resolve(toolDir, "..", "..");
 const schemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "answer-graphic-spec.schema.json");
 const answerGraphicsRoot = resolveAnswerGraphicsRoot(repoRoot);
 
+function requireAnchor(anchors, id) {
+  const anchor = anchors[id];
+  if (!anchor) {
+    throw new Error(`Figure understanding result is missing required anchor: ${id}`);
+  }
+  return anchor;
+}
+
+function requireLabel(labels, id) {
+  const label = labels[id];
+  if (!label) {
+    throw new Error(`Figure understanding result is missing required label: ${id}`);
+  }
+  return label;
+}
+
 function main() {
-  const inputPath = path.join(answerGraphicsRoot, "problem-figure-asset.json");
+  const figureAssetPath = path.join(answerGraphicsRoot, "problem-figure-asset.json");
+  const understandingPath = path.join(answerGraphicsRoot, "figure-understanding-result.json");
   const outputPath = path.join(answerGraphicsRoot, "answer-graphic-spec.json");
 
-  if (!fs.existsSync(inputPath)) {
-    throw new Error(`Problem figure asset not found: ${inputPath}`);
+  if (!fs.existsSync(figureAssetPath)) {
+    throw new Error(`Problem figure asset not found: ${figureAssetPath}`);
   }
 
-  const figureAsset = JSON.parse(fs.readFileSync(inputPath, "utf8"));
+  if (!fs.existsSync(understandingPath)) {
+    throw new Error(`Figure understanding result not found: ${understandingPath}`);
+  }
+
+  const figureAsset = JSON.parse(fs.readFileSync(figureAssetPath, "utf8"));
+  const understanding = JSON.parse(fs.readFileSync(understandingPath, "utf8"));
+  const anchors = Object.fromEntries((understanding.anchors ?? []).map((anchor) => [anchor.id, anchor]));
+  const labels = Object.fromEntries((understanding.labels ?? []).map((label) => [label.id, label]));
+
+  const pivot = requireAnchor(anchors, "pivot");
+  const forceTop = requireAnchor(anchors, "force-top");
+  const forceTail = requireAnchor(anchors, "force-tail");
+  const resistance = requireAnchor(anchors, "resistance");
+  const forceArmLabel = requireLabel(labels, "label-force-arm");
+
   const spec = {
     schemaVersion: "1.0",
     kind: "answer-graphic-spec",
@@ -25,30 +56,30 @@ function main() {
     baseFigureId: figureAsset.figureId,
     intent: "lever-force-arm",
     anchorMap: {
-      pivot: { x: 180, y: 620, label: "支点" },
-      force: { x: 920, y: 240, label: "动力" },
-      resistance: { x: 1080, y: 620, label: "阻力" }
+      pivot: { x: pivot.x, y: pivot.y, label: pivot.label },
+      force: { x: forceTop.x, y: forceTop.y, label: forceTop.label },
+      resistance: { x: resistance.x, y: resistance.y, label: resistance.label }
     },
     primitives: [
       {
         type: "circle",
-        center: { x: 180, y: 620 },
+        center: { x: pivot.x, y: pivot.y },
         radius: 16,
         stroke: "#b91c1c",
         fill: "none"
       },
       {
         type: "arrow",
-        from: { x: 920, y: 240 },
-        to: { x: 920, y: 80 },
+        from: { x: forceTop.x, y: forceTop.y },
+        to: { x: forceTail.x, y: forceTail.y },
         stroke: "#b91c1c",
         label: "F"
       },
       {
         type: "label",
-        text: "力臂",
-        x: 560,
-        y: 420,
+        text: forceArmLabel.text,
+        x: forceArmLabel.x,
+        y: forceArmLabel.y,
         fill: "#1d4ed8"
       }
     ],
@@ -62,14 +93,15 @@ function main() {
       fontSize: 26,
       lineWidth: 6
     },
-    caption: "杠杆力臂示意",
+    caption: "Lever force-arm diagram",
     placementHints: {
       preferredWidthMm: 120,
       placementMode: "inline-medium"
     },
     reviewHints: {
       verifyPivot: true,
-      verifyArrowDirection: true
+      verifyArrowDirection: true,
+      verifyUnderstandingInput: true
     }
   };
 
