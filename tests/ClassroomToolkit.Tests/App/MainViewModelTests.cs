@@ -1,5 +1,5 @@
-using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.App.Services;
+using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Domain.Toolchain;
@@ -19,6 +19,7 @@ public sealed class MainViewModelTests
         {
             SelectedAnswerMarkdownPath = @"D:\repo\习题PDF\sample-answer.md",
             SelectedOutputPdfPath = @"D:\repo\习题PDF\sample-answer.pdf",
+            SelectedSubjectPack = "math-answer",
             SelectedProfile = "classroom",
             KeepReviewArtifacts = true
         };
@@ -29,7 +30,13 @@ public sealed class MainViewModelTests
         viewModel.LastDeliveryManifestPath.Should().Be(@"D:\repo\习题PDF\sample-answer.delivery-manifest.json");
         viewModel.LastReviewDirectoryPath.Should().Be(@"D:\repo\.pdf-review\sample-answer");
         viewModel.LastSnapshotId.Should().Be("snapshot-test");
+        viewModel.LastDeliverySubjectPack.Should().Be("math-answer");
+        viewModel.LastDeliveryProfile.Should().Be("classroom");
+        viewModel.LastDeliverySnapshotPath.Should().Be(@"D:\repo\.snapshot-cache\resolved-snapshot.math.json");
+        viewModel.LastDeliverySnapshotVersion.Should().Be("v0.1");
         viewModel.StatusMessage.Should().Be("答案交付完成");
+        orchestrator.LastRequest.Should().NotBeNull();
+        orchestrator.LastRequest!.SubjectPack.Should().Be("math-answer");
 
         viewModel.OpenLastOutputPdfCommand.Execute(null);
         pathOpener.LastOpenedPath.Should().Be(@"D:\repo\习题PDF\sample-answer.pdf");
@@ -46,8 +53,19 @@ public sealed class MainViewModelTests
         pathOpener.LastOpenedPath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001\diagnostic-manifest.json");
     }
 
+    [Fact]
+    public void Constructor_UsesPrimarySubjectPack_AsDefaultSelection()
+    {
+        var viewModel = new MainViewModel(new FakeToolchainOrchestrator(), new FakePathOpener(), new FakeDiagnosticsExporter());
+
+        viewModel.SelectedSubjectPack.Should().Be("math-answer");
+        viewModel.AvailableSubjectPacks.Should().ContainInOrder("math-answer", "physics-answer");
+    }
+
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator
     {
+        public AnswerDeliveryRequest? LastRequest { get; private set; }
+
         public ToolchainWorkspaceInfo GetWorkspaceInfo()
         {
             return new ToolchainWorkspaceInfo(
@@ -55,24 +73,29 @@ public sealed class MainViewModelTests
                 @"D:\repo\scripts\bootstrap.ps1",
                 @"D:\repo\scripts\check-toolchain.ps1",
                 BootstrapScriptExists: true,
-                CheckScriptExists: true);
+                CheckScriptExists: true,
+                PrimarySubjectPack: "math-answer",
+                SubjectPacks: ["math-answer", "physics-answer"]);
         }
 
         public WorkspaceHealthReport GetWorkspaceHealthReport()
         {
             return new WorkspaceHealthReport(
+                "math-answer",
+                ["math-answer", "physics-answer"],
                 "v11.1",
                 "v11.1",
                 SnapshotExists: true,
+                SnapshotPath: @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
                 SnapshotVersion: "v11.1",
                 SnapshotProfile: "classroom",
                 EvalExists: true,
                 EvalOk: true,
                 EvalCaseCount: 5,
                 GraphicsExists: true,
-                GraphicsSummary: "图块产物已生成，含 placement 记录。",
-                "规则快照、评测结果与最新规范已对齐。",
-                Array.Empty<string>());
+                GraphicsSummary: "图块产物已生成，包含 placement 记录。",
+                Summary: "规则快照、评测结果与最新规范已对齐。",
+                Issues: Array.Empty<string>());
         }
 
         public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default)
@@ -89,13 +112,19 @@ public sealed class MainViewModelTests
             AnswerDeliveryRequest request,
             CancellationToken cancellationToken = default)
         {
+            LastRequest = request;
+
             var execution = Success(ToolchainScriptKind.Deliver, @"D:\repo\tools\latex-renderer\deliver-answer.mjs");
             var delivery = new AnswerDeliveryResult(
                 request.AnswerMarkdownPath,
                 request.OutputPdfPath ?? @"D:\repo\习题PDF\sample-answer.pdf",
                 @"D:\repo\习题PDF\sample-answer.delivery-manifest.json",
                 @"D:\repo\.pdf-review\sample-answer",
-                "snapshot-test");
+                "snapshot-test",
+                request.SubjectPack ?? "math-answer",
+                request.Profile,
+                @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
+                "v0.1");
 
             return Task.FromResult<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)>((execution, delivery));
         }

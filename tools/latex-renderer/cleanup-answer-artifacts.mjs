@@ -17,6 +17,7 @@ Behavior:
   - Deletes repository-local transient artifacts created during source review, OCR, and visual QA.
   - Keeps final deliverables such as source PDFs, answer Markdown, answer PDFs, and tool dependencies.
   - Preserves everything when render/review fails unless you run this cleanup command explicitly.
+  - Loose temp files such as *.render.html are deleted only when passed explicitly.
 `;
 
 function parseArgs(argv) {
@@ -93,39 +94,6 @@ function resolveExtraPath(rawPath) {
   return resolved;
 }
 
-function walkForLooseTempFiles(currentDir, results) {
-  const skipDirNames = new Set([
-    ".git",
-    ".pdf-review",
-    "_ocr_work",
-    "node_modules",
-    ".venv",
-    ".tessdata",
-    ".playwright-mcp"
-  ]);
-
-  for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
-    const fullPath = path.join(currentDir, entry.name);
-
-    if (entry.isDirectory()) {
-      if (skipDirNames.has(entry.name)) {
-        continue;
-      }
-
-      walkForLooseTempFiles(fullPath, results);
-      continue;
-    }
-
-    if (!entry.isFile()) {
-      continue;
-    }
-
-    if (entry.name.startsWith("_tmp_") || entry.name.endsWith(".render.html")) {
-      results.push(fullPath);
-    }
-  }
-}
-
 function collectCandidates(options) {
   const candidates = [];
 
@@ -142,8 +110,6 @@ function collectCandidates(options) {
       candidates.push(ocrDir);
     }
   }
-
-  walkForLooseTempFiles(repoRoot, candidates);
 
   for (const rawPath of options.extraPaths) {
     const resolved = resolveExtraPath(rawPath);

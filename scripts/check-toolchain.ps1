@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+. (Join-Path $PSScriptRoot "subject-pack-tooling.ps1")
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot
 
@@ -46,9 +48,23 @@ Write-Host "browser: $browserPath"
 Write-Host "rule compiler assets:"
 Assert-CommandSuccess { npm --prefix tools/rule-compiler run validate:assets } "Rule compiler asset validation failed."
 
+$subjectPacks = Get-SubjectPackMetadata -RepositoryRoot $repoRoot
+if ($subjectPacks.Count -eq 0) {
+    throw "No subject pack manifests were found under prompts/."
+}
+
 Write-Host "rule snapshots:"
-Assert-CommandSuccess { npm --prefix tools/rule-compiler run compile:snapshot -- --profile classroom --out .snapshot-cache/resolved-snapshot.json } "Classroom snapshot compilation failed."
-Assert-CommandSuccess { npm --prefix tools/rule-compiler run compile:snapshot -- --profile compact --out .snapshot-cache/resolved-snapshot.compact.json } "Compact snapshot compilation failed."
+foreach ($subjectPack in $subjectPacks) {
+    foreach ($profile in $subjectPack.Profiles) {
+        $outputPath = Get-SubjectPackSnapshotOutputPath -SubjectPack $subjectPack -Profile $profile
+        $relativeOutputPath = Get-RelativePath -BasePath $repoRoot -TargetPath $outputPath
+        Write-Host ("- {0}/{1} -> {2}" -f $subjectPack.AssetId, $profile, $relativeOutputPath)
+        Assert-CommandSuccess {
+            & npm --prefix tools/rule-compiler run compile:snapshot -- --subject-pack $subjectPack.AssetId --profile $profile --out $relativeOutputPath
+        } ("Snapshot compilation failed for {0}/{1}." -f $subjectPack.AssetId, $profile)
+    }
+}
+
 Write-Host "cross-subject contract:"
 Assert-CommandSuccess { npm --prefix tools/rule-compiler run validate:cross-subject } "Cross-subject validation failed."
 
@@ -56,10 +72,16 @@ Write-Host "latex renderer smoke:"
 Assert-CommandSuccess { npm --prefix tools/latex-renderer run smoke } "LaTeX renderer smoke failed."
 
 Write-Host "physics answer eval:"
-Assert-CommandSuccess { npm --prefix tools/latex-renderer run eval:answer } "Physics answer eval failed."
+foreach ($subjectPack in $subjectPacks) {
+    if (-not (Test-Path -LiteralPath $subjectPack.EvalDatasetPath)) {
+        throw ("Eval dataset not found for subject pack {0}: {1}" -f $subjectPack.AssetId, $subjectPack.EvalDatasetPath)
+    }
 
-Write-Host "math answer eval:"
-Assert-CommandSuccess { npm --prefix tools/latex-renderer run eval:math } "Math answer eval failed."
+    Write-Host ("{0} answer eval:" -f $subjectPack.AssetId)
+    Assert-CommandSuccess {
+        & node tools/latex-renderer/eval-answer-fixtures.mjs --subject-pack $subjectPack.AssetId
+    } ("{0} answer eval failed." -f $subjectPack.AssetId)
+}
 
 Write-Host "answer graphics smoke:"
 Assert-CommandSuccess { npm --prefix tools/answer-graphics run smoke } "Answer graphics smoke failed."

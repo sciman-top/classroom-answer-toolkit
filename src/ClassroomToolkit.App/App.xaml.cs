@@ -68,6 +68,17 @@ public partial class App : System.Windows.Application
         Console.WriteLine($"workspaceSummary={smoke.WorkspaceSummary}");
         Console.WriteLine($"workspaceHealthy={smoke.WorkspaceHealthy}");
         Console.WriteLine($"healthSummary={smoke.HealthSummary}");
+        Console.WriteLine($"primarySubjectPack={smoke.PrimarySubjectPack}");
+        Console.WriteLine($"subjectPacks={string.Join(",", smoke.SubjectPacks)}");
+        Console.WriteLine($"snapshotPath={smoke.SnapshotPath}");
+        Console.WriteLine($"lastDeliverySubjectPack={smoke.LastDeliverySubjectPack}");
+        Console.WriteLine($"lastDeliveryProfile={smoke.LastDeliveryProfile}");
+        Console.WriteLine($"lastSnapshotId={smoke.LastSnapshotId}");
+        Console.WriteLine($"lastDeliverySnapshotPath={smoke.LastDeliverySnapshotPath}");
+        Console.WriteLine($"lastDeliverySnapshotVersion={smoke.LastDeliverySnapshotVersion}");
+        Console.WriteLine($"lastDeliveryInputPath={smoke.LastDeliveryInputPath}");
+        Console.WriteLine($"lastDeliveryOutputPath={smoke.LastDeliveryOutputPath}");
+        Console.WriteLine($"lastDeliveryReviewDirectoryPath={smoke.LastDeliveryReviewDirectoryPath}");
         Console.WriteLine($"diagnosticsBundlePath={smoke.DiagnosticsBundlePath}");
         Console.WriteLine($"diagnosticsManifestPath={smoke.DiagnosticsManifestPath}");
         Console.WriteLine($"diagnosticsFileCount={smoke.DiagnosticsFileCount}");

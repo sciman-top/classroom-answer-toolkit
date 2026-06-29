@@ -94,8 +94,8 @@ This removes known transient outputs such as:
 
 - `.pdf-review/`
 - `_ocr_work/`
-- root-level `_tmp_*`
-- stale `*.render.html`
+- explicitly targeted `_tmp_*`
+- explicitly targeted `*.render.html`
 
 It does **not** remove final deliverables such as the original PDF, answer
 Markdown, answer PDF, or runtime dependencies like `node_modules`, `.tessdata`,

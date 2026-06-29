@@ -27,13 +27,17 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         var scriptsDirectory = Path.Combine(repositoryRoot, "scripts");
         var bootstrapScriptPath = Path.Combine(scriptsDirectory, "bootstrap.ps1");
         var checkScriptPath = Path.Combine(scriptsDirectory, "check-toolchain.ps1");
+        var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(repositoryRoot);
+        var primarySubjectPack = subjectPacks.FirstOrDefault()?.AssetId ?? "physics-answer";
 
         return new ToolchainWorkspaceInfo(
             repositoryRoot,
             bootstrapScriptPath,
             checkScriptPath,
             File.Exists(bootstrapScriptPath),
-            File.Exists(checkScriptPath));
+            File.Exists(checkScriptPath),
+            primarySubjectPack,
+            subjectPacks.Select(pack => pack.AssetId).ToArray());
     }
 
     public WorkspaceHealthReport GetWorkspaceHealthReport()
@@ -58,13 +62,17 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     {
         var workspaceInfo = GetWorkspaceInfo();
         var repositoryRoot = workspaceInfo.RepositoryRoot;
+        var deliverScriptPath = Path.Combine(repositoryRoot, "tools", "latex-renderer", "deliver-answer.mjs");
         var answerMarkdownPath = Path.GetFullPath(request.AnswerMarkdownPath);
+        var subjectPack = string.IsNullOrWhiteSpace(request.SubjectPack)
+            ? workspaceInfo.PrimarySubjectPack ?? "physics-answer"
+            : request.SubjectPack;
 
         if (!File.Exists(answerMarkdownPath))
         {
             var failed = ToolchainExecutionResult.Failure(
                 ToolchainScriptKind.Deliver,
-                Path.Combine(repositoryRoot, "tools", "latex-renderer", "deliver-answer.mjs"),
+                deliverScriptPath,
                 -1,
                 DateTimeOffset.Now,
                 DateTimeOffset.Now,
@@ -86,6 +94,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             "--",
             answerMarkdownPath,
             outputPdfPath,
+            "--subject-pack",
+            subjectPack,
             "--profile",
             request.Profile
         };
@@ -104,15 +114,15 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(processResult.StandardOutput, processResult.StandardError);
         var execution = processResult.ExitCode == 0
-            ? ToolchainExecutionResult.Success(ToolchainScriptKind.Deliver, deliveryManifestPath, startedAt, finishedAt, output)
-            : ToolchainExecutionResult.Failure(ToolchainScriptKind.Deliver, deliveryManifestPath, processResult.ExitCode, startedAt, finishedAt, output);
+            ? ToolchainExecutionResult.Success(ToolchainScriptKind.Deliver, deliverScriptPath, startedAt, finishedAt, output)
+            : ToolchainExecutionResult.Failure(ToolchainScriptKind.Deliver, deliverScriptPath, processResult.ExitCode, startedAt, finishedAt, output);
 
         if (!execution.Succeeded)
         {
             return (execution, null);
         }
 
-        var snapshotId = ReadSnapshotIdFromDeliveryManifest(deliveryManifestPath);
+        var deliveryContext = ReadDeliveryContext(deliveryManifestPath);
 
         return (
             execution,
@@ -121,7 +131,11 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 outputPdfPath,
                 deliveryManifestPath,
                 reviewDirectoryPath,
-                snapshotId));
+                deliveryContext.SnapshotId,
+                subjectPack,
+                deliveryContext.Profile ?? request.Profile,
+                deliveryContext.SnapshotPath ?? string.Empty,
+                deliveryContext.SnapshotVersion));
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(
@@ -192,26 +206,38 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         return builder.ToString().TrimEnd();
     }
 
-    private static string? ReadSnapshotIdFromDeliveryManifest(string deliveryManifestPath)
+    private static (string? SnapshotId, string? Profile, string? SnapshotPath, string? SnapshotVersion) ReadDeliveryContext(string deliveryManifestPath)
     {
         if (!File.Exists(deliveryManifestPath))
         {
-            return null;
+            return (null, null, null, null);
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(deliveryManifestPath));
         var root = document.RootElement;
-        if (root.TryGetProperty("snapshot", out var snapshotElement)
-            && snapshotElement.TryGetProperty("id", out var snapshotIdElement))
+
+        var profile = root.TryGetProperty("profile", out var profileElement)
+            ? profileElement.GetString()
+            : null;
+        var snapshotPath = root.TryGetProperty("snapshotPath", out var snapshotPathElement)
+            ? snapshotPathElement.GetString()
+            : null;
+        var snapshotVersion = root.TryGetProperty("snapshot", out var snapshotElement)
+            && snapshotElement.TryGetProperty("version", out var snapshotVersionElement)
+                ? snapshotVersionElement.GetString()
+                : null;
+
+        if (root.TryGetProperty("snapshot", out var snapshotIdContainer)
+            && snapshotIdContainer.TryGetProperty("id", out var snapshotIdElement))
         {
-            return snapshotIdElement.GetString();
+            return (snapshotIdElement.GetString(), profile, snapshotPath, snapshotVersion);
         }
 
         if (root.TryGetProperty("snapshotId", out var fallbackSnapshotId))
         {
-            return fallbackSnapshotId.GetString();
+            return (fallbackSnapshotId.GetString(), profile, snapshotPath, snapshotVersion);
         }
 
-        return null;
+        return (null, profile, snapshotPath, snapshotVersion);
     }
 }

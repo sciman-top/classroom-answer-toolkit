@@ -5,7 +5,9 @@ public sealed record ToolchainWorkspaceInfo(
     string BootstrapScriptPath,
     string CheckScriptPath,
     bool BootstrapScriptExists,
-    bool CheckScriptExists)
+    bool CheckScriptExists,
+    string? PrimarySubjectPack,
+    IReadOnlyList<string> SubjectPacks)
 {
     public bool IsReady => BootstrapScriptExists && CheckScriptExists;
 

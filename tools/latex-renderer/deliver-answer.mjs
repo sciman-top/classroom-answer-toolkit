@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getDefaultProfileName, getDefaultSubjectPack, loadRuntimeConfig } from "./runtime-config.mjs";
+import { getDefaultProfileName, getDefaultSubjectPack, loadRuntimeConfig, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -163,6 +163,13 @@ function makeDeliveryManifestPath(pdfPath) {
   );
 }
 
+function makeRenderTempHtmlPath(pdfPath) {
+  return path.resolve(
+    path.dirname(pdfPath),
+    `.${path.basename(pdfPath, ".pdf")}.render.html`
+  );
+}
+
 function loadJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
@@ -202,11 +209,10 @@ function main() {
   }
 
   const reviewOutputDir = makeReviewOutputDir(outputPath);
-  const snapshotPath = options.snapshotPath
-    ? path.resolve(callerCwd, options.snapshotPath)
-    : runtimeConfig.snapshot?.cachePath
-    ? path.resolve(path.dirname(path.join(repoRoot, "prompts", options.subjectPack, "config.json")), runtimeConfig.snapshot.cachePath)
-    : path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json");
+  const snapshotPath = resolveSnapshotPath(options.snapshotPath, {
+    subjectPack: options.subjectPack,
+    callerCwd
+  });
 
   console.log(`[${packageName}] validate-assets`);
   runNodeScript(path.join("..", "rule-compiler", "validate-assets.mjs"), []);
@@ -273,6 +279,7 @@ function main() {
   if (!options.keepReview) {
     cleanupArgs.push(path.relative(repoRoot, reviewOutputDir));
   }
+  cleanupArgs.push(path.relative(repoRoot, makeRenderTempHtmlPath(outputPath)));
 
   console.log(`[${packageName}] cleanup`);
   if (runtimeConfig.deliveryRules?.cleanupAfterSuccessfulDeliver !== false) {
@@ -294,6 +301,8 @@ function main() {
     path.relative(repoRoot, inputPath),
     "--output",
     path.relative(repoRoot, outputPath),
+    "--subject-pack",
+    options.subjectPack,
     "--profile",
     options.profile,
     "--snapshot-path",

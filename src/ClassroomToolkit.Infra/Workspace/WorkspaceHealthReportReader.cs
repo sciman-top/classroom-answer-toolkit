@@ -19,7 +19,8 @@ public sealed class WorkspaceHealthReportReader
 
     public WorkspaceHealthReport Read()
     {
-        var subjectPack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(_repositoryRoot);
+        var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(_repositoryRoot);
+        var subjectPack = subjectPacks.FirstOrDefault();
         var manifestPath = subjectPack?.ManifestPath ?? Path.Combine(_repositoryRoot, "prompts", "physics-answer", "manifest.json");
         var configPath = subjectPack?.ConfigPath ?? Path.Combine(_repositoryRoot, "prompts", "physics-answer", "config.json");
         var evalResultsPath = subjectPack?.EvalResultsPath ?? Path.Combine(_repositoryRoot, "eval", "physics-answer", "results", "latest.json");
@@ -27,7 +28,7 @@ public sealed class WorkspaceHealthReportReader
 
         var latestVersion = FindLatestProductionSpecVersion();
         var manifestVersion = ReadManifestVersion(manifestPath);
-        var snapshotPath = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath);
+        var snapshotPath = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath, manifestPath);
         var snapshotStatus = ReadSnapshotStatus(snapshotPath);
         var evalStatus = ReadEvalStatus(evalResultsPath);
         var graphicsStatus = ReadGraphicsStatus(graphicsPath);
@@ -71,9 +72,12 @@ public sealed class WorkspaceHealthReportReader
             : string.Join("；", issues);
 
         return new WorkspaceHealthReport(
+            PrimarySubjectPack: subjectPack?.AssetId ?? "physics-answer",
+            SubjectPacks: subjectPacks.Select(pack => pack.AssetId).ToArray(),
             LatestProductionSpecVersion: latestVersion is null ? null : $"v{latestVersion}",
             AssetVersion: manifestVersion,
             SnapshotExists: snapshotStatus.Exists,
+            SnapshotPath: snapshotPath,
             SnapshotVersion: snapshotStatus.Version,
             SnapshotProfile: snapshotStatus.Profile,
             EvalExists: evalStatus.Exists,

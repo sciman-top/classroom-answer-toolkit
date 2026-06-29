@@ -5,4 +5,8 @@ public sealed record AnswerDeliveryResult(
     string OutputPdfPath,
     string DeliveryManifestPath,
     string ReviewDirectoryPath,
-    string? SnapshotId);
+    string? SnapshotId,
+    string SubjectPack,
+    string Profile,
+    string SnapshotPath,
+    string? SnapshotVersion);

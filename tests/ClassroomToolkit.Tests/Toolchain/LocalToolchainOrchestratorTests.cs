@@ -51,11 +51,47 @@ public sealed class LocalToolchainOrchestratorTests
                 workspace.AnswerMarkdownPath,
                 null,
                 "classroom",
-                KeepReviewArtifacts: true));
+                KeepReviewArtifacts: true,
+                SubjectPack: "physics-answer"));
 
         execution.Succeeded.Should().BeTrue();
+        execution.ScriptPath.Should().EndWith(@"tools\latex-renderer\deliver-answer.mjs");
         delivery.Should().NotBeNull();
         delivery!.SnapshotId.Should().Be("snapshot-test");
+        delivery.SubjectPack.Should().Be("physics-answer");
+        delivery.Profile.Should().Be("classroom");
+        delivery.SnapshotPath.Should().Be("D:\\repo\\.snapshot-cache\\resolved-snapshot.json");
+        delivery.SnapshotVersion.Should().Be("v11.1");
+    }
+
+    [Fact]
+    public async Task RunDeliverAsync_PassesPrimarySubjectPack_ToDeliverScript()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteRootSpec("11.1");
+        workspace.WriteManifest("math-answer", "v0.1", "./README.md", status: "active");
+        workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
+        workspace.WriteSnapshot("math-answer", "v0.1", "classroom");
+        workspace.WriteEval("math-answer", "v0.1", ok: true, caseCount: 2);
+        workspace.WriteSupportFiles();
+        workspace.WriteAnswerMarkdown();
+        workspace.WriteDeliveryManifest("snapshot-math");
+
+        var processRunner = new CapturingDeliverProcessRunner();
+        var resolver = new RepositoryRootResolver(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(resolver, processRunner);
+
+        var (execution, _) = await orchestrator.RunDeliverAsync(
+            new AnswerDeliveryRequest(
+                workspace.AnswerMarkdownPath,
+                null,
+                "classroom",
+                KeepReviewArtifacts: false));
+
+        execution.Succeeded.Should().BeTrue();
+        processRunner.LastArguments.Should().NotBeNull();
+        processRunner.LastArguments.Should().Contain("--subject-pack");
+        processRunner.LastArguments.Should().Contain("math-answer");
     }
 
     private sealed class FakeProcessRunner : IProcessRunner
@@ -91,6 +127,7 @@ public sealed class LocalToolchainOrchestratorTests
                     schemaVersion = "1.0",
                     kind = "delivery-manifest",
                     generatedAt = "2026-06-18T00:00:00Z",
+                    subjectPack = "physics-answer",
                     snapshotId = "snapshot-test",
                     snapshotPath = "D:\\repo\\.snapshot-cache\\resolved-snapshot.json",
                     snapshot = new
@@ -117,6 +154,40 @@ public sealed class LocalToolchainOrchestratorTests
         }
     }
 
+    private sealed class CapturingDeliverProcessRunner : IProcessRunner
+    {
+        public IReadOnlyList<string>? LastArguments { get; private set; }
+
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            LastArguments = arguments.ToArray();
+
+            if (string.Equals(fileName, "npm", StringComparison.OrdinalIgnoreCase))
+            {
+                var manifestPath = Path.Combine(workingDirectory, "sample-answer.delivery-manifest.json");
+                File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
+                {
+                    schemaVersion = "1.0",
+                    kind = "delivery-manifest",
+                    subjectPack = "math-answer",
+                    snapshotId = "snapshot-math",
+                    snapshot = new
+                    {
+                        id = "snapshot-math",
+                        version = "v0.1",
+                        profile = "classroom"
+                    }
+                }, new JsonSerializerOptions { WriteIndented = true }));
+            }
+
+            return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));
+        }
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
@@ -136,15 +207,21 @@ public sealed class LocalToolchainOrchestratorTests
             File.WriteAllText(Path.Combine(Root, $"spec_v{version}_release.md"), $"# v{version}\n");
         }
 
-        public void WriteManifest(string subjectPack, string version, string humanSpec)
+        public void WriteManifest(string subjectPack, string version, string humanSpec, string status = "active")
         {
             WriteJson(Path.Combine(Root, "prompts", subjectPack, "manifest.json"), new
             {
                 kind = "subject-pack",
                 assetId = subjectPack,
                 version,
-                status = "active",
+                status,
                 sourceOfTruth = new { humanSpec },
+                entry = new
+                {
+                    snapshotCache = subjectPack == "math-answer"
+                        ? "../../.snapshot-cache/resolved-snapshot.math.json"
+                        : "../../.snapshot-cache/resolved-snapshot.json"
+                },
                 evaluation = new { resultsDir = $"../../eval/{subjectPack}/results" }
             });
         }
@@ -193,6 +270,7 @@ public sealed class LocalToolchainOrchestratorTests
                 schemaVersion = "1.0",
                 kind = "delivery-manifest",
                 generatedAt = "2026-06-18T00:00:00Z",
+                subjectPack = "physics-answer",
                 snapshotId,
                 snapshotPath = "../../.snapshot-cache/resolved-snapshot.json",
                 snapshot = new

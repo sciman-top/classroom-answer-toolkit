@@ -17,6 +17,10 @@ public sealed class MsixPackagingScriptTests
         script.Should().Contain("Windows.FullTrustApplication");
         script.Should().Contain("makeappx.exe");
         script.Should().Contain("MSIX staging prepared without packaging");
+        script.Should().Contain("Published smoke report not found.");
+        script.Should().Contain("release-evidence");
+        script.Should().Contain("published-app-smoke-report");
+        script.Should().Contain('Join-Path $PublishDirPath "..\\verification"');
     }
 
     [Fact]

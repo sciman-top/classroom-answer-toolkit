@@ -11,6 +11,7 @@ function collectValidationTargets() {
   const profileSchema = resolveRepoPath("prompts/shared/schemas/profile.schema.json");
   const snapshotSchema = resolveRepoPath("prompts/shared/schemas/snapshot.schema.json");
   const deliveryManifestSchema = resolveRepoPath("prompts/shared/schemas/delivery-manifest.schema.json");
+  const subjectPackDirectories = listSubjectPackDirectories();
   const figureSchemas = [
     resolveRepoPath("prompts/shared/schemas/problem-figure-asset.schema.json"),
     resolveRepoPath("prompts/shared/schemas/figure-understanding-result.schema.json"),
@@ -22,17 +23,18 @@ function collectValidationTargets() {
   return {
     manifests: [
       resolveRepoPath("prompts/platform-core/manifest.json"),
-      ...listSubjectPackDirectories().map((directoryPath) => path.join(directoryPath, "manifest.json"))
+      ...subjectPackDirectories.map((directoryPath) => path.join(directoryPath, "manifest.json"))
     ].map((filePath) => ({ filePath, schemaPath: manifestSchema })),
-    runtimeConfigs: listSubjectPackDirectories().map((directoryPath) => path.join(directoryPath, "config.json")).map((filePath) => ({ filePath, schemaPath: runtimeConfigSchema })),
+    runtimeConfigs: subjectPackDirectories.map((directoryPath) => path.join(directoryPath, "config.json")).map((filePath) => ({ filePath, schemaPath: runtimeConfigSchema })),
     rulePacks: [
       ...listJsonFiles(resolveRepoPath("prompts/platform-core/rules")),
-      ...listSubjectPackDirectories().flatMap((directoryPath) => listJsonFiles(path.join(directoryPath, "rules")))
+      ...subjectPackDirectories.flatMap((directoryPath) => listJsonFiles(path.join(directoryPath, "rules")))
     ].map((filePath) => ({ filePath, schemaPath: rulePackSchema })),
     profiles: [
       ...listJsonFiles(resolveRepoPath("prompts/platform-core/profiles")),
-      ...listSubjectPackDirectories().flatMap((directoryPath) => listJsonFiles(path.join(directoryPath, "profiles")))
+      ...subjectPackDirectories.flatMap((directoryPath) => listJsonFiles(path.join(directoryPath, "profiles")))
     ].map((filePath) => ({ filePath, schemaPath: profileSchema })),
+    subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
     schemaFiles: [
       manifestSchema,
       runtimeConfigSchema,
@@ -85,9 +87,15 @@ function validateSchemaFiles(schemaFiles) {
 }
 
 function validateSnapshot(snapshotSchema) {
-  const snapshot = compileResolvedSnapshot();
-  const errors = validateValueAgainstSchema(snapshot, snapshotSchema);
-  return { snapshot, errors };
+  return validateSnapshots(snapshotSchema, ["physics-answer"]);
+}
+
+function validateSnapshots(snapshotSchema, subjectPacks) {
+  return subjectPacks.map((subjectPack) => {
+    const snapshot = compileResolvedSnapshot({ subjectPack });
+    const errors = validateValueAgainstSchema(snapshot, snapshotSchema);
+    return { subjectPack, snapshot, errors };
+  });
 }
 
 function validateSchemaFile(schemaPath) {
@@ -166,13 +174,15 @@ function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
   const mergedAssets = buildMergedAssets({ subjectPack: "physics-answer" });
-  const snapshotValidation = validateSnapshot(targets.snapshotSchema);
+  const snapshotValidations = validateSnapshots(targets.snapshotSchema, targets.subjectPacks);
   const specAlignmentErrors = validateLatestSpecAlignment(mergedAssets.manifest.subject, mergedAssets.config);
   const schemaFileErrors = validateSchemaFiles(targets.schemaFiles);
 
   const errors = [
     ...fileValidation.errors,
-    ...snapshotValidation.errors.map((error) => `ResolvedSnapshot: ${error}`),
+    ...snapshotValidations.flatMap((validation) =>
+      validation.errors.map((error) => `ResolvedSnapshot(${validation.subjectPack}): ${error}`)
+    ),
     ...specAlignmentErrors,
     ...schemaFileErrors
   ];
@@ -193,7 +203,7 @@ function main() {
   }
 
   console.log(
-    `Validated ${fileValidation.validatedFileCount} asset files, ${mergedAssets.rules.length} merged rules, ${Object.keys(mergedAssets.profiles).length} merged profiles, and snapshot ${snapshotValidation.snapshot.snapshotId}.`
+    `Validated ${fileValidation.validatedFileCount} asset files, ${mergedAssets.rules.length} merged rules, ${Object.keys(mergedAssets.profiles).length} merged profiles, and ${snapshotValidations.length} snapshots (${snapshotValidations.map((validation) => `${validation.subjectPack}:${validation.snapshot.snapshotId}`).join(", ")}).`
   );
 }
 

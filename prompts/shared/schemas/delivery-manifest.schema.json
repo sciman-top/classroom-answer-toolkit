@@ -6,6 +6,7 @@
     "schemaVersion",
     "kind",
     "generatedAt",
+    "subjectPack",
     "snapshotId",
     "snapshotPath",
     "snapshot",
@@ -23,6 +24,7 @@
       ]
     },
     "generatedAt": { "type": "string" },
+    "subjectPack": { "type": "string" },
     "snapshotId": { "type": "string" },
     "snapshotPath": { "type": "string" },
     "snapshot": {

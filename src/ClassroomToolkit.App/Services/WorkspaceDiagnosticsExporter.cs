@@ -11,8 +11,30 @@ public sealed record WorkspaceDiagnosticsAssetRecord(
     string TargetPath,
     bool Exists);
 
+public sealed record WorkspaceDiagnosticsSubjectPackRecord(
+    string AssetId,
+    string Status,
+    bool IsPrimary,
+    string? Version,
+    string ManifestPath,
+    string ConfigPath,
+    string SnapshotPath,
+    bool SnapshotExists,
+    string? SnapshotVersion,
+    string? SnapshotProfile,
+    string EvalResultsPath,
+    bool EvalExists,
+    bool EvalOk,
+    int EvalCaseCount);
+
 public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     public WorkspaceDiagnosticsExportResult Export(WorkspaceDiagnosticsExportRequest request)
     {
         var repositoryRoot = Path.GetFullPath(request.RepositoryRoot);
@@ -27,7 +49,10 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
         var assets = new List<WorkspaceDiagnosticsAssetRecord>();
         var workspaceRoot = Path.Combine(bundleRoot, "workspace");
         var deliveryRoot = Path.Combine(bundleRoot, "delivery");
-        var primarySubjectPack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(repositoryRoot);
+        var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(repositoryRoot);
+        var primarySubjectPack = subjectPacks.FirstOrDefault(pack =>
+                string.Equals(pack.AssetId, request.HealthReport.PrimarySubjectPack, StringComparison.OrdinalIgnoreCase))
+            ?? subjectPacks.FirstOrDefault();
         var subjectPackManifestPath = primarySubjectPack?.ManifestPath ?? Path.Combine(repositoryRoot, "prompts", "physics-answer", "manifest.json");
         var subjectPackConfigPath = primarySubjectPack?.ConfigPath ?? Path.Combine(repositoryRoot, "prompts", "physics-answer", "config.json");
         var subjectPackEvalPath = primarySubjectPack?.EvalResultsPath ?? Path.Combine(repositoryRoot, "eval", "physics-answer", "results", "latest.json");
@@ -59,6 +84,7 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             Path.Combine(workspaceRoot, "answer-graphics"),
             "answer-graphics",
             assets);
+        WriteSubjectPackIndex(subjectPacks, primarySubjectPack?.AssetId, workspaceRoot, assets);
 
         CopyFileIfExists(
             request.LastOutputPdfPath,
@@ -83,6 +109,8 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             manifestPath,
             true));
 
+        var lastDeliveryContext = ReadLastDeliveryContext(request.LastDeliveryManifestPath);
+
         var manifest = new
         {
             schemaVersion = "1.0",
@@ -90,20 +118,87 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             generatedAt = DateTimeOffset.Now.ToString("O"),
             bundleDirectoryPath = bundleRoot,
             repositoryRoot,
+            primarySubjectPack = request.HealthReport.PrimarySubjectPack ?? subjectPackAssetId,
+            subjectPacks = request.HealthReport.SubjectPacks,
+            snapshotPath = request.HealthReport.SnapshotPath,
+            lastSnapshotId = request.LastSnapshotId,
+            lastDeliveryContext,
             lastOutputPdfPath = request.LastOutputPdfPath,
             lastDeliveryManifestPath = request.LastDeliveryManifestPath,
             lastReviewDirectoryPath = request.LastReviewDirectoryPath,
-            lastSnapshotId = request.LastSnapshotId,
             health = request.HealthReport,
             assets
         };
 
         File.WriteAllText(
             manifestPath,
-            JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine,
+            JsonSerializer.Serialize(manifest, JsonOptions) + Environment.NewLine,
             System.Text.Encoding.UTF8);
 
         return new WorkspaceDiagnosticsExportResult(bundleRoot, manifestPath, assets.Count);
+    }
+
+    private static void WriteSubjectPackIndex(
+        IReadOnlyList<WorkspaceSubjectPackPaths> subjectPacks,
+        string? primarySubjectPackAssetId,
+        string workspaceRoot,
+        ICollection<WorkspaceDiagnosticsAssetRecord> assets)
+    {
+        var subjectPacksRoot = Path.Combine(workspaceRoot, "subject-packs");
+        Directory.CreateDirectory(subjectPacksRoot);
+
+        var records = new List<WorkspaceDiagnosticsSubjectPackRecord>();
+        foreach (var subjectPack in subjectPacks)
+        {
+            var packRoot = Path.Combine(subjectPacksRoot, subjectPack.AssetId);
+            CopyFileIfExists(
+                subjectPack.ManifestPath,
+                Path.Combine(packRoot, "manifest.json"),
+                "subject-pack-manifest",
+                assets);
+            CopyFileIfExists(
+                subjectPack.ConfigPath,
+                Path.Combine(packRoot, "config.json"),
+                "subject-pack-config",
+                assets);
+            CopyFileIfExists(
+                subjectPack.SnapshotPath,
+                Path.Combine(packRoot, "snapshot", Path.GetFileName(subjectPack.SnapshotPath)),
+                "subject-pack-snapshot",
+                assets);
+            CopyFileIfExists(
+                subjectPack.EvalResultsPath,
+                Path.Combine(packRoot, "eval", "latest.json"),
+                "subject-pack-eval",
+                assets);
+
+            records.Add(new WorkspaceDiagnosticsSubjectPackRecord(
+                subjectPack.AssetId,
+                subjectPack.Status,
+                string.Equals(subjectPack.AssetId, primarySubjectPackAssetId, StringComparison.OrdinalIgnoreCase),
+                ReadSubjectPackVersion(subjectPack.ManifestPath),
+                subjectPack.ManifestPath,
+                subjectPack.ConfigPath,
+                subjectPack.SnapshotPath,
+                File.Exists(subjectPack.SnapshotPath),
+                ReadSnapshotVersion(subjectPack.SnapshotPath),
+                ReadSnapshotProfile(subjectPack.SnapshotPath),
+                subjectPack.EvalResultsPath,
+                File.Exists(subjectPack.EvalResultsPath),
+                ReadEvalStatus(subjectPack.EvalResultsPath).Ok,
+                ReadEvalStatus(subjectPack.EvalResultsPath).CaseCount));
+        }
+
+        var indexPath = Path.Combine(subjectPacksRoot, "index.json");
+        File.WriteAllText(
+            indexPath,
+            JsonSerializer.Serialize(records, JsonOptions) + Environment.NewLine,
+            System.Text.Encoding.UTF8);
+        assets.Add(new WorkspaceDiagnosticsAssetRecord(
+            "subject-pack-index",
+            indexPath,
+            indexPath,
+            true));
     }
 
     private static void CopyFileIfExists(
@@ -166,5 +261,116 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             var destinationPath = Path.Combine(destinationDirectory, Path.GetFileName(subDirectory));
             CopyDirectory(subDirectory, destinationPath);
         }
+    }
+
+    private static string? ReadSubjectPackVersion(string manifestPath)
+    {
+        if (!File.Exists(manifestPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        return document.RootElement.TryGetProperty("version", out var versionElement)
+            ? versionElement.GetString()
+            : null;
+    }
+
+    private static string? ReadSnapshotVersion(string snapshotPath)
+    {
+        if (!File.Exists(snapshotPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(snapshotPath));
+        return document.RootElement.TryGetProperty("subjectPack", out var subjectPackElement)
+            && subjectPackElement.TryGetProperty("version", out var versionElement)
+                ? versionElement.GetString()
+                : null;
+    }
+
+    private static string? ReadSnapshotProfile(string snapshotPath)
+    {
+        if (!File.Exists(snapshotPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(snapshotPath));
+        return document.RootElement.TryGetProperty("activeProfile", out var profileElement)
+            && profileElement.TryGetProperty("name", out var nameElement)
+                ? nameElement.GetString()
+                : null;
+    }
+
+    private static (bool Ok, int CaseCount) ReadEvalStatus(string evalResultsPath)
+    {
+        if (!File.Exists(evalResultsPath))
+        {
+            return (false, 0);
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(evalResultsPath));
+        var ok = document.RootElement.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
+        var caseCount = document.RootElement.TryGetProperty("cases", out var casesElement)
+            ? casesElement.GetArrayLength()
+            : 0;
+        return (ok, caseCount);
+    }
+
+    private static object? ReadLastDeliveryContext(string? deliveryManifestPath)
+    {
+        if (string.IsNullOrWhiteSpace(deliveryManifestPath))
+        {
+            return null;
+        }
+
+        var fullPath = Path.GetFullPath(deliveryManifestPath);
+        if (!File.Exists(fullPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(fullPath));
+        var root = document.RootElement;
+        var snapshotId = root.TryGetProperty("snapshotId", out var snapshotIdElement)
+            ? snapshotIdElement.GetString()
+            : null;
+        var snapshotPath = root.TryGetProperty("snapshotPath", out var snapshotPathElement)
+            ? snapshotPathElement.GetString()
+            : null;
+        var profile = root.TryGetProperty("profile", out var profileElement)
+            ? profileElement.GetString()
+            : null;
+        var input = root.TryGetProperty("input", out var inputElement)
+            ? inputElement.GetString()
+            : null;
+        var output = root.TryGetProperty("output", out var outputElement)
+            ? outputElement.GetString()
+            : null;
+        var subjectPack = root.TryGetProperty("subjectPack", out var subjectPackElement)
+            ? subjectPackElement.GetString()
+            : null;
+        var reviewDirectoryPath = root.TryGetProperty("review", out var reviewElement)
+            && reviewElement.TryGetProperty("outputDir", out var reviewOutputDirElement)
+                ? reviewOutputDirElement.GetString()
+                : null;
+        var snapshotVersion = root.TryGetProperty("snapshot", out var snapshotElement)
+            && snapshotElement.TryGetProperty("version", out var versionElement)
+                ? versionElement.GetString()
+                : null;
+
+        return new
+        {
+            subjectPack,
+            profile,
+            snapshotId,
+            snapshotPath,
+            snapshotVersion,
+            input,
+            output,
+            reviewDirectoryPath
+        };
     }
 }

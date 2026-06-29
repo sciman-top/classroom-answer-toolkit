@@ -44,6 +44,18 @@ public sealed class WorkspaceSubjectPackLocatorTests
         resolved.Should().EndWith("resolved-snapshot.math.json");
     }
 
+    [Fact]
+    public void ResolveSnapshotPath_FallsBackToManifestSnapshotCache_WhenConfigIsMissing()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var manifestPath = workspace.WritePack("math-answer", status: "experimental", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.math.json");
+        var configPath = Path.Combine(workspace.Root, "prompts", "math-answer", "missing-config.json");
+
+        var resolved = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath, manifestPath);
+
+        resolved.Should().EndWith("resolved-snapshot.math.json");
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
@@ -68,6 +80,7 @@ public sealed class WorkspaceSubjectPackLocatorTests
                 version = "v0.1",
                 status,
                 sourceOfTruth = new { runtimeConfig = "./config.json" },
+                entry = new { snapshotCache = snapshotCachePath },
                 evaluation = new { resultsDir = $"../../eval/{assetId}/results" }
             });
 

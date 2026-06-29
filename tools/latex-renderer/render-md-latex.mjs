@@ -5,7 +5,7 @@ import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
 import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
-import { getDefaultProfileName, getDefaultSnapshotPath, getDefaultSubjectPack, loadResolvedSnapshot } from "./runtime-config.mjs";
+import { getDefaultProfileName, getDefaultSubjectPack, loadResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 function parseArgs(argv) {
   const positional = [];
@@ -76,9 +76,13 @@ const inputPath = path.resolve(callerCwd, inputArg);
 const outputPath = path.resolve(
   outputArg ? path.resolve(callerCwd, outputArg) : inputPath.replace(/\.md$/i, ".pdf")
 );
-const snapshot = options.snapshot
-  ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot), { required: true })
-  : loadResolvedSnapshot(getDefaultSnapshotPath(options.subjectPack));
+const snapshot = loadResolvedSnapshot(
+  resolveSnapshotPath(options.snapshot, {
+    subjectPack: options.subjectPack,
+    callerCwd
+  }),
+  { required: Boolean(options.snapshot) }
+);
 const renderProfile = loadRenderProfile(options.profile, callerCwd, snapshot, options.subjectPack);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 

@@ -12,6 +12,7 @@ function parseArgs(argv) {
     input: null,
     output: null,
     profile: null,
+    subjectPack: null,
     snapshotPath: null,
     snapshotId: null,
     reviewDir: null,
@@ -47,6 +48,15 @@ function parseArgs(argv) {
     }
     if (arg.startsWith("--profile=")) {
       options.profile = arg.slice("--profile=".length);
+      continue;
+    }
+
+    if (arg === "--subject-pack") {
+      options.subjectPack = argv[++index];
+      continue;
+    }
+    if (arg.startsWith("--subject-pack=")) {
+      options.subjectPack = arg.slice("--subject-pack=".length);
       continue;
     }
 
@@ -140,6 +150,7 @@ function main() {
       version: null,
       profile: options.profile
     },
+    subjectPack: options.subjectPack,
     profile: options.profile,
     input: inputPath,
     output: outputPath,

@@ -26,12 +26,36 @@ public sealed class CrossSubjectContractTests
     }
 
     [Fact]
-    public void CheckToolchain_InvokesMathAnswerEval()
+    public void SubjectPackToolingScript_ExposesSharedSubjectPackDiscovery()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "scripts", "subject-pack-tooling.ps1"));
+
+        script.Should().Contain("function Get-SubjectPackMetadata");
+        script.Should().Contain("manifest.json");
+        script.Should().Contain("function Get-SubjectPackSnapshotOutputPath");
+        script.Should().Contain("snapshot.cachePath");
+    }
+
+    [Fact]
+    public void CheckToolchain_UsesDiscoveredSubjectPacks_ForSnapshotsAndEval()
     {
         var repoRoot = FindRepoRoot();
         var script = File.ReadAllText(Path.Combine(repoRoot, "scripts", "check-toolchain.ps1"));
 
-        script.Should().Contain("npm --prefix tools/latex-renderer run eval:math");
+        script.Should().Contain("Get-SubjectPackMetadata -RepositoryRoot $repoRoot");
+        script.Should().Contain("Get-SubjectPackSnapshotOutputPath -SubjectPack $subjectPack -Profile $profile");
+        script.Should().Contain("node tools/latex-renderer/eval-answer-fixtures.mjs --subject-pack $subjectPack.AssetId");
+    }
+
+    [Fact]
+    public void Bootstrap_UsesDiscoveredSubjectPacks_ForSnapshotCompilation()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "scripts", "bootstrap.ps1"));
+
+        script.Should().Contain("Get-SubjectPackMetadata -RepositoryRoot $repoRoot");
+        script.Should().Contain("Get-SubjectPackSnapshotOutputPath -SubjectPack $subjectPack -Profile $profile");
     }
 
     private static string FindRepoRoot()

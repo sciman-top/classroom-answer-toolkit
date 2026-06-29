@@ -84,6 +84,10 @@ function main() {
     errors.push("Top-level profile must match snapshot.profile.");
   }
 
+  if (typeof manifest.subjectPack !== "string" || manifest.subjectPack.trim().length === 0) {
+    errors.push("subjectPack must be a non-empty string.");
+  }
+
   if (typeof manifest.snapshot?.version !== "string" || manifest.snapshot.version.trim().length === 0) {
     errors.push("snapshot.version must be a non-empty string.");
   }

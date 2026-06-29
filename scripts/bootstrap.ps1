@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+. (Join-Path $PSScriptRoot "subject-pack-tooling.ps1")
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot
 
@@ -85,16 +87,23 @@ function Compile-RuleSnapshots {
         throw "Rule compiler asset validation failed."
     }
 
-    Write-Host "Compiling default classroom snapshot..."
-    & npm --prefix tools/rule-compiler run compile:snapshot -- --profile classroom --out .snapshot-cache/resolved-snapshot.json
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to compile classroom snapshot."
+    $subjectPacks = Get-SubjectPackMetadata -RepositoryRoot $repoRoot
+    if ($subjectPacks.Count -eq 0) {
+        throw "No subject pack manifests were found under prompts/."
     }
 
-    Write-Host "Compiling compact snapshot..."
-    & npm --prefix tools/rule-compiler run compile:snapshot -- --profile compact --out .snapshot-cache/resolved-snapshot.compact.json
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to compile compact snapshot."
+    Write-Host "Compiling discovered subject-pack snapshots..."
+    foreach ($subjectPack in $subjectPacks) {
+        foreach ($profile in $subjectPack.Profiles) {
+            $outputPath = Get-SubjectPackSnapshotOutputPath -SubjectPack $subjectPack -Profile $profile
+            $relativeOutputPath = Get-RelativePath -BasePath $repoRoot -TargetPath $outputPath
+
+            Write-Host ("- {0}/{1} -> {2}" -f $subjectPack.AssetId, $profile, $relativeOutputPath)
+            & npm --prefix tools/rule-compiler run compile:snapshot -- --subject-pack $subjectPack.AssetId --profile $profile --out $relativeOutputPath
+            if ($LASTEXITCODE -ne 0) {
+                throw ("Failed to compile snapshot for {0}/{1}." -f $subjectPack.AssetId, $profile)
+            }
+        }
     }
 }
 

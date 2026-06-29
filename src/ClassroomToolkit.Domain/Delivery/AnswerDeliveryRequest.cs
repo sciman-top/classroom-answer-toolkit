@@ -4,4 +4,5 @@ public sealed record AnswerDeliveryRequest(
     string AnswerMarkdownPath,
     string? OutputPdfPath,
     string Profile,
-    bool KeepReviewArtifacts);
+    bool KeepReviewArtifacts,
+    string? SubjectPack = null);

@@ -2,6 +2,7 @@ param(
     [string]$PublishDir = "artifacts\publish\ClassroomToolkit.App",
     [string]$StageDir = "artifacts\msix\stage",
     [string]$PackageDir = "artifacts\msix\packages",
+    [string]$SmokeReportPath = "",
     [string]$Version = "1.0.0.0",
     [string]$Publisher = "CN=ClassroomToolkit.Dev"
 )
@@ -20,6 +21,20 @@ function Resolve-RepoPath {
     }
 
     return Join-Path $repoRoot $Path
+}
+
+function Resolve-SmokeReportPath {
+    param(
+        [string]$PublishDirPath,
+        [string]$ConfiguredPath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ConfiguredPath)) {
+        $reportDir = Join-Path $PublishDirPath "..\verification"
+        return Join-Path $reportDir ("{0}.smoke-report.json" -f (Split-Path -Path $PublishDirPath -Leaf))
+    }
+
+    return Resolve-RepoPath $ConfiguredPath
 }
 
 function New-Png {
@@ -73,10 +88,41 @@ function Get-MakeAppxPath {
 $publishDir = Resolve-RepoPath $PublishDir
 $stageDir = Resolve-RepoPath $StageDir
 $packageDir = Resolve-RepoPath $PackageDir
+$smokeReportPath = Resolve-SmokeReportPath -PublishDirPath $publishDir -ConfiguredPath $SmokeReportPath
 
 $exePath = Join-Path $publishDir "ClassroomToolkit.App.exe"
 if (-not (Test-Path -LiteralPath $exePath)) {
     throw "Published app not found. Run scripts/publish-app.ps1 first. Missing: $exePath"
+}
+
+if (-not (Test-Path -LiteralPath $smokeReportPath)) {
+    throw "Published smoke report not found. Run scripts/publish-app.ps1 first. Missing: $smokeReportPath"
+}
+
+$smokeReport = Get-Content -LiteralPath $smokeReportPath -Raw | ConvertFrom-Json
+if ([string]$smokeReport.kind -ne "published-app-smoke-report" -or [string]$smokeReport.status -ne "passed") {
+    throw "Published smoke report is invalid or not marked passed."
+}
+
+if ([string]::IsNullOrWhiteSpace([string]$smokeReport.smoke.primarySubjectPack)) {
+    throw "Published smoke report missing smoke.primarySubjectPack."
+}
+
+if ($null -eq $smokeReport.smoke.subjectPacks -or $smokeReport.smoke.subjectPacks.Count -lt 1) {
+    throw "Published smoke report missing smoke.subjectPacks."
+}
+
+if ([string]::IsNullOrWhiteSpace([string]$smokeReport.smoke.snapshotPath)) {
+    throw "Published smoke report missing smoke.snapshotPath."
+}
+
+if ([string]::IsNullOrWhiteSpace([string]$smokeReport.diagnostics.manifestPath)) {
+    throw "Published smoke report missing diagnostics.manifestPath."
+}
+
+$diagnosticManifestPath = [string]$smokeReport.diagnostics.manifestPath
+if (-not (Test-Path -LiteralPath $diagnosticManifestPath)) {
+    throw "Published smoke diagnostics manifest not found: $diagnosticManifestPath"
 }
 
 Remove-Item -LiteralPath $stageDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -129,6 +175,12 @@ $manifestPath = Join-Path $stageDir "AppxManifest.xml"
 
 $makeAppxPath = Get-MakeAppxPath
 $packagePath = Join-Path $packageDir "ClassroomToolkit.App_$Version.msix"
+$evidenceDir = Join-Path $packageDir "release-evidence"
+New-Item -ItemType Directory -Path $evidenceDir -Force | Out-Null
+$evidenceSmokeReportPath = Join-Path $evidenceDir ("ClassroomToolkit.App_{0}.smoke-report.json" -f $Version)
+$evidenceDiagnosticManifestPath = Join-Path $evidenceDir ("ClassroomToolkit.App_{0}.diagnostic-manifest.json" -f $Version)
+Copy-Item -LiteralPath $smokeReportPath -Destination $evidenceSmokeReportPath -Force
+Copy-Item -LiteralPath $diagnosticManifestPath -Destination $evidenceDiagnosticManifestPath -Force
 
 if ($makeAppxPath) {
     & $makeAppxPath pack /d $stageDir /p $packagePath /overwrite
@@ -137,8 +189,10 @@ if ($makeAppxPath) {
     }
 
     Write-Host "MSIX package created: $packagePath"
+    Write-Host "Release evidence: $evidenceSmokeReportPath"
 } else {
     Write-Host "Windows SDK makeappx.exe not found; MSIX staging prepared without packaging."
     Write-Host "Stage directory: $stageDir"
     Write-Host "Manifest: $manifestPath"
+    Write-Host "Release evidence: $evidenceSmokeReportPath"
 }

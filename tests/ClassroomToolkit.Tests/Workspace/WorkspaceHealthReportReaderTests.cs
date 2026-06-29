@@ -21,6 +21,7 @@ public sealed class WorkspaceHealthReportReaderTests
         var result = reader.Read();
 
         result.Issues.Should().BeEmpty();
+        result.PrimarySubjectPack.Should().Be("physics-answer");
         result.AssetVersion.Should().Be("v11.0");
         result.LatestProductionSpecVersion.Should().Be("v11.0");
         result.SnapshotExists.Should().BeTrue();
@@ -48,6 +49,7 @@ public sealed class WorkspaceHealthReportReaderTests
         var reader = new WorkspaceHealthReportReader(workspace.Root);
         var result = reader.Read();
 
+        result.PrimarySubjectPack.Should().Be("physics-answer");
         result.AssetVersion.Should().Be("v11.0");
         result.SnapshotVersion.Should().Be("v11.0");
         result.EvalCaseCount.Should().Be(4);

@@ -37,6 +37,17 @@ export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack()) {
   return defaultSnapshotPath;
 }
 
+export function resolveSnapshotPath(snapshotPath, options = {}) {
+  const subjectPack = options.subjectPack ?? getDefaultSubjectPack();
+  const callerCwd = options.callerCwd ?? process.cwd();
+
+  if (typeof snapshotPath === "string" && snapshotPath.trim().length > 0) {
+    return path.resolve(callerCwd, snapshotPath);
+  }
+
+  return getDefaultSnapshotPath(subjectPack);
+}
+
 export function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath(), options = {}) {
   if (!fs.existsSync(snapshotPath)) {
     if (options.required) {

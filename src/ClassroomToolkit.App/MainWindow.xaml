@@ -60,6 +60,11 @@
                                 <TextBlock Margin="0,12,0,0" Text="输出 PDF" />
                                 <TextBox Margin="0,6,0,0" Text="{Binding SelectedOutputPdfPath, UpdateSourceTrigger=PropertyChanged}" />
 
+                                <TextBlock Margin="0,12,0,0" Text="Subject Pack" />
+                                <ComboBox Margin="0,6,0,0"
+                                          ItemsSource="{Binding AvailableSubjectPacks}"
+                                          SelectedItem="{Binding SelectedSubjectPack}" />
+
                                 <TextBlock Margin="0,12,0,0" Text="Profile" />
                                 <ComboBox Margin="0,6,0,0" SelectedValue="{Binding SelectedProfile}" SelectedValuePath="Tag">
                                     <ComboBoxItem Content="classroom" Tag="classroom" />
@@ -87,13 +92,17 @@
 
                         <Border Margin="0,16,0,0" Padding="16" Background="#111C31" CornerRadius="16">
                             <StackPanel>
-                                <TextBlock Text="最近产物" Foreground="#7DD3FC" FontWeight="SemiBold" />
-                                <TextBlock Margin="0,8,0,0" Text="{Binding LastOutputPdfPath}" TextWrapping="Wrap" FontSize="13" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDeliveryManifestPath}" TextWrapping="Wrap" FontSize="13" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding LastReviewDirectoryPath}" TextWrapping="Wrap" FontSize="13" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding LastSnapshotId}" TextWrapping="Wrap" FontSize="13" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsBundlePath}" TextWrapping="Wrap" FontSize="13" />
-                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsManifestPath}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Text="最近交付上下文" Foreground="#7DD3FC" FontWeight="SemiBold" />
+                                <TextBlock Margin="0,8,0,0" Text="{Binding LastDeliverySubjectPack, StringFormat=Subject Pack: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDeliveryProfile, StringFormat=Profile: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastSnapshotId, StringFormat=Snapshot ID: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDeliverySnapshotVersion, StringFormat=Snapshot Version: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDeliverySnapshotPath, StringFormat=Snapshot Path: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastOutputPdfPath, StringFormat=PDF: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDeliveryManifestPath, StringFormat=Delivery Manifest: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastReviewDirectoryPath, StringFormat=Review Directory: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsBundlePath, StringFormat=Diagnostics Bundle: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsManifestPath, StringFormat=Diagnostics Manifest: {0}}" TextWrapping="Wrap" FontSize="13" />
                                 <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
                                     <Button Content="打开 PDF" Command="{Binding OpenLastOutputPdfCommand}" />
                                     <Button Content="打开 Manifest" Command="{Binding OpenLastDeliveryManifestCommand}" />
@@ -134,7 +143,7 @@
                                       ItemsSource="{Binding StatusCards}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" />
+                                    <UniformGrid Columns="4" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
-import { getDefaultProfileName, getDefaultSubjectPack, getDefaultSnapshotPath, loadResolvedSnapshot, loadRuntimeConfig } from "./runtime-config.mjs";
+import { getDefaultProfileName, getDefaultSubjectPack, loadResolvedSnapshot, loadRuntimeConfig, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact]
@@ -192,9 +192,11 @@ function main() {
     fail(`Answer Markdown not found: ${inputPath}`);
   }
 
-  const snapshot = options.snapshot
-    ? loadResolvedSnapshot(path.resolve(callerCwd, options.snapshot), { required: true })
-    : loadResolvedSnapshot(getDefaultSnapshotPath(options.subjectPack));
+  const snapshotPath = resolveSnapshotPath(options.snapshot, {
+    subjectPack: options.subjectPack,
+    callerCwd
+  });
+  const snapshot = loadResolvedSnapshot(snapshotPath, { required: Boolean(options.snapshot) });
   const profile = loadRenderProfile(options.profile, callerCwd, snapshot, options.subjectPack);
   const runtimeConfig = loadRuntimeConfig(options.subjectPack);
   const source = fs.readFileSync(inputPath, "utf8");
