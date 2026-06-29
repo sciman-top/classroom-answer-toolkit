@@ -1,41 +1,53 @@
 # Classroom Answer Toolkit
 
-面向初中试卷参考答案的生成、校验、渲染与交付工具链。
-
+面向初中试卷参考答案的生成、校验、渲染与交付工具链。  
 Windows-first toolkit for generating, validating, and rendering junior-high exam answer sheets to Markdown, LaTeX, and PDF.
 
-## Overview
+## 项目定位 / Positioning
 
-This repository is centered on a local Windows workflow for turning answer content into classroom-ready and print-ready deliverables.
+Classroom Answer Toolkit 是一个以 Windows 本地环境为主的教育内容交付工具链，目标是把试卷参考答案内容生成、校验并渲染为适合课堂投屏、打印分发和归档复用的 Markdown、LaTeX 与 PDF 文件。
 
-Current capabilities include:
+This project provides a local Windows workflow for generating, validating, and rendering exam answer deliverables for classroom display, printing, and reuse.
 
-- structured subject-pack assets for answer policies and profiles
-- Markdown and LaTeX validation before rendering
-- PDF rendering with real math output
-- review-image generation for source PDFs and rendered answers
-- diagram answer overlay and composition helpers
-- lightweight workspace diagnostics through the WPF app
+## 当前能力 / Capabilities
 
-## Current Scope
+- 学科规则与运行配置使用 `subject-pack` 组织。
+- 答案 Markdown 在渲染前执行格式与 LaTeX 基线校验。
+- PDF 渲染保留真实数学公式输出，而不是降级为普通文本。
+- 支持源 PDF 与答案 PDF 的页面审阅图生成。
+- 支持作图题答案图的结构化描述、叠加层渲染与组合。
+- WPF 桌面应用提供本地工具链入口和工作区诊断。
 
-- `physics-answer`: active junior-high physics answer workflow
-- `math-answer`: experimental second-subject scaffold used to keep platform contracts subject-agnostic
+English summary:
 
-The internal solution and project names still use `ClassroomToolkit`. The external repository-facing name is `Classroom Answer Toolkit`.
+- Subject policies and runtime profiles are organized as `subject-pack` assets.
+- Answer Markdown is validated before rendering.
+- PDF output keeps real LaTeX math rendering.
+- Source PDFs and rendered answers can be reviewed through generated page images.
+- Diagram-answer helpers support structured overlays and composition.
+- The WPF app provides a local toolchain entry point and workspace diagnostics.
 
-## Repository Layout
+## 当前范围 / Current Scope
 
-- `src/`: WPF app and .NET orchestration layers
-- `scripts/`: bootstrap, toolchain check, publish, and packaging entry points
-- `prompts/`: subject-pack assets, profiles, rules, manifests, and schemas
-- `tools/latex-renderer/`: Markdown, LaTeX, render, review, and delivery toolchain
-- `tools/answer-graphics/`: diagram-answer extraction and overlay pipeline
-- `tools/ocr/`: local RapidOCR CPU path for poor scans and batch OCR
-- `eval/`: fixed datasets, baselines, and regression outputs
-- `tests/`: xUnit and FluentAssertions coverage for workspace and app behavior
+- `physics-answer`: 当前主线，面向初中物理试卷参考答案。
+- `math-answer`: 实验性第二学科支架，用于验证平台契约不依赖单一物理学科。
 
-## Requirements
+内部解决方案、项目名和命名空间暂时仍使用 `ClassroomToolkit`。对外展示名统一为 `Classroom Answer Toolkit`。
+
+The internal solution, project names, and namespaces still use `ClassroomToolkit`. The repository-facing name is `Classroom Answer Toolkit`.
+
+## 目录结构 / Repository Layout
+
+- `src/`: WPF 应用与 .NET 编排层。
+- `scripts/`: 初始化、自检、发布和打包脚本。
+- `prompts/`: 学科资产、规则、配置、清单和 schema。
+- `tools/latex-renderer/`: Markdown、LaTeX、PDF 渲染、审阅与交付工具链。
+- `tools/answer-graphics/`: 作图题答案图提取、叠加和组合工具链。
+- `tools/ocr/`: 面向低质量扫描件和批量处理的本地 OCR 路径。
+- `eval/`: 固定评测数据集、视觉基线和回归结果。
+- `tests/`: xUnit 与 FluentAssertions 测试。
+
+## 环境要求 / Requirements
 
 - Windows
 - .NET SDK `10.0.301`
@@ -43,9 +55,9 @@ The internal solution and project names still use `ClassroomToolkit`. The extern
 - Python `3.12+`
 - Edge, Chrome, or Chromium
 
-## Quick Start
+## 快速开始 / Quick Start
 
-Run from the repository root:
+在仓库根目录执行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
@@ -55,22 +67,38 @@ dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug
 dotnet run --project src/ClassroomToolkit.App/ClassroomToolkit.App.csproj
 ```
 
-## Common Workflows
+## 常用命令 / Common Workflows
 
-Render or deliver an answer after the Markdown is ready:
+答案 Markdown 准备好后，执行交付渲染：
 
 ```powershell
 npm --prefix tools/latex-renderer run deliver -- "<answer.md>"
 npm --prefix tools/latex-renderer run deliver -- "<answer.md>" --profile compact
 ```
 
-Run the focused local checks:
+执行本地冒烟检查：
 
 ```powershell
 npm --prefix tools/latex-renderer run smoke
 npm --prefix tools/answer-graphics run smoke
 ```
 
-## Status
+## 迁移到另一台电脑 / Move To Another PC
 
-The repository is currently strongest on the junior-high physics answer path. Multi-subject support is present at the asset and contract level, but still incomplete at the product level.
+推荐通过 GitHub 拉取仓库，再在新电脑重建本地依赖：
+
+```powershell
+git clone https://github.com/sciman-top/classroom-answer-toolkit.git
+cd classroom-answer-toolkit
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
+powershell -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1
+dotnet build ClassroomToolkit.sln -c Debug
+```
+
+`node_modules/`、`tools/ocr/.venv/`、`artifacts/`、`.snapshot-cache/` 等目录属于本地依赖或生成物，不需要提交到仓库。
+
+## 状态 / Status
+
+当前最完整的链路是初中物理参考答案生成与渲染。多学科支持已经在资产层和契约层展开，但产品层仍在演进中。
+
+The junior-high physics answer workflow is currently the most complete path. Multi-subject support exists at the asset and contract level, while product-level coverage is still evolving.
