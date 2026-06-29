@@ -29,6 +29,12 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastDeliveryInputPath.Should().BeNull();
         result.LastDeliveryOutputPath.Should().BeNull();
         result.LastDeliveryReviewDirectoryPath.Should().BeNull();
+        result.LastDeliveryToolchainPassed.Should().BeNull();
+        result.LastDeliveryComplete.Should().BeNull();
+        result.LastDeliveryReviewArtifactReady.Should().BeNull();
+        result.LastDeliveryVisualReviewPassed.Should().BeNull();
+        result.LastDeliveryTrusted.Should().BeNull();
+        result.LastDeliveryGraphicCount.Should().Be(0);
         result.DiagnosticsBundlePath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001");
         result.DiagnosticsManifestPath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001\diagnostic-manifest.json");
         result.DiagnosticsFileCount.Should().Be(3);
@@ -65,7 +71,26 @@ public sealed class HeadlessSmokeRunnerTests
                 snapshotVersion = "v0.1",
                 input = @"D:\repo\习题PDF\sample-answer.md",
                 output = @"D:\repo\习题PDF\sample-answer.pdf",
-                reviewDirectoryPath = @"D:\repo\.pdf-review\sample-answer"
+                reviewDirectoryPath = @"D:\repo\.pdf-review\sample-answer",
+                status = new
+                {
+                    toolchainPassed = true,
+                    deliveryComplete = true,
+                    reviewArtifactReady = true,
+                    visualReviewPassed = (bool?)null,
+                    trusted = false
+                },
+                graphics = new
+                {
+                    count = 1,
+                    items = new[]
+                    {
+                        new
+                        {
+                            graphicId = "sample-lever-figure-answer"
+                        }
+                    }
+                }
             }
         }));
 
@@ -83,6 +108,12 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastDeliveryInputPath.Should().Be(@"D:\repo\习题PDF\sample-answer.md");
         result.LastDeliveryOutputPath.Should().Be(@"D:\repo\习题PDF\sample-answer.pdf");
         result.LastDeliveryReviewDirectoryPath.Should().Be(@"D:\repo\.pdf-review\sample-answer");
+        result.LastDeliveryToolchainPassed.Should().BeTrue();
+        result.LastDeliveryComplete.Should().BeTrue();
+        result.LastDeliveryReviewArtifactReady.Should().BeTrue();
+        result.LastDeliveryVisualReviewPassed.Should().BeNull();
+        result.LastDeliveryTrusted.Should().BeFalse();
+        result.LastDeliveryGraphicCount.Should().Be(1);
     }
 
     [Fact]
@@ -111,6 +142,12 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastDeliveryInputPath.Should().BeNull();
         result.LastDeliveryOutputPath.Should().BeNull();
         result.LastDeliveryReviewDirectoryPath.Should().BeNull();
+        result.LastDeliveryToolchainPassed.Should().BeNull();
+        result.LastDeliveryComplete.Should().BeNull();
+        result.LastDeliveryReviewArtifactReady.Should().BeNull();
+        result.LastDeliveryVisualReviewPassed.Should().BeNull();
+        result.LastDeliveryTrusted.Should().BeNull();
+        result.LastDeliveryGraphicCount.Should().Be(0);
     }
 
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator

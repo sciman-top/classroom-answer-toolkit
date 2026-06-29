@@ -123,9 +123,86 @@ function fail(message, code = 2) {
   process.exit(code);
 }
 
+function readJsonIfExists(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/u, ""));
+}
+
+function collectAnswerGraphicReferences(inputPath) {
+  const source = fs.readFileSync(inputPath, "utf8");
+  const inputDir = path.dirname(inputPath);
+  const references = [];
+  const seen = new Set();
+  const markerPattern = /<!--\s*answer-graphic:\s*(.+?)\s*-->/g;
+  let match;
+
+  while ((match = markerPattern.exec(source)) !== null) {
+    const markerPath = match[1].trim();
+    if (!markerPath || seen.has(markerPath)) {
+      continue;
+    }
+
+    seen.add(markerPath);
+    const placementPath = path.resolve(inputDir, markerPath);
+    const placement = readJsonIfExists(placementPath);
+    const previewPath = typeof placement?.previewPath === "string"
+      ? path.resolve(path.dirname(placementPath), placement.previewPath)
+      : null;
+
+    const reference = {
+      placementPath,
+      ...(previewPath ? { previewPath } : {}),
+      ...(typeof placement?.placedGraphicId === "string" ? { placedGraphicId: placement.placedGraphicId } : {}),
+      ...(typeof placement?.graphicId === "string" ? { graphicId: placement.graphicId } : {}),
+      ...(typeof placement?.artifactId === "string" ? { artifactId: placement.artifactId } : {}),
+      ...(typeof placement?.questionRef === "string" ? { questionRef: placement.questionRef } : {}),
+      ...(typeof placement?.placementMode === "string" ? { placementMode: placement.placementMode } : {})
+    };
+
+    references.push(reference);
+  }
+
+  return references;
+}
+
+function collectOcrMetadata(reviewManifestPath) {
+  const reviewManifest = reviewManifestPath ? readJsonIfExists(reviewManifestPath) : null;
+  const status = typeof reviewManifest?.ocrStatus === "string"
+    ? reviewManifest.ocrStatus
+    : "not-requested";
+  const ocr = {
+    status
+  };
+
+  if (typeof reviewManifest?.ocrProvider === "string") {
+    ocr.provider = reviewManifest.ocrProvider;
+  }
+
+  if (typeof reviewManifest?.ocrProviderVersion === "string") {
+    ocr.version = reviewManifest.ocrProviderVersion;
+  }
+
+  if (typeof reviewManifest?.ocrLanguage === "string") {
+    ocr.language = reviewManifest.ocrLanguage;
+  }
+
+  if (Array.isArray(reviewManifest?.pages)) {
+    ocr.pageCount = reviewManifest.pages.length;
+  }
+
+  if (typeof reviewManifest?.ocrError === "string") {
+    ocr.error = reviewManifest.ocrError;
+  }
+
+  return ocr;
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
-  if (!options.input || !options.output || !options.snapshotPath || !options.snapshotId) {
+  if (!options.input || !options.output || !options.snapshotPath) {
     fail("Missing required arguments for delivery manifest.");
   }
 
@@ -139,39 +216,67 @@ function main() {
     ? path.resolve(callerCwd, options.out)
     : path.resolve(path.dirname(outputPath), `${path.basename(outputPath, path.extname(outputPath))}.delivery-manifest.json`);
 
+  if (!fs.existsSync(snapshotPath)) {
+    fail(`Resolved snapshot not found: ${snapshotPath}`);
+  }
+
+  let snapshot;
+  try {
+    snapshot = JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
+  } catch {
+    fail(`Resolved snapshot is not valid JSON: ${snapshotPath}`);
+  }
+
+  const snapshotId = snapshot?.snapshotId ?? options.snapshotId;
+  const snapshotProfile = snapshot?.activeProfile?.name ?? options.profile;
+  const snapshotSubjectPack = snapshot?.subjectPack?.assetId ?? options.subjectPack;
+  const snapshotVersion = snapshot?.subjectPack?.version ?? null;
+  if (typeof snapshotId !== "string" || snapshotId.trim().length === 0) {
+    fail(`Resolved snapshot is missing snapshotId: ${snapshotPath}`);
+  }
+
+  const reviewArtifactReady = Boolean(
+    reviewDir
+    && reviewManifestPath
+    && fs.existsSync(reviewDir)
+    && fs.existsSync(reviewManifestPath)
+  );
+  const deliveryComplete = fs.existsSync(outputPath);
+  const answerGraphics = collectAnswerGraphicReferences(inputPath);
+  const ocr = collectOcrMetadata(reviewManifestPath);
+
   const manifest = {
     schemaVersion: "1.0",
     kind: "delivery-manifest",
     generatedAt: new Date().toISOString(),
-    snapshotId: options.snapshotId,
+    snapshotId,
     snapshotPath,
     snapshot: {
-      id: options.snapshotId,
-      version: null,
-      profile: options.profile
+      id: snapshotId,
+      version: snapshotVersion,
+      profile: snapshotProfile
     },
-    subjectPack: options.subjectPack,
-    profile: options.profile,
+    subjectPack: snapshotSubjectPack,
+    profile: snapshotProfile,
     input: inputPath,
     output: outputPath,
     review: {
       outputDir: reviewDir,
       manifestPath: reviewManifestPath,
       scale: options.reviewScale
+    },
+    ocr,
+    graphics: {
+      items: answerGraphics
+    },
+    status: {
+      toolchainPassed: true,
+      deliveryComplete,
+      reviewArtifactReady,
+      visualReviewPassed: null,
+      trusted: false
     }
   };
-
-  if (fs.existsSync(snapshotPath)) {
-    try {
-      const snapshot = JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
-      manifest.snapshot.version = snapshot?.subjectPack?.version ?? null;
-      manifest.snapshot.profile = snapshot?.activeProfile?.name ?? options.profile;
-    } catch {
-      manifest.snapshot.version = null;
-    }
-  } else {
-    fail(`Resolved snapshot not found: ${snapshotPath}`);
-  }
 
   const errors = validateValueAgainstSchema(manifest, deliveryManifestSchemaPath);
   if (errors.length > 0) {

@@ -20,7 +20,7 @@ public sealed class MsixPackagingScriptTests
         script.Should().Contain("Published smoke report not found.");
         script.Should().Contain("release-evidence");
         script.Should().Contain("published-app-smoke-report");
-        script.Should().Contain('Join-Path $PublishDirPath "..\\verification"');
+        script.Should().Contain("Join-Path $PublishDirPath \"..\\verification\"");
     }
 
     [Fact]

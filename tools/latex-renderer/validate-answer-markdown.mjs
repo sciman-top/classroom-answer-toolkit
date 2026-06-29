@@ -1,10 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
-import { getDefaultProfileName, getDefaultSubjectPack, loadResolvedSnapshot, loadRuntimeConfig, resolveSnapshotPath } from "./runtime-config.mjs";
+import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const usage = `Usage:
-  npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact]
+  npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact] [--snapshot <snapshot.json>]
 
 Checks:
   - choice-answer line format
@@ -111,40 +110,69 @@ function nextNonEmptyLine(lines, startIndex) {
   return null;
 }
 
-function validateChoiceLine(line, lineNumber, errors) {
-  const trimmed = line.trim();
-  if (!/^\d+\s*[-—]\s*\d+\s*[:：]/u.test(trimmed)) {
+function findEnabledRule(snapshot, ruleIds) {
+  const rules = Array.isArray(snapshot?.rules) ? snapshot.rules : [];
+  for (const ruleId of ruleIds) {
+    const rule = rules.find((candidate) => candidate?.id === ruleId);
+    if (rule && rule.enabled !== false) {
+      return rule;
+    }
+  }
+
+  return null;
+}
+
+function resolveValidationRules(snapshot) {
+  return {
+    choiceAnswer: findEnabledRule(snapshot, ["physics-answer.choice-answer.compact-line"]),
+    questionLead: findEnabledRule(snapshot, ["physics-answer.question-lead.same-line"]),
+    trueLatex: findEnabledRule(snapshot, ["rendering.true-latex", "physics-answer.math.true-latex"])
+  };
+}
+
+function addRuleFinding(rule, message, errors, warnings) {
+  if (rule?.severity === "hard") {
+    errors.push(message);
     return;
   }
 
-  if (/^\d+\s*-\s*\d+\s*[:：]/u.test(trimmed)) {
-    errors.push(`第 ${lineNumber} 行：选择题答案范围应使用中文破折号“—”，不要使用半角连字符“-”。`);
+  warnings.push(message);
+}
+
+function validateChoiceLine(line, lineNumber, rule, errors, warnings) {
+  const trimmed = line.trim();
+  if (!/^\d+\s*[-\u2013\u2014]\s*\d+\s*[:\uff1a]/u.test(trimmed)) {
+    return;
   }
 
-  const answerPart = trimmed.replace(/^\d+\s*[-—]\s*\d+\s*[:：]\s*/u, "");
+  if (/^\d+\s*-\s*\d+\s*[:\uff1a]/u.test(trimmed)) {
+    addRuleFinding(rule, `Line ${lineNumber}: choice answer ranges must use a Chinese dash, not an ASCII hyphen.`, errors, warnings);
+  }
+
+  const answerPart = trimmed.replace(/^\d+\s*[-\u2013\u2014]\s*\d+\s*[:\uff1a]\s*/u, "");
   if (/[A-Z]\s+[A-Z]/.test(answerPart)) {
-    errors.push(`第 ${lineNumber} 行：选择题答案应使用“、”分隔，例如“1—5：A、B、C、D、A”。`);
+    addRuleFinding(rule, `Line ${lineNumber}: choice answers should use separators, not spaces between options.`, errors, warnings);
   }
 }
 
-function validateOrphanQuestionLead(lines, line, lineNumber, errors) {
-  if (!/^\s*\d{1,3}[.．、]\s*$/u.test(line)) {
+function validateOrphanQuestionLead(lines, line, lineNumber, rule, errors, warnings) {
+  if (!/^\s*\d{1,3}[.\uff0e\u3001]?\s*$/u.test(line)) {
     return;
   }
 
   const next = nextNonEmptyLine(lines, lineNumber);
-  if (next && /^\s*[（(][一二三四五六七八九十\d]+[）)]/u.test(next.line)) {
-    errors.push(`第 ${lineNumber} 行：题号不得单独成行，必须与第一个小问同首行。`);
+  if (next && /^\s*[\uff08(][\u4e00-\u9fff\d]+[\uff09)]/u.test(next.line)) {
+    addRuleFinding(rule, `Line ${lineNumber}: question number must stay on the same first line as the first sub-question.`, errors, warnings);
   }
 }
 
-function validateBacktickWrappedMath(line, lineNumber, errors) {
-  if (/`[^`\n]*(\$|\\|Ω|℃|°|V|A|W|N|Pa|J|kg|cm|mm|kW|h)[^`\n]*`/u.test(line)) {
-    errors.push(`第 ${lineNumber} 行：不要用反引号包裹公式或物理单位，这会阻止正常渲染。`);
+function validateBacktickWrappedMath(line, lineNumber, rule, errors, warnings) {
+  if (/`[^`\n]*(\$|\\|Ω|\u03a9|\u2103|°|V|A|W|N|Pa|J|kg|cm|mm|kW|h)[^`\n]*`/u.test(line)) {
+    addRuleFinding(rule, `Line ${lineNumber}: do not wrap formulas or physical units in backticks.`, errors, warnings);
   }
 }
 
-function validateUnbalancedDollarSigns(source, errors) {
+function validateUnbalancedDollarSigns(source, rule, errors, warnings) {
   let count = 0;
   for (let index = 0; index < source.length; index += 1) {
     if (source[index] === "$" && source[index - 1] !== "\\") {
@@ -153,7 +181,7 @@ function validateUnbalancedDollarSigns(source, errors) {
   }
 
   if (count % 2 !== 0) {
-    errors.push("全文存在未成对的 LaTeX 美元符号 `$`。");
+    addRuleFinding(rule, "Document has unbalanced LaTeX dollar signs.", errors, warnings);
   }
 }
 
@@ -166,7 +194,7 @@ function validateLineLengths(lines, maxCjkPerLine, warnings) {
 
     const cjkCount = countCjkCharacters(line);
     if (cjkCount > maxCjkPerLine) {
-      warnings.push(`第 ${index + 1} 行：普通说明行含 ${cjkCount} 个中文字符，超过当前 profile 建议上限 ${maxCjkPerLine}。`);
+      warnings.push(`Line ${index + 1}: plain-text line has ${cjkCount} CJK characters, exceeding current profile limit ${maxCjkPerLine}.`);
     }
   }
 }
@@ -174,12 +202,8 @@ function validateLineLengths(lines, maxCjkPerLine, warnings) {
 function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
   if (options.help) {
-    console.log(`${usage}\nBuilt-in profiles: ${listBuiltInProfiles(options.subjectPack).join(", ")}`);
+    console.log(usage);
     process.exit(0);
-  }
-
-  if (!options.profile) {
-    options.profile = getDefaultProfileName(options.subjectPack);
   }
 
   if (!positional[0]) {
@@ -196,32 +220,40 @@ function main() {
     subjectPack: options.subjectPack,
     callerCwd
   });
-  const snapshot = loadResolvedSnapshot(snapshotPath, { required: Boolean(options.snapshot) });
-  const profile = loadRenderProfile(options.profile, callerCwd, snapshot, options.subjectPack);
-  const runtimeConfig = loadRuntimeConfig(options.subjectPack);
+  const snapshot = loadRequiredResolvedSnapshot(snapshotPath);
+  const profile = getSnapshotActiveProfile(snapshot, options.profile);
   const source = fs.readFileSync(inputPath, "utf8");
   const lines = source.replace(/\r\n/g, "\n").split("\n");
 
   const errors = [];
   const warnings = [];
+  const rules = resolveValidationRules(snapshot);
 
-  validateUnbalancedDollarSigns(source, errors);
+  if (rules.trueLatex) {
+    validateUnbalancedDollarSigns(source, rules.trueLatex, errors, warnings);
+  }
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
     const lineNumber = index + 1;
-    validateChoiceLine(line, lineNumber, errors);
-    validateOrphanQuestionLead(lines, line, lineNumber, errors);
-    validateBacktickWrappedMath(line, lineNumber, errors);
+
+    if (rules.choiceAnswer) {
+      validateChoiceLine(line, lineNumber, rules.choiceAnswer, errors, warnings);
+    }
+    if (rules.questionLead) {
+      validateOrphanQuestionLead(lines, line, lineNumber, rules.questionLead, errors, warnings);
+    }
+    if (rules.trueLatex) {
+      validateBacktickWrappedMath(line, lineNumber, rules.trueLatex, errors, warnings);
+    }
   }
 
   validateLineLengths(
     lines,
-    snapshot?.activeProfile?.answerRules?.maxPlainTextCjkPerLine
-      ?? snapshot?.profiles?.[profile.name]?.answerRules?.maxPlainTextCjkPerLine
-      ?? profile.answerRules.maxPlainTextCjkPerLine
-      ?? runtimeConfig.profiles?.[profile.name]?.plainTextCjkMax
-      ?? runtimeConfig.profiles?.classroom?.plainTextCjkMax
+    profile.answerRules?.maxPlainTextCjkPerLine
+      ?? profile.layout?.plainTextCjkMax
+      ?? snapshot.profiles?.[profile.name]?.answerRules?.maxPlainTextCjkPerLine
+      ?? snapshot.profiles?.[profile.name]?.layout?.plainTextCjkMax
       ?? 24,
     warnings
   );

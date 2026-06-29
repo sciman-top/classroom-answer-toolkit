@@ -210,6 +210,9 @@ export function compileResolvedSnapshot(options = {}) {
     activeProfile,
     rules: assets.rules,
     profiles: assets.profiles,
+    delivery: {
+      rules: assets.config.deliveryRules ?? {}
+    },
     toolchain: {
       compiler: "tools/rule-compiler/compile-snapshot.mjs"
     },

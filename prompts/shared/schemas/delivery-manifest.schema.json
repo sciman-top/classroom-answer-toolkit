@@ -13,7 +13,8 @@
     "profile",
     "input",
     "output",
-    "review"
+    "review",
+    "status"
   ],
   "properties": {
     "schemaVersion": { "type": "string" },
@@ -55,6 +56,71 @@
         "outputDir": { "type": "string" },
         "manifestPath": { "type": "string" },
         "scale": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "ocr": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": { "type": "string" },
+        "provider": { "type": "string" },
+        "version": { "type": "string" },
+        "language": { "type": "string" },
+        "pageCount": { "type": "number" },
+        "error": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "graphics": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "placementPath"
+            ],
+            "properties": {
+              "placementPath": { "type": "string" },
+              "previewPath": { "type": "string" },
+              "placedGraphicId": { "type": "string" },
+              "graphicId": { "type": "string" },
+              "artifactId": { "type": "string" },
+              "questionRef": { "type": "string" },
+              "placementMode": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "status": {
+      "type": "object",
+      "required": [
+        "toolchainPassed",
+        "deliveryComplete",
+        "reviewArtifactReady",
+        "trusted"
+      ],
+      "properties": {
+        "toolchainPassed": { "type": "boolean" },
+        "deliveryComplete": { "type": "boolean" },
+        "reviewArtifactReady": { "type": "boolean" },
+        "visualReviewPassed": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "trusted": { "type": "boolean" }
       },
       "additionalProperties": true
     }

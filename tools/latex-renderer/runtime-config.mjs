@@ -7,34 +7,31 @@ const repoRoot = path.resolve(toolDir, "..", "..");
 const defaultSubjectPack = process.env.CLASSROOM_TOOLKIT_SUBJECT_PACK || "physics-answer";
 const defaultSnapshotPath = path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json");
 
+function getDefaultSnapshotFileName(subjectPack) {
+  if (subjectPack === "physics-answer") {
+    return "resolved-snapshot.json";
+  }
+
+  const normalizedSubjectPack = String(subjectPack ?? "")
+    .trim()
+    .replace(/-answer$/u, "");
+
+  return normalizedSubjectPack
+    ? `resolved-snapshot.${normalizedSubjectPack}.json`
+    : "resolved-snapshot.json";
+}
+
 export function getDefaultSubjectPack() {
   return process.env.CLASSROOM_TOOLKIT_SUBJECT_PACK || defaultSubjectPack;
 }
 
-export function getRuntimeConfigPath(subjectPack = getDefaultSubjectPack()) {
-  return path.join(repoRoot, "prompts", subjectPack, "config.json");
-}
-
-export function loadRuntimeConfig(subjectPack = getDefaultSubjectPack()) {
-  const configPath = getRuntimeConfigPath(subjectPack);
-  if (!fs.existsSync(configPath)) {
-    throw new Error(`Runtime config not found: ${configPath}`);
-  }
-
-  return JSON.parse(fs.readFileSync(configPath, "utf8"));
-}
-
-export function resolveRuntimeConfigRelativePath(relativePath, subjectPack = getDefaultSubjectPack()) {
-  return path.resolve(path.dirname(getRuntimeConfigPath(subjectPack)), relativePath);
-}
-
 export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack()) {
-  const config = loadRuntimeConfig(subjectPack);
-  if (config.snapshot?.cachePath) {
-    return resolveRuntimeConfigRelativePath(config.snapshot.cachePath, subjectPack);
+  const snapshotFileName = getDefaultSnapshotFileName(subjectPack);
+  if (snapshotFileName === "resolved-snapshot.json") {
+    return defaultSnapshotPath;
   }
 
-  return defaultSnapshotPath;
+  return path.join(repoRoot, ".snapshot-cache", snapshotFileName);
 }
 
 export function resolveSnapshotPath(snapshotPath, options = {}) {
@@ -60,6 +57,37 @@ export function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath(), op
   return JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
 }
 
-export function getDefaultProfileName(subjectPack = getDefaultSubjectPack()) {
-  return loadRuntimeConfig(subjectPack).profiles?.default ?? "classroom";
+export function loadRequiredResolvedSnapshot(snapshotPath, options = {}) {
+  const snapshot = loadResolvedSnapshot(snapshotPath, { ...options, required: true });
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    throw new Error(`Resolved snapshot is not a JSON object: ${snapshotPath}`);
+  }
+
+  return snapshot;
+}
+
+export function getSnapshotActiveProfile(snapshot, requestedProfile = null) {
+  const activeProfile = snapshot?.activeProfile;
+  if (!activeProfile || typeof activeProfile !== "object" || Array.isArray(activeProfile)) {
+    throw new Error("Resolved snapshot is missing activeProfile.");
+  }
+
+  const activeProfileName = activeProfile.name;
+  if (typeof activeProfileName !== "string" || activeProfileName.trim().length === 0) {
+    throw new Error("Resolved snapshot is missing activeProfile.name.");
+  }
+
+  if (
+    typeof requestedProfile === "string"
+    && requestedProfile.trim().length > 0
+    && requestedProfile !== activeProfileName
+  ) {
+    throw new Error(`Requested profile "${requestedProfile}" does not match snapshot activeProfile "${activeProfileName}".`);
+  }
+
+  return activeProfile;
+}
+
+export function listSnapshotProfileNames(snapshot) {
+  return Object.keys(snapshot?.profiles ?? {}).sort();
 }

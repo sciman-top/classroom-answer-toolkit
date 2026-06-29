@@ -8,6 +8,7 @@ import { chromium } from "playwright-core";
 
 const require = createRequire(import.meta.url);
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
+const tesseractPackageJson = require("tesseract.js/package.json");
 const restrictedPorts = new Set([
   0,
   1,
@@ -464,6 +465,8 @@ async function main() {
     selectedPages: [],
     pageCount: 0,
     pages: [],
+    ocrProvider: options.ocr ? "tesseract.js" : null,
+    ocrProviderVersion: options.ocr ? tesseractPackageJson.version : null,
     ocrLanguage: options.ocr,
     ocrStatus: options.ocr ? "requested" : "not-requested"
   };

@@ -19,6 +19,12 @@ public sealed record HeadlessSmokeResult(
     string? LastDeliveryInputPath,
     string? LastDeliveryOutputPath,
     string? LastDeliveryReviewDirectoryPath,
+    bool? LastDeliveryToolchainPassed,
+    bool? LastDeliveryComplete,
+    bool? LastDeliveryReviewArtifactReady,
+    bool? LastDeliveryVisualReviewPassed,
+    bool? LastDeliveryTrusted,
+    int LastDeliveryGraphicCount,
     string DiagnosticsBundlePath,
     string DiagnosticsManifestPath,
     int DiagnosticsFileCount);
@@ -70,6 +76,12 @@ public sealed class HeadlessSmokeRunner : IHeadlessSmokeRunner
             lastDeliveryContext.InputPath,
             lastDeliveryContext.OutputPath,
             lastDeliveryContext.ReviewDirectoryPath,
+            lastDeliveryContext.ToolchainPassed,
+            lastDeliveryContext.DeliveryComplete,
+            lastDeliveryContext.ReviewArtifactReady,
+            lastDeliveryContext.VisualReviewPassed,
+            lastDeliveryContext.Trusted,
+            lastDeliveryContext.GraphicCount,
             diagnostics.BundleDirectoryPath,
             diagnostics.ManifestPath,
             diagnostics.FileCount);
@@ -83,23 +95,37 @@ public sealed class HeadlessSmokeRunner : IHeadlessSmokeRunner
         string? SnapshotVersion,
         string? InputPath,
         string? OutputPath,
-        string? ReviewDirectoryPath) ReadLastDeliveryContext(string manifestPath)
+        string? ReviewDirectoryPath,
+        bool? ToolchainPassed,
+        bool? DeliveryComplete,
+        bool? ReviewArtifactReady,
+        bool? VisualReviewPassed,
+        bool? Trusted,
+        int GraphicCount) ReadLastDeliveryContext(string manifestPath)
     {
         if (!File.Exists(manifestPath))
         {
-            return (null, null, null, null, null, null, null, null);
+            return (null, null, null, null, null, null, null, null, null, null, null, null, null, 0);
         }
 
         using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifestPath));
         if (!document.RootElement.TryGetProperty("lastDeliveryContext", out var deliveryContextElement))
         {
-            return (null, null, null, null, null, null, null, null);
+            return (null, null, null, null, null, null, null, null, null, null, null, null, null, 0);
         }
 
         if (deliveryContextElement.ValueKind is System.Text.Json.JsonValueKind.Null or System.Text.Json.JsonValueKind.Undefined)
         {
-            return (null, null, null, null, null, null, null, null);
+            return (null, null, null, null, null, null, null, null, null, null, null, null, null, 0);
         }
+
+        var statusElementExists = deliveryContextElement.TryGetProperty("status", out var statusElement)
+            && statusElement.ValueKind == System.Text.Json.JsonValueKind.Object;
+        var graphicCount = deliveryContextElement.TryGetProperty("graphics", out var graphicsElement)
+            && graphicsElement.TryGetProperty("count", out var graphicCountElement)
+            && graphicCountElement.ValueKind == System.Text.Json.JsonValueKind.Number
+                ? graphicCountElement.GetInt32()
+                : 0;
 
         return (
             deliveryContextElement.TryGetProperty("subjectPack", out var subjectPackElement) ? subjectPackElement.GetString() : null,
@@ -109,6 +135,30 @@ public sealed class HeadlessSmokeRunner : IHeadlessSmokeRunner
             deliveryContextElement.TryGetProperty("snapshotVersion", out var snapshotVersionElement) ? snapshotVersionElement.GetString() : null,
             deliveryContextElement.TryGetProperty("input", out var inputElement) ? inputElement.GetString() : null,
             deliveryContextElement.TryGetProperty("output", out var outputElement) ? outputElement.GetString() : null,
-            deliveryContextElement.TryGetProperty("reviewDirectoryPath", out var reviewDirectoryPathElement) ? reviewDirectoryPathElement.GetString() : null);
+            deliveryContextElement.TryGetProperty("reviewDirectoryPath", out var reviewDirectoryPathElement) ? reviewDirectoryPathElement.GetString() : null,
+            ReadNullableBoolean(statusElementExists, statusElement, "toolchainPassed"),
+            ReadNullableBoolean(statusElementExists, statusElement, "deliveryComplete"),
+            ReadNullableBoolean(statusElementExists, statusElement, "reviewArtifactReady"),
+            ReadNullableBoolean(statusElementExists, statusElement, "visualReviewPassed"),
+            ReadNullableBoolean(statusElementExists, statusElement, "trusted"),
+            graphicCount);
+    }
+
+    private static bool? ReadNullableBoolean(
+        bool parentExists,
+        System.Text.Json.JsonElement parent,
+        string propertyName)
+    {
+        if (!parentExists || !parent.TryGetProperty(propertyName, out var valueElement))
+        {
+            return null;
+        }
+
+        return valueElement.ValueKind switch
+        {
+            System.Text.Json.JsonValueKind.True => true,
+            System.Text.Json.JsonValueKind.False => false,
+            _ => null
+        };
     }
 }

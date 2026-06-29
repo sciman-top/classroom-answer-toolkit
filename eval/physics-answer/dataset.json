@@ -44,6 +44,17 @@
       ]
     },
     {
+      "id": "multi-graphic-delivery",
+      "input": "cases/multi-graphic-delivery.md",
+      "expected": "cases/multi-graphic-delivery.expected.json",
+      "tags": [
+        "graphic-placement",
+        "answer-graphic",
+        "multi-graphic",
+        "delivery"
+      ]
+    },
+    {
       "id": "orphan-question-lead",
       "input": "cases/orphan-question-lead.md",
       "expected": "cases/orphan-question-lead.expected.json",

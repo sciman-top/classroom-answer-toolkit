@@ -53,6 +53,9 @@ public sealed class WorkspaceDiagnosticsExporterTests
         var deliveryBundle = Path.Combine(result.BundleDirectoryPath, "delivery");
         File.Exists(Path.Combine(deliveryBundle, "answer.pdf")).Should().BeTrue();
         File.Exists(Path.Combine(deliveryBundle, "delivery-manifest.json")).Should().BeTrue();
+        File.Exists(Path.Combine(deliveryBundle, "graphics", "001", "placed-answer-graphic.json")).Should().BeTrue();
+        File.Exists(Path.Combine(deliveryBundle, "graphics", "001", "preview.svg")).Should().BeTrue();
+        File.Exists(Path.Combine(deliveryBundle, "graphics", "index.json")).Should().BeTrue();
         File.Exists(Path.Combine(deliveryBundle, "review", "review.html")).Should().BeTrue();
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
@@ -68,7 +71,30 @@ public sealed class WorkspaceDiagnosticsExporterTests
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("snapshotVersion").GetString().Should().Be("v0.1");
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("output").GetString().Should().Be(workspace.OutputPdfPath);
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("reviewDirectoryPath").GetString().Should().Be(workspace.ReviewDirectoryPath);
-        manifest.RootElement.GetProperty("assets").GetArrayLength().Should().BeGreaterThan(0);
+        var deliveryStatus = manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("status");
+        deliveryStatus.GetProperty("toolchainPassed").GetBoolean().Should().BeTrue();
+        deliveryStatus.GetProperty("deliveryComplete").GetBoolean().Should().BeTrue();
+        deliveryStatus.GetProperty("reviewArtifactReady").GetBoolean().Should().BeTrue();
+        deliveryStatus.GetProperty("visualReviewPassed").ValueKind.Should().Be(JsonValueKind.Null);
+        deliveryStatus.GetProperty("trusted").GetBoolean().Should().BeFalse();
+        var deliveryOcr = manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("ocr");
+        deliveryOcr.GetProperty("status").GetString().Should().Be("not-requested");
+        var deliveryGraphics = manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("graphics");
+        deliveryGraphics.GetProperty("count").GetInt32().Should().Be(1);
+        var deliveryGraphic = deliveryGraphics.GetProperty("items").EnumerateArray().Single();
+        deliveryGraphic.GetProperty("graphicId").GetString().Should().Be("sample-lever-figure-answer");
+        deliveryGraphic.GetProperty("placementPath").GetString().Should().Be(Path.Combine(workspace.Root, ".answer-graphics", "placed-answer-graphic.json"));
+        using var graphicsIndex = JsonDocument.Parse(File.ReadAllText(Path.Combine(deliveryBundle, "graphics", "index.json")));
+        var indexedGraphic = graphicsIndex.RootElement.EnumerateArray().Single();
+        indexedGraphic.GetProperty("bundleId").GetString().Should().Be("001");
+        indexedGraphic.GetProperty("graphicId").GetString().Should().Be("sample-lever-figure-answer");
+        indexedGraphic.GetProperty("placementBundlePath").GetString().Should().Be(Path.Combine(deliveryBundle, "graphics", "001", "placed-answer-graphic.json"));
+        indexedGraphic.GetProperty("previewBundlePath").GetString().Should().Be(Path.Combine(deliveryBundle, "graphics", "001", "preview.svg"));
+        var assets = manifest.RootElement.GetProperty("assets").EnumerateArray().ToArray();
+        assets.Should().Contain(asset => asset.GetProperty("kind").GetString() == "latest-delivery-graphic-placement");
+        assets.Should().Contain(asset => asset.GetProperty("kind").GetString() == "latest-delivery-graphic-preview");
+        assets.Should().Contain(asset => asset.GetProperty("kind").GetString() == "latest-delivery-graphic-index");
+        assets.Length.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -175,6 +201,52 @@ public sealed class WorkspaceDiagnosticsExporterTests
         mathPack.GetProperty("evalCaseCount").GetInt32().Should().Be(1);
     }
 
+    [Fact]
+    public void Export_ResolvesDeliveryGraphicPaths_RelativeToDeliveryManifest()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteWorkspaceInputs();
+        workspace.WriteRelativeDeliveryGraphicArtifacts();
+
+        var exporter = new WorkspaceDiagnosticsExporter();
+        var result = exporter.Export(new WorkspaceDiagnosticsExportRequest(
+            workspace.Root,
+            new WorkspaceHealthReport(
+                "math-answer",
+                ["math-answer"],
+                "v0.1",
+                "v0.1",
+                SnapshotExists: true,
+                SnapshotPath: @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
+                SnapshotVersion: "v0.1",
+                SnapshotProfile: "classroom",
+                EvalExists: true,
+                EvalOk: true,
+                EvalCaseCount: 1,
+                GraphicsExists: true,
+                GraphicsSummary: "graphics ready",
+                Summary: "workspace healthy",
+                Issues: Array.Empty<string>()),
+            workspace.OutputPdfPath,
+            workspace.DeliveryManifestPath,
+            null,
+            "snapshot-test"));
+
+        var deliveryBundle = Path.Combine(result.BundleDirectoryPath, "delivery");
+        File.Exists(Path.Combine(deliveryBundle, "graphics", "001", "placed-answer-graphic.json")).Should().BeTrue();
+        File.Exists(Path.Combine(deliveryBundle, "graphics", "001", "preview.svg")).Should().BeTrue();
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
+        var deliveryGraphic = manifest.RootElement
+            .GetProperty("lastDeliveryContext")
+            .GetProperty("graphics")
+            .GetProperty("items")
+            .EnumerateArray()
+            .Single();
+        deliveryGraphic.GetProperty("placementPath").GetString().Should().Be(Path.Combine(workspace.Root, "delivery-assets", "placed-answer-graphic.json"));
+        deliveryGraphic.GetProperty("previewPath").GetString().Should().Be(Path.Combine(workspace.Root, "delivery-assets", "preview.svg"));
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
@@ -258,10 +330,106 @@ public sealed class WorkspaceDiagnosticsExporterTests
                 review = new
                 {
                     outputDir = ReviewDirectoryPath
+                },
+                status = new
+                {
+                    toolchainPassed = true,
+                    deliveryComplete = true,
+                    reviewArtifactReady = true,
+                    visualReviewPassed = (bool?)null,
+                    trusted = false
+                },
+                ocr = new
+                {
+                    status = "not-requested"
+                },
+                graphics = new
+                {
+                    items = new[]
+                    {
+                        new
+                        {
+                            placementPath = Path.Combine(Root, ".answer-graphics", "placed-answer-graphic.json"),
+                            previewPath = Path.Combine(Root, ".answer-graphics", "answer-graphic-preview.svg"),
+                            placedGraphicId = "sample-lever-figure-answer-placed",
+                            graphicId = "sample-lever-figure-answer",
+                            artifactId = "sample-lever-figure-answer-artifact",
+                            questionRef = "11",
+                            placementMode = "inline-medium"
+                        }
+                    }
                 }
             });
             WriteFile(Path.Combine(ReviewDirectoryPath, "review.html"), "<html></html>");
             WriteFile(Path.Combine(ReviewDirectoryPath, "sample-answer.page-001.png"), "png");
+        }
+
+        public void WriteRelativeDeliveryGraphicArtifacts()
+        {
+            var deliveryAssetsRoot = Path.Combine(Root, "delivery-assets");
+            Directory.CreateDirectory(deliveryAssetsRoot);
+            WriteFile(OutputPdfPath, "pdf");
+            WriteJson(Path.Combine(deliveryAssetsRoot, "placed-answer-graphic.json"), new
+            {
+                schemaVersion = "1.0",
+                kind = "placed-answer-graphic",
+                placedGraphicId = "sample-lever-figure-answer-placed",
+                graphicId = "sample-lever-figure-answer",
+                artifactId = "sample-lever-figure-answer-artifact",
+                questionRef = "11",
+                placementMode = "inline-medium",
+                targetBlock = "answer-body",
+                figureWidthMm = 120,
+                captionMode = "inline",
+                pageBreakPolicy = "avoid",
+                previewPath = "preview.svg"
+            });
+            WriteFile(Path.Combine(deliveryAssetsRoot, "preview.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\" />");
+            WriteJson(DeliveryManifestPath, new
+            {
+                subjectPack = "math-answer",
+                snapshotId = "snapshot-test",
+                snapshotPath = @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
+                profile = "classroom",
+                input = Path.Combine(Root, "sample-answer.md"),
+                output = OutputPdfPath,
+                snapshot = new
+                {
+                    version = "v0.1"
+                },
+                review = new
+                {
+                    outputDir = ReviewDirectoryPath
+                },
+                status = new
+                {
+                    toolchainPassed = true,
+                    deliveryComplete = true,
+                    reviewArtifactReady = false,
+                    visualReviewPassed = (bool?)null,
+                    trusted = false
+                },
+                ocr = new
+                {
+                    status = "not-requested"
+                },
+                graphics = new
+                {
+                    items = new[]
+                    {
+                        new
+                        {
+                            placementPath = Path.Combine("delivery-assets", "placed-answer-graphic.json"),
+                            previewPath = Path.Combine("delivery-assets", "preview.svg"),
+                            placedGraphicId = "sample-lever-figure-answer-placed",
+                            graphicId = "sample-lever-figure-answer",
+                            artifactId = "sample-lever-figure-answer-artifact",
+                            questionRef = "11",
+                            placementMode = "inline-medium"
+                        }
+                    }
+                }
+            });
         }
 
         private static void WriteJson(string path, object value)

@@ -31,6 +31,34 @@ function runNodeScript(scriptFileName, scriptArgs) {
   }
 }
 
+function runNodeScriptExpectFailure(scriptFileName, scriptArgs, expectedMessage) {
+  const result = spawnSync(
+    process.execPath,
+    [path.join(toolDir, scriptFileName), ...scriptArgs],
+    {
+      cwd: toolDir,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        INIT_CWD: repoRoot
+      }
+    }
+  );
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if ((result.status ?? 0) === 0) {
+    throw new Error(`${scriptFileName} was expected to fail.`);
+  }
+
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  if (!output.includes(expectedMessage)) {
+    throw new Error(`${scriptFileName} failed without expected message "${expectedMessage}". Output:\n${output}`);
+  }
+}
+
 function ensureCleanSmokeDir() {
   fs.rmSync(smokeDir, { recursive: true, force: true });
   fs.mkdirSync(smokeDir, { recursive: true });
@@ -45,7 +73,7 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
-function assertDeliveryManifestMatches(manifestPath, expectedSnapshot, expectedSnapshotPath) {
+function assertDeliveryManifestMatches(manifestPath, expectedSnapshot, expectedSnapshotPath, expectedStatus = {}) {
   if (!fs.existsSync(manifestPath)) {
     throw new Error(`Deliver manifest not found: ${manifestPath}`);
   }
@@ -68,6 +96,163 @@ function assertDeliveryManifestMatches(manifestPath, expectedSnapshot, expectedS
   if (actualSnapshotPath !== expectedSnapshotPath) {
     throw new Error(`Deliver manifest snapshotPath mismatch: expected ${expectedSnapshotPath}, got ${actualSnapshotPath}`);
   }
+
+  const status = manifest.status ?? {};
+  const expectedReviewArtifactReady = Boolean(expectedStatus.reviewArtifactReady);
+
+  if (status.toolchainPassed !== true) {
+    throw new Error(`Deliver manifest status.toolchainPassed mismatch: expected true, got ${status.toolchainPassed}`);
+  }
+
+  if (status.deliveryComplete !== true) {
+    throw new Error(`Deliver manifest status.deliveryComplete mismatch: expected true, got ${status.deliveryComplete}`);
+  }
+
+  if (status.reviewArtifactReady !== expectedReviewArtifactReady) {
+    throw new Error(`Deliver manifest status.reviewArtifactReady mismatch: expected ${expectedReviewArtifactReady}, got ${status.reviewArtifactReady}`);
+  }
+
+  if (status.visualReviewPassed !== null) {
+    throw new Error(`Deliver manifest status.visualReviewPassed mismatch: expected null, got ${status.visualReviewPassed}`);
+  }
+
+  if (status.trusted !== false) {
+    throw new Error(`Deliver manifest status.trusted mismatch: expected false, got ${status.trusted}`);
+  }
+
+  if (manifest.ocr?.status !== "not-requested") {
+    throw new Error(`Deliver manifest OCR status mismatch: expected not-requested, got ${manifest.ocr?.status}`);
+  }
+
+  const expectedGraphics = expectedStatus.expectedGraphics ?? [];
+  const actualGraphics = (manifest.graphics?.items ?? [])
+    .map((item) => item?.graphicId)
+    .filter((graphicId) => typeof graphicId === "string");
+
+  for (const graphicId of expectedGraphics) {
+    if (!actualGraphics.includes(graphicId)) {
+      throw new Error(`Deliver manifest graphics mismatch: expected graphic ${graphicId}, got ${actualGraphics.join(", ")}`);
+    }
+  }
+}
+
+function assertDeliveryManifestRejectsMismatchedGraphic(explicitSnapshot) {
+  const placementPath = path.join(smokeDir, "mismatched-placed-answer-graphic.json");
+  const previewPath = path.join(smokeDir, "mismatched-preview.svg");
+  const manifestPath = path.join(smokeDir, "mismatched-graphic.delivery-manifest.json");
+
+  fs.writeFileSync(previewPath, "<svg xmlns=\"http://www.w3.org/2000/svg\" />", "utf8");
+  writeJson(placementPath, {
+    schemaVersion: "1.0",
+    kind: "placed-answer-graphic",
+    placedGraphicId: "smoke-graphic-placed",
+    graphicId: "smoke-graphic",
+    artifactId: "smoke-graphic-artifact",
+    questionRef: "11",
+    placementMode: "inline-medium",
+    targetBlock: "answer-body",
+    figureWidthMm: 120,
+    captionMode: "inline",
+    pageBreakPolicy: "avoid",
+    previewPath: path.basename(previewPath)
+  });
+
+  writeJson(manifestPath, {
+    schemaVersion: "1.0",
+    kind: "delivery-manifest",
+    generatedAt: "2026-06-22T00:00:00.000Z",
+    subjectPack: "physics-answer",
+    snapshotId: explicitSnapshot.snapshotId,
+    snapshotPath: path.join(smokeDir, "resolved-snapshot.explicit.json"),
+    snapshot: {
+      id: explicitSnapshot.snapshotId,
+      version: explicitSnapshot.subjectPack?.version ?? "unknown",
+      profile: "classroom"
+    },
+    profile: "classroom",
+    input: path.join(smokeDir, "mismatched-graphic.md"),
+    output: path.join(smokeDir, "mismatched-graphic.pdf"),
+    review: {
+      outputDir: path.join(smokeDir, "mismatched-review"),
+      manifestPath: path.join(smokeDir, "mismatched-review", "manifest.json"),
+      scale: "2"
+    },
+    ocr: {
+      status: "not-requested"
+    },
+    graphics: {
+      items: [
+        {
+          placementPath,
+          previewPath,
+          placedGraphicId: "smoke-graphic-placed",
+          graphicId: "wrong-graphic",
+          artifactId: "smoke-graphic-artifact",
+          questionRef: "11",
+          placementMode: "inline-medium"
+        }
+      ]
+    },
+    status: {
+      toolchainPassed: true,
+      deliveryComplete: true,
+      reviewArtifactReady: false,
+      visualReviewPassed: null,
+      trusted: false
+    }
+  });
+
+  runNodeScriptExpectFailure(
+    "validate-delivery-manifest.mjs",
+    ["--manifest", path.relative(repoRoot, manifestPath)],
+    "graphics.items[0].graphicId must match placement.graphicId."
+  );
+}
+
+function assertDeliveryManifestRejectsIncompleteOcrMetadata(explicitSnapshot) {
+  const manifestPath = path.join(smokeDir, "incomplete-ocr.delivery-manifest.json");
+  writeJson(manifestPath, {
+    schemaVersion: "1.0",
+    kind: "delivery-manifest",
+    generatedAt: "2026-06-22T00:00:00.000Z",
+    subjectPack: "physics-answer",
+    snapshotId: explicitSnapshot.snapshotId,
+    snapshotPath: path.join(smokeDir, "resolved-snapshot.explicit.json"),
+    snapshot: {
+      id: explicitSnapshot.snapshotId,
+      version: explicitSnapshot.subjectPack?.version ?? "unknown",
+      profile: "classroom"
+    },
+    profile: "classroom",
+    input: path.join(smokeDir, "incomplete-ocr.md"),
+    output: path.join(smokeDir, "incomplete-ocr.pdf"),
+    review: {
+      outputDir: path.join(smokeDir, "ocr-review"),
+      manifestPath: path.join(smokeDir, "ocr-review", "manifest.json"),
+      scale: "2"
+    },
+    ocr: {
+      status: "ok",
+      provider: "tesseract.js",
+      language: "chi_sim"
+    },
+    graphics: {
+      items: []
+    },
+    status: {
+      toolchainPassed: true,
+      deliveryComplete: true,
+      reviewArtifactReady: false,
+      visualReviewPassed: null,
+      trusted: false
+    }
+  });
+
+  runNodeScriptExpectFailure(
+    "validate-delivery-manifest.mjs",
+    ["--manifest", path.relative(repoRoot, manifestPath)],
+    "ocr.version must be a non-empty string when OCR is ok."
+  );
 }
 
 function main() {
@@ -153,7 +338,8 @@ function main() {
   assertDeliveryManifestMatches(
     deliverManifestPath,
     classroomSnapshot,
-    path.resolve(path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json"))
+    path.resolve(path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json")),
+    { reviewArtifactReady: true }
   );
 
   const explicitSnapshotPath = path.join(smokeDir, "resolved-snapshot.explicit.json");
@@ -181,8 +367,12 @@ function main() {
   assertDeliveryManifestMatches(
     explicitDeliverManifestPath,
     explicitSnapshot,
-    explicitSnapshotPath
+    explicitSnapshotPath,
+    { reviewArtifactReady: false }
   );
+
+  assertDeliveryManifestRejectsMismatchedGraphic(explicitSnapshot);
+  assertDeliveryManifestRejectsIncompleteOcrMetadata(explicitSnapshot);
 
   console.log("[smoke] cleanup");
   fs.rmSync(smokeDir, { recursive: true, force: true });

@@ -4,8 +4,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
-import { loadRenderProfile, DEFAULT_PROFILE_NAME, listBuiltInProfiles } from "./render-profiles.mjs";
-import { getDefaultProfileName, getDefaultSubjectPack, loadResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { loadRenderProfile } from "./render-profiles.mjs";
+import { getDefaultSubjectPack, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 function parseArgs(argv) {
   const positional = [];
@@ -62,13 +62,14 @@ function parseArgs(argv) {
 const { positional, options } = parseArgs(process.argv.slice(2));
 const [inputArg, outputArg] = positional;
 
-if (!inputArg) {
-  console.error(`Usage: npm run render -- <input.md> [output.pdf] [--profile classroom|compact]\nBuilt-in profiles: ${listBuiltInProfiles(options.subjectPack).join(", ")}`);
-  process.exit(2);
+if (options.help) {
+  console.log("Usage: npm run render -- <input.md> [output.pdf] [--profile classroom|compact] [--snapshot <snapshot.json>]");
+  process.exit(0);
 }
 
-if (!options.profile) {
-  options.profile = getDefaultProfileName(options.subjectPack);
+if (!inputArg) {
+  console.error("Usage: npm run render -- <input.md> [output.pdf] [--profile classroom|compact] [--snapshot <snapshot.json>]");
+  process.exit(2);
 }
 
 const callerCwd = process.env.INIT_CWD || process.cwd();
@@ -76,12 +77,11 @@ const inputPath = path.resolve(callerCwd, inputArg);
 const outputPath = path.resolve(
   outputArg ? path.resolve(callerCwd, outputArg) : inputPath.replace(/\.md$/i, ".pdf")
 );
-const snapshot = loadResolvedSnapshot(
+const snapshot = loadRequiredResolvedSnapshot(
   resolveSnapshotPath(options.snapshot, {
     subjectPack: options.subjectPack,
     callerCwd
-  }),
-  { required: Boolean(options.snapshot) }
+  })
 );
 const renderProfile = loadRenderProfile(options.profile, callerCwd, snapshot, options.subjectPack);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });

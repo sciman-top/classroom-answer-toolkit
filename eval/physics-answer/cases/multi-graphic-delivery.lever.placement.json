@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "placed-answer-graphic",
+  "placedGraphicId": "multi-graphic-lever-answer-placed",
+  "graphicId": "multi-graphic-lever-answer",
+  "artifactId": "multi-graphic-lever-answer-artifact",
+  "questionRef": "12(1)",
+  "placementMode": "inline-small",
+  "targetBlock": "answer-body",
+  "figureWidthMm": 92,
+  "captionMode": "inline",
+  "pageBreakPolicy": "avoid",
+  "previewPath": "graphic-placement.preview.svg",
+  "notes": [
+    "First graphic in a multi-graphic delivery case."
+  ]
+}

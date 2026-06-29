@@ -79,6 +79,12 @@ public partial class App : System.Windows.Application
         Console.WriteLine($"lastDeliveryInputPath={smoke.LastDeliveryInputPath}");
         Console.WriteLine($"lastDeliveryOutputPath={smoke.LastDeliveryOutputPath}");
         Console.WriteLine($"lastDeliveryReviewDirectoryPath={smoke.LastDeliveryReviewDirectoryPath}");
+        Console.WriteLine($"lastDeliveryToolchainPassed={smoke.LastDeliveryToolchainPassed}");
+        Console.WriteLine($"lastDeliveryComplete={smoke.LastDeliveryComplete}");
+        Console.WriteLine($"lastDeliveryReviewArtifactReady={smoke.LastDeliveryReviewArtifactReady}");
+        Console.WriteLine($"lastDeliveryVisualReviewPassed={smoke.LastDeliveryVisualReviewPassed}");
+        Console.WriteLine($"lastDeliveryTrusted={smoke.LastDeliveryTrusted}");
+        Console.WriteLine($"lastDeliveryGraphicCount={smoke.LastDeliveryGraphicCount}");
         Console.WriteLine($"diagnosticsBundlePath={smoke.DiagnosticsBundlePath}");
         Console.WriteLine($"diagnosticsManifestPath={smoke.DiagnosticsManifestPath}");
         Console.WriteLine($"diagnosticsFileCount={smoke.DiagnosticsFileCount}");

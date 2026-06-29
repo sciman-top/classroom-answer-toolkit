@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getDefaultProfileName, getDefaultSubjectPack, loadRuntimeConfig, resolveSnapshotPath } from "./runtime-config.mjs";
+import { getDefaultSubjectPack, getSnapshotActiveProfile, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -176,12 +176,7 @@ function loadJson(filePath) {
 
 function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
-  const runtimeConfig = loadRuntimeConfig(options.subjectPack);
   const callerCwd = process.env.INIT_CWD || process.cwd();
-
-  if (!options.profile) {
-    options.profile = getDefaultProfileName(options.subjectPack);
-  }
 
   if (options.help) {
     console.log(usage);
@@ -213,6 +208,7 @@ function main() {
     subjectPack: options.subjectPack,
     callerCwd
   });
+  const compileProfile = options.profile ?? "classroom";
 
   console.log(`[${packageName}] validate-assets`);
   runNodeScript(path.join("..", "rule-compiler", "validate-assets.mjs"), []);
@@ -223,7 +219,7 @@ function main() {
       "--subject-pack",
       options.subjectPack,
       "--profile",
-      options.profile,
+      compileProfile,
       "--out",
       path.relative(repoRoot, snapshotPath)
     ]);
@@ -236,15 +232,18 @@ function main() {
   }
 
   const snapshot = loadJson(snapshotPath);
+  const activeProfile = getSnapshotActiveProfile(snapshot, options.profile);
+  const profileName = activeProfile.name;
+  const snapshotSubjectPack = snapshot.subjectPack?.assetId ?? options.subjectPack;
 
   if (!options.skipValidate) {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
     runNodeScript("validate-answer-markdown.mjs", [
       path.relative(repoRoot, inputPath),
       "--subject-pack",
-      options.subjectPack,
+      snapshotSubjectPack,
       "--profile",
-      options.profile,
+      profileName,
       "--snapshot",
       path.relative(repoRoot, snapshotPath)
     ]);
@@ -255,9 +254,9 @@ function main() {
     path.relative(repoRoot, inputPath),
     path.relative(repoRoot, outputPath),
     "--subject-pack",
-    options.subjectPack,
+    snapshotSubjectPack,
     "--profile",
-    options.profile,
+    profileName,
     "--snapshot",
     path.relative(repoRoot, snapshotPath)
   ]);
@@ -282,7 +281,7 @@ function main() {
   cleanupArgs.push(path.relative(repoRoot, makeRenderTempHtmlPath(outputPath)));
 
   console.log(`[${packageName}] cleanup`);
-  if (runtimeConfig.deliveryRules?.cleanupAfterSuccessfulDeliver !== false) {
+  if (snapshot.delivery?.rules?.cleanupAfterSuccessfulDeliver !== false) {
     runNodeScript("cleanup-answer-artifacts.mjs", cleanupArgs);
     if (!options.keepReview) {
       const reviewRoot = path.join(repoRoot, ".pdf-review");
@@ -302,13 +301,11 @@ function main() {
     "--output",
     path.relative(repoRoot, outputPath),
     "--subject-pack",
-    options.subjectPack,
+    snapshotSubjectPack,
     "--profile",
-    options.profile,
+    profileName,
     "--snapshot-path",
     path.relative(repoRoot, snapshotPath),
-    "--snapshot-id",
-    snapshot.snapshotId,
     "--review-dir",
     path.relative(repoRoot, reviewOutputDir),
     "--review-manifest",

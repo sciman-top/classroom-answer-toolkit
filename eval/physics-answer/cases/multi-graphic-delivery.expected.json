@@ -1,14 +1,14 @@
 {
-  "caseId": "graphic-placement",
+  "caseId": "multi-graphic-delivery",
   "profiles": {
     "classroom": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/graphic-placement.classroom.page-001.png",
       "delivery": {
         "keepReview": false,
         "expectedGraphics": [
-          "sample-lever-figure-answer"
+          "multi-graphic-lever-answer",
+          "multi-graphic-optics-answer"
         ],
         "expectedStatus": {
           "toolchainPassed": true,
@@ -25,11 +25,11 @@
     "compact": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/graphic-placement.compact.page-001.png",
       "delivery": {
         "keepReview": false,
         "expectedGraphics": [
-          "sample-lever-figure-answer"
+          "multi-graphic-lever-answer",
+          "multi-graphic-optics-answer"
         ],
         "expectedStatus": {
           "toolchainPassed": true,
@@ -45,6 +45,6 @@
     }
   },
   "notes": [
-    "Covers answer-graphic marker expansion, placement rendering, and delivery manifest validation."
+    "Covers delivery manifest traceability for multiple answer-graphic markers in one answer."
   ]
 }

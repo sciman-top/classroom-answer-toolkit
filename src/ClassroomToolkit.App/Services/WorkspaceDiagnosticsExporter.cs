@@ -27,6 +27,35 @@ public sealed record WorkspaceDiagnosticsSubjectPackRecord(
     bool EvalOk,
     int EvalCaseCount);
 
+public sealed record WorkspaceDiagnosticsDeliveryGraphicRecord(
+    string? PlacementPath,
+    string? PreviewPath,
+    string? PlacedGraphicId,
+    string? GraphicId,
+    string? ArtifactId,
+    string? QuestionRef,
+    string? PlacementMode);
+
+public sealed record WorkspaceDiagnosticsDeliveryGraphicIndexRecord(
+    string BundleId,
+    string? PlacedGraphicId,
+    string? GraphicId,
+    string? ArtifactId,
+    string? QuestionRef,
+    string? PlacementMode,
+    string? PlacementBundlePath,
+    string? PreviewBundlePath,
+    string? SourcePlacementPath,
+    string? SourcePreviewPath);
+
+public sealed record WorkspaceDiagnosticsOcrRecord(
+    string? Status,
+    string? Provider,
+    string? Version,
+    string? Language,
+    int? PageCount,
+    string? Error);
+
 public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -95,6 +124,10 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             request.LastDeliveryManifestPath,
             Path.Combine(deliveryRoot, "delivery-manifest.json"),
             "latest-delivery-manifest",
+            assets);
+        CopyDeliveryGraphicsIfExists(
+            request.LastDeliveryManifestPath,
+            Path.Combine(deliveryRoot, "graphics"),
             assets);
         CopyDirectoryIfExists(
             request.LastReviewDirectoryPath,
@@ -246,6 +279,71 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
         assets.Add(new WorkspaceDiagnosticsAssetRecord(kind, fullSourceDirectory, destinationDirectory, true));
     }
 
+    private static void CopyDeliveryGraphicsIfExists(
+        string? deliveryManifestPath,
+        string destinationDirectory,
+        ICollection<WorkspaceDiagnosticsAssetRecord> assets)
+    {
+        if (string.IsNullOrWhiteSpace(deliveryManifestPath))
+        {
+            return;
+        }
+
+        var fullManifestPath = Path.GetFullPath(deliveryManifestPath);
+        if (!File.Exists(fullManifestPath))
+        {
+            return;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(fullManifestPath));
+        var graphics = ReadDeliveryGraphics(document.RootElement, Path.GetDirectoryName(fullManifestPath));
+        var indexRecords = new List<WorkspaceDiagnosticsDeliveryGraphicIndexRecord>();
+        for (var index = 0; index < graphics.Count; index += 1)
+        {
+            var graphic = graphics[index];
+            var bundleId = $"{index + 1:000}";
+            var graphicRoot = Path.Combine(destinationDirectory, bundleId);
+            var placementBundlePath = Path.Combine(graphicRoot, "placed-answer-graphic.json");
+            var previewBundlePath = Path.Combine(graphicRoot, "preview" + Path.GetExtension(graphic.PreviewPath ?? ".svg"));
+            CopyFileIfExists(
+                graphic.PlacementPath,
+                placementBundlePath,
+                "latest-delivery-graphic-placement",
+                assets);
+            CopyFileIfExists(
+                graphic.PreviewPath,
+                previewBundlePath,
+                "latest-delivery-graphic-preview",
+                assets);
+            indexRecords.Add(new WorkspaceDiagnosticsDeliveryGraphicIndexRecord(
+                bundleId,
+                graphic.PlacedGraphicId,
+                graphic.GraphicId,
+                graphic.ArtifactId,
+                graphic.QuestionRef,
+                graphic.PlacementMode,
+                File.Exists(placementBundlePath) ? placementBundlePath : null,
+                File.Exists(previewBundlePath) ? previewBundlePath : null,
+                graphic.PlacementPath,
+                graphic.PreviewPath));
+        }
+
+        if (indexRecords.Count > 0)
+        {
+            Directory.CreateDirectory(destinationDirectory);
+            var indexPath = Path.Combine(destinationDirectory, "index.json");
+            File.WriteAllText(
+                indexPath,
+                JsonSerializer.Serialize(indexRecords, JsonOptions) + Environment.NewLine,
+                System.Text.Encoding.UTF8);
+            assets.Add(new WorkspaceDiagnosticsAssetRecord(
+                "latest-delivery-graphic-index",
+                indexPath,
+                indexPath,
+                true));
+        }
+    }
+
     private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
     {
         Directory.CreateDirectory(destinationDirectory);
@@ -360,6 +458,29 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             && snapshotElement.TryGetProperty("version", out var versionElement)
                 ? versionElement.GetString()
                 : null;
+        var toolchainPassed = root.TryGetProperty("status", out var statusElement)
+            && statusElement.TryGetProperty("toolchainPassed", out var toolchainPassedElement)
+                ? toolchainPassedElement.GetBoolean()
+                : (bool?)null;
+        var deliveryComplete = root.TryGetProperty("status", out statusElement)
+            && statusElement.TryGetProperty("deliveryComplete", out var deliveryCompleteElement)
+                ? deliveryCompleteElement.GetBoolean()
+                : (bool?)null;
+        var reviewArtifactReady = root.TryGetProperty("status", out statusElement)
+            && statusElement.TryGetProperty("reviewArtifactReady", out var reviewArtifactReadyElement)
+                ? reviewArtifactReadyElement.GetBoolean()
+                : (bool?)null;
+        var visualReviewPassed = root.TryGetProperty("status", out statusElement)
+            && statusElement.TryGetProperty("visualReviewPassed", out var visualReviewPassedElement)
+            && visualReviewPassedElement.ValueKind != JsonValueKind.Null
+                ? visualReviewPassedElement.GetBoolean()
+                : (bool?)null;
+        var trusted = root.TryGetProperty("status", out statusElement)
+            && statusElement.TryGetProperty("trusted", out var trustedElement)
+                ? trustedElement.GetBoolean()
+                : (bool?)null;
+        var ocr = ReadDeliveryOcr(root);
+        var graphics = ReadDeliveryGraphics(root, Path.GetDirectoryName(fullPath));
 
         return new
         {
@@ -370,7 +491,88 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             snapshotVersion,
             input,
             output,
-            reviewDirectoryPath
+            reviewDirectoryPath,
+            status = new
+            {
+                toolchainPassed,
+                deliveryComplete,
+                reviewArtifactReady,
+                visualReviewPassed,
+                trusted
+            },
+            ocr,
+            graphics = new
+            {
+                count = graphics.Count,
+                items = graphics
+            }
         };
+    }
+
+    private static WorkspaceDiagnosticsOcrRecord ReadDeliveryOcr(JsonElement root)
+    {
+        if (!root.TryGetProperty("ocr", out var ocrElement) || ocrElement.ValueKind != JsonValueKind.Object)
+        {
+            return new WorkspaceDiagnosticsOcrRecord(null, null, null, null, null, null);
+        }
+
+        var pageCount = ocrElement.TryGetProperty("pageCount", out var pageCountElement)
+            && pageCountElement.ValueKind == JsonValueKind.Number
+            && pageCountElement.TryGetInt32(out var pageCountValue)
+                ? pageCountValue
+                : (int?)null;
+
+        return new WorkspaceDiagnosticsOcrRecord(
+            ReadOptionalString(ocrElement, "status"),
+            ReadOptionalString(ocrElement, "provider"),
+            ReadOptionalString(ocrElement, "version"),
+            ReadOptionalString(ocrElement, "language"),
+            pageCount,
+            ReadOptionalString(ocrElement, "error"));
+    }
+
+    private static IReadOnlyList<WorkspaceDiagnosticsDeliveryGraphicRecord> ReadDeliveryGraphics(JsonElement root, string? manifestDirectory)
+    {
+        if (!root.TryGetProperty("graphics", out var graphicsElement)
+            || !graphicsElement.TryGetProperty("items", out var itemsElement)
+            || itemsElement.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<WorkspaceDiagnosticsDeliveryGraphicRecord>();
+        }
+
+        var items = new List<WorkspaceDiagnosticsDeliveryGraphicRecord>();
+        foreach (var itemElement in itemsElement.EnumerateArray())
+        {
+            items.Add(new WorkspaceDiagnosticsDeliveryGraphicRecord(
+                ResolveDeliveryManifestPath(ReadOptionalString(itemElement, "placementPath"), manifestDirectory),
+                ResolveDeliveryManifestPath(ReadOptionalString(itemElement, "previewPath"), manifestDirectory),
+                ReadOptionalString(itemElement, "placedGraphicId"),
+                ReadOptionalString(itemElement, "graphicId"),
+                ReadOptionalString(itemElement, "artifactId"),
+                ReadOptionalString(itemElement, "questionRef"),
+                ReadOptionalString(itemElement, "placementMode")));
+        }
+
+        return items;
+    }
+
+    private static string? ResolveDeliveryManifestPath(string? pathValue, string? manifestDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(pathValue) || string.IsNullOrWhiteSpace(manifestDirectory))
+        {
+            return pathValue;
+        }
+
+        return Path.IsPathFullyQualified(pathValue)
+            ? pathValue
+            : Path.GetFullPath(Path.Combine(manifestDirectory, pathValue));
+    }
+
+    private static string? ReadOptionalString(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var valueElement)
+            && valueElement.ValueKind == JsonValueKind.String
+                ? valueElement.GetString()
+                : null;
     }
 }

@@ -6,6 +6,7 @@ import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mj
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const defaultSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
+const placedAnswerGraphicSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "placed-answer-graphic.schema.json");
 
 function fail(message, code = 2) {
   console.error(message);
@@ -50,6 +51,63 @@ function parseArgs(argv) {
   return options;
 }
 
+function resolveManifestRelativePath(filePath, manifestDir) {
+  return path.isAbsolute(filePath) ? filePath : path.resolve(manifestDir, filePath);
+}
+
+function readJsonWithBom(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/u, ""));
+}
+
+function addPlacementFieldMismatchErrors(errors, item, placement, itemIndex) {
+  for (const fieldName of ["placedGraphicId", "graphicId", "artifactId", "questionRef", "placementMode"]) {
+    if (typeof placement?.[fieldName] !== "string" || placement[fieldName].trim().length === 0) {
+      continue;
+    }
+
+    if (item?.[fieldName] !== placement[fieldName]) {
+      errors.push(`graphics.items[${itemIndex}].${fieldName} must match placement.${fieldName}.`);
+    }
+  }
+}
+
+function validateOcrMetadata(errors, ocr) {
+  const allowedStatuses = new Set(["not-requested", "requested", "ok", "failed"]);
+  if (!ocr || typeof ocr !== "object" || Array.isArray(ocr)) {
+    errors.push("ocr must be an object.");
+    return;
+  }
+
+  if (typeof ocr.status !== "string" || !allowedStatuses.has(ocr.status)) {
+    errors.push("ocr.status must be one of not-requested, requested, ok, failed.");
+    return;
+  }
+
+  if (ocr.status !== "not-requested") {
+    for (const fieldName of ["provider", "version", "language"]) {
+      if (typeof ocr[fieldName] !== "string" || ocr[fieldName].trim().length === 0) {
+        errors.push(`ocr.${fieldName} must be a non-empty string when OCR is ${ocr.status}.`);
+      }
+    }
+  }
+
+  if (ocr.status === "not-requested") {
+    for (const fieldName of ["provider", "version", "language"]) {
+      if (ocr[fieldName] !== undefined && ocr[fieldName] !== null) {
+        errors.push(`ocr.${fieldName} must be omitted when OCR is not requested.`);
+      }
+    }
+  }
+
+  if (ocr.status === "failed" && (typeof ocr.error !== "string" || ocr.error.trim().length === 0)) {
+    errors.push("ocr.error must be a non-empty string when OCR failed.");
+  }
+
+  if (ocr.pageCount !== undefined && (!Number.isFinite(ocr.pageCount) || ocr.pageCount < 0)) {
+    errors.push("ocr.pageCount must be a non-negative number.");
+  }
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
@@ -63,6 +121,7 @@ function main() {
 
   const callerCwd = process.env.INIT_CWD || process.cwd();
   const manifestPath = path.resolve(callerCwd, options.manifest);
+  const manifestDir = path.dirname(manifestPath);
   const schemaPath = path.resolve(callerCwd, options.schema);
 
   if (!fs.existsSync(manifestPath)) {
@@ -102,6 +161,84 @@ function main() {
 
   if (typeof manifest.output === "string" && !manifest.output.toLowerCase().endsWith(".pdf")) {
     errors.push("output should point to a PDF file.");
+  }
+
+  validateOcrMetadata(errors, manifest.ocr);
+
+  if (manifest.graphics !== undefined && !Array.isArray(manifest.graphics?.items)) {
+    errors.push("graphics.items must be an array.");
+  } else if (Array.isArray(manifest.graphics?.items)) {
+    for (const [index, item] of manifest.graphics.items.entries()) {
+      if (typeof item?.placementPath !== "string" || item.placementPath.trim().length === 0) {
+        errors.push(`graphics.items[${index}].placementPath must be a non-empty string.`);
+        continue;
+      }
+
+      const placementPath = resolveManifestRelativePath(item.placementPath, manifestDir);
+      if (!fs.existsSync(placementPath)) {
+        errors.push(`graphics.items[${index}].placementPath not found: ${item.placementPath}`);
+        continue;
+      }
+
+      let placement;
+      try {
+        placement = readJsonWithBom(placementPath);
+      } catch {
+        errors.push(`graphics.items[${index}].placementPath is not valid JSON: ${item.placementPath}`);
+        continue;
+      }
+
+      for (const placementError of validateValueAgainstSchema(placement, placedAnswerGraphicSchemaPath)) {
+        errors.push(`graphics.items[${index}].placementPath schema error: ${placementError}`);
+      }
+
+      if (placement.kind !== "placed-answer-graphic") {
+        errors.push(`graphics.items[${index}].placementPath must point to a placed-answer-graphic.`);
+      }
+
+      addPlacementFieldMismatchErrors(errors, item, placement, index);
+
+      if (typeof placement.previewPath === "string" && placement.previewPath.trim().length > 0) {
+        const expectedPreviewPath = path.resolve(path.dirname(placementPath), placement.previewPath);
+        if (typeof item.previewPath !== "string" || item.previewPath.trim().length === 0) {
+          errors.push(`graphics.items[${index}].previewPath must match placement.previewPath.`);
+        } else {
+          const previewPath = resolveManifestRelativePath(item.previewPath, manifestDir);
+          if (path.resolve(previewPath) !== expectedPreviewPath) {
+            errors.push(`graphics.items[${index}].previewPath must match placement.previewPath.`);
+          }
+
+          if (!fs.existsSync(previewPath)) {
+            errors.push(`graphics.items[${index}].previewPath not found: ${item.previewPath}`);
+          }
+        }
+      } else if (typeof item.previewPath === "string") {
+        const previewPath = resolveManifestRelativePath(item.previewPath, manifestDir);
+        if (!fs.existsSync(previewPath)) {
+          errors.push(`graphics.items[${index}].previewPath not found: ${item.previewPath}`);
+        }
+      }
+    }
+  }
+
+  if (typeof manifest.status?.toolchainPassed !== "boolean") {
+    errors.push("status.toolchainPassed must be a boolean.");
+  }
+
+  if (typeof manifest.status?.deliveryComplete !== "boolean") {
+    errors.push("status.deliveryComplete must be a boolean.");
+  }
+
+  if (typeof manifest.status?.reviewArtifactReady !== "boolean") {
+    errors.push("status.reviewArtifactReady must be a boolean.");
+  }
+
+  if (typeof manifest.status?.trusted !== "boolean") {
+    errors.push("status.trusted must be a boolean.");
+  }
+
+  if (manifest.status?.trusted === true && manifest.status?.visualReviewPassed !== true) {
+    errors.push("status.trusted cannot be true unless status.visualReviewPassed is true.");
   }
 
   if (errors.length > 0) {

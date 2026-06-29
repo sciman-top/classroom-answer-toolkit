@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { loadRuntimeConfig, resolveRuntimeConfigRelativePath } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -101,6 +100,16 @@ function runNodeTool(scriptFileName, args, options = {}) {
   };
 }
 
+function sameStringSet(expectedValues, actualValues) {
+  if (expectedValues.length !== actualValues.length) {
+    return false;
+  }
+
+  const expected = [...expectedValues].sort();
+  const actual = [...actualValues].sort();
+  return expected.every((value, index) => value === actual[index]);
+}
+
 function firstPageImagePath(reviewDir) {
   const candidates = fs
     .readdirSync(reviewDir)
@@ -116,6 +125,22 @@ function firstPageImagePath(reviewDir) {
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function loadSubjectPackManifest(subjectPack) {
+  const manifestPath = path.join(repoRoot, "prompts", subjectPack, "manifest.json");
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error(`Subject pack manifest not found: ${manifestPath}`);
+  }
+
+  return {
+    manifest: readJson(manifestPath),
+    manifestPath
+  };
+}
+
+function resolveManifestRelativePath(manifestPath, relativePath) {
+  return path.resolve(path.dirname(manifestPath), relativePath);
 }
 
 function removePathWithRetry(targetPath, attempts = 5) {
@@ -149,14 +174,14 @@ function makeCaseWorkDir(evalWorkRoot, subjectPack, caseId, profile) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
-  const runtimeConfig = loadRuntimeConfig(options.subjectPack);
+  const { manifest, manifestPath } = loadSubjectPackManifest(options.subjectPack);
   const evalWorkRoot = path.join(repoRoot, ".eval-work", `${options.subjectPack}-${process.pid}`);
   removePathWithRetry(evalWorkRoot);
   try {
     const datasetPath = options.dataset
       ? path.resolve(repoRoot, options.dataset)
-      : runtimeConfig.evaluation?.dataset
-      ? resolveRuntimeConfigRelativePath(runtimeConfig.evaluation.dataset)
+      : typeof manifest.evaluation?.dataset === "string"
+      ? resolveManifestRelativePath(manifestPath, manifest.evaluation.dataset)
       : path.resolve(repoRoot, "eval", options.subjectPack, "dataset.json");
     if (!fs.existsSync(datasetPath)) {
       fail(`Eval dataset not found: ${datasetPath}`);
@@ -331,13 +356,45 @@ function main() {
               && deliveryManifest.snapshot?.id === compiledSnapshot.snapshotId
               && deliveryManifest.snapshot?.version === compiledSnapshot.subjectPack?.version
               && deliveryManifest.snapshot?.profile === profile;
+            const expectedGraphics = expectation.delivery.expectedGraphics ?? [];
+            const actualGraphics = (deliveryManifest.graphics?.items ?? [])
+              .map((item) => item?.graphicId)
+              .filter((graphicId) => typeof graphicId === "string");
+            const graphicsMatch = sameStringSet(expectedGraphics, actualGraphics);
+            const expectedStatus = expectation.delivery.expectedStatus ?? {
+              toolchainPassed: true,
+              deliveryComplete: true,
+              reviewArtifactReady: Boolean(expectation.delivery.keepReview),
+              visualReviewPassed: null,
+              trusted: false
+            };
+            const actualStatus = deliveryManifest.status ?? {};
+            const statusMatch =
+              actualStatus.toolchainPassed === expectedStatus.toolchainPassed
+              && actualStatus.deliveryComplete === expectedStatus.deliveryComplete
+              && actualStatus.reviewArtifactReady === expectedStatus.reviewArtifactReady
+              && actualStatus.visualReviewPassed === expectedStatus.visualReviewPassed
+              && actualStatus.trusted === expectedStatus.trusted;
+            const expectedOcr = expectation.delivery.expectedOcr ?? { status: "not-requested" };
+            const actualOcr = deliveryManifest.ocr ?? {};
+            const ocrMatch = Object.entries(expectedOcr)
+              .every(([key, value]) => actualOcr[key] === value);
 
-            deliveryOk = snapshotMatch;
+            deliveryOk = snapshotMatch && graphicsMatch && statusMatch && ocrMatch;
             delivery = {
               manifestPath: path.relative(repoRoot, deliveryManifestPath),
               pdfPath: path.relative(repoRoot, deliverPdfPath),
               snapshotId: deliveryManifest.snapshotId,
               snapshotMatch,
+              expectedGraphics,
+              actualGraphics,
+              graphicsMatch,
+              expectedStatus,
+              actualStatus,
+              statusMatch,
+              expectedOcr,
+              actualOcr,
+              ocrMatch,
               keepReview: Boolean(expectation.delivery.keepReview)
             };
           } else {
@@ -346,6 +403,15 @@ function main() {
               pdfPath: path.relative(repoRoot, deliverPdfPath),
               snapshotId: null,
               snapshotMatch: false,
+              expectedGraphics: expectation.delivery.expectedGraphics ?? [],
+              actualGraphics: [],
+              graphicsMatch: false,
+              expectedStatus: expectation.delivery.expectedStatus ?? null,
+              actualStatus: null,
+              statusMatch: false,
+              expectedOcr: expectation.delivery.expectedOcr ?? null,
+              actualOcr: null,
+              ocrMatch: false,
               keepReview: Boolean(expectation.delivery.keepReview)
             };
           }
@@ -382,7 +448,7 @@ function main() {
     const output = {
       suiteId: dataset.suiteId ?? options.subjectPack,
       subjectPack: options.subjectPack,
-      assetVersion: dataset.assetVersion ?? runtimeConfig.version ?? "unknown",
+      assetVersion: dataset.assetVersion ?? manifest.version ?? "unknown",
       generatedAt: new Date().toISOString(),
       ok,
       cases: caseResults
