@@ -57,7 +57,7 @@ function deepMerge(base, override) {
   return merged;
 }
 
-export function loadRenderProfile(profileNameOrPath, _callerCwd = process.cwd(), snapshot = null) {
+export function loadRenderProfile(profileNameOrPath, snapshot = null) {
   if (!snapshot) {
     throw new Error("Resolved snapshot is required to load a render profile.");
   }

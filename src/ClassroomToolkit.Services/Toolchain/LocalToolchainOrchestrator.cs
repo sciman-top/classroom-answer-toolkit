@@ -233,11 +233,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             return (snapshotIdElement.GetString(), profile, snapshotPath, snapshotVersion);
         }
 
-        if (root.TryGetProperty("snapshotId", out var fallbackSnapshotId))
-        {
-            return (fallbackSnapshotId.GetString(), profile, snapshotPath, snapshotVersion);
-        }
-
         return (null, profile, snapshotPath, snapshotVersion);
     }
 }

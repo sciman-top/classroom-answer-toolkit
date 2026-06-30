@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -11,10 +12,7 @@ function parseArgs(argv) {
   const options = {
     input: null,
     output: null,
-    profile: null,
-    subjectPack: null,
     snapshotPath: null,
-    snapshotId: null,
     reviewDir: null,
     reviewManifestPath: null,
     reviewScale: null,
@@ -42,39 +40,12 @@ function parseArgs(argv) {
       continue;
     }
 
-    if (arg === "--profile") {
-      options.profile = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--profile=")) {
-      options.profile = arg.slice("--profile=".length);
-      continue;
-    }
-
-    if (arg === "--subject-pack") {
-      options.subjectPack = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--subject-pack=")) {
-      options.subjectPack = arg.slice("--subject-pack=".length);
-      continue;
-    }
-
     if (arg === "--snapshot-path") {
       options.snapshotPath = argv[++index];
       continue;
     }
     if (arg.startsWith("--snapshot-path=")) {
       options.snapshotPath = arg.slice("--snapshot-path=".length);
-      continue;
-    }
-
-    if (arg === "--snapshot-id") {
-      options.snapshotId = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--snapshot-id=")) {
-      options.snapshotId = arg.slice("--snapshot-id=".length);
       continue;
     }
 
@@ -222,17 +193,26 @@ function main() {
 
   let snapshot;
   try {
-    snapshot = JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
-  } catch {
-    fail(`Resolved snapshot is not valid JSON: ${snapshotPath}`);
+    snapshot = loadRequiredResolvedSnapshot(snapshotPath);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : `Resolved snapshot is not valid JSON: ${snapshotPath}`);
   }
 
-  const snapshotId = snapshot?.snapshotId ?? options.snapshotId;
-  const snapshotProfile = snapshot?.activeProfile?.name ?? options.profile;
-  const snapshotSubjectPack = snapshot?.subjectPack?.assetId ?? options.subjectPack;
-  const snapshotVersion = snapshot?.subjectPack?.version ?? null;
+  const snapshotId = snapshot?.snapshotId;
+  const snapshotProfile = snapshot?.activeProfile?.name;
+  const snapshotSubjectPack = snapshot?.subjectPack?.assetId;
+  const snapshotVersion = snapshot?.subjectPack?.version;
   if (typeof snapshotId !== "string" || snapshotId.trim().length === 0) {
     fail(`Resolved snapshot is missing snapshotId: ${snapshotPath}`);
+  }
+  if (typeof snapshotProfile !== "string" || snapshotProfile.trim().length === 0) {
+    fail(`Resolved snapshot is missing activeProfile.name: ${snapshotPath}`);
+  }
+  if (typeof snapshotSubjectPack !== "string" || snapshotSubjectPack.trim().length === 0) {
+    fail(`Resolved snapshot is missing subjectPack.assetId: ${snapshotPath}`);
+  }
+  if (typeof snapshotVersion !== "string" || snapshotVersion.trim().length === 0) {
+    fail(`Resolved snapshot is missing subjectPack.version: ${snapshotPath}`);
   }
 
   const reviewArtifactReady = Boolean(

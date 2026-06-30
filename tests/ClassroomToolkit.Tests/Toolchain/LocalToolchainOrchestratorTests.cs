@@ -94,6 +94,34 @@ public sealed class LocalToolchainOrchestratorTests
         processRunner.LastArguments.Should().Contain("math-answer");
     }
 
+    [Fact]
+    public async Task RunDeliverAsync_DoesNotTrustLegacyTopLevelSnapshotId_WhenSnapshotBlockIsMissing()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteRootSpec("11.1");
+        workspace.WriteManifest("physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("physics-answer", "v11.1", ok: true, caseCount: 5);
+        workspace.WriteSupportFiles();
+        workspace.WriteAnswerMarkdown();
+
+        var resolver = new RepositoryRootResolver(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(resolver, new LegacyTopLevelSnapshotIdProcessRunner());
+
+        var (execution, delivery) = await orchestrator.RunDeliverAsync(
+            new AnswerDeliveryRequest(
+                workspace.AnswerMarkdownPath,
+                null,
+                "classroom",
+                KeepReviewArtifacts: false,
+                SubjectPack: "physics-answer"));
+
+        execution.Succeeded.Should().BeTrue();
+        delivery.Should().NotBeNull();
+        delivery!.SnapshotId.Should().BeNull();
+    }
+
     private sealed class FakeProcessRunner : IProcessRunner
     {
         public Task<ProcessRunResult> RunAsync(
@@ -181,6 +209,31 @@ public sealed class LocalToolchainOrchestratorTests
                         version = "v0.1",
                         profile = "classroom"
                     }
+                }, new JsonSerializerOptions { WriteIndented = true }));
+            }
+
+            return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));
+        }
+    }
+
+    private sealed class LegacyTopLevelSnapshotIdProcessRunner : IProcessRunner
+    {
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.Equals(fileName, "npm", StringComparison.OrdinalIgnoreCase))
+            {
+                var manifestPath = Path.Combine(workingDirectory, "sample-answer.delivery-manifest.json");
+                File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
+                {
+                    schemaVersion = "1.0",
+                    kind = "delivery-manifest",
+                    subjectPack = "physics-answer",
+                    snapshotId = "legacy-top-level-only",
+                    profile = "classroom"
                 }, new JsonSerializerOptions { WriteIndented = true }));
             }
 

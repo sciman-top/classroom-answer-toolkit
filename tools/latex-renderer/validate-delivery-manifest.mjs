@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -108,6 +109,47 @@ function validateOcrMetadata(errors, ocr) {
   }
 }
 
+function validateReferencedSnapshot(errors, manifest, manifestDir) {
+  if (typeof manifest.snapshotPath !== "string" || manifest.snapshotPath.trim().length === 0) {
+    errors.push("snapshotPath must be a non-empty string.");
+    return;
+  }
+
+  const snapshotPath = resolveManifestRelativePath(manifest.snapshotPath, manifestDir);
+  let snapshot;
+  try {
+    snapshot = loadRequiredResolvedSnapshot(snapshotPath);
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : `Resolved snapshot is not valid JSON: ${snapshotPath}`);
+    return;
+  }
+
+  const snapshotId = snapshot.snapshotId;
+  const snapshotVersion = snapshot.subjectPack?.version;
+  const snapshotProfile = snapshot.activeProfile?.name;
+  const snapshotSubjectPack = snapshot.subjectPack?.assetId;
+
+  if (manifest.snapshotId !== snapshotId) {
+    errors.push("snapshotId must match referenced snapshot.snapshotId.");
+  }
+
+  if (manifest.snapshot?.id !== snapshotId) {
+    errors.push("snapshot.id must match referenced snapshot.snapshotId.");
+  }
+
+  if (manifest.snapshot?.version !== snapshotVersion) {
+    errors.push("snapshot.version must match referenced snapshot.subjectPack.version.");
+  }
+
+  if (manifest.snapshot?.profile !== snapshotProfile) {
+    errors.push("snapshot.profile must match referenced snapshot.activeProfile.name.");
+  }
+
+  if (manifest.subjectPack !== snapshotSubjectPack) {
+    errors.push("subjectPack must match referenced snapshot.subjectPack.assetId.");
+  }
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
@@ -154,6 +196,8 @@ function main() {
   if (typeof manifest.snapshot?.profile !== "string" || manifest.snapshot.profile.trim().length === 0) {
     errors.push("snapshot.profile must be a non-empty string.");
   }
+
+  validateReferencedSnapshot(errors, manifest, manifestDir);
 
   if (typeof manifest.input === "string" && !manifest.input.toLowerCase().endsWith(".md")) {
     errors.push("input should point to a Markdown file.");

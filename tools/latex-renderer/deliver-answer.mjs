@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getDefaultSubjectPack, getSnapshotActiveProfile, resolveSnapshotPath } from "./runtime-config.mjs";
+import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -170,10 +170,6 @@ function makeRenderTempHtmlPath(pdfPath) {
   );
 }
 
-function loadJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
-}
-
 function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
   const callerCwd = process.env.INIT_CWD || process.cwd();
@@ -231,10 +227,13 @@ function main() {
     fail(`Resolved snapshot not found: ${snapshotPath}`);
   }
 
-  const snapshot = loadJson(snapshotPath);
+  const snapshot = loadRequiredResolvedSnapshot(snapshotPath);
   const activeProfile = getSnapshotActiveProfile(snapshot, options.profile);
   const profileName = activeProfile.name;
-  const snapshotSubjectPack = snapshot.subjectPack?.assetId ?? options.subjectPack;
+  const snapshotSubjectPack = snapshot.subjectPack?.assetId;
+  if (typeof snapshotSubjectPack !== "string" || snapshotSubjectPack.trim().length === 0) {
+    fail(`Resolved snapshot is missing subjectPack.assetId: ${snapshotPath}`);
+  }
 
   if (!options.skipValidate) {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
@@ -300,10 +299,6 @@ function main() {
     path.relative(repoRoot, inputPath),
     "--output",
     path.relative(repoRoot, outputPath),
-    "--subject-pack",
-    snapshotSubjectPack,
-    "--profile",
-    profileName,
     "--snapshot-path",
     path.relative(repoRoot, snapshotPath),
     "--review-dir",

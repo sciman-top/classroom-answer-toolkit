@@ -251,6 +251,14 @@ function main() {
         }
 
         const compiledSnapshot = readJson(path.resolve(repoRoot, snapshotRelativePath));
+        const compiledSnapshotPath = path.resolve(repoRoot, snapshotRelativePath);
+        const snapshotTrace = {
+          snapshotId: compiledSnapshot.snapshotId,
+          snapshotPath: snapshotRelativePath,
+          subjectPack: compiledSnapshot.subjectPack?.assetId ?? null,
+          version: compiledSnapshot.subjectPack?.version ?? null,
+          profile: compiledSnapshot.activeProfile?.name ?? null
+        };
 
         const expectation = expected.profiles[profile];
         const run = runValidator(
@@ -352,10 +360,14 @@ function main() {
             }
 
             const deliveryManifest = readJson(deliveryManifestPath);
+            const deliverySnapshotPath = typeof deliveryManifest.snapshotPath === "string"
+              ? path.resolve(deliveryManifest.snapshotPath)
+              : null;
             const snapshotMatch = deliveryManifest.snapshotId === compiledSnapshot.snapshotId
               && deliveryManifest.snapshot?.id === compiledSnapshot.snapshotId
               && deliveryManifest.snapshot?.version === compiledSnapshot.subjectPack?.version
-              && deliveryManifest.snapshot?.profile === profile;
+              && deliveryManifest.snapshot?.profile === profile
+              && deliverySnapshotPath === compiledSnapshotPath;
             const expectedGraphics = expectation.delivery.expectedGraphics ?? [];
             const actualGraphics = (deliveryManifest.graphics?.items ?? [])
               .map((item) => item?.graphicId)
@@ -385,7 +397,9 @@ function main() {
               manifestPath: path.relative(repoRoot, deliveryManifestPath),
               pdfPath: path.relative(repoRoot, deliverPdfPath),
               snapshotId: deliveryManifest.snapshotId,
+              snapshotPath: deliveryManifest.snapshotPath,
               snapshotMatch,
+              expectedSnapshotPath: path.relative(repoRoot, compiledSnapshotPath),
               expectedGraphics,
               actualGraphics,
               graphicsMatch,
@@ -402,7 +416,9 @@ function main() {
               manifestPath: path.relative(repoRoot, deliveryManifestPath),
               pdfPath: path.relative(repoRoot, deliverPdfPath),
               snapshotId: null,
+              snapshotPath: null,
               snapshotMatch: false,
+              expectedSnapshotPath: path.relative(repoRoot, compiledSnapshotPath),
               expectedGraphics: expectation.delivery.expectedGraphics ?? [],
               actualGraphics: [],
               graphicsMatch: false,
@@ -426,6 +442,7 @@ function main() {
         caseResult.profiles[profile] = {
           expected: expectation,
           actual: {
+            snapshot: snapshotTrace,
             passed,
             warningCount,
             status: run.status,

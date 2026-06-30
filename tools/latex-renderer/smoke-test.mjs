@@ -255,6 +255,60 @@ function assertDeliveryManifestRejectsIncompleteOcrMetadata(explicitSnapshot) {
   );
 }
 
+function assertDeliveryManifestRejectsMismatchedSnapshot(explicitSnapshot) {
+  const referencedSnapshotPath = path.join(smokeDir, "mismatched-referenced-snapshot.json");
+  const manifestPath = path.join(smokeDir, "mismatched-snapshot.delivery-manifest.json");
+  writeJson(referencedSnapshotPath, {
+    ...explicitSnapshot,
+    snapshotId: `${explicitSnapshot.snapshotId}-different`,
+    subjectPack: {
+      ...explicitSnapshot.subjectPack,
+      version: `${explicitSnapshot.subjectPack?.version ?? "unknown"}-different`
+    }
+  });
+
+  writeJson(manifestPath, {
+    schemaVersion: "1.0",
+    kind: "delivery-manifest",
+    generatedAt: "2026-06-22T00:00:00.000Z",
+    subjectPack: "physics-answer",
+    snapshotId: explicitSnapshot.snapshotId,
+    snapshotPath: referencedSnapshotPath,
+    snapshot: {
+      id: explicitSnapshot.snapshotId,
+      version: explicitSnapshot.subjectPack?.version ?? "unknown",
+      profile: "classroom"
+    },
+    profile: "classroom",
+    input: path.join(smokeDir, "mismatched-snapshot.md"),
+    output: path.join(smokeDir, "mismatched-snapshot.pdf"),
+    review: {
+      outputDir: path.join(smokeDir, "mismatched-snapshot-review"),
+      manifestPath: path.join(smokeDir, "mismatched-snapshot-review", "manifest.json"),
+      scale: "2"
+    },
+    ocr: {
+      status: "not-requested"
+    },
+    graphics: {
+      items: []
+    },
+    status: {
+      toolchainPassed: true,
+      deliveryComplete: true,
+      reviewArtifactReady: false,
+      visualReviewPassed: null,
+      trusted: false
+    }
+  });
+
+  runNodeScriptExpectFailure(
+    "validate-delivery-manifest.mjs",
+    ["--manifest", path.relative(repoRoot, manifestPath)],
+    "snapshotId must match referenced snapshot.snapshotId."
+  );
+}
+
 function main() {
   ensureCleanSmokeDir();
 
@@ -373,6 +427,7 @@ function main() {
 
   assertDeliveryManifestRejectsMismatchedGraphic(explicitSnapshot);
   assertDeliveryManifestRejectsIncompleteOcrMetadata(explicitSnapshot);
+  assertDeliveryManifestRejectsMismatchedSnapshot(explicitSnapshot);
 
   console.log("[smoke] cleanup");
   fs.rmSync(smokeDir, { recursive: true, force: true });

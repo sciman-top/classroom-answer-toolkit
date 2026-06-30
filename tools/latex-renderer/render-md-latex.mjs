@@ -83,7 +83,7 @@ const snapshot = loadRequiredResolvedSnapshot(
     callerCwd
   })
 );
-const renderProfile = loadRenderProfile(options.profile, callerCwd, snapshot, options.subjectPack);
+const renderProfile = loadRenderProfile(options.profile, snapshot);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 const browserCandidates = [

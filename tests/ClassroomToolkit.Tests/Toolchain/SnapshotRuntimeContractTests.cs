@@ -53,6 +53,46 @@ public sealed class SnapshotRuntimeContractTests
     }
 
     [Fact]
+    public void DeliveryManifestWriter_RequiresSnapshotIdentityInsteadOfCliFallback()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "tools/latex-renderer/write-delivery-manifest.mjs"));
+
+        script.Should().Contain("loadRequiredResolvedSnapshot(snapshotPath)");
+        script.Should().Contain("Resolved snapshot is missing snapshotId");
+        script.Should().Contain("Resolved snapshot is missing activeProfile.name");
+        script.Should().Contain("Resolved snapshot is missing subjectPack.assetId");
+        script.Should().Contain("Resolved snapshot is missing subjectPack.version");
+        script.Should().NotContain("snapshot?.snapshotId ?? options.snapshotId");
+        script.Should().NotContain("snapshot?.activeProfile?.name ?? options.profile");
+        script.Should().NotContain("snapshot?.subjectPack?.assetId ?? options.subjectPack");
+    }
+
+    [Fact]
+    public void DeliverRuntime_RequiresSnapshotSubjectPackInsteadOfCliFallback()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "tools/latex-renderer/deliver-answer.mjs"));
+
+        script.Should().Contain("loadRequiredResolvedSnapshot(snapshotPath)");
+        script.Should().Contain("Resolved snapshot is missing subjectPack.assetId");
+        script.Should().NotContain("snapshot.subjectPack?.assetId ?? options.subjectPack");
+    }
+
+    [Fact]
+    public void DeliveryManifestValidator_ChecksManifestAgainstReferencedSnapshot()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "tools/latex-renderer/validate-delivery-manifest.mjs"));
+
+        script.Should().Contain("loadRequiredResolvedSnapshot(snapshotPath)");
+        script.Should().Contain("snapshotId must match referenced snapshot.snapshotId.");
+        script.Should().Contain("snapshot.version must match referenced snapshot.subjectPack.version.");
+        script.Should().Contain("snapshot.profile must match referenced snapshot.activeProfile.name.");
+        script.Should().Contain("subjectPack must match referenced snapshot.subjectPack.assetId.");
+    }
+
+    [Fact]
     public void SnapshotCompiler_IncludesDeliveryRulesForRuntime()
     {
         var repoRoot = FindRepoRoot();
@@ -71,6 +111,9 @@ public sealed class SnapshotRuntimeContractTests
         script.Should().Contain("manifest.evaluation?.dataset");
         script.Should().Contain("--snapshot");
         script.Should().Contain("--snapshot-path");
+        script.Should().Contain("snapshotTrace");
+        script.Should().Contain("expectedSnapshotPath");
+        script.Should().Contain("deliverySnapshotPath === compiledSnapshotPath");
         script.Should().NotContain("loadRuntimeConfig(");
         script.Should().NotContain("resolveRuntimeConfigRelativePath");
     }
