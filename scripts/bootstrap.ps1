@@ -20,13 +20,21 @@ function Get-FirstExistingPath {
     return $null
 }
 
-function Assert-DotNetSdk {
+function Test-DotNetSdkInstalled {
+    param(
+        [string]$Version
+    )
+
     $sdkOutput = & dotnet --list-sdks
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet --list-sdks failed."
     }
 
-    if ($sdkOutput -notmatch '^10\.0\.301\s+\[') {
+    return @($sdkOutput -split [Environment]::NewLine | Where-Object { $_ -match ('^{0}\s+\[' -f [regex]::Escape($Version)) }).Count -gt 0
+}
+
+function Assert-DotNetSdk {
+    if (-not (Test-DotNetSdkInstalled -Version "10.0.301")) {
         Write-Host "Installing .NET SDK 10.0.301..."
         & winget install --id Microsoft.DotNet.SDK.10 --exact --accept-source-agreements --accept-package-agreements --disable-interactivity
         if ($LASTEXITCODE -ne 0) {
@@ -34,8 +42,7 @@ function Assert-DotNetSdk {
         }
     }
 
-    $sdkOutput = & dotnet --list-sdks
-    if ($sdkOutput -notmatch '^10\.0\.301\s+\[') {
+    if (-not (Test-DotNetSdkInstalled -Version "10.0.301")) {
         throw "Expected .NET SDK 10.0.301 was not found after installation."
     }
 }
@@ -150,9 +157,9 @@ Assert-Browser
 Install-NodeDependencies
 Compile-RuleSnapshots
 Write-Host "Installing Node dependencies for tools/answer-graphics..."
-& npm ci --no-fund --no-audit --prefix tools/answer-graphics
+& npm install --no-fund --no-audit --prefix tools/answer-graphics
 if ($LASTEXITCODE -ne 0) {
-    throw "npm ci failed for tools/answer-graphics."
+    throw "npm install failed for tools/answer-graphics."
 }
 Install-PythonOcrEnv
 
