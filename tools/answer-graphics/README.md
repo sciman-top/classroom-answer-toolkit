@@ -1,6 +1,15 @@
 # Answer Graphics
 
-Minimal answer-graphic pipeline for diagram-based answers.
+Experimental controlled-graphic pipeline for reviewed diagram assets.
+
+## Positioning
+
+This toolchain is no longer a default product requirement.
+
+- It is **experimental**
+- It is **not** part of the main delivery promise
+- It is intended for **user-supplied** or **human-reviewed** graphic assets
+- The main answer workflow must remain usable without this toolchain
 
 Current staged flow:
 

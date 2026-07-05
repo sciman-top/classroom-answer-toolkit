@@ -28,7 +28,7 @@ public sealed class WorkspaceHealthReportReaderTests
         result.EvalOk.Should().BeTrue();
         result.EvalCaseCount.Should().Be(4);
         result.GraphicsExists.Should().BeTrue();
-        result.GraphicsSummary.Should().Contain("图块产物");
+        result.GraphicsSummary.Should().Contain("受控插图");
     }
 
     [Fact]
@@ -70,6 +70,25 @@ public sealed class WorkspaceHealthReportReaderTests
         var result = reader.Read();
 
         result.Issues.Should().ContainSingle(issue => issue.Contains("最新规范 v11.1", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Read_DoesNotAddIssue_WhenExperimentalGraphicsDirectoryIsIncomplete()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteRootSpec("11.0");
+        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
+        workspace.WriteIncompleteGraphics();
+
+        var reader = new WorkspaceHealthReportReader(workspace.Root);
+        var result = reader.Read();
+
+        result.Issues.Should().BeEmpty();
+        result.GraphicsExists.Should().BeTrue();
+        result.GraphicsSummary.Should().Contain("实验性");
     }
 
     private sealed class TemporaryWorkspace : IDisposable
@@ -160,6 +179,13 @@ public sealed class WorkspaceHealthReportReaderTests
             Directory.CreateDirectory(graphicsPath);
             File.WriteAllText(Path.Combine(graphicsPath, "answer-graphic-preview.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\" />");
             File.WriteAllText(Path.Combine(graphicsPath, "placed-answer-graphic.json"), "{}");
+        }
+
+        public void WriteIncompleteGraphics()
+        {
+            var graphicsPath = Path.Combine(Root, ".answer-graphics");
+            Directory.CreateDirectory(graphicsPath);
+            File.WriteAllText(Path.Combine(graphicsPath, "readme.txt"), "experimental");
         }
 
         public void Dispose()

@@ -350,10 +350,10 @@ public partial class MainViewModel : ObservableObject
             _healthReport.EvalExists ? $"共 {_healthReport.EvalCaseCount} 组" : "尚未生成 latest.json",
             _healthReport.EvalExists && _healthReport.EvalOk));
         StatusCards.Add(new StatusCardViewModel(
-            "图块产物",
-            _healthReport.GraphicsExists ? "已生成" : "缺失",
-            _healthReport.GraphicsSummary ?? "尚未生成 answer graphics 产物",
-            _healthReport.GraphicsExists));
+            "受控插图",
+            _healthReport.GraphicsExists ? "实验性已检测" : "未启用",
+            _healthReport.GraphicsSummary ?? "受控插图实验链未启用。",
+            true));
 
         Issues.Clear();
         foreach (var issue in _healthReport.Issues)
@@ -377,7 +377,7 @@ public partial class MainViewModel : ObservableObject
         AppendLine($"Snapshot 路径: {_healthReport.SnapshotPath}");
         AppendLine($"快照: {(_healthReport.SnapshotExists ? $"{_healthReport.SnapshotVersion} / {_healthReport.SnapshotProfile}" : "缺失")}");
         AppendLine($"回归: {(_healthReport.EvalExists ? $"{(_healthReport.EvalOk ? "通过" : "失败")} / {_healthReport.EvalCaseCount} 组" : "缺失")}");
-        AppendLine($"图块: {(_healthReport.GraphicsExists ? _healthReport.GraphicsSummary : "缺失")}");
+        AppendLine($"受控插图: {_healthReport.GraphicsSummary ?? "未启用"}");
 
         if (_healthReport.Issues.Count > 0)
         {

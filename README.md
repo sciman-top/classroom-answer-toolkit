@@ -15,7 +15,7 @@ This project provides a local Windows workflow for generating, validating, and r
 - 答案 Markdown 在渲染前执行格式与 LaTeX 基线校验。
 - PDF 渲染保留真实数学公式输出，而不是降级为普通文本。
 - 支持源 PDF 与答案 PDF 的页面审阅图生成。
-- 支持作图题答案图的结构化描述、叠加层渲染与组合。
+- 支持实验性的受控插图插入链路，可把用户提供或人工复核后的答案图块插入 PDF。
 - WPF 桌面应用提供本地工具链入口和工作区诊断。
 
 English summary:
@@ -24,7 +24,7 @@ English summary:
 - Answer Markdown is validated before rendering.
 - PDF output keeps real LaTeX math rendering.
 - Source PDFs and rendered answers can be reviewed through generated page images.
-- Diagram-answer helpers support structured overlays and composition.
+- Experimental controlled-graphic helpers can place reviewed answer graphics into PDFs.
 - The WPF app provides a local toolchain entry point and workspace diagnostics.
 
 ## 当前范围 / Current Scope
@@ -48,7 +48,7 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `docs/strategy/`: 平台化路线、执行路线图与视觉降错专项方案。
 - `docs/adr/`: 关键决策记录。
 - `tools/latex-renderer/`: Markdown、LaTeX、PDF 渲染、审阅与交付工具链。
-- `tools/answer-graphics/`: 作图题答案图提取、叠加和组合工具链。
+- `tools/answer-graphics/`: 实验性受控插图工具链，不是默认主交付链。
 - `tools/ocr/`: 面向低质量扫描件和批量处理的本地 OCR 路径。
 - `eval/`: 固定评测数据集、视觉基线和回归结果。
 - `tests/`: xUnit 与 FluentAssertions 测试。
@@ -85,10 +85,15 @@ npm --prefix tools/latex-renderer run deliver -- "<answer.md>" --subject-pack se
 
 兼容说明：第一阶段仍接受旧包名 `physics-answer`，运行时会自动映射到 `junior-physics-answer`。
 
-执行本地冒烟检查：
+执行本地主链冒烟检查：
 
 ```powershell
 npm --prefix tools/latex-renderer run smoke
+```
+
+实验性受控插图链路如需单独验证，再运行：
+
+```powershell
 npm --prefix tools/answer-graphics run smoke
 ```
 
@@ -109,5 +114,6 @@ dotnet build ClassroomToolkit.sln -c Debug
 ## 状态 / Status
 
 当前最完整的链路是初中物理参考答案生成与渲染。多学段/多学科支持已经在资产层、规范层和契约层展开，但产品层仍在演进中。
+自动基于题图生成作图题答案图不再作为本项目的主需求；当前只保留“受控插图插入 PDF”的实验性底座。
 
 The junior-high physics answer workflow is currently the most complete path. Multi-subject support exists at the asset and contract level, while product-level coverage is still evolving.

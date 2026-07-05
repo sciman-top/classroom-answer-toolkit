@@ -62,11 +62,6 @@ public sealed class WorkspaceHealthReportReader
             issues.Add($"评测结果版本 {evalStatus.AssetVersion} 与资产版本 {manifestVersion} 不一致。");
         }
 
-        if (graphicsStatus.Exists && !graphicsStatus.HasPreview)
-        {
-            issues.Add("作图题图块产物缺少预览图。");
-        }
-
         var summary = issues.Count == 0
             ? "规则快照、评测结果与最新规范已对齐。"
             : string.Join("；", issues);
@@ -191,7 +186,7 @@ public sealed class WorkspaceHealthReportReader
     {
         if (!Directory.Exists(graphicsPath))
         {
-            return (false, false, "作图题图块产物目录尚未生成。");
+            return (false, false, "受控插图实验链未启用；默认主交付链不依赖该能力。");
         }
 
         var previewExists = File.Exists(Path.Combine(graphicsPath, "answer-graphic-preview.svg"))
@@ -201,8 +196,8 @@ public sealed class WorkspaceHealthReportReader
         var placedExists = File.Exists(Path.Combine(graphicsPath, "placed-answer-graphic.json"));
 
         var summary = previewExists
-            ? $"图块产物已生成{(artifactExists ? "，包含 artifact" : string.Empty)}{(placedExists ? "，包含 placement 记录" : string.Empty)}。"
-            : "作图题图块产物缺少预览图。";
+            ? $"已检测到受控插图产物（实验性）{(artifactExists ? "，包含 artifact" : string.Empty)}{(placedExists ? "，包含 placement 记录" : string.Empty)}。"
+            : "发现受控插图目录，但产物不完整；该能力为实验性，不影响默认主交付链。";
 
         return (true, previewExists, summary);
     }

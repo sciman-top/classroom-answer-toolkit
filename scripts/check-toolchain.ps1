@@ -83,8 +83,7 @@ foreach ($subjectPack in $subjectPacks) {
     } ("{0} answer eval failed." -f $subjectPack.AssetId)
 }
 
-Write-Host "answer graphics smoke:"
-Assert-CommandSuccess { npm --prefix tools/answer-graphics run smoke } "Answer graphics smoke failed."
+Write-Host "answer graphics smoke: skipped (experimental, not part of default toolchain gate)"
 
 $venvPython = Join-Path $repoRoot "tools\ocr\.venv\Scripts\python.exe"
 if (Test-Path -LiteralPath $venvPython) {

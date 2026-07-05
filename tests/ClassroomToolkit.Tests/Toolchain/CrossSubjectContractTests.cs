@@ -59,7 +59,7 @@ public sealed class CrossSubjectContractTests
     }
 
     [Fact]
-    public void Bootstrap_ChecksDotNetSdkAcrossInstalledSdkLines_AndAvoidsCiWithoutLockfile()
+    public void Bootstrap_ChecksDotNetSdkAcrossInstalledSdkLines_AndTreatsAnswerGraphicsAsOnDemand()
     {
         var repoRoot = FindRepoRoot();
         var script = File.ReadAllText(Path.Combine(repoRoot, "scripts", "bootstrap.ps1"));
@@ -67,8 +67,7 @@ public sealed class CrossSubjectContractTests
         script.Should().Contain("$sdkOutput -split [Environment]::NewLine");
         script.Should().Contain("Where-Object { $_ -match ('^{0}\\s+\\[' -f [regex]::Escape($Version)) }");
         script.Should().Contain("Test-DotNetSdkInstalled -Version \"10.0.301\"");
-        script.Should().Contain("npm install --no-fund --no-audit --prefix tools/answer-graphics");
-        script.Should().NotContain("npm ci --no-fund --no-audit --prefix tools/answer-graphics");
+        script.Should().Contain("Skipping tools/answer-graphics bootstrap; this experimental toolchain is installed on demand.");
     }
 
     private static string FindRepoRoot()

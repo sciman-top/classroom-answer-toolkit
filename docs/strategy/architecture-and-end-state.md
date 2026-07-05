@@ -15,7 +15,7 @@
 1. 桌面层：WPF、Generic Host、MVVM，负责 orchestration、diagnostics、review、delivery。
 2. 平台核心层：规则、profile、snapshot、delivery manifest、workspace diagnostics 等跨学科 contract。
 3. 学科包层：按 subject-pack 承载学段学科规则、评测、profile override 和 compiled spec。
-4. 工具实现层：OCR、规则编译、渲染、review、作图题辅助与交付。
+4. 工具实现层：OCR、规则编译、渲染、review、实验性受控插图与交付。
 
 ## 技术栈
 
@@ -31,3 +31,4 @@
 2. 运行时真相是 snapshot，不是大规格 Markdown。
 3. 对外可转发真相是 compiled human spec。
 4. 视觉风险必须可比对、可复核、可回放。
+5. 默认主交付链不承诺 AI 自动基于题图生成答案图；如需插图，只支持用户提供或人工复核后的受控图块插入。

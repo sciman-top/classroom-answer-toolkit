@@ -67,3 +67,15 @@
 - rollback: 恢复旧单轨叙述
 - blocks: 无
 - done_definition: 看图风险被明确建模，而不是只靠提示词提醒
+
+## Epic 5: 受控插图收缩
+
+### task_id: GRAPHICS-001
+
+- goal: 将 `answer-graphics` 从主需求降级为实验性受控插图底座
+- inputs: README、strategy、ADR、bootstrap/check-toolchain、桌面诊断口径
+- changes: 去掉自动作图答案图承诺；保留“已有图块插入 PDF”能力；主链门禁不再依赖 `tools/answer-graphics`
+- verification: 文档口径一致；主链 bootstrap/check 不再把 `answer-graphics` 视为硬门禁
+- rollback: 恢复旧主需求表述与门禁
+- blocks: 无
+- done_definition: 后续 AI 不会再把自动作图答案图当作主线承诺
