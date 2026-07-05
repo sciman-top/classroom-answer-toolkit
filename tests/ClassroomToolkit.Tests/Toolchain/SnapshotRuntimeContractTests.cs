@@ -36,7 +36,8 @@ public sealed class SnapshotRuntimeContractTests
         script.Should().Contain("resolveValidationRules(snapshot)");
         script.Should().Contain("findEnabledRule(snapshot");
         script.Should().Contain("rule?.severity === \"hard\"");
-        script.Should().Contain("physics-answer.choice-answer.compact-line");
+        script.Should().Contain("const subjectPackId = snapshot?.subjectPack?.assetId;");
+        script.Should().Contain("`${subjectPackId}.choice-answer.compact-line`");
         script.Should().Contain("rendering.true-latex");
     }
 

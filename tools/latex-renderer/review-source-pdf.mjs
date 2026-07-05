@@ -94,6 +94,7 @@ const restrictedPorts = new Set([
 ]);
 
 const browserCandidates = [
+  process.env.CLASSROOM_TOOLKIT_BROWSER_PATH,
   path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
@@ -105,9 +106,9 @@ const usage = `Usage:
   npm run review-source-pdf -- <input.pdf> [--out <dir>] [--pages all|1,3,5-7,last] [--scale 1.8] [--ocr chi_sim]
 
 Examples:
-  npm run review-source-pdf -- "../../习题PDF/能量-效率.pdf"
-  npm run review-source-pdf -- "../../习题PDF/能量-效率.pdf" --pages 1,last --scale 2
-  npm run review-source-pdf -- "../../习题PDF/能量-效率.pdf" --pages 1 --ocr chi_sim
+  npm run review-source-pdf -- "../../样例交付/能量-效率.pdf"
+  npm run review-source-pdf -- "../../样例交付/能量-效率.pdf" --pages 1,last --scale 2
+  npm run review-source-pdf -- "../../样例交付/能量-效率.pdf" --pages 1 --ocr chi_sim
 `;
 
 function parseArgs(argv) {
@@ -446,7 +447,7 @@ async function main() {
     : makeDefaultOutputDir(inputPath);
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const browserPath = browserCandidates.find((candidate) => fs.existsSync(candidate));
+const browserPath = browserCandidates.find((candidate) => candidate && fs.existsSync(candidate));
   if (!browserPath) {
     fail("No local Chromium, Chrome, or Edge executable found for PDF source review.", 3);
   }

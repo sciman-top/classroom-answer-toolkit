@@ -1,0 +1,50 @@
+{
+  "caseId": "graphic-placement",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/graphic-placement.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false,
+        "expectedGraphics": [
+          "sample-lever-figure-answer"
+        ],
+        "expectedStatus": {
+          "toolchainPassed": true,
+          "deliveryComplete": true,
+          "reviewArtifactReady": false,
+          "visualReviewPassed": null,
+          "trusted": false
+        },
+        "expectedOcr": {
+          "status": "not-requested"
+        }
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/graphic-placement.compact.page-001.png",
+      "delivery": {
+        "keepReview": false,
+        "expectedGraphics": [
+          "sample-lever-figure-answer"
+        ],
+        "expectedStatus": {
+          "toolchainPassed": true,
+          "deliveryComplete": true,
+          "reviewArtifactReady": false,
+          "visualReviewPassed": null,
+          "trusted": false
+        },
+        "expectedOcr": {
+          "status": "not-requested"
+        }
+      }
+    }
+  },
+  "notes": [
+    "Covers answer-graphic marker expansion, placement rendering, and delivery manifest validation."
+  ]
+}

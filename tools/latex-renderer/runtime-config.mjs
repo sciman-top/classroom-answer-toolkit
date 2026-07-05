@@ -1,18 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
-const defaultSubjectPack = process.env.CLASSROOM_TOOLKIT_SUBJECT_PACK || "physics-answer";
+const defaultSubjectPack = getDefaultSubjectPackName();
 const defaultSnapshotPath = path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json");
 
 function getDefaultSnapshotFileName(subjectPack) {
-  if (subjectPack === "physics-answer") {
+  const canonicalSubjectPack = normalizeSubjectPackName(subjectPack, defaultSubjectPack);
+  if (canonicalSubjectPack === "junior-physics-answer") {
     return "resolved-snapshot.json";
   }
 
-  const normalizedSubjectPack = String(subjectPack ?? "")
+  const normalizedSubjectPack = String(canonicalSubjectPack ?? "")
     .trim()
     .replace(/-answer$/u, "");
 
@@ -22,7 +24,7 @@ function getDefaultSnapshotFileName(subjectPack) {
 }
 
 export function getDefaultSubjectPack() {
-  return process.env.CLASSROOM_TOOLKIT_SUBJECT_PACK || defaultSubjectPack;
+  return getDefaultSubjectPackName();
 }
 
 export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack()) {
@@ -35,7 +37,7 @@ export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack()) {
 }
 
 export function resolveSnapshotPath(snapshotPath, options = {}) {
-  const subjectPack = options.subjectPack ?? getDefaultSubjectPack();
+  const subjectPack = normalizeSubjectPackName(options.subjectPack, getDefaultSubjectPack());
   const callerCwd = options.callerCwd ?? process.cwd();
 
   if (typeof snapshotPath === "string" && snapshotPath.trim().length > 0) {

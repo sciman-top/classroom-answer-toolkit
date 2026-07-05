@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "placed-answer-graphic",
+  "placedGraphicId": "sample-lever-figure-answer-placed",
+  "graphicId": "sample-lever-figure-answer",
+  "artifactId": "sample-lever-figure-answer-artifact",
+  "questionRef": "11",
+  "placementMode": "inline-medium",
+  "targetBlock": "answer-body",
+  "figureWidthMm": 120,
+  "captionMode": "inline",
+  "pageBreakPolicy": "avoid",
+  "previewPath": "graphic-placement.preview.svg",
+  "notes": [
+    "Keep graphic adjacent to the original question."
+  ]
+}

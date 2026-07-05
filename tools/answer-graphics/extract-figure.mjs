@@ -12,7 +12,7 @@ const answerGraphicsRoot = resolveAnswerGraphicsRoot(repoRoot);
 function parseArgs(argv) {
   const options = {
     figureId: "sample-lever-figure",
-    sourceDocument: path.join(repoRoot, "eval", "physics-answer", "cases", "smoke-answer.md"),
+    sourceDocument: path.join(repoRoot, "eval", "junior-physics-answer", "cases", "smoke-answer.md"),
     questionRef: "11",
     output: path.join(answerGraphicsRoot, "problem-figure-asset.json")
   };

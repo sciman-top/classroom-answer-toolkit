@@ -28,7 +28,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         var bootstrapScriptPath = Path.Combine(scriptsDirectory, "bootstrap.ps1");
         var checkScriptPath = Path.Combine(scriptsDirectory, "check-toolchain.ps1");
         var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(repositoryRoot);
-        var primarySubjectPack = subjectPacks.FirstOrDefault()?.AssetId ?? "physics-answer";
+        var primarySubjectPack = subjectPacks.FirstOrDefault()?.AssetId ?? "junior-physics-answer";
 
         return new ToolchainWorkspaceInfo(
             repositoryRoot,
@@ -65,7 +65,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         var deliverScriptPath = Path.Combine(repositoryRoot, "tools", "latex-renderer", "deliver-answer.mjs");
         var answerMarkdownPath = Path.GetFullPath(request.AnswerMarkdownPath);
         var subjectPack = string.IsNullOrWhiteSpace(request.SubjectPack)
-            ? workspaceInfo.PrimarySubjectPack ?? "physics-answer"
+            ? workspaceInfo.PrimarySubjectPack ?? "junior-physics-answer"
             : request.SubjectPack;
 
         if (!File.Exists(answerMarkdownPath))

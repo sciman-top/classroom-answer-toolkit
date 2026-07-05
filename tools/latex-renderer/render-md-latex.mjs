@@ -87,6 +87,7 @@ const renderProfile = loadRenderProfile(options.profile, snapshot);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 const browserCandidates = [
+  process.env.CLASSROOM_TOOLKIT_BROWSER_PATH,
   path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
   "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
@@ -94,7 +95,7 @@ const browserCandidates = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
 ];
 
-const browserPath = browserCandidates.find((candidate) => fs.existsSync(candidate));
+const browserPath = browserCandidates.find((candidate) => candidate && fs.existsSync(candidate));
 if (!browserPath) {
   console.error("No local Chromium, Chrome, or Edge executable found for PDF rendering.");
   process.exit(3);

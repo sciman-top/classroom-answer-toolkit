@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0",
+  "assemblyId": "junior-physics",
+  "subjectPack": "junior-physics-answer",
+  "subjectLabel": "初中物理",
+  "outputVersion": "v8.14",
+  "sourceLayers": [
+    {
+      "label": "平台总则",
+      "path": "../platform/试卷参考答案交付规范-平台总则-v1.0.md"
+    },
+    {
+      "label": "K12通用",
+      "path": "../commons/试卷参考答案交付规范-K12通用-v1.0.md"
+    },
+    {
+      "label": "图文定量题通用",
+      "path": "../commons/试卷参考答案交付规范-图文定量题通用-v1.0.md"
+    },
+    {
+      "label": "物理通用",
+      "path": "../commons/试卷参考答案交付规范-物理通用-v1.0.md"
+    },
+    {
+      "label": "初中物理特异",
+      "path": "../subjects/试卷参考答案交付规范-初中物理-源规范-v8.14.md"
+    }
+  ],
+  "entrySource": "../subjects/试卷参考答案交付规范-初中物理-调用版源-v8.14.md",
+  "fullOutput": "../compiled/试卷参考答案交付规范-初中物理-完整版-v8.14.md",
+  "entryOutput": "../compiled/试卷参考答案交付规范-初中物理-调用版-v8.14.md",
+  "mirroredSpecOutput": "../../junior-physics-answer/spec.md"
+}

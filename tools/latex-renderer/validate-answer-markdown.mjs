@@ -123,10 +123,21 @@ function findEnabledRule(snapshot, ruleIds) {
 }
 
 function resolveValidationRules(snapshot) {
+  const subjectPackId = snapshot?.subjectPack?.assetId;
+  const choiceRuleIds = typeof subjectPackId === "string" && subjectPackId.trim().length > 0
+    ? [`${subjectPackId}.choice-answer.compact-line`]
+    : [];
+  const questionRuleIds = typeof subjectPackId === "string" && subjectPackId.trim().length > 0
+    ? [`${subjectPackId}.question-lead.same-line`]
+    : [];
+  const mathRuleIds = typeof subjectPackId === "string" && subjectPackId.trim().length > 0
+    ? ["rendering.true-latex", `${subjectPackId}.math.true-latex`]
+    : ["rendering.true-latex"];
+
   return {
-    choiceAnswer: findEnabledRule(snapshot, ["physics-answer.choice-answer.compact-line"]),
-    questionLead: findEnabledRule(snapshot, ["physics-answer.question-lead.same-line"]),
-    trueLatex: findEnabledRule(snapshot, ["rendering.true-latex", "physics-answer.math.true-latex"])
+    choiceAnswer: findEnabledRule(snapshot, choiceRuleIds),
+    questionLead: findEnabledRule(snapshot, questionRuleIds),
+    trueLatex: findEnabledRule(snapshot, mathRuleIds)
   };
 }
 

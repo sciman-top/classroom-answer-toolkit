@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "junior-physics-answer.answer-format",
+  "packVersion": "v8.10",
+  "kind": "rule-pack",
+  "metadata": {
+    "subject": "junior-physics-answer",
+    "priority": 100
+  },
+  "rules": [
+    {
+      "id": "junior-physics-answer.choice-answer.compact-line",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 100,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "answersPerLine": 5,
+        "formatExample": "1—5：A、B、C、D、A"
+      },
+      "source": {
+        "path": "./rules/answer-format.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "junior-physics-answer.question-lead.same-line",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "hard",
+      "priority": 95,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "firstSubQuestionSameLineRequired": true
+      },
+      "source": {
+        "path": "./rules/answer-format.json",
+        "layer": "subject-pack"
+      }
+    }
+  ]
+}

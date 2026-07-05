@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "placed-answer-graphic",
+  "placedGraphicId": "multi-graphic-optics-answer-placed",
+  "graphicId": "multi-graphic-optics-answer",
+  "artifactId": "multi-graphic-optics-answer-artifact",
+  "questionRef": "12(2)",
+  "placementMode": "inline-medium",
+  "targetBlock": "answer-body",
+  "figureWidthMm": 110,
+  "captionMode": "inline",
+  "pageBreakPolicy": "avoid",
+  "previewPath": "graphic-placement.preview.svg",
+  "notes": [
+    "Second graphic in a multi-graphic delivery case."
+  ]
+}

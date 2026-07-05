@@ -7,7 +7,7 @@ namespace ClassroomToolkit.Infra.Workspace;
 public sealed class WorkspaceHealthReportReader
 {
     private static readonly Regex SpecPattern = new(
-        @"^.*_v(?<version>\d+\.\d+)_.*\.md$",
+        @"(?:^|[-_])v(?<version>\d+\.\d+)(?:[-_]|\.md$)",
         RegexOptions.Compiled);
 
     private readonly string _repositoryRoot;
@@ -21,12 +21,12 @@ public sealed class WorkspaceHealthReportReader
     {
         var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(_repositoryRoot);
         var subjectPack = subjectPacks.FirstOrDefault();
-        var manifestPath = subjectPack?.ManifestPath ?? Path.Combine(_repositoryRoot, "prompts", "physics-answer", "manifest.json");
-        var configPath = subjectPack?.ConfigPath ?? Path.Combine(_repositoryRoot, "prompts", "physics-answer", "config.json");
-        var evalResultsPath = subjectPack?.EvalResultsPath ?? Path.Combine(_repositoryRoot, "eval", "physics-answer", "results", "latest.json");
+        var manifestPath = subjectPack?.ManifestPath ?? Path.Combine(_repositoryRoot, "prompts", "junior-physics-answer", "manifest.json");
+        var configPath = subjectPack?.ConfigPath ?? Path.Combine(_repositoryRoot, "prompts", "junior-physics-answer", "config.json");
+        var evalResultsPath = subjectPack?.EvalResultsPath ?? Path.Combine(_repositoryRoot, "eval", "junior-physics-answer", "results", "latest.json");
         var graphicsPath = Path.Combine(_repositoryRoot, ".answer-graphics");
 
-        var latestVersion = FindLatestProductionSpecVersion();
+        var latestVersion = FindLatestProductionSpecVersion(manifestPath);
         var manifestVersion = ReadManifestVersion(manifestPath);
         var snapshotPath = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath, manifestPath);
         var snapshotStatus = ReadSnapshotStatus(snapshotPath);
@@ -72,7 +72,7 @@ public sealed class WorkspaceHealthReportReader
             : string.Join("；", issues);
 
         return new WorkspaceHealthReport(
-            PrimarySubjectPack: subjectPack?.AssetId ?? "physics-answer",
+            PrimarySubjectPack: subjectPack?.AssetId ?? "junior-physics-answer",
             SubjectPacks: subjectPacks.Select(pack => pack.AssetId).ToArray(),
             LatestProductionSpecVersion: latestVersion is null ? null : $"v{latestVersion}",
             AssetVersion: manifestVersion,
@@ -89,16 +89,51 @@ public sealed class WorkspaceHealthReportReader
             Issues: issues);
     }
 
-    private string? FindLatestProductionSpecVersion()
+    private string? FindLatestProductionSpecVersion(string manifestPath)
+    {
+        return TryReadHumanSpecVersion(manifestPath) ?? FindLatestRootSpecVersion();
+    }
+
+    private string? TryReadHumanSpecVersion(string manifestPath)
+    {
+        if (!File.Exists(manifestPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        if (!document.RootElement.TryGetProperty("sourceOfTruth", out var sourceOfTruthElement)
+            || !sourceOfTruthElement.TryGetProperty("humanSpec", out var humanSpecElement))
+        {
+            return null;
+        }
+
+        var humanSpecRelativePath = humanSpecElement.GetString();
+        if (string.IsNullOrWhiteSpace(humanSpecRelativePath))
+        {
+            return null;
+        }
+
+        var humanSpecPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(manifestPath)!, humanSpecRelativePath));
+        return TryParseVersionFromFileName(humanSpecPath);
+    }
+
+    private string? FindLatestRootSpecVersion()
     {
         return Directory
             .EnumerateFiles(_repositoryRoot, "*.md", SearchOption.TopDirectoryOnly)
             .Select(Path.GetFileName)
-            .Select(fileName => SpecPattern.Match(fileName ?? string.Empty))
-            .Where(match => match.Success)
-            .Select(match => match.Groups["version"].Value)
+            .Select(fileName => TryParseVersionFromFileName(fileName))
+            .Where(static version => version is not null)
+            .Select(static version => version!)
             .OrderBy(version => version, VersionComparer.Instance)
             .LastOrDefault();
+    }
+
+    private static string? TryParseVersionFromFileName(string? fileName)
+    {
+        var match = SpecPattern.Match(fileName ?? string.Empty);
+        return match.Success ? match.Groups["version"].Value : null;
     }
 
     private static string? ReadManifestVersion(string manifestPath)

@@ -1,0 +1,10 @@
+{
+  "name": "classroom-answer-spec-assembler",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "assemble": "node assemble-human-spec.mjs",
+    "assemble:all": "node assemble-human-spec.mjs --all"
+  }
+}

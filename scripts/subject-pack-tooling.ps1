@@ -107,7 +107,7 @@ function Get-SubjectPackMetadata {
         $subjectPacks |
             Sort-Object `
                 @{ Expression = { [string]$_.Status -ne "active" } }, `
-                @{ Expression = { [string]$_.AssetId -ne "physics-answer" } }, `
+                @{ Expression = { [string]$_.AssetId -ne "junior-physics-answer" } }, `
                 @{ Expression = { [string]$_.AssetId } }
     )
 }

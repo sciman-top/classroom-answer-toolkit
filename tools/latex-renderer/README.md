@@ -5,8 +5,8 @@ This folder contains the lightweight local toolchain used by the answer workflow
 ## Render final answer PDF
 
 ```powershell
-npm --prefix tools/latex-renderer run render -- "习题PDF/能量-效率参考答案.md"
-npm --prefix tools/latex-renderer run render -- "习题PDF/能量-效率参考答案.md" --profile classroom
+npm --prefix tools/latex-renderer run render -- "样例交付/能量-效率参考答案.md"
+npm --prefix tools/latex-renderer run render -- "样例交付/能量-效率参考答案.md" --profile classroom
 ```
 
 The renderer keeps LaTeX as real math by using Markdown-It, KaTeX, and a local
@@ -28,8 +28,8 @@ For the repository-standard delivery flow after the answer Markdown is ready,
 use:
 
 ```powershell
-npm --prefix tools/latex-renderer run deliver -- "习题PDF/能量-效率参考答案.md"
-npm --prefix tools/latex-renderer run deliver -- "习题PDF/能量-效率参考答案.md" --profile compact
+npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md"
+npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md" --profile compact
 ```
 
 This one command will:
@@ -46,7 +46,7 @@ manual re-checking after a successful run.
 ## Review source PDF pages
 
 ```powershell
-npm --prefix tools/latex-renderer run review-source-pdf -- "习题PDF/能量-效率.pdf"
+npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf"
 ```
 
 The source-review command renders the original PDF pages into PNG files with
@@ -57,9 +57,9 @@ page images.
 Useful options:
 
 ```powershell
-npm --prefix tools/latex-renderer run review-source-pdf -- "习题PDF/能量-效率.pdf" --pages 1,last
-npm --prefix tools/latex-renderer run review-source-pdf -- "习题PDF/能量-效率.pdf" --out ".pdf-review/能量-效率"
-npm --prefix tools/latex-renderer run review-source-pdf -- "习题PDF/能量-效率.pdf" --pages 1 --ocr chi_sim
+npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --pages 1,last
+npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --out ".pdf-review/能量-效率"
+npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --pages 1 --ocr chi_sim
 ```
 
 OCR is explicit and optional. It uses Tesseract.js on the rendered page images,
@@ -73,7 +73,7 @@ For poor scans or batch OCR, render page images first, then run the RapidOCR CPU
 pipeline:
 
 ```powershell
-npm --prefix tools/latex-renderer run review-source-pdf -- "习题PDF/能量-效率.pdf" --out "_ocr_work/能量-效率" --scale 2
+npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --out "_ocr_work/能量-效率" --scale 2
 npm --prefix tools/latex-renderer run ocr:rapid -- "_ocr_work/能量-效率"
 ```
 
@@ -121,7 +121,7 @@ Recommended workflow:
 Before rendering, you can run the baseline answer-format gate directly:
 
 ```powershell
-npm --prefix tools/latex-renderer run validate:answer -- "习题PDF/能量-效率参考答案.md" --profile classroom
+npm --prefix tools/latex-renderer run validate:answer -- "样例交付/能量-效率参考答案.md" --profile classroom
 ```
 
 Current checks focus on the most common hard failures:
@@ -132,9 +132,9 @@ Current checks focus on the most common hard failures:
 - unbalanced LaTeX dollar signs
 - overly long plain-text lines as warnings
 
-These automated checks are derived from the current v8.12 production spec and
-now anchor to structured assets under `prompts/physics-answer/` plus fixed eval
-cases under `eval/physics-answer/`.
+These automated checks are derived from the current v8.14 production spec and
+now anchor to structured assets under `prompts/junior-physics-answer/` plus fixed eval
+cases under `eval/junior-physics-answer/`.
 
 ## Smoke test
 
@@ -172,9 +172,9 @@ Run the fixed prompt-asset regression suite with:
 npm --prefix tools/latex-renderer run eval:answer
 ```
 
-This reads `eval/physics-answer/dataset.json`, runs validator checks for each
+This reads `eval/junior-physics-answer/dataset.json`, runs validator checks for each
 listed case/profile pair, and writes a local summary to
-`eval/physics-answer/results/latest.json`.
+`eval/junior-physics-answer/results/latest.json`.
 
 For another subject pack, pass `--subject-pack <name>` and the evaluator will
 default to `eval/<name>/dataset.json`.

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
@@ -14,10 +14,10 @@ public sealed class LocalToolchainOrchestratorTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("physics-answer", "v11.1", "../../physics-spec.md");
-        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("physics-answer", "v11.1", "classroom");
-        workspace.WriteEval("physics-answer", "v11.1", ok: true, caseCount: 5);
+        workspace.WriteManifest("junior-physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
         workspace.WriteSupportFiles();
 
         var resolver = new RepositoryRootResolver(workspace.Root);
@@ -35,10 +35,10 @@ public sealed class LocalToolchainOrchestratorTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("physics-answer", "v11.1", "../../physics-spec.md");
-        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("physics-answer", "v11.1", "classroom");
-        workspace.WriteEval("physics-answer", "v11.1", ok: true, caseCount: 5);
+        workspace.WriteManifest("junior-physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
         workspace.WriteSupportFiles();
         workspace.WriteAnswerMarkdown();
         workspace.WriteDeliveryManifest("snapshot-test");
@@ -52,13 +52,13 @@ public sealed class LocalToolchainOrchestratorTests
                 null,
                 "classroom",
                 KeepReviewArtifacts: true,
-                SubjectPack: "physics-answer"));
+                SubjectPack: "junior-physics-answer"));
 
         execution.Succeeded.Should().BeTrue();
         execution.ScriptPath.Should().EndWith(@"tools\latex-renderer\deliver-answer.mjs");
         delivery.Should().NotBeNull();
         delivery!.SnapshotId.Should().Be("snapshot-test");
-        delivery.SubjectPack.Should().Be("physics-answer");
+        delivery.SubjectPack.Should().Be("junior-physics-answer");
         delivery.Profile.Should().Be("classroom");
         delivery.SnapshotPath.Should().Be("D:\\repo\\.snapshot-cache\\resolved-snapshot.json");
         delivery.SnapshotVersion.Should().Be("v11.1");
@@ -99,10 +99,10 @@ public sealed class LocalToolchainOrchestratorTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("physics-answer", "v11.1", "../../physics-spec.md");
-        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("physics-answer", "v11.1", "classroom");
-        workspace.WriteEval("physics-answer", "v11.1", ok: true, caseCount: 5);
+        workspace.WriteManifest("junior-physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
         workspace.WriteSupportFiles();
         workspace.WriteAnswerMarkdown();
 
@@ -115,7 +115,7 @@ public sealed class LocalToolchainOrchestratorTests
                 null,
                 "classroom",
                 KeepReviewArtifacts: false,
-                SubjectPack: "physics-answer"));
+                SubjectPack: "junior-physics-answer"));
 
         execution.Succeeded.Should().BeTrue();
         delivery.Should().NotBeNull();
@@ -155,7 +155,7 @@ public sealed class LocalToolchainOrchestratorTests
                     schemaVersion = "1.0",
                     kind = "delivery-manifest",
                     generatedAt = "2026-06-18T00:00:00Z",
-                    subjectPack = "physics-answer",
+                    subjectPack = "junior-physics-answer",
                     snapshotId = "snapshot-test",
                     snapshotPath = "D:\\repo\\.snapshot-cache\\resolved-snapshot.json",
                     snapshot = new
@@ -231,7 +231,7 @@ public sealed class LocalToolchainOrchestratorTests
                 {
                     schemaVersion = "1.0",
                     kind = "delivery-manifest",
-                    subjectPack = "physics-answer",
+                    subjectPack = "junior-physics-answer",
                     snapshotId = "legacy-top-level-only",
                     profile = "classroom"
                 }, new JsonSerializerOptions { WriteIndented = true }));
@@ -323,7 +323,7 @@ public sealed class LocalToolchainOrchestratorTests
                 schemaVersion = "1.0",
                 kind = "delivery-manifest",
                 generatedAt = "2026-06-18T00:00:00Z",
-                subjectPack = "physics-answer",
+                subjectPack = "junior-physics-answer",
                 snapshotId,
                 snapshotPath = "../../.snapshot-cache/resolved-snapshot.json",
                 snapshot = new

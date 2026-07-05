@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "junior-physics-answer",
+  "displayName": "初中物理试卷参考答案生成与渲染",
+  "version": "v8.14",
+  "status": "active",
+  "locale": "zh-CN",
+  "domain": "junior-high-school-physics",
+  "kind": "subject-pack",
+  "inherits": [
+    "../platform-core/manifest.json"
+  ],
+  "sourceOfTruth": {
+    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.14.md",
+    "mirroredSpec": "./spec.md",
+    "runtimeConfig": "./config.json",
+    "acceptanceChecklist": "./checklists/acceptance.md"
+  },
+  "entry": {
+    "rulesDir": "./rules",
+    "profilesDir": "./profiles",
+    "overridesDir": "./overrides",
+    "migrationsDir": "./migrations",
+    "snapshotCache": "../../.snapshot-cache/resolved-snapshot.json"
+  },
+  "evaluation": {
+    "dataset": "../../eval/junior-physics-answer/dataset.json",
+    "casesDir": "../../eval/junior-physics-answer/cases",
+    "resultsDir": "../../eval/junior-physics-answer/results",
+    "visualBaselinesDir": "../../eval/junior-physics-answer/baselines/visual"
+  },
+  "tooling": {
+    "ruleCompiler": "../../tools/rule-compiler/compile-snapshot.mjs",
+    "validator": "../../tools/latex-renderer/validate-answer-markdown.mjs",
+    "evalRunner": "../../tools/latex-renderer/eval-answer-fixtures.mjs",
+    "renderer": "../../tools/latex-renderer/render-md-latex.mjs",
+    "deliver": "../../tools/latex-renderer/deliver-answer.mjs",
+    "visualSmoke": "../../tools/latex-renderer/visual-regression-smoke.mjs"
+  }
+}

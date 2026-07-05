@@ -34,7 +34,7 @@ public static class WorkspaceSubjectPackLocator
 
         return subjectPacks
             .OrderByDescending(pack => string.Equals(pack.Status, "active", StringComparison.OrdinalIgnoreCase))
-            .ThenByDescending(pack => string.Equals(pack.AssetId, "physics-answer", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(pack => string.Equals(pack.AssetId, "junior-physics-answer", StringComparison.OrdinalIgnoreCase))
             .ThenBy(pack => pack.AssetId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }

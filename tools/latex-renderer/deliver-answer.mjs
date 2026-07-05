@@ -8,14 +8,14 @@ const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const packageJsonPath = path.join(toolDir, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-const packageName = packageJson.name ?? "physics-answer-latex-renderer";
+const packageName = packageJson.name ?? "junior-physics-answer-latex-renderer";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--keep-ocr] [--review-scale 2] [--skip-validate]
 
 Examples:
-  npm --prefix tools/latex-renderer run deliver -- "习题PDF/能量-效率参考答案.md"
-  npm --prefix tools/latex-renderer run deliver -- "习题PDF/能量-效率参考答案.md" --keep-review
+  npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md"
+  npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md" --keep-review
 
 Behavior:
   1. Render the answer Markdown to PDF.

@@ -1,0 +1,50 @@
+{
+  "caseId": "multi-graphic-delivery",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "delivery": {
+        "keepReview": false,
+        "expectedGraphics": [
+          "multi-graphic-lever-answer",
+          "multi-graphic-optics-answer"
+        ],
+        "expectedStatus": {
+          "toolchainPassed": true,
+          "deliveryComplete": true,
+          "reviewArtifactReady": false,
+          "visualReviewPassed": null,
+          "trusted": false
+        },
+        "expectedOcr": {
+          "status": "not-requested"
+        }
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "delivery": {
+        "keepReview": false,
+        "expectedGraphics": [
+          "multi-graphic-lever-answer",
+          "multi-graphic-optics-answer"
+        ],
+        "expectedStatus": {
+          "toolchainPassed": true,
+          "deliveryComplete": true,
+          "reviewArtifactReady": false,
+          "visualReviewPassed": null,
+          "trusted": false
+        },
+        "expectedOcr": {
+          "status": "not-requested"
+        }
+      }
+    }
+  },
+  "notes": [
+    "Covers delivery manifest traceability for multiple answer-graphic markers in one answer."
+  ]
+}

@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;
@@ -20,7 +20,7 @@ public sealed class WorkspaceDiagnosticsExporterTests
             workspace.Root,
             new WorkspaceHealthReport(
                 "math-answer",
-                ["math-answer", "physics-answer"],
+                ["math-answer", "junior-physics-answer"],
                 "v11.2",
                 "v0.1",
                 SnapshotExists: true,
@@ -62,7 +62,7 @@ public sealed class WorkspaceDiagnosticsExporterTests
         manifest.RootElement.GetProperty("kind").GetString().Should().Be("workspace-diagnostics-bundle");
         manifest.RootElement.GetProperty("primarySubjectPack").GetString().Should().Be("math-answer");
         manifest.RootElement.GetProperty("snapshotPath").GetString().Should().Be(@"D:\repo\.snapshot-cache\resolved-snapshot.math.json");
-        manifest.RootElement.GetProperty("subjectPacks").EnumerateArray().Select(static element => element.GetString()).Should().ContainInOrder("math-answer", "physics-answer");
+        manifest.RootElement.GetProperty("subjectPacks").EnumerateArray().Select(static element => element.GetString()).Should().ContainInOrder("math-answer", "junior-physics-answer");
         manifest.RootElement.GetProperty("lastSnapshotId").GetString().Should().Be("snapshot-test");
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("subjectPack").GetString().Should().Be("math-answer");
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("profile").GetString().Should().Be("classroom");
@@ -141,14 +141,14 @@ public sealed class WorkspaceDiagnosticsExporterTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteSubjectPackInputs("math-answer", "v0.1", "../../.snapshot-cache/resolved-snapshot.math.json", "experimental");
-        workspace.WriteSubjectPackInputs("physics-answer", "v11.2", "../../.snapshot-cache/resolved-snapshot.json", "active");
+        workspace.WriteSubjectPackInputs("junior-physics-answer", "v11.2", "../../.snapshot-cache/resolved-snapshot.json", "active");
 
         var exporter = new WorkspaceDiagnosticsExporter();
         var result = exporter.Export(new WorkspaceDiagnosticsExportRequest(
             workspace.Root,
             new WorkspaceHealthReport(
-                "physics-answer",
-                ["physics-answer", "math-answer"],
+                "junior-physics-answer",
+                ["junior-physics-answer", "math-answer"],
                 "v11.2",
                 "v0.1",
                 SnapshotExists: true,
@@ -169,18 +169,18 @@ public sealed class WorkspaceDiagnosticsExporterTests
 
         var workspaceBundle = Path.Combine(result.BundleDirectoryPath, "workspace");
         File.Exists(Path.Combine(workspaceBundle, "subject-packs", "index.json")).Should().BeTrue();
-        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "physics-answer", "manifest.json")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "junior-physics-answer", "manifest.json")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "subject-packs", "math-answer", "manifest.json")).Should().BeTrue();
-        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "physics-answer", "snapshot", "resolved-snapshot.json")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "junior-physics-answer", "snapshot", "resolved-snapshot.json")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "subject-packs", "math-answer", "snapshot", "resolved-snapshot.math.json")).Should().BeTrue();
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
         manifest.RootElement.GetProperty("subjectPacks").GetArrayLength().Should().Be(2);
-        manifest.RootElement.GetProperty("subjectPacks").EnumerateArray().Select(static element => element.GetString()).Should().ContainInOrder("physics-answer", "math-answer");
+        manifest.RootElement.GetProperty("subjectPacks").EnumerateArray().Select(static element => element.GetString()).Should().ContainInOrder("junior-physics-answer", "math-answer");
 
         using var index = JsonDocument.Parse(File.ReadAllText(Path.Combine(workspaceBundle, "subject-packs", "index.json")));
         index.RootElement.GetArrayLength().Should().Be(2);
-        var physicsPack = index.RootElement.EnumerateArray().Single(element => element.GetProperty("assetId").GetString() == "physics-answer");
+        var physicsPack = index.RootElement.EnumerateArray().Single(element => element.GetProperty("assetId").GetString() == "junior-physics-answer");
         physicsPack.GetProperty("isPrimary").GetBoolean().Should().BeTrue();
         physicsPack.GetProperty("version").GetString().Should().Be("v11.2");
         physicsPack.GetProperty("snapshotExists").GetBoolean().Should().BeTrue();

@@ -44,12 +44,12 @@ public partial class MainViewModel : ObservableObject
 
         if (AvailableSubjectPacks.Count == 0)
         {
-            AvailableSubjectPacks.Add("physics-answer");
+            AvailableSubjectPacks.Add("junior-physics-answer");
         }
 
         SelectedSubjectPack = workspaceInfo.PrimarySubjectPack
             ?? AvailableSubjectPacks.FirstOrDefault()
-            ?? "physics-answer";
+            ?? "junior-physics-answer";
         SelectedProfile = "classroom";
 
         _healthReport = _toolchainOrchestrator.GetWorkspaceHealthReport();
@@ -88,7 +88,7 @@ public partial class MainViewModel : ObservableObject
     private string selectedOutputPdfPath = string.Empty;
 
     [ObservableProperty]
-    private string selectedSubjectPack = "physics-answer";
+    private string selectedSubjectPack = "junior-physics-answer";
 
     [ObservableProperty]
     private string selectedProfile = "classroom";
@@ -150,8 +150,8 @@ public partial class MainViewModel : ObservableObject
         {
             Title = "选择参考答案 Markdown",
             Filter = "Markdown 文件 (*.md)|*.md",
-            InitialDirectory = Directory.Exists(Path.Combine(RepositoryRoot, "习题PDF"))
-                ? Path.Combine(RepositoryRoot, "习题PDF")
+            InitialDirectory = Directory.Exists(Path.Combine(RepositoryRoot, "样例交付"))
+                ? Path.Combine(RepositoryRoot, "样例交付")
                 : RepositoryRoot
         };
 

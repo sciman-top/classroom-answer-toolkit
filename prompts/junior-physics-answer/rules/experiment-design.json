@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "junior-physics-answer.experiment-design",
+  "packVersion": "v8.10",
+  "kind": "rule-pack",
+  "metadata": {
+    "subject": "junior-physics-answer",
+    "priority": 80
+  },
+  "rules": [
+    {
+      "id": "junior-physics-answer.experiment-design.score-sentence",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 80,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "scoreSentenceStyleRequired": true
+      },
+      "source": {
+        "path": "./rules/experiment-design.json",
+        "layer": "subject-pack"
+      }
+    }
+  ]
+}

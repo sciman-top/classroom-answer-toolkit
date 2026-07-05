@@ -1,7 +1,7 @@
 # Classroom Answer Toolkit
 
-面向初中试卷参考答案的生成、校验、渲染与交付工具链。  
-Windows-first toolkit for generating, validating, and rendering junior-high exam answer sheets to Markdown, LaTeX, and PDF.
+面向中小学试卷参考答案的生成、校验、渲染与交付工具链。
+Windows-first toolkit for generating, validating, and rendering K12 exam answer sheets to Markdown, LaTeX, and PDF.
 
 ## 项目定位 / Positioning
 
@@ -29,7 +29,8 @@ English summary:
 
 ## 当前范围 / Current Scope
 
-- `physics-answer`: 当前主线，面向初中物理试卷参考答案。
+- `junior-physics-answer`: 当前主线，面向初中物理试卷参考答案。
+- `senior-physics-answer`: 已落盘的高中物理模板包，用于后续扩展与回归接入。
 - `math-answer`: 实验性第二学科支架，用于验证平台契约不依赖单一物理学科。
 
 内部解决方案、项目名和命名空间暂时仍使用 `ClassroomToolkit`。对外展示名统一为 `Classroom Answer Toolkit`。
@@ -41,6 +42,11 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `src/`: WPF 应用与 .NET 编排层。
 - `scripts/`: 初始化、自检、发布和打包脚本。
 - `prompts/`: 学科资产、规则、配置、清单和 schema。
+- `prompts/specs/`: 人类可读规范真值区，含分层源规范、装配清单与自动生成产物。
+- `样例交付/`: 回归验证、演示和冒烟测试使用的样例题卷与交付物。
+- `正式交付/`: 面向真实生产交付的题卷工作区。
+- `docs/strategy/`: 平台化路线、执行路线图与视觉降错专项方案。
+- `docs/adr/`: 关键决策记录。
 - `tools/latex-renderer/`: Markdown、LaTeX、PDF 渲染、审阅与交付工具链。
 - `tools/answer-graphics/`: 作图题答案图提取、叠加和组合工具链。
 - `tools/ocr/`: 面向低质量扫描件和批量处理的本地 OCR 路径。
@@ -74,7 +80,10 @@ dotnet run --project src/ClassroomToolkit.App/ClassroomToolkit.App.csproj
 ```powershell
 npm --prefix tools/latex-renderer run deliver -- "<answer.md>"
 npm --prefix tools/latex-renderer run deliver -- "<answer.md>" --profile compact
+npm --prefix tools/latex-renderer run deliver -- "<answer.md>" --subject-pack senior-physics-answer
 ```
+
+兼容说明：第一阶段仍接受旧包名 `physics-answer`，运行时会自动映射到 `junior-physics-answer`。
 
 执行本地冒烟检查：
 
@@ -99,6 +108,6 @@ dotnet build ClassroomToolkit.sln -c Debug
 
 ## 状态 / Status
 
-当前最完整的链路是初中物理参考答案生成与渲染。多学科支持已经在资产层和契约层展开，但产品层仍在演进中。
+当前最完整的链路是初中物理参考答案生成与渲染。多学段/多学科支持已经在资产层、规范层和契约层展开，但产品层仍在演进中。
 
 The junior-high physics answer workflow is currently the most complete path. Multi-subject support exists at the asset and contract level, while product-level coverage is still evolving.

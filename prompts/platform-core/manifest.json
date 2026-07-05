@@ -7,7 +7,7 @@
   "locale": "zh-CN",
   "kind": "platform-core",
   "sourceOfTruth": {
-    "humanSpec": "../../工程终态与平台化路线图.md",
+    "humanSpec": "../specs/platform/试卷参考答案交付规范-平台总则-v1.0.md",
     "mirroredSpec": "./README.md"
   },
   "entry": {

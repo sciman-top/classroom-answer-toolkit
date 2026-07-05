@@ -20,7 +20,7 @@ Recreate it if needed:
 First render the source PDF into page images:
 
 ```powershell
-npm --prefix tools/latex-renderer run review-source-pdf -- "习题PDF/能量-效率.pdf" --out "_ocr_work/能量-效率" --scale 2
+npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --out "_ocr_work/能量-效率" --scale 2
 ```
 
 Then run RapidOCR over the rendered page images:

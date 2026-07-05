@@ -11,12 +11,12 @@ public sealed class WorkspaceSubjectPackLocatorTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WritePack("math-answer", status: "experimental", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.math.json");
-        workspace.WritePack("physics-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WritePack("junior-physics-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.json");
 
         var pack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(workspace.Root);
 
         pack.Should().NotBeNull();
-        pack!.AssetId.Should().Be("physics-answer");
+        pack!.AssetId.Should().Be("junior-physics-answer");
         pack.SnapshotPath.Should().EndWith("resolved-snapshot.json");
     }
 
@@ -25,12 +25,12 @@ public sealed class WorkspaceSubjectPackLocatorTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WritePack("math-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.math.json");
-        workspace.WritePack("physics-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WritePack("junior-physics-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.json");
 
         var pack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(workspace.Root);
 
         pack.Should().NotBeNull();
-        pack!.AssetId.Should().Be("physics-answer");
+        pack!.AssetId.Should().Be("junior-physics-answer");
     }
 
     [Fact]

@@ -1,0 +1,6 @@
+{
+  "name": "compact",
+  "inherits": [
+    "../../platform-core/profiles/compact.json"
+  ]
+}

@@ -19,14 +19,14 @@ function main() {
   assert(snapshot.rules.some((rule) => rule.id.startsWith("delivery.")), "Platform delivery rules were not inherited.");
   assert(snapshot.inputRefs.subjectManifest === "prompts/math-answer/manifest.json", `Unexpected subject manifest ref: ${snapshot.inputRefs.subjectManifest}`);
   assert(snapshot.inputRefs.subjectConfig === "prompts/math-answer/config.json", `Unexpected subject config ref: ${snapshot.inputRefs.subjectConfig}`);
-  assert(!snapshot.rules.some((rule) => rule.id.startsWith("physics-answer.")), "Physics subject rules leaked into math-answer snapshot.");
+  assert(!snapshot.rules.some((rule) => rule.id.startsWith("junior-physics-answer.")), "Physics subject rules leaked into math-answer snapshot.");
   assert(
     resolveDefaultOutputRelativePath("math-answer") === ".snapshot-cache/resolved-snapshot.math.json",
     `Unexpected default math snapshot path: ${resolveDefaultOutputRelativePath("math-answer")}`
   );
   assert(
-    resolveDefaultOutputRelativePath("physics-answer") === ".snapshot-cache/resolved-snapshot.json",
-    `Unexpected default physics snapshot path: ${resolveDefaultOutputRelativePath("physics-answer")}`
+    resolveDefaultOutputRelativePath("junior-physics-answer") === ".snapshot-cache/resolved-snapshot.json",
+    `Unexpected default physics snapshot path: ${resolveDefaultOutputRelativePath("junior-physics-answer")}`
   );
 
   console.log(`Cross-subject contract validated with snapshot ${snapshot.snapshotId}.`);

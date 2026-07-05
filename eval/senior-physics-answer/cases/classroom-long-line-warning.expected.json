@@ -1,0 +1,18 @@
+{
+  "caseId": "classroom-long-line-warning",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 1,
+      "visualBaseline": "baselines/visual/classroom-long-line-warning.classroom.page-001.png"
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/classroom-long-line-warning.compact.page-001.png"
+    }
+  },
+  "notes": [
+    "Classroom profile should warn on long plain-text lines while compact profile can still pass cleanly."
+  ]
+}

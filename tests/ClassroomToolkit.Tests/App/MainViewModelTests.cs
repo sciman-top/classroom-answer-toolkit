@@ -17,8 +17,8 @@ public sealed class MainViewModelTests
         var diagnosticsExporter = new FakeDiagnosticsExporter();
         var viewModel = new MainViewModel(orchestrator, pathOpener, diagnosticsExporter)
         {
-            SelectedAnswerMarkdownPath = @"D:\repo\习题PDF\sample-answer.md",
-            SelectedOutputPdfPath = @"D:\repo\习题PDF\sample-answer.pdf",
+            SelectedAnswerMarkdownPath = @"D:\repo\样例交付\sample-answer.md",
+            SelectedOutputPdfPath = @"D:\repo\样例交付\sample-answer.pdf",
             SelectedSubjectPack = "math-answer",
             SelectedProfile = "classroom",
             KeepReviewArtifacts = true
@@ -26,8 +26,8 @@ public sealed class MainViewModelTests
 
         await viewModel.DeliverCommand.ExecuteAsync(null);
 
-        viewModel.LastOutputPdfPath.Should().Be(@"D:\repo\习题PDF\sample-answer.pdf");
-        viewModel.LastDeliveryManifestPath.Should().Be(@"D:\repo\习题PDF\sample-answer.delivery-manifest.json");
+        viewModel.LastOutputPdfPath.Should().Be(@"D:\repo\样例交付\sample-answer.pdf");
+        viewModel.LastDeliveryManifestPath.Should().Be(@"D:\repo\样例交付\sample-answer.delivery-manifest.json");
         viewModel.LastReviewDirectoryPath.Should().Be(@"D:\repo\.pdf-review\sample-answer");
         viewModel.LastSnapshotId.Should().Be("snapshot-test");
         viewModel.LastDeliverySubjectPack.Should().Be("math-answer");
@@ -39,7 +39,7 @@ public sealed class MainViewModelTests
         orchestrator.LastRequest!.SubjectPack.Should().Be("math-answer");
 
         viewModel.OpenLastOutputPdfCommand.Execute(null);
-        pathOpener.LastOpenedPath.Should().Be(@"D:\repo\习题PDF\sample-answer.pdf");
+        pathOpener.LastOpenedPath.Should().Be(@"D:\repo\样例交付\sample-answer.pdf");
 
         viewModel.ExportDiagnosticsCommand.Execute(null);
         viewModel.LastDiagnosticsBundlePath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001");
@@ -59,7 +59,7 @@ public sealed class MainViewModelTests
         var viewModel = new MainViewModel(new FakeToolchainOrchestrator(), new FakePathOpener(), new FakeDiagnosticsExporter());
 
         viewModel.SelectedSubjectPack.Should().Be("math-answer");
-        viewModel.AvailableSubjectPacks.Should().ContainInOrder("math-answer", "physics-answer");
+        viewModel.AvailableSubjectPacks.Should().ContainInOrder("math-answer", "junior-physics-answer");
     }
 
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator
@@ -75,14 +75,14 @@ public sealed class MainViewModelTests
                 BootstrapScriptExists: true,
                 CheckScriptExists: true,
                 PrimarySubjectPack: "math-answer",
-                SubjectPacks: ["math-answer", "physics-answer"]);
+                SubjectPacks: ["math-answer", "junior-physics-answer"]);
         }
 
         public WorkspaceHealthReport GetWorkspaceHealthReport()
         {
             return new WorkspaceHealthReport(
                 "math-answer",
-                ["math-answer", "physics-answer"],
+                ["math-answer", "junior-physics-answer"],
                 "v11.1",
                 "v11.1",
                 SnapshotExists: true,
@@ -117,8 +117,8 @@ public sealed class MainViewModelTests
             var execution = Success(ToolchainScriptKind.Deliver, @"D:\repo\tools\latex-renderer\deliver-answer.mjs");
             var delivery = new AnswerDeliveryResult(
                 request.AnswerMarkdownPath,
-                request.OutputPdfPath ?? @"D:\repo\习题PDF\sample-answer.pdf",
-                @"D:\repo\习题PDF\sample-answer.delivery-manifest.json",
+                request.OutputPdfPath ?? @"D:\repo\样例交付\sample-answer.pdf",
+                @"D:\repo\样例交付\sample-answer.delivery-manifest.json",
                 @"D:\repo\.pdf-review\sample-answer",
                 "snapshot-test",
                 request.SubjectPack ?? "math-answer",

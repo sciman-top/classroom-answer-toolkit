@@ -5,9 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
-const fixturePath = path.join(repoRoot, "eval", "physics-answer", "cases", "smoke-answer.md");
+const fixturePath = path.join(repoRoot, "eval", "junior-physics-answer", "cases", "smoke-answer.md");
 const smokeDir = path.join(repoRoot, ".smoke-visual");
-const baselineDir = path.join(repoRoot, "eval", "physics-answer", "baselines", "visual");
+const baselineDir = path.join(repoRoot, "eval", "junior-physics-answer", "baselines", "visual");
 
 function runNodeScript(scriptFileName, scriptArgs) {
   const result = spawnSync(

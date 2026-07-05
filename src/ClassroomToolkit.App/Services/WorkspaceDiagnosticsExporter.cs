@@ -82,11 +82,11 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
         var primarySubjectPack = subjectPacks.FirstOrDefault(pack =>
                 string.Equals(pack.AssetId, request.HealthReport.PrimarySubjectPack, StringComparison.OrdinalIgnoreCase))
             ?? subjectPacks.FirstOrDefault();
-        var subjectPackManifestPath = primarySubjectPack?.ManifestPath ?? Path.Combine(repositoryRoot, "prompts", "physics-answer", "manifest.json");
-        var subjectPackConfigPath = primarySubjectPack?.ConfigPath ?? Path.Combine(repositoryRoot, "prompts", "physics-answer", "config.json");
-        var subjectPackEvalPath = primarySubjectPack?.EvalResultsPath ?? Path.Combine(repositoryRoot, "eval", "physics-answer", "results", "latest.json");
+        var subjectPackManifestPath = primarySubjectPack?.ManifestPath ?? Path.Combine(repositoryRoot, "prompts", "junior-physics-answer", "manifest.json");
+        var subjectPackConfigPath = primarySubjectPack?.ConfigPath ?? Path.Combine(repositoryRoot, "prompts", "junior-physics-answer", "config.json");
+        var subjectPackEvalPath = primarySubjectPack?.EvalResultsPath ?? Path.Combine(repositoryRoot, "eval", "junior-physics-answer", "results", "latest.json");
         var subjectPackSnapshotPath = primarySubjectPack?.SnapshotPath ?? Path.Combine(repositoryRoot, ".snapshot-cache", "resolved-snapshot.json");
-        var subjectPackAssetId = primarySubjectPack?.AssetId ?? "physics-answer";
+        var subjectPackAssetId = primarySubjectPack?.AssetId ?? "junior-physics-answer";
 
         CopyFileIfExists(
             subjectPackManifestPath,

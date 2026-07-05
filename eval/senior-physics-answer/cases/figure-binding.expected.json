@@ -1,0 +1,16 @@
+{
+  "caseId": "figure-binding",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "v8.11 requires each sub-question in a multi-figure question to bind to its own figure instead of borrowing evidence from another figure."
+  ]
+}

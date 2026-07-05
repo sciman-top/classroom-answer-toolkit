@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -13,7 +14,7 @@ function fail(message, code = 2) {
 
 function parseArgs(argv) {
   const options = {
-    subjectPack: "physics-answer",
+    subjectPack: getDefaultSubjectPackName(),
     dataset: null
   };
 
@@ -174,6 +175,7 @@ function makeCaseWorkDir(evalWorkRoot, subjectPack, caseId, profile) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  options.subjectPack = normalizeSubjectPackName(options.subjectPack, getDefaultSubjectPackName());
   const { manifest, manifestPath } = loadSubjectPackManifest(options.subjectPack);
   const evalWorkRoot = path.join(repoRoot, ".eval-work", `${options.subjectPack}-${process.pid}`);
   removePathWithRetry(evalWorkRoot);
@@ -217,7 +219,7 @@ function main() {
         removePathWithRetry(workDir);
         fs.mkdirSync(workDir, { recursive: true });
 
-        const snapshotFileName = options.subjectPack === "physics-answer"
+        const snapshotFileName = options.subjectPack === "junior-physics-answer"
           ? `resolved-snapshot.${profile}.json`
           : `resolved-snapshot.${options.subjectPack}.${profile}.json`;
         const snapshotRelativePath = path.join(".snapshot-cache", snapshotFileName);

@@ -18,8 +18,8 @@ public sealed class HeadlessSmokeRunnerTests
 
         result.RepositoryRoot.Should().Be(@"D:\repo");
         result.WorkspaceHealthy.Should().BeTrue();
-        result.PrimarySubjectPack.Should().Be("physics-answer");
-        result.SubjectPacks.Should().ContainSingle().Which.Should().Be("physics-answer");
+        result.PrimarySubjectPack.Should().Be("junior-physics-answer");
+        result.SubjectPacks.Should().ContainSingle().Which.Should().Be("junior-physics-answer");
         result.SnapshotPath.Should().Be(@"D:\repo\.snapshot-cache\resolved-snapshot.json");
         result.LastSnapshotId.Should().BeNull();
         result.LastDeliverySubjectPack.Should().BeNull();
@@ -69,8 +69,8 @@ public sealed class HeadlessSmokeRunnerTests
                 snapshotId = "snapshot-math",
                 snapshotPath = @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
                 snapshotVersion = "v0.1",
-                input = @"D:\repo\习题PDF\sample-answer.md",
-                output = @"D:\repo\习题PDF\sample-answer.pdf",
+                input = @"D:\repo\样例交付\sample-answer.md",
+                output = @"D:\repo\样例交付\sample-answer.pdf",
                 reviewDirectoryPath = @"D:\repo\.pdf-review\sample-answer",
                 status = new
                 {
@@ -105,8 +105,8 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastSnapshotId.Should().Be("snapshot-math");
         result.LastDeliverySnapshotPath.Should().Be(@"D:\repo\.snapshot-cache\resolved-snapshot.math.json");
         result.LastDeliverySnapshotVersion.Should().Be("v0.1");
-        result.LastDeliveryInputPath.Should().Be(@"D:\repo\习题PDF\sample-answer.md");
-        result.LastDeliveryOutputPath.Should().Be(@"D:\repo\习题PDF\sample-answer.pdf");
+        result.LastDeliveryInputPath.Should().Be(@"D:\repo\样例交付\sample-answer.md");
+        result.LastDeliveryOutputPath.Should().Be(@"D:\repo\样例交付\sample-answer.pdf");
         result.LastDeliveryReviewDirectoryPath.Should().Be(@"D:\repo\.pdf-review\sample-answer");
         result.LastDeliveryToolchainPassed.Should().BeTrue();
         result.LastDeliveryComplete.Should().BeTrue();
@@ -160,15 +160,15 @@ public sealed class HeadlessSmokeRunnerTests
                 @"D:\repo\scripts\check-toolchain.ps1",
                 BootstrapScriptExists: true,
                 CheckScriptExists: true,
-                PrimarySubjectPack: "physics-answer",
-                SubjectPacks: ["physics-answer"]);
+                PrimarySubjectPack: "junior-physics-answer",
+                SubjectPacks: ["junior-physics-answer"]);
         }
 
         public WorkspaceHealthReport GetWorkspaceHealthReport()
         {
             return new WorkspaceHealthReport(
-                "physics-answer",
-                ["physics-answer"],
+                "junior-physics-answer",
+                ["junior-physics-answer"],
                 "v11.2",
                 "v11.2",
                 SnapshotExists: true,

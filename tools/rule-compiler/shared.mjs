@@ -5,6 +5,22 @@ import { fileURLToPath } from "node:url";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
+const subjectPackAliases = new Map([
+  ["physics-answer", "junior-physics-answer"]
+]);
+
+export function normalizeSubjectPackName(subjectPack, fallback = "junior-physics-answer") {
+  if (typeof subjectPack !== "string" || subjectPack.trim().length === 0) {
+    return fallback;
+  }
+
+  const trimmed = subjectPack.trim();
+  return subjectPackAliases.get(trimmed) ?? trimmed;
+}
+
+export function getDefaultSubjectPackName() {
+  return normalizeSubjectPackName(process.env.CLASSROOM_TOOLKIT_SUBJECT_PACK || "junior-physics-answer");
+}
 
 export function resolveRepoPath(relativePath) {
   return path.resolve(repoRoot, relativePath);

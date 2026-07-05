@@ -3,6 +3,7 @@ import path from "node:path";
 import { buildMergedAssets, compileResolvedSnapshot } from "./merge-rules.mjs";
 import { listJsonFiles, readJsonFile, resolveRepoPath } from "./shared.mjs";
 import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./schema-validator.mjs";
+import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs";
 
 function collectValidationTargets() {
   const manifestSchema = resolveRepoPath("prompts/shared/schemas/manifest.schema.json");
@@ -86,10 +87,6 @@ function validateSchemaFiles(schemaFiles) {
   return errors;
 }
 
-function validateSnapshot(snapshotSchema) {
-  return validateSnapshots(snapshotSchema, ["physics-answer"]);
-}
-
 function validateSnapshots(snapshotSchema, subjectPacks) {
   return subjectPacks.map((subjectPack) => {
     const snapshot = compileResolvedSnapshot({ subjectPack });
@@ -127,44 +124,60 @@ function compareVersion(a, b) {
   return 0;
 }
 
-function findLatestProductionSpecVersion() {
-  const repoRoot = resolveRepoPath(".");
-  const fileNames = fs
-    .readdirSync(repoRoot, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && /^初中物理试卷参考答案生成与渲染交付提示词_v\d+\.\d+_生产完整版\.md$/u.test(entry.name))
-    .map((entry) => entry.name);
+function validateAssemblyGeneratedArtifacts(subjectPackDirectories) {
+  const assemblyRoot = resolveRepoPath("prompts/specs/assemblies");
+  if (!fs.existsSync(assemblyRoot)) {
+    return ["Missing assembly root: prompts/specs/assemblies"];
+  }
 
-  const versions = fileNames
-    .map((name) => {
-      const match = name.match(/_v(\d+\.\d+)_/u);
-      return match ? match[1] : null;
-    })
-    .filter(Boolean)
-    .sort(compareVersion);
+  const assemblyFiles = fs
+    .readdirSync(assemblyRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => path.join(assemblyRoot, entry.name))
+    .sort((left, right) => left.localeCompare(right));
 
-  return versions.at(-1) ?? null;
-}
-
-function validateLatestSpecAlignment(manifest, config) {
-  const latestVersion = findLatestProductionSpecVersion();
   const errors = [];
+  const subjectPackByName = new Map(
+    subjectPackDirectories.map((directoryPath) => [path.basename(directoryPath), directoryPath])
+  );
+  const normalizeRelativePath = (value) => {
+    if (typeof value !== "string" || value.trim().length === 0) {
+      return value;
+    }
 
-  if (!latestVersion) {
-    return errors;
-  }
+    return path.posix.normalize(value.replace(/\\/g, "/"));
+  };
 
-  const expectedSpecPath = `../../初中物理试卷参考答案生成与渲染交付提示词_v${latestVersion}_生产完整版.md`;
+  for (const assemblyFile of assemblyFiles) {
+    const assembly = readJsonFile(assemblyFile);
+    errors.push(...checkAssemblyOutputs(assemblyFile));
 
-  if (manifest.version !== `v${latestVersion}`) {
-    errors.push(`Manifest version ${manifest.version} does not match latest production spec v${latestVersion}.`);
-  }
+    const subjectPackDir = subjectPackByName.get(assembly.subjectPack);
+    if (!subjectPackDir) {
+      errors.push(`Assembly ${path.relative(resolveRepoPath("."), assemblyFile)} references missing subject-pack ${assembly.subjectPack}.`);
+      continue;
+    }
 
-  if (manifest.sourceOfTruth?.humanSpec !== expectedSpecPath) {
-    errors.push(`Manifest humanSpec ${manifest.sourceOfTruth?.humanSpec ?? "(missing)"} does not point to latest production spec ${expectedSpecPath}.`);
-  }
+    const manifest = readJsonFile(path.join(subjectPackDir, "manifest.json"));
+    const config = readJsonFile(path.join(subjectPackDir, "config.json"));
+    const relativeHumanSpec = path.relative(subjectPackDir, path.resolve(path.dirname(assemblyFile), assembly.fullOutput)).replace(/\\/g, "/");
+    const relativeSpecMirror = path.relative(subjectPackDir, path.resolve(path.dirname(assemblyFile), assembly.mirroredSpecOutput)).replace(/\\/g, "/");
 
-  if (config.sourceOfTruth?.humanSpec !== expectedSpecPath) {
-    errors.push(`Runtime config humanSpec ${config.sourceOfTruth?.humanSpec ?? "(missing)"} does not point to latest production spec ${expectedSpecPath}.`);
+    if (normalizeRelativePath(manifest.sourceOfTruth?.humanSpec) !== normalizeRelativePath(relativeHumanSpec)) {
+      errors.push(`Manifest humanSpec ${manifest.sourceOfTruth?.humanSpec ?? "(missing)"} does not match assembly output ${relativeHumanSpec}.`);
+    }
+
+    if (normalizeRelativePath(config.sourceOfTruth?.humanSpec) !== normalizeRelativePath(relativeHumanSpec)) {
+      errors.push(`Runtime config humanSpec ${config.sourceOfTruth?.humanSpec ?? "(missing)"} does not match assembly output ${relativeHumanSpec}.`);
+    }
+
+    if (normalizeRelativePath(manifest.sourceOfTruth?.mirroredSpec) !== normalizeRelativePath(relativeSpecMirror)) {
+      errors.push(`Manifest mirroredSpec ${manifest.sourceOfTruth?.mirroredSpec ?? "(missing)"} does not match assembly mirror ${relativeSpecMirror}.`);
+    }
+
+    if (normalizeRelativePath(config.sourceOfTruth?.mirroredSpec) !== normalizeRelativePath(relativeSpecMirror)) {
+      errors.push(`Runtime config mirroredSpec ${config.sourceOfTruth?.mirroredSpec ?? "(missing)"} does not match assembly mirror ${relativeSpecMirror}.`);
+    }
   }
 
   return errors;
@@ -173,26 +186,31 @@ function validateLatestSpecAlignment(manifest, config) {
 function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
-  const mergedAssets = buildMergedAssets({ subjectPack: "physics-answer" });
   const snapshotValidations = validateSnapshots(targets.snapshotSchema, targets.subjectPacks);
-  const specAlignmentErrors = validateLatestSpecAlignment(mergedAssets.manifest.subject, mergedAssets.config);
+  const assemblyErrors = validateAssemblyGeneratedArtifacts(targets.subjectPacks.map((subjectPack) => resolveRepoPath(`prompts/${subjectPack}`)));
   const schemaFileErrors = validateSchemaFiles(targets.schemaFiles);
+  const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
+    subjectPack,
+    mergedAssets: buildMergedAssets({ subjectPack })
+  }));
 
   const errors = [
     ...fileValidation.errors,
     ...snapshotValidations.flatMap((validation) =>
       validation.errors.map((error) => `ResolvedSnapshot(${validation.subjectPack}): ${error}`)
     ),
-    ...specAlignmentErrors,
+    ...assemblyErrors,
     ...schemaFileErrors
   ];
 
-  if (!mergedAssets.rules.length) {
-    errors.push("Merged assets produced zero rules.");
-  }
+  for (const validation of mergedAssetValidations) {
+    if (!validation.mergedAssets.rules.length) {
+      errors.push(`Merged assets produced zero rules for ${validation.subjectPack}.`);
+    }
 
-  if (!Object.keys(mergedAssets.profiles).length) {
-    errors.push("Merged assets produced zero profiles.");
+    if (!Object.keys(validation.mergedAssets.profiles).length) {
+      errors.push(`Merged assets produced zero profiles for ${validation.subjectPack}.`);
+    }
   }
 
   if (errors.length > 0) {
@@ -203,7 +221,7 @@ function main() {
   }
 
   console.log(
-    `Validated ${fileValidation.validatedFileCount} asset files, ${mergedAssets.rules.length} merged rules, ${Object.keys(mergedAssets.profiles).length} merged profiles, and ${snapshotValidations.length} snapshots (${snapshotValidations.map((validation) => `${validation.subjectPack}:${validation.snapshot.snapshotId}`).join(", ")}).`
+    `Validated ${fileValidation.validatedFileCount} asset files, ${mergedAssetValidations.length} subject packs, and ${snapshotValidations.length} snapshots (${snapshotValidations.map((validation) => `${validation.subjectPack}:${validation.snapshot.snapshotId}`).join(", ")}).`
   );
 }
 

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createSnapshotId, listJsonFiles, readJsonFile, resolveRepoPath, writeJsonFile } from "./shared.mjs";
+import { createSnapshotId, getDefaultSubjectPackName, listJsonFiles, normalizeSubjectPackName, readJsonFile, resolveRepoPath, writeJsonFile } from "./shared.mjs";
 
 export function loadRulePackFiles(directoryRelativePath) {
   const directoryPath = resolveRepoPath(directoryRelativePath);
@@ -129,7 +129,7 @@ function resolveProfileInheritance(profileKey, profileGraph, seen = new Set()) {
 }
 
 export function buildMergedAssets(options = {}) {
-  const subjectPack = options.subjectPack ?? "physics-answer";
+  const subjectPack = normalizeSubjectPackName(options.subjectPack, getDefaultSubjectPackName());
   const subjectRoot = `prompts/${subjectPack}`;
   const platformManifest = readJsonFile(resolveRepoPath(options.platformManifest ?? "prompts/platform-core/manifest.json"));
   const subjectManifestPath = options.subjectManifest ?? `${subjectRoot}/manifest.json`;

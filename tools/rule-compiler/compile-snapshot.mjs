@@ -2,19 +2,20 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { compileResolvedSnapshot, writeResolvedSnapshot } from "./merge-rules.mjs";
-import { readJsonFile, resolveRepoPath } from "./shared.mjs";
+import { getDefaultSubjectPackName, normalizeSubjectPackName, readJsonFile, resolveRepoPath } from "./shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
-const defaultSubjectPack = process.env.CLASSROOM_TOOLKIT_SUBJECT_PACK || "physics-answer";
+const defaultSubjectPack = getDefaultSubjectPackName();
 const defaultOutputRelativePath = ".snapshot-cache/resolved-snapshot.json";
 
 const usage = `Usage:
-  npm --prefix tools/rule-compiler run compile:snapshot -- [--subject-pack physics-answer|math-answer] [--profile classroom|compact] [--out <snapshot.json>]
+  npm --prefix tools/rule-compiler run compile:snapshot -- [--subject-pack junior-physics-answer|senior-physics-answer|math-answer|physics-answer(alias)] [--profile classroom|compact] [--out <snapshot.json>]
 `;
 
 export function resolveDefaultOutputRelativePath(subjectPack = defaultSubjectPack) {
-  const configPath = resolveRepoPath(`prompts/${subjectPack}/config.json`);
+  const canonicalSubjectPack = normalizeSubjectPackName(subjectPack, defaultSubjectPack);
+  const configPath = resolveRepoPath(`prompts/${canonicalSubjectPack}/config.json`);
   if (!fs.existsSync(configPath)) {
     return defaultOutputRelativePath;
   }
@@ -74,6 +75,7 @@ export function parseArgs(argv) {
 
 export function main(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
+  options.subjectPack = normalizeSubjectPackName(options.subjectPack, defaultSubjectPack);
   if (options.help) {
     console.log(usage);
     return null;

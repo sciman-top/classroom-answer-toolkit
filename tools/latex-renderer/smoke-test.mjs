@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
-const fixturePath = path.join(repoRoot, "eval", "physics-answer", "cases", "smoke-answer.md");
+const fixturePath = path.join(repoRoot, "eval", "junior-physics-answer", "cases", "smoke-answer.md");
 const smokeDir = path.join(repoRoot, ".smoke-work");
 
 function runNodeScript(scriptFileName, scriptArgs) {
@@ -161,7 +161,7 @@ function assertDeliveryManifestRejectsMismatchedGraphic(explicitSnapshot) {
     schemaVersion: "1.0",
     kind: "delivery-manifest",
     generatedAt: "2026-06-22T00:00:00.000Z",
-    subjectPack: "physics-answer",
+    subjectPack: "junior-physics-answer",
     snapshotId: explicitSnapshot.snapshotId,
     snapshotPath: path.join(smokeDir, "resolved-snapshot.explicit.json"),
     snapshot: {
@@ -215,7 +215,7 @@ function assertDeliveryManifestRejectsIncompleteOcrMetadata(explicitSnapshot) {
     schemaVersion: "1.0",
     kind: "delivery-manifest",
     generatedAt: "2026-06-22T00:00:00.000Z",
-    subjectPack: "physics-answer",
+    subjectPack: "junior-physics-answer",
     snapshotId: explicitSnapshot.snapshotId,
     snapshotPath: path.join(smokeDir, "resolved-snapshot.explicit.json"),
     snapshot: {
@@ -271,7 +271,7 @@ function assertDeliveryManifestRejectsMismatchedSnapshot(explicitSnapshot) {
     schemaVersion: "1.0",
     kind: "delivery-manifest",
     generatedAt: "2026-06-22T00:00:00.000Z",
-    subjectPack: "physics-answer",
+    subjectPack: "junior-physics-answer",
     snapshotId: explicitSnapshot.snapshotId,
     snapshotPath: referencedSnapshotPath,
     snapshot: {

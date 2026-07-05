@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "senior-physics-answer.experiment-design",
+  "packVersion": "v8.10",
+  "kind": "rule-pack",
+  "metadata": {
+    "subject": "senior-physics-answer",
+    "priority": 80
+  },
+  "rules": [
+    {
+      "id": "senior-physics-answer.experiment-design.score-sentence",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 80,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "scoreSentenceStyleRequired": true
+      },
+      "source": {
+        "path": "./rules/experiment-design.json",
+        "layer": "subject-pack"
+      }
+    }
+  ]
+}

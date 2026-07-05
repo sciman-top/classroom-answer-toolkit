@@ -1,6 +1,7 @@
 import { compileResolvedSnapshot } from "./merge-rules.mjs";
+import { getDefaultSubjectPackName, normalizeSubjectPackName } from "./shared.mjs";
 
-const defaultSubjectPack = process.env.CLASSROOM_TOOLKIT_SUBJECT_PACK || "physics-answer";
+const defaultSubjectPack = getDefaultSubjectPackName();
 
 function parseArgs(argv) {
   const positional = [];
@@ -44,6 +45,7 @@ function parseArgs(argv) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  options.subjectPack = normalizeSubjectPackName(options.subjectPack, defaultSubjectPack);
   const snapshot = compileResolvedSnapshot({
     profileName: options.profile,
     subjectPack: options.subjectPack

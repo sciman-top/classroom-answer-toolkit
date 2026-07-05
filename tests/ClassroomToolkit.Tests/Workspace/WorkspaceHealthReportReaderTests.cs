@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ClassroomToolkit.Infra.Workspace;
 using FluentAssertions;
 
@@ -11,17 +11,17 @@ public sealed class WorkspaceHealthReportReaderTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.0");
-        workspace.WriteManifest("physics-answer", "v11.0", "../../physics-spec.md");
-        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("physics-answer", "v11.0", "classroom");
-        workspace.WriteEval("physics-answer", "v11.0", ok: true, caseCount: 4);
+        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
         workspace.WriteGraphics();
 
         var reader = new WorkspaceHealthReportReader(workspace.Root);
         var result = reader.Read();
 
         result.Issues.Should().BeEmpty();
-        result.PrimarySubjectPack.Should().Be("physics-answer");
+        result.PrimarySubjectPack.Should().Be("junior-physics-answer");
         result.AssetVersion.Should().Be("v11.0");
         result.LatestProductionSpecVersion.Should().Be("v11.0");
         result.SnapshotExists.Should().BeTrue();
@@ -36,10 +36,10 @@ public sealed class WorkspaceHealthReportReaderTests
     {
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.0");
-        workspace.WriteManifest("physics-answer", "v11.0", "../../physics-spec.md");
-        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("physics-answer", "v11.0", "classroom");
-        workspace.WriteEval("physics-answer", "v11.0", ok: true, caseCount: 4);
+        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
 
         workspace.WriteManifest("math-answer", "v0.1", "./README.md");
         workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
@@ -49,7 +49,7 @@ public sealed class WorkspaceHealthReportReaderTests
         var reader = new WorkspaceHealthReportReader(workspace.Root);
         var result = reader.Read();
 
-        result.PrimarySubjectPack.Should().Be("physics-answer");
+        result.PrimarySubjectPack.Should().Be("junior-physics-answer");
         result.AssetVersion.Should().Be("v11.0");
         result.SnapshotVersion.Should().Be("v11.0");
         result.EvalCaseCount.Should().Be(4);
@@ -61,10 +61,10 @@ public sealed class WorkspaceHealthReportReaderTests
         using var workspace = new TemporaryWorkspace();
         workspace.WriteRootSpec("11.0");
         workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("physics-answer", "v11.0", "../../physics-spec.md");
-        workspace.WriteConfig("physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
-        workspace.WriteSnapshot("physics-answer", "v11.0", "classroom");
-        workspace.WriteEval("physics-answer", "v11.0", ok: true, caseCount: 4);
+        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
 
         var reader = new WorkspaceHealthReportReader(workspace.Root);
         var result = reader.Read();
