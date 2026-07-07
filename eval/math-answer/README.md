@@ -25,6 +25,9 @@ the `math-answer` subject pack.
 - `geometry-review-fallback`: positive fallback fixture that carries a compact
   `【疑】` marker for geometry-dependent items without pretending real geometry
   reasoning is automated
+- `chart-driven-review-fallback`: positive fallback fixture that carries a
+  compact `【疑】` marker for chart/data-driven items without pretending real
+  chart interpretation is automated
 
 ## Output
 

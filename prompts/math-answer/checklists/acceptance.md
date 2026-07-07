@@ -14,6 +14,7 @@ This checklist captures the current minimum runtime contract for the experimenta
 - Basic text-grounded probability answers may use standard `$P(A)=\frac{m}{n}$` notation.
 - Function-graph-dependent items may degrade to a compact `【疑：...待复核】` marker instead of a guessed answer.
 - Geometry-dependent items may degrade to a compact `【疑：...待复核】` marker instead of a guessed answer.
+- Chart/data-driven statistics or probability items may degrade to a compact `【疑：...待复核】` marker instead of a guessed answer.
 - This pack stays an experimental cross-subject scaffold and must not be reported as a full junior-math production workflow.
 
 ## Current automated coverage
@@ -24,6 +25,7 @@ This checklist captures the current minimum runtime contract for the experimenta
 - basic probability notation smoke
 - function-graph review-fallback smoke
 - geometry review-fallback smoke
+- chart-driven review-fallback smoke
 - unbalanced-dollar hard gate
 - cross-subject snapshot and asset validation
 - shared markdown validator on math fixtures
@@ -33,4 +35,4 @@ This checklist captures the current minimum runtime contract for the experimenta
 - final PDF visual review
 - geometry and diagram-heavy item solving
 - function-graph reading
-- chart/data-driven statistics or probability conventions
+- chart/data-driven statistics or probability solving

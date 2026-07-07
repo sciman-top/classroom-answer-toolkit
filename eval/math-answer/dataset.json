@@ -10,6 +10,8 @@
     "baselines/visual/basic-statistics-summary.compact.page-001.png",
     "baselines/visual/basic-probability-notation.classroom.page-001.png",
     "baselines/visual/basic-probability-notation.compact.page-001.png",
+    "baselines/visual/chart-driven-review-fallback.classroom.page-001.png",
+    "baselines/visual/chart-driven-review-fallback.compact.page-001.png",
     "baselines/visual/function-graph-review-fallback.classroom.page-001.png",
     "baselines/visual/function-graph-review-fallback.compact.page-001.png",
     "baselines/visual/geometry-review-fallback.classroom.page-001.png",
@@ -86,6 +88,18 @@
         "math-subject",
         "fallback",
         "geometry"
+      ]
+    },
+    {
+      "id": "chart-driven-review-fallback",
+      "input": "cases/chart-driven-review-fallback.md",
+      "expected": "cases/chart-driven-review-fallback.expected.json",
+      "visualBaseline": "baselines/visual/chart-driven-review-fallback.classroom.page-001.png",
+      "tags": [
+        "cross-subject",
+        "math-subject",
+        "fallback",
+        "chart-driven"
       ]
     },
     {

@@ -20,6 +20,7 @@ function main() {
   assert(snapshot.rules.some((rule) => rule.id === "math-answer.statistics.basic-summary"), "Math statistics rule was not merged.");
   assert(snapshot.rules.some((rule) => rule.id === "math-answer.function-graph.review-fallback"), "Math function-graph fallback rule was not merged.");
   assert(snapshot.rules.some((rule) => rule.id === "math-answer.geometry.review-fallback"), "Math geometry fallback rule was not merged.");
+  assert(snapshot.rules.some((rule) => rule.id === "math-answer.chart-driven.review-fallback"), "Math chart-driven fallback rule was not merged.");
   assert(snapshot.rules.some((rule) => rule.id.startsWith("delivery.")), "Platform delivery rules were not inherited.");
   assert(snapshot.inputRefs.subjectManifest === "prompts/math-answer/manifest.json", `Unexpected subject manifest ref: ${snapshot.inputRefs.subjectManifest}`);
   assert(snapshot.inputRefs.subjectConfig === "prompts/math-answer/config.json", `Unexpected subject config ref: ${snapshot.inputRefs.subjectConfig}`);

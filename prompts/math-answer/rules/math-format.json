@@ -106,6 +106,26 @@
         "path": "./rules/math-format.json",
         "layer": "subject-pack"
       }
+    },
+    {
+      "id": "math-answer.chart-driven.review-fallback",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 74,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "allowReviewFallbackMarker": true,
+        "markerPrefix": "【疑：",
+        "restrictToChartDrivenCases": true
+      },
+      "source": {
+        "path": "./rules/math-format.json",
+        "layer": "subject-pack"
+      }
     }
   ]
 }

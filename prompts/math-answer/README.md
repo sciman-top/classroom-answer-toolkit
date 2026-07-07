@@ -31,6 +31,6 @@ This pack is still experimental. It currently proves shared validator, render,
 delivery, snapshot, diagnostics, and eval contracts across a non-physics
 subject, including fixed regressions for basic algebra, stepwise derivation,
 text-grounded statistics summary, text-grounded probability notation, and
-review-fallback markers for graph/geometry-dependent items. It does not yet
-claim full junior-math production coverage, real graph/geometry reading, or
-chart-driven statistics/probability automation.
+review-fallback markers for graph/geometry/chart-dependent items. It does not
+yet claim full junior-math production coverage, real graph/geometry reading,
+or chart-driven statistics/probability automation.

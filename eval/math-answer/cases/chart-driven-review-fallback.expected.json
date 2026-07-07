@@ -1,0 +1,24 @@
+{
+  "caseId": "chart-driven-review-fallback",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/chart-driven-review-fallback.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/chart-driven-review-fallback.compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    }
+  },
+  "notes": [
+    "Covers the math-answer downgrade posture for chart/data-driven items with a compact review-fallback marker."
+  ]
+}

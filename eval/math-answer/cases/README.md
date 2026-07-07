@@ -25,3 +25,6 @@ This directory stores the fixed fixtures referenced by
 - `geometry-review-fallback`: positive fallback fixture that keeps a compact
   `【疑】` marker for geometry-dependent items and verifies the shared
   validator/render/deliver pipeline can carry that downgrade posture.
+- `chart-driven-review-fallback`: positive fallback fixture that keeps a
+  compact `【疑】` marker for chart/data-driven items and verifies the shared
+  validator/render/deliver pipeline can carry that downgrade posture.
