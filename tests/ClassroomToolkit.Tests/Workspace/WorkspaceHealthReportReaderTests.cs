@@ -10,8 +10,7 @@ public sealed class WorkspaceHealthReportReaderTests
     public void Read_ReturnsHealthyReport_WhenPhysicsWorkspaceIsAligned()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.0");
-        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteManifest("junior-physics-answer", "v11.0");
         workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
         workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
@@ -35,13 +34,12 @@ public sealed class WorkspaceHealthReportReaderTests
     public void Read_PicksActivePhysicsPack_WhenMathPackExistsAlongsidePhysicsPack()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.0");
-        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteManifest("junior-physics-answer", "v11.0");
         workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
         workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
 
-        workspace.WriteManifest("math-answer", "v0.1", "./README.md");
+        workspace.WriteManifest("math-answer", "v0.1");
         workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
         workspace.WriteSnapshot("math-answer", "v0.1", "classroom");
         workspace.WriteEval("math-answer", "v0.1", ok: true, caseCount: 1);
@@ -53,6 +51,26 @@ public sealed class WorkspaceHealthReportReaderTests
         result.AssetVersion.Should().Be("v11.0");
         result.SnapshotVersion.Should().Be("v11.0");
         result.EvalCaseCount.Should().Be(4);
+    }
+
+    [Fact]
+    public void Read_ReturnsHealthyReport_WhenMathWorkspaceUsesCompiledHumanSpec()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("math-answer", "v0.1");
+        workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
+        workspace.WriteSnapshot("math-answer", "v0.1", "classroom");
+        workspace.WriteEval("math-answer", "v0.1", ok: true, caseCount: 2);
+
+        var reader = new WorkspaceHealthReportReader(workspace.Root);
+        var result = reader.Read();
+
+        result.Issues.Should().BeEmpty();
+        result.PrimarySubjectPack.Should().Be("math-answer");
+        result.AssetVersion.Should().Be("v0.1");
+        result.LatestProductionSpecVersion.Should().Be("v0.1");
+        result.SnapshotVersion.Should().Be("v0.1");
+        result.EvalCaseCount.Should().Be(2);
     }
 
     [Fact]
@@ -76,8 +94,7 @@ public sealed class WorkspaceHealthReportReaderTests
     public void Read_DoesNotAddIssue_WhenExperimentalGraphicsDirectoryIsIncomplete()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.0");
-        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteManifest("junior-physics-answer", "v11.0");
         workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
         workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
@@ -110,10 +127,11 @@ public sealed class WorkspaceHealthReportReaderTests
                 $"# v{version}\n");
         }
 
-        public void WriteManifest(string subjectPack, string version, string humanSpec)
+        public void WriteManifest(string subjectPack, string version, string? humanSpec = null)
         {
             var manifestPath = Path.Combine(Root, "prompts", subjectPack, "manifest.json");
             Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
+            humanSpec ??= BuildCompiledHumanSpecPath(subjectPack, version);
 
             var manifest = new
             {
@@ -121,7 +139,13 @@ public sealed class WorkspaceHealthReportReaderTests
                 assetId = subjectPack,
                 version,
                 status = subjectPack == "math-answer" ? "experimental" : "active",
-                sourceOfTruth = new { humanSpec },
+                sourceOfTruth = new
+                {
+                    humanSpec,
+                    mirroredSpec = "./spec.md",
+                    acceptanceChecklist = "./checklists/acceptance.md",
+                    runtimeConfig = "./config.json"
+                },
                 evaluation = new { resultsDir = $"../../eval/{subjectPack}/results" }
             };
 
@@ -194,6 +218,17 @@ public sealed class WorkspaceHealthReportReaderTests
             {
                 Directory.Delete(Root, recursive: true);
             }
+        }
+
+        private static string BuildCompiledHumanSpecPath(string subjectPack, string version)
+        {
+            return subjectPack switch
+            {
+                "junior-physics-answer" => $"../specs/compiled/试卷参考答案交付规范-初中物理-完整版-{version}.md",
+                "senior-physics-answer" => $"../specs/compiled/试卷参考答案交付规范-高中物理-完整版-{version}.md",
+                "math-answer" => $"../specs/compiled/试卷参考答案交付规范-初中数学-完整版-{version}.md",
+                _ => $"../specs/compiled/{subjectPack}-full-{version}.md"
+            };
         }
     }
 }

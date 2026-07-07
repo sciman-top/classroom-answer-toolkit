@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 
 namespace ClassroomToolkit.Tests.Toolchain;
@@ -8,12 +9,49 @@ public sealed class CrossSubjectContractTests
     public void MathSubjectPack_ProvidesMinimalContractAssets()
     {
         var repoRoot = FindRepoRoot();
+        var manifestPath = Path.Combine(repoRoot, "prompts", "math-answer", "manifest.json");
+        var configPath = Path.Combine(repoRoot, "prompts", "math-answer", "config.json");
 
-        File.Exists(Path.Combine(repoRoot, "prompts", "math-answer", "manifest.json")).Should().BeTrue();
-        File.Exists(Path.Combine(repoRoot, "prompts", "math-answer", "config.json")).Should().BeTrue();
+        File.Exists(manifestPath).Should().BeTrue();
+        File.Exists(configPath).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "prompts", "math-answer", "spec.md")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "prompts", "math-answer", "checklists", "acceptance.md")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "prompts", "math-answer", "profiles", "classroom.json")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "prompts", "math-answer", "rules", "math-format.json")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "prompts", "specs", "assemblies", "math.json")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "prompts", "specs", "compiled", "试卷参考答案交付规范-初中数学-完整版-v0.1.md")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "dataset.json")).Should().BeTrue();
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        manifest.RootElement.GetProperty("status").GetString().Should().Be("experimental");
+        var manifestSourceOfTruth = manifest.RootElement.GetProperty("sourceOfTruth");
+        manifestSourceOfTruth.GetProperty("humanSpec").GetString().Should().Be("../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.1.md");
+        manifestSourceOfTruth.GetProperty("mirroredSpec").GetString().Should().Be("./spec.md");
+        manifestSourceOfTruth.GetProperty("acceptanceChecklist").GetString().Should().Be("./checklists/acceptance.md");
+        manifestSourceOfTruth.GetProperty("runtimeConfig").GetString().Should().Be("./config.json");
+        manifest.RootElement.GetProperty("evaluation").GetProperty("visualBaselinesDir").GetString().Should().Be("../../eval/math-answer/baselines/visual");
+        var tooling = manifest.RootElement.GetProperty("tooling");
+        tooling.GetProperty("evalRunner").GetString().Should().Be("../../tools/latex-renderer/eval-answer-fixtures.mjs");
+        tooling.GetProperty("renderer").GetString().Should().Be("../../tools/latex-renderer/render-md-latex.mjs");
+        tooling.GetProperty("deliver").GetString().Should().Be("../../tools/latex-renderer/deliver-answer.mjs");
+        tooling.GetProperty("visualSmoke").GetString().Should().Be("../../tools/latex-renderer/visual-regression-smoke.mjs");
+
+        using var config = JsonDocument.Parse(File.ReadAllText(configPath));
+        var configSourceOfTruth = config.RootElement.GetProperty("sourceOfTruth");
+        configSourceOfTruth.GetProperty("humanSpec").GetString().Should().Be("../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.1.md");
+        configSourceOfTruth.GetProperty("mirroredSpec").GetString().Should().Be("./spec.md");
+        configSourceOfTruth.GetProperty("acceptanceChecklist").GetString().Should().Be("./checklists/acceptance.md");
+        config.RootElement.GetProperty("evaluation").GetProperty("visualBaselinesDir").GetString().Should().Be("../../eval/math-answer/baselines/visual");
+    }
+
+    [Fact]
+    public void AssetValidationScript_RequiresAssemblyCoverage_ForEverySubjectPack()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "tools", "rule-compiler", "validate-assets.mjs"));
+
+        script.Should().Contain("is missing prompts/specs/assemblies coverage");
+        script.Should().Contain("is referenced by multiple assemblies");
     }
 
     [Fact]

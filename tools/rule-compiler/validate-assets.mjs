@@ -140,6 +140,7 @@ function validateAssemblyGeneratedArtifacts(subjectPackDirectories) {
   const subjectPackByName = new Map(
     subjectPackDirectories.map((directoryPath) => [path.basename(directoryPath), directoryPath])
   );
+  const assembliesBySubjectPack = new Map();
   const normalizeRelativePath = (value) => {
     if (typeof value !== "string" || value.trim().length === 0) {
       return value;
@@ -150,6 +151,9 @@ function validateAssemblyGeneratedArtifacts(subjectPackDirectories) {
 
   for (const assemblyFile of assemblyFiles) {
     const assembly = readJsonFile(assemblyFile);
+    const existingAssemblies = assembliesBySubjectPack.get(assembly.subjectPack) ?? [];
+    existingAssemblies.push(assemblyFile);
+    assembliesBySubjectPack.set(assembly.subjectPack, existingAssemblies);
     errors.push(...checkAssemblyOutputs(assemblyFile));
 
     const subjectPackDir = subjectPackByName.get(assembly.subjectPack);
@@ -177,6 +181,20 @@ function validateAssemblyGeneratedArtifacts(subjectPackDirectories) {
 
     if (normalizeRelativePath(config.sourceOfTruth?.mirroredSpec) !== normalizeRelativePath(relativeSpecMirror)) {
       errors.push(`Runtime config mirroredSpec ${config.sourceOfTruth?.mirroredSpec ?? "(missing)"} does not match assembly mirror ${relativeSpecMirror}.`);
+    }
+  }
+
+  for (const subjectPack of subjectPackByName.keys()) {
+    const matchingAssemblies = assembliesBySubjectPack.get(subjectPack) ?? [];
+    if (matchingAssemblies.length === 0) {
+      errors.push(`Subject-pack ${subjectPack} is missing prompts/specs/assemblies coverage.`);
+      continue;
+    }
+
+    if (matchingAssemblies.length > 1) {
+      errors.push(
+        `Subject-pack ${subjectPack} is referenced by multiple assemblies: ${matchingAssemblies.map((filePath) => path.relative(resolveRepoPath("."), filePath)).join(", ")}.`
+      );
     }
   }
 

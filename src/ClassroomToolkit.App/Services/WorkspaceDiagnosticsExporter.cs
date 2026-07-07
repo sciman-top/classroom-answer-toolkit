@@ -25,7 +25,13 @@ public sealed record WorkspaceDiagnosticsSubjectPackRecord(
     string EvalResultsPath,
     bool EvalExists,
     bool EvalOk,
-    int EvalCaseCount);
+    int EvalCaseCount,
+    string? HumanSpecPath,
+    bool HumanSpecExists,
+    string? MirroredSpecPath,
+    bool MirroredSpecExists,
+    string? AcceptanceChecklistPath,
+    bool AcceptanceChecklistExists);
 
 public sealed record WorkspaceDiagnosticsDeliveryGraphicRecord(
     string? PlacementPath,
@@ -107,6 +113,12 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             subjectPackEvalPath,
             Path.Combine(workspaceRoot, "eval", "latest.json"),
             "eval",
+            assets);
+        CopySubjectPackSourceOfTruth(
+            repositoryRoot,
+            subjectPackManifestPath,
+            subjectPackConfigPath,
+            workspaceRoot,
             assets);
         CopyDirectoryIfExists(
             Path.Combine(repositoryRoot, ".answer-graphics"),
@@ -204,6 +216,8 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
                 Path.Combine(packRoot, "eval", "latest.json"),
                 "subject-pack-eval",
                 assets);
+            var sourceOfTruth = ReadSubjectPackSourceOfTruth(subjectPack.ManifestPath, subjectPack.ConfigPath);
+            CopySubjectPackSourceOfTruthFiles(packRoot, sourceOfTruth, assets);
 
             records.Add(new WorkspaceDiagnosticsSubjectPackRecord(
                 subjectPack.AssetId,
@@ -219,7 +233,13 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
                 subjectPack.EvalResultsPath,
                 File.Exists(subjectPack.EvalResultsPath),
                 ReadEvalStatus(subjectPack.EvalResultsPath).Ok,
-                ReadEvalStatus(subjectPack.EvalResultsPath).CaseCount));
+                ReadEvalStatus(subjectPack.EvalResultsPath).CaseCount,
+                sourceOfTruth.HumanSpecPath,
+                File.Exists(sourceOfTruth.HumanSpecPath ?? string.Empty),
+                sourceOfTruth.MirroredSpecPath,
+                File.Exists(sourceOfTruth.MirroredSpecPath ?? string.Empty),
+                sourceOfTruth.AcceptanceChecklistPath,
+                File.Exists(sourceOfTruth.AcceptanceChecklistPath ?? string.Empty)));
         }
 
         var indexPath = Path.Combine(subjectPacksRoot, "index.json");
@@ -277,6 +297,60 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
 
         CopyDirectory(fullSourceDirectory, destinationDirectory);
         assets.Add(new WorkspaceDiagnosticsAssetRecord(kind, fullSourceDirectory, destinationDirectory, true));
+    }
+
+    private static void CopySubjectPackSourceOfTruth(
+        string repositoryRoot,
+        string manifestPath,
+        string configPath,
+        string workspaceRoot,
+        ICollection<WorkspaceDiagnosticsAssetRecord> assets)
+    {
+        var sourceOfTruth = ReadSubjectPackSourceOfTruth(manifestPath, configPath);
+        CopySourceOfTruthFileToWorkspace(repositoryRoot, workspaceRoot, sourceOfTruth.HumanSpecPath, "subject-pack-human-spec", assets);
+        CopySourceOfTruthFileToWorkspace(repositoryRoot, workspaceRoot, sourceOfTruth.MirroredSpecPath, "subject-pack-mirrored-spec", assets);
+        CopySourceOfTruthFileToWorkspace(repositoryRoot, workspaceRoot, sourceOfTruth.AcceptanceChecklistPath, "subject-pack-acceptance-checklist", assets);
+    }
+
+    private static void CopySubjectPackSourceOfTruthFiles(
+        string packRoot,
+        SubjectPackSourceOfTruthPaths sourceOfTruth,
+        ICollection<WorkspaceDiagnosticsAssetRecord> assets)
+    {
+        var sourceOfTruthRoot = Path.Combine(packRoot, "source-of-truth");
+        CopyFileIfExists(
+            sourceOfTruth.HumanSpecPath,
+            Path.Combine(sourceOfTruthRoot, Path.GetFileName(sourceOfTruth.HumanSpecPath ?? "human-spec.md")),
+            "subject-pack-human-spec",
+            assets);
+        CopyFileIfExists(
+            sourceOfTruth.MirroredSpecPath,
+            Path.Combine(sourceOfTruthRoot, Path.GetFileName(sourceOfTruth.MirroredSpecPath ?? "spec.md")),
+            "subject-pack-mirrored-spec",
+            assets);
+        CopyFileIfExists(
+            sourceOfTruth.AcceptanceChecklistPath,
+            Path.Combine(sourceOfTruthRoot, Path.GetFileName(sourceOfTruth.AcceptanceChecklistPath ?? "acceptance.md")),
+            "subject-pack-acceptance-checklist",
+            assets);
+    }
+
+    private static void CopySourceOfTruthFileToWorkspace(
+        string repositoryRoot,
+        string workspaceRoot,
+        string? sourcePath,
+        string kind,
+        ICollection<WorkspaceDiagnosticsAssetRecord> assets)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath))
+        {
+            return;
+        }
+
+        var fullSourcePath = Path.GetFullPath(sourcePath);
+        var relativePath = Path.GetRelativePath(repositoryRoot, fullSourcePath);
+        var destinationPath = Path.Combine(workspaceRoot, relativePath);
+        CopyFileIfExists(fullSourcePath, destinationPath, kind, assets);
     }
 
     private static void CopyDeliveryGraphicsIfExists(
@@ -372,6 +446,37 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
         return document.RootElement.TryGetProperty("version", out var versionElement)
             ? versionElement.GetString()
             : null;
+    }
+
+    private static SubjectPackSourceOfTruthPaths ReadSubjectPackSourceOfTruth(string manifestPath, string configPath)
+    {
+        return new SubjectPackSourceOfTruthPaths(
+            ReadSourceOfTruthPath(manifestPath, "humanSpec") ?? ReadSourceOfTruthPath(configPath, "humanSpec"),
+            ReadSourceOfTruthPath(manifestPath, "mirroredSpec") ?? ReadSourceOfTruthPath(configPath, "mirroredSpec"),
+            ReadSourceOfTruthPath(manifestPath, "acceptanceChecklist") ?? ReadSourceOfTruthPath(configPath, "acceptanceChecklist"));
+    }
+
+    private static string? ReadSourceOfTruthPath(string jsonPath, string propertyName)
+    {
+        if (!File.Exists(jsonPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(jsonPath));
+        if (!document.RootElement.TryGetProperty("sourceOfTruth", out var sourceOfTruthElement)
+            || !sourceOfTruthElement.TryGetProperty(propertyName, out var propertyElement))
+        {
+            return null;
+        }
+
+        var relativePath = propertyElement.GetString();
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return null;
+        }
+
+        return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(jsonPath)!, relativePath));
     }
 
     private static string? ReadSnapshotVersion(string snapshotPath)
@@ -575,4 +680,9 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
                 ? valueElement.GetString()
                 : null;
     }
+
+    private sealed record SubjectPackSourceOfTruthPaths(
+        string? HumanSpecPath,
+        string? MirroredSpecPath,
+        string? AcceptanceChecklistPath);
 }

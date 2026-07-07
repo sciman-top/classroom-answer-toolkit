@@ -3,7 +3,9 @@
   "assetId": "math-answer",
   "version": "v0.1-derived",
   "sourceOfTruth": {
-    "humanSpec": "./README.md"
+    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.1.md",
+    "mirroredSpec": "./spec.md",
+    "acceptanceChecklist": "./checklists/acceptance.md"
   },
   "kind": "subject-pack-runtime-config",
   "inherits": [
@@ -36,6 +38,7 @@
   },
   "evaluation": {
     "dataset": "../../eval/math-answer/dataset.json",
-    "casesDir": "../../eval/math-answer/cases"
+    "casesDir": "../../eval/math-answer/cases",
+    "visualBaselinesDir": "../../eval/math-answer/baselines/visual"
   }
 }

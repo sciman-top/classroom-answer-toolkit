@@ -32,6 +32,11 @@ public sealed class HeadlessSmokeInstalledAppTests
         content.Should().Contain("Diagnostics manifest missing primarySubjectPack.");
         content.Should().Contain("published-app-smoke-report");
         content.Should().Contain("subjectPackIndexPath");
+        content.Should().Contain("Resolve-BundleRelativePath");
+        content.Should().Contain("Diagnostics bundle missing primary subject-pack manifest:");
+        content.Should().Contain("Diagnostics bundle missing primary subject-pack humanSpec:");
+        content.Should().Contain("Diagnostics bundle missing primary subject-pack mirroredSpec:");
+        content.Should().Contain("Diagnostics bundle missing primary subject-pack acceptanceChecklist:");
         content.Should().Contain("Smoke stdout subjectPacks does not match diagnostics manifest.");
         content.Should().Contain("Smoke report:");
     }

@@ -13,8 +13,7 @@ public sealed class LocalToolchainOrchestratorTests
     public void GetWorkspaceHealthReport_ReturnsHealthyState_WhenWorkspaceIsAligned()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("junior-physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteManifest("junior-physics-answer", "v11.1");
         workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
         workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
@@ -34,8 +33,7 @@ public sealed class LocalToolchainOrchestratorTests
     public async Task RunDeliverAsync_PreservesSnapshotId_FromWrittenDeliveryManifest()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("junior-physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteManifest("junior-physics-answer", "v11.1");
         workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
         workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
@@ -68,8 +66,7 @@ public sealed class LocalToolchainOrchestratorTests
     public async Task RunDeliverAsync_PassesPrimarySubjectPack_ToDeliverScript()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("math-answer", "v0.1", "./README.md", status: "active");
+        workspace.WriteManifest("math-answer", "v0.1", status: "experimental");
         workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
         workspace.WriteSnapshot("math-answer", "v0.1", "classroom");
         workspace.WriteEval("math-answer", "v0.1", ok: true, caseCount: 2);
@@ -98,8 +95,7 @@ public sealed class LocalToolchainOrchestratorTests
     public async Task RunDeliverAsync_DoesNotTrustLegacyTopLevelSnapshotId_WhenSnapshotBlockIsMissing()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("junior-physics-answer", "v11.1", "../../physics-spec.md");
+        workspace.WriteManifest("junior-physics-answer", "v11.1");
         workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
         workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
@@ -260,15 +256,22 @@ public sealed class LocalToolchainOrchestratorTests
             File.WriteAllText(Path.Combine(Root, $"spec_v{version}_release.md"), $"# v{version}\n");
         }
 
-        public void WriteManifest(string subjectPack, string version, string humanSpec, string status = "active")
+        public void WriteManifest(string subjectPack, string version, string? humanSpec = null, string status = "active")
         {
+            humanSpec ??= BuildCompiledHumanSpecPath(subjectPack, version);
             WriteJson(Path.Combine(Root, "prompts", subjectPack, "manifest.json"), new
             {
                 kind = "subject-pack",
                 assetId = subjectPack,
                 version,
                 status,
-                sourceOfTruth = new { humanSpec },
+                sourceOfTruth = new
+                {
+                    humanSpec,
+                    mirroredSpec = "./spec.md",
+                    acceptanceChecklist = "./checklists/acceptance.md",
+                    runtimeConfig = "./config.json"
+                },
                 entry = new
                 {
                     snapshotCache = subjectPack == "math-answer"
@@ -365,6 +368,17 @@ public sealed class LocalToolchainOrchestratorTests
             {
                 Directory.Delete(Root, recursive: true);
             }
+        }
+
+        private static string BuildCompiledHumanSpecPath(string subjectPack, string version)
+        {
+            return subjectPack switch
+            {
+                "junior-physics-answer" => $"../specs/compiled/试卷参考答案交付规范-初中物理-完整版-{version}.md",
+                "senior-physics-answer" => $"../specs/compiled/试卷参考答案交付规范-高中物理-完整版-{version}.md",
+                "math-answer" => $"../specs/compiled/试卷参考答案交付规范-初中数学-完整版-{version}.md",
+                _ => $"../specs/compiled/{subjectPack}-full-{version}.md"
+            };
         }
     }
 }

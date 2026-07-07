@@ -45,6 +45,9 @@ public sealed class WorkspaceDiagnosticsExporterTests
         var workspaceBundle = Path.Combine(result.BundleDirectoryPath, "workspace");
         File.Exists(Path.Combine(workspaceBundle, "prompts", "math-answer", "manifest.json")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "prompts", "math-answer", "config.json")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "prompts", "math-answer", "spec.md")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "prompts", "math-answer", "checklists", "acceptance.md")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "prompts", "specs", "compiled", "试卷参考答案交付规范-初中数学-完整版-v0.1.md")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "snapshot", "resolved-snapshot.math.json")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "eval", "latest.json")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "answer-graphics", "answer-graphic-preview.svg")).Should().BeTrue();
@@ -173,6 +176,12 @@ public sealed class WorkspaceDiagnosticsExporterTests
         File.Exists(Path.Combine(workspaceBundle, "subject-packs", "math-answer", "manifest.json")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "subject-packs", "junior-physics-answer", "snapshot", "resolved-snapshot.json")).Should().BeTrue();
         File.Exists(Path.Combine(workspaceBundle, "subject-packs", "math-answer", "snapshot", "resolved-snapshot.math.json")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "junior-physics-answer", "source-of-truth", "试卷参考答案交付规范-初中物理-完整版-v11.2.md")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "junior-physics-answer", "source-of-truth", "spec.md")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "junior-physics-answer", "source-of-truth", "acceptance.md")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "math-answer", "source-of-truth", "试卷参考答案交付规范-初中数学-完整版-v0.1.md")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "math-answer", "source-of-truth", "spec.md")).Should().BeTrue();
+        File.Exists(Path.Combine(workspaceBundle, "subject-packs", "math-answer", "source-of-truth", "acceptance.md")).Should().BeTrue();
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
         manifest.RootElement.GetProperty("subjectPacks").GetArrayLength().Should().Be(2);
@@ -189,6 +198,9 @@ public sealed class WorkspaceDiagnosticsExporterTests
         physicsPack.GetProperty("evalExists").GetBoolean().Should().BeTrue();
         physicsPack.GetProperty("evalOk").GetBoolean().Should().BeTrue();
         physicsPack.GetProperty("evalCaseCount").GetInt32().Should().Be(1);
+        physicsPack.GetProperty("humanSpecExists").GetBoolean().Should().BeTrue();
+        physicsPack.GetProperty("mirroredSpecExists").GetBoolean().Should().BeTrue();
+        physicsPack.GetProperty("acceptanceChecklistExists").GetBoolean().Should().BeTrue();
 
         var mathPack = index.RootElement.EnumerateArray().Single(element => element.GetProperty("assetId").GetString() == "math-answer");
         mathPack.GetProperty("isPrimary").GetBoolean().Should().BeFalse();
@@ -199,6 +211,9 @@ public sealed class WorkspaceDiagnosticsExporterTests
         mathPack.GetProperty("evalExists").GetBoolean().Should().BeTrue();
         mathPack.GetProperty("evalOk").GetBoolean().Should().BeTrue();
         mathPack.GetProperty("evalCaseCount").GetInt32().Should().Be(1);
+        mathPack.GetProperty("humanSpecExists").GetBoolean().Should().BeTrue();
+        mathPack.GetProperty("mirroredSpecExists").GetBoolean().Should().BeTrue();
+        mathPack.GetProperty("acceptanceChecklistExists").GetBoolean().Should().BeTrue();
     }
 
     [Fact]
@@ -278,15 +293,37 @@ public sealed class WorkspaceDiagnosticsExporterTests
                 assetId,
                 version,
                 status,
-                sourceOfTruth = new { humanSpec = "./README.md" },
+                sourceOfTruth = new
+                {
+                    humanSpec = BuildCompiledHumanSpecPath(assetId, version),
+                    mirroredSpec = "./spec.md",
+                    acceptanceChecklist = "./checklists/acceptance.md",
+                    runtimeConfig = "./config.json"
+                },
                 entry = new { snapshotCache = snapshotCachePath },
                 evaluation = new { resultsDir = $"../../eval/{assetId}/results" }
             });
 
             WriteJson(Path.Combine(Root, "prompts", assetId, "config.json"), new
             {
+                sourceOfTruth = new
+                {
+                    humanSpec = BuildCompiledHumanSpecPath(assetId, version),
+                    mirroredSpec = "./spec.md",
+                    acceptanceChecklist = "./checklists/acceptance.md"
+                },
                 snapshot = new { cachePath = snapshotCachePath }
             });
+
+            WriteFile(
+                Path.Combine(Root, "prompts", assetId, "spec.md"),
+                $"# {assetId} mirrored spec {version}\n");
+            WriteFile(
+                Path.Combine(Root, "prompts", assetId, "checklists", "acceptance.md"),
+                $"# {assetId} acceptance {version}\n");
+
+            var compiledHumanSpecPath = Path.GetFullPath(Path.Combine(Root, "prompts", assetId, BuildCompiledHumanSpecPath(assetId, version)));
+            WriteFile(compiledHumanSpecPath, $"# {assetId} compiled spec {version}\n");
 
             var snapshotFileName = Path.GetFileName(snapshotCachePath);
             WriteJson(Path.Combine(Root, ".snapshot-cache", snapshotFileName), new
@@ -450,6 +487,17 @@ public sealed class WorkspaceDiagnosticsExporterTests
             {
                 Directory.Delete(Root, recursive: true);
             }
+        }
+
+        private static string BuildCompiledHumanSpecPath(string assetId, string version)
+        {
+            return assetId switch
+            {
+                "junior-physics-answer" => $"../specs/compiled/试卷参考答案交付规范-初中物理-完整版-{version}.md",
+                "senior-physics-answer" => $"../specs/compiled/试卷参考答案交付规范-高中物理-完整版-{version}.md",
+                "math-answer" => $"../specs/compiled/试卷参考答案交付规范-初中数学-完整版-{version}.md",
+                _ => $"../specs/compiled/{assetId}-full-{version}.md"
+            };
         }
     }
 }

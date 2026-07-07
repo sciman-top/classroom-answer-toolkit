@@ -6,6 +6,23 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+function Resolve-BundleRelativePath {
+    param(
+        [string]$BaseFilePath,
+        [string]$RelativePath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) {
+        return $null
+    }
+
+    if ([System.IO.Path]::IsPathRooted($RelativePath)) {
+        return $RelativePath
+    }
+
+    return [System.IO.Path]::GetFullPath((Join-Path (Split-Path -Path $BaseFilePath -Parent) $RelativePath))
+}
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot
 
@@ -98,6 +115,31 @@ try {
         throw "Diagnostics manifest missing primarySubjectPack."
     }
 
+    $primarySubjectPackManifestPath = Join-Path $bundlePath ("workspace\prompts\{0}\manifest.json" -f [string]$diagnosticManifest.primarySubjectPack)
+    if (-not (Test-Path -LiteralPath $primarySubjectPackManifestPath)) {
+        throw "Diagnostics bundle missing primary subject-pack manifest: $primarySubjectPackManifestPath"
+    }
+
+    $primarySubjectPackManifest = Get-Content -LiteralPath $primarySubjectPackManifestPath -Raw | ConvertFrom-Json
+    if ($null -eq $primarySubjectPackManifest.sourceOfTruth) {
+        throw "Diagnostics primary subject-pack manifest missing sourceOfTruth."
+    }
+
+    $bundledHumanSpecPath = Resolve-BundleRelativePath -BaseFilePath $primarySubjectPackManifestPath -RelativePath ([string]$primarySubjectPackManifest.sourceOfTruth.humanSpec)
+    if ([string]::IsNullOrWhiteSpace($bundledHumanSpecPath) -or -not (Test-Path -LiteralPath $bundledHumanSpecPath)) {
+        throw "Diagnostics bundle missing primary subject-pack humanSpec: $bundledHumanSpecPath"
+    }
+
+    $bundledMirroredSpecPath = Resolve-BundleRelativePath -BaseFilePath $primarySubjectPackManifestPath -RelativePath ([string]$primarySubjectPackManifest.sourceOfTruth.mirroredSpec)
+    if ([string]::IsNullOrWhiteSpace($bundledMirroredSpecPath) -or -not (Test-Path -LiteralPath $bundledMirroredSpecPath)) {
+        throw "Diagnostics bundle missing primary subject-pack mirroredSpec: $bundledMirroredSpecPath"
+    }
+
+    $bundledAcceptanceChecklistPath = Resolve-BundleRelativePath -BaseFilePath $primarySubjectPackManifestPath -RelativePath ([string]$primarySubjectPackManifest.sourceOfTruth.acceptanceChecklist)
+    if ([string]::IsNullOrWhiteSpace($bundledAcceptanceChecklistPath) -or -not (Test-Path -LiteralPath $bundledAcceptanceChecklistPath)) {
+        throw "Diagnostics bundle missing primary subject-pack acceptanceChecklist: $bundledAcceptanceChecklistPath"
+    }
+
     if ($null -eq $diagnosticManifest.subjectPacks -or $diagnosticManifest.subjectPacks.Count -lt 1) {
         throw "Diagnostics manifest missing subjectPacks."
     }
@@ -156,6 +198,10 @@ try {
             manifestPath = $manifestPath
             bundleDirectoryPath = $bundlePath
             subjectPackIndexPath = $subjectPackIndexPath
+            primarySubjectPackManifestPath = $primarySubjectPackManifestPath
+            primaryHumanSpecPath = $bundledHumanSpecPath
+            primaryMirroredSpecPath = $bundledMirroredSpecPath
+            primaryAcceptanceChecklistPath = $bundledAcceptanceChecklistPath
             primarySubjectPack = [string]$diagnosticManifest.primarySubjectPack
             subjectPacks = $diagnosticSubjectPacks
             snapshotPath = [string]$diagnosticManifest.snapshotPath
