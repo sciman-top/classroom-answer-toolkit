@@ -64,3 +64,8 @@
 
 - 决定：人工入口拆分为 `needs_human_label`、`high_risk_approval`、`truth_needs_review`
 - 原因：反馈低置信、优化审批和真值存疑是三种不同问题，混在同一队列会误导处理流程
+
+## D-014 外置参考仓分层收口
+
+- 决定：活跃外置参考仓只保留 `MVVM-Samples`、`Wpf.Extensions.Hosting`、`RapidOCR`；`marp-cli` 降为次级参考；`Text-Grab` 退出活跃清单；`Typst` 与 `OCRmyPDF` 只保留候选身份
+- 原因：当前主链仍是 `WPF + Generic Host + Playwright/Chromium + RapidOCR`，其余仓要么只提供模式参考，要么属于第二阶段增强，不应继续伪装成当前主设计驱动
