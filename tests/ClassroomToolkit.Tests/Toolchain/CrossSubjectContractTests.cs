@@ -30,6 +30,14 @@ public sealed class CrossSubjectContractTests
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "basic-statistics-summary.expected.json")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "basic-statistics-summary.classroom.page-001.png")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "basic-statistics-summary.compact.page-001.png")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "function-graph-review-fallback.md")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "function-graph-review-fallback.expected.json")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "function-graph-review-fallback.classroom.page-001.png")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "function-graph-review-fallback.compact.page-001.png")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "geometry-review-fallback.md")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "geometry-review-fallback.expected.json")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "geometry-review-fallback.classroom.page-001.png")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "geometry-review-fallback.compact.page-001.png")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "stepwise-derivation.md")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "stepwise-derivation.expected.json")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "stepwise-derivation.classroom.page-001.png")).Should().BeTrue();
@@ -41,6 +49,8 @@ public sealed class CrossSubjectContractTests
             .ToArray();
         caseIds.Should().Contain("basic-probability-notation");
         caseIds.Should().Contain("basic-statistics-summary");
+        caseIds.Should().Contain("function-graph-review-fallback");
+        caseIds.Should().Contain("geometry-review-fallback");
         caseIds.Should().Contain("stepwise-derivation");
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));

@@ -12,6 +12,8 @@ This checklist captures the current minimum runtime contract for the experimenta
 - Stepwise derivation may be kept when it improves classroom readability.
 - Basic text-grounded statistics answers may state average/median/mode directly, with a short formula when it helps readability.
 - Basic text-grounded probability answers may use standard `$P(A)=\frac{m}{n}$` notation.
+- Function-graph-dependent items may degrade to a compact `【疑：...待复核】` marker instead of a guessed answer.
+- Geometry-dependent items may degrade to a compact `【疑：...待复核】` marker instead of a guessed answer.
 - This pack stays an experimental cross-subject scaffold and must not be reported as a full junior-math production workflow.
 
 ## Current automated coverage
@@ -20,6 +22,8 @@ This checklist captures the current minimum runtime contract for the experimenta
 - stepwise derivation smoke
 - basic statistics summary smoke
 - basic probability notation smoke
+- function-graph review-fallback smoke
+- geometry review-fallback smoke
 - unbalanced-dollar hard gate
 - cross-subject snapshot and asset validation
 - shared markdown validator on math fixtures
@@ -27,6 +31,6 @@ This checklist captures the current minimum runtime contract for the experimenta
 ## Still manual or future automated coverage
 
 - final PDF visual review
-- geometry and diagram-heavy items
+- geometry and diagram-heavy item solving
 - function-graph reading
 - chart/data-driven statistics or probability conventions

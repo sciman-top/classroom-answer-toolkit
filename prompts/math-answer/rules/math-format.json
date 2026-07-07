@@ -66,6 +66,46 @@
         "path": "./rules/math-format.json",
         "layer": "subject-pack"
       }
+    },
+    {
+      "id": "math-answer.function-graph.review-fallback",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 76,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "allowReviewFallbackMarker": true,
+        "markerPrefix": "【疑：",
+        "restrictToGraphDependentCases": true
+      },
+      "source": {
+        "path": "./rules/math-format.json",
+        "layer": "subject-pack"
+      }
+    },
+    {
+      "id": "math-answer.geometry.review-fallback",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 75,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "allowReviewFallbackMarker": true,
+        "markerPrefix": "【疑：",
+        "restrictToGeometryDependentCases": true
+      },
+      "source": {
+        "path": "./rules/math-format.json",
+        "layer": "subject-pack"
+      }
     }
   ]
 }

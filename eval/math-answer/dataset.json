@@ -10,6 +10,10 @@
     "baselines/visual/basic-statistics-summary.compact.page-001.png",
     "baselines/visual/basic-probability-notation.classroom.page-001.png",
     "baselines/visual/basic-probability-notation.compact.page-001.png",
+    "baselines/visual/function-graph-review-fallback.classroom.page-001.png",
+    "baselines/visual/function-graph-review-fallback.compact.page-001.png",
+    "baselines/visual/geometry-review-fallback.classroom.page-001.png",
+    "baselines/visual/geometry-review-fallback.compact.page-001.png",
     "baselines/visual/stepwise-derivation.classroom.page-001.png",
     "baselines/visual/stepwise-derivation.compact.page-001.png"
   ],
@@ -58,6 +62,30 @@
         "math-subject",
         "statistics",
         "smoke"
+      ]
+    },
+    {
+      "id": "function-graph-review-fallback",
+      "input": "cases/function-graph-review-fallback.md",
+      "expected": "cases/function-graph-review-fallback.expected.json",
+      "visualBaseline": "baselines/visual/function-graph-review-fallback.classroom.page-001.png",
+      "tags": [
+        "cross-subject",
+        "math-subject",
+        "fallback",
+        "function-graph"
+      ]
+    },
+    {
+      "id": "geometry-review-fallback",
+      "input": "cases/geometry-review-fallback.md",
+      "expected": "cases/geometry-review-fallback.expected.json",
+      "visualBaseline": "baselines/visual/geometry-review-fallback.classroom.page-001.png",
+      "tags": [
+        "cross-subject",
+        "math-subject",
+        "fallback",
+        "geometry"
       ]
     },
     {

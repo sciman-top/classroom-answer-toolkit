@@ -19,3 +19,9 @@ This directory stores the fixed fixtures referenced by
   standard probability notation explicit for a text-grounded case, then
   verifies validator/render/deliver behavior with classroom and compact visual
   baselines.
+- `function-graph-review-fallback`: positive fallback fixture that keeps a
+  compact `【疑】` marker for graph-dependent items and verifies the shared
+  validator/render/deliver pipeline can carry that downgrade posture.
+- `geometry-review-fallback`: positive fallback fixture that keeps a compact
+  `【疑】` marker for geometry-dependent items and verifies the shared
+  validator/render/deliver pipeline can carry that downgrade posture.

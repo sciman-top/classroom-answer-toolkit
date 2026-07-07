@@ -1,0 +1,24 @@
+{
+  "caseId": "geometry-review-fallback",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/geometry-review-fallback.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/geometry-review-fallback.compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    }
+  },
+  "notes": [
+    "Covers the math-answer downgrade posture for geometry-dependent items with a compact review-fallback marker."
+  ]
+}

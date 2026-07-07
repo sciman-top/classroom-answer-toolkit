@@ -19,6 +19,12 @@ the `math-answer` subject pack.
   standard `$P(A)=\frac{m}{n}$` notation explicit for text-grounded probability
   answers, then verifies validator/render/deliver behavior with classroom and
   compact visual baselines
+- `function-graph-review-fallback`: positive fallback fixture that carries a
+  compact `【疑】` marker for graph-dependent items without pretending real graph
+  reading is automated
+- `geometry-review-fallback`: positive fallback fixture that carries a compact
+  `【疑】` marker for geometry-dependent items without pretending real geometry
+  reasoning is automated
 
 ## Output
 

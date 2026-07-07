@@ -30,6 +30,7 @@ junior-math scaffold used to verify that platform contracts are not physics-only
 This pack is still experimental. It currently proves shared validator, render,
 delivery, snapshot, diagnostics, and eval contracts across a non-physics
 subject, including fixed regressions for basic algebra, stepwise derivation,
-text-grounded statistics summary, and text-grounded probability notation. It
-does not yet claim full junior-math production coverage, graph/geometry
-reading, or chart-driven statistics/probability automation.
+text-grounded statistics summary, text-grounded probability notation, and
+review-fallback markers for graph/geometry-dependent items. It does not yet
+claim full junior-math production coverage, real graph/geometry reading, or
+chart-driven statistics/probability automation.
