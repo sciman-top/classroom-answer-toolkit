@@ -22,6 +22,10 @@ public sealed class CrossSubjectContractTests
         File.Exists(Path.Combine(repoRoot, "prompts", "specs", "compiled", "试卷参考答案交付规范-初中数学-完整版-v0.1.md")).Should().BeTrue();
         var datasetPath = Path.Combine(repoRoot, "eval", "math-answer", "dataset.json");
         File.Exists(datasetPath).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "basic-probability-notation.md")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "basic-probability-notation.expected.json")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "basic-probability-notation.classroom.page-001.png")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "basic-probability-notation.compact.page-001.png")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "stepwise-derivation.md")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "stepwise-derivation.expected.json")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "stepwise-derivation.classroom.page-001.png")).Should().BeTrue();
@@ -31,6 +35,7 @@ public sealed class CrossSubjectContractTests
         var caseIds = dataset.RootElement.GetProperty("cases").EnumerateArray()
             .Select(static element => element.GetProperty("id").GetString())
             .ToArray();
+        caseIds.Should().Contain("basic-probability-notation");
         caseIds.Should().Contain("stepwise-derivation");
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));

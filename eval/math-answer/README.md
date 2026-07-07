@@ -11,6 +11,10 @@ the `math-answer` subject pack.
   delimiters are rejected
 - `stepwise-derivation`: positive derivation case that keeps equivalent-transform
   steps explicit and records classroom/compact visual baselines
+- `basic-probability-notation`: positive math-specific fixture that keeps
+  standard `$P(A)=\frac{m}{n}$` notation explicit for text-grounded probability
+  answers, then verifies validator/render/deliver behavior with classroom and
+  compact visual baselines
 
 ## Output
 

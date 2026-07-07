@@ -10,12 +10,14 @@ This checklist captures the current minimum runtime contract for the experimenta
 - Display formulas stay left-aligned.
 - Unbalanced dollar signs fail validation.
 - Stepwise derivation may be kept when it improves classroom readability.
+- Basic text-grounded probability answers may use standard `$P(A)=\frac{m}{n}$` notation.
 - This pack stays an experimental cross-subject scaffold and must not be reported as a full junior-math production workflow.
 
 ## Current automated coverage
 
 - linear-equation smoke
 - stepwise derivation smoke
+- basic probability notation smoke
 - unbalanced-dollar hard gate
 - cross-subject snapshot and asset validation
 - shared markdown validator on math fixtures
@@ -25,4 +27,4 @@ This checklist captures the current minimum runtime contract for the experimenta
 - final PDF visual review
 - geometry and diagram-heavy items
 - function-graph reading
-- statistics/probability answer conventions
+- chart/data-driven statistics or probability conventions

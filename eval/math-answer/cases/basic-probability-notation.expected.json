@@ -1,0 +1,24 @@
+{
+  "caseId": "basic-probability-notation",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/basic-probability-notation.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/basic-probability-notation.compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    }
+  },
+  "notes": [
+    "Covers the math-answer basic probability notation posture with explicit event naming and fraction-form conclusion."
+  ]
+}

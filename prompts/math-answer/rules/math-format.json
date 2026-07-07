@@ -26,6 +26,26 @@
         "path": "./rules/math-format.json",
         "layer": "subject-pack"
       }
+    },
+    {
+      "id": "math-answer.probability.basic-notation",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 78,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "preferStandardProbabilityNotation": true,
+        "allowEventSymbolFractions": true,
+        "restrictToTextGroundedCases": true
+      },
+      "source": {
+        "path": "./rules/math-format.json",
+        "layer": "subject-pack"
+      }
     }
   ]
 }

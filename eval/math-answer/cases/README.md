@@ -11,3 +11,7 @@ This directory stores the fixed fixtures referenced by
 - `stepwise-derivation`: positive math-specific fixture that keeps equivalent
   transforms explicit, then verifies validator/render/deliver behavior with
   classroom and compact visual baselines.
+- `basic-probability-notation`: positive math-specific fixture that keeps
+  standard probability notation explicit for a text-grounded case, then
+  verifies validator/render/deliver behavior with classroom and compact visual
+  baselines.

@@ -6,6 +6,8 @@
   "visualBaselines": [
     "baselines/visual/linear-equation-smoke.classroom.page-001.png",
     "baselines/visual/linear-equation-smoke.compact.page-001.png",
+    "baselines/visual/basic-probability-notation.classroom.page-001.png",
+    "baselines/visual/basic-probability-notation.compact.page-001.png",
     "baselines/visual/stepwise-derivation.classroom.page-001.png",
     "baselines/visual/stepwise-derivation.compact.page-001.png"
   ],
@@ -30,6 +32,18 @@
         "cross-subject",
         "validator",
         "hard-gate"
+      ]
+    },
+    {
+      "id": "basic-probability-notation",
+      "input": "cases/basic-probability-notation.md",
+      "expected": "cases/basic-probability-notation.expected.json",
+      "visualBaseline": "baselines/visual/basic-probability-notation.classroom.page-001.png",
+      "tags": [
+        "cross-subject",
+        "math-subject",
+        "probability",
+        "smoke"
       ]
     },
     {
