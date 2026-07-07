@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/negative-candidate/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "NegativeCandidate",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "candidateId",
+    "candidateSourceType",
+    "artifactRef",
+    "expectedPrimaryErrorType",
+    "expectedDiffLayer",
+    "originRef"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "negative-candidate"
+      ]
+    },
+    "candidateId": { "type": "string" },
+    "candidateSourceType": {
+      "type": "string",
+      "enum": [
+        "reference_placeholder",
+        "historical_candidate",
+        "generated",
+        "perturbed_negative"
+      ]
+    },
+    "artifactRef": { "type": "string" },
+    "expectedPrimaryErrorType": {
+      "type": "string",
+      "enum": [
+        "spec_gap",
+        "rule_gap",
+        "routing_error",
+        "visual_error",
+        "ocr_error",
+        "reference_parse_error",
+        "reasoning_error",
+        "format_error",
+        "data_quality_issue"
+      ]
+    },
+    "expectedContributingErrorTypes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "spec_gap",
+          "rule_gap",
+          "routing_error",
+          "visual_error",
+          "ocr_error",
+          "reference_parse_error",
+          "reasoning_error",
+          "format_error",
+          "data_quality_issue"
+        ]
+      }
+    },
+    "expectedDiffLayer": {
+      "type": "string",
+      "enum": [
+        "answer",
+        "evidence",
+        "format",
+        "policy"
+      ]
+    },
+    "originRef": { "type": "string" },
+    "mutationRef": { "type": "string" }
+  },
+  "additionalProperties": true
+}

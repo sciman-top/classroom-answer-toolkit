@@ -1,5 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/runtime-config/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
   "title": "SubjectPackRuntimeConfig",
   "type": "object",
   "required": [
@@ -122,6 +127,21 @@
         "casesDir": { "type": "string" },
         "resultsDir": { "type": "string" },
         "visualBaselinesDir": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "egressPolicy": {
+      "type": "object",
+      "required": [
+        "allowCloud"
+      ],
+      "properties": {
+        "allowCloud": { "type": "boolean" },
+        "allowedProviders": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "redactBeforeEgress": { "type": "boolean" }
       },
       "additionalProperties": true
     },

@@ -6,13 +6,21 @@ import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./sch
 import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs";
 
 function collectValidationTargets() {
+  const dataClassificationSchema = resolveRepoPath("prompts/shared/schemas/data-classification.schema.json");
   const manifestSchema = resolveRepoPath("prompts/shared/schemas/manifest.schema.json");
   const runtimeConfigSchema = resolveRepoPath("prompts/shared/schemas/runtime-config.schema.json");
   const rulePackSchema = resolveRepoPath("prompts/shared/schemas/rule-pack.schema.json");
   const profileSchema = resolveRepoPath("prompts/shared/schemas/profile.schema.json");
   const snapshotSchema = resolveRepoPath("prompts/shared/schemas/snapshot.schema.json");
   const deliveryManifestSchema = resolveRepoPath("prompts/shared/schemas/delivery-manifest.schema.json");
+  const reviewStateMachineSchema = resolveRepoPath("prompts/shared/schemas/review-state-machine.schema.json");
+  const feedbackRecordSchema = resolveRepoPath("prompts/shared/schemas/feedback-record.schema.json");
+  const samplePackageSchema = resolveRepoPath("prompts/shared/schemas/sample-package.schema.json");
+  const sampleIndexSchema = resolveRepoPath("prompts/shared/schemas/sample-index.schema.json");
+  const negativeCandidateSchema = resolveRepoPath("prompts/shared/schemas/negative-candidate.schema.json");
+  const sampleRunRecordSchema = resolveRepoPath("prompts/shared/schemas/sample-run-record.schema.json");
   const subjectPackDirectories = listSubjectPackDirectories();
+  const sampleRoot = resolveRepoPath("样例交付");
   const figureSchemas = [
     resolveRepoPath("prompts/shared/schemas/problem-figure-asset.schema.json"),
     resolveRepoPath("prompts/shared/schemas/figure-understanding-result.schema.json"),
@@ -20,6 +28,11 @@ function collectValidationTargets() {
     resolveRepoPath("prompts/shared/schemas/answer-graphic-artifact.schema.json"),
     resolveRepoPath("prompts/shared/schemas/placed-answer-graphic.schema.json")
   ];
+  const samplePackageFiles = listFilesByNameRecursive(path.join(sampleRoot, "structured"), "sample.json")
+    .map((filePath) => ({ filePath, schemaPath: samplePackageSchema }));
+  const sampleIndexFiles = fs.existsSync(path.join(sampleRoot, "index.json"))
+    ? [{ filePath: path.join(sampleRoot, "index.json"), schemaPath: sampleIndexSchema }]
+    : [];
 
   return {
     manifests: [
@@ -35,14 +48,23 @@ function collectValidationTargets() {
       ...listJsonFiles(resolveRepoPath("prompts/platform-core/profiles")),
       ...subjectPackDirectories.flatMap((directoryPath) => listJsonFiles(path.join(directoryPath, "profiles")))
     ].map((filePath) => ({ filePath, schemaPath: profileSchema })),
+    samplePackages: samplePackageFiles,
+    sampleIndices: sampleIndexFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
     schemaFiles: [
+      dataClassificationSchema,
       manifestSchema,
       runtimeConfigSchema,
       rulePackSchema,
       profileSchema,
       snapshotSchema,
       deliveryManifestSchema,
+      reviewStateMachineSchema,
+      feedbackRecordSchema,
+      samplePackageSchema,
+      sampleIndexSchema,
+      negativeCandidateSchema,
+      sampleRunRecordSchema,
       ...figureSchemas
     ],
     snapshotSchema,
@@ -60,11 +82,33 @@ function listSubjectPackDirectories() {
     .filter((directoryPath) => fs.existsSync(path.join(directoryPath, "manifest.json")) && fs.existsSync(path.join(directoryPath, "config.json")));
 }
 
+function listFilesByNameRecursive(directoryPath, fileName) {
+  if (!fs.existsSync(directoryPath)) {
+    return [];
+  }
+
+  const results = [];
+
+  for (const entry of fs.readdirSync(directoryPath, { withFileTypes: true })) {
+    const entryPath = path.join(directoryPath, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listFilesByNameRecursive(entryPath, fileName));
+      continue;
+    }
+
+    if (entry.isFile() && entry.name === fileName) {
+      results.push(entryPath);
+    }
+  }
+
+  return results.sort((left, right) => left.localeCompare(right));
+}
+
 function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -101,6 +145,22 @@ function validateSchemaFile(schemaPath) {
 
   if (schema.type !== "object") {
     errors.push(`${path.relative(resolveRepoPath("."), schemaPath)}: schema root should declare object type.`);
+  }
+
+  if (typeof schema.$id !== "string" || schema.$id.trim().length === 0) {
+    errors.push(`${path.relative(resolveRepoPath("."), schemaPath)}: schema should declare a non-empty $id.`);
+  }
+
+  if (typeof schema.compatibility !== "object" || schema.compatibility === null) {
+    errors.push(`${path.relative(resolveRepoPath("."), schemaPath)}: schema should declare compatibility metadata.`);
+  } else {
+    if (typeof schema.compatibility.forward !== "string" || schema.compatibility.forward.trim().length === 0) {
+      errors.push(`${path.relative(resolveRepoPath("."), schemaPath)}: compatibility.forward should be a non-empty string.`);
+    }
+
+    if (typeof schema.compatibility.backward !== "string" || schema.compatibility.backward.trim().length === 0) {
+      errors.push(`${path.relative(resolveRepoPath("."), schemaPath)}: compatibility.backward should be a non-empty string.`);
+    }
   }
 
   if (!Array.isArray(schema.required) || schema.required.length === 0) {

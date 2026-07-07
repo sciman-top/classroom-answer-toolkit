@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/sample-run-record/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "SampleRunRecord",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "sampleId",
+    "subjectPack",
+    "runMode",
+    "candidateSourceType",
+    "iteration",
+    "truthExtractionStatus",
+    "inputAnswerLeakage"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "sample-run-record"
+      ]
+    },
+    "sampleId": { "type": "string" },
+    "subjectPack": { "type": "string" },
+    "referenceTruthSource": {
+      "type": "string",
+      "enum": [
+        "L1",
+        "L2",
+        "L3"
+      ]
+    },
+    "runMode": {
+      "type": "string",
+      "enum": [
+        "plumbing",
+        "scoring"
+      ]
+    },
+    "candidateSourceType": {
+      "type": "string",
+      "enum": [
+        "reference_placeholder",
+        "historical_candidate",
+        "generated",
+        "perturbed_negative"
+      ]
+    },
+    "candidateArtifactRef": { "type": "string" },
+    "iteration": { "type": "integer" },
+    "truthExtractionStatus": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "low_confidence",
+        "failed"
+      ]
+    },
+    "inputAnswerLeakage": {
+      "type": "string",
+      "enum": [
+        "none",
+        "detected_and_stripped",
+        "suspected_unresolved"
+      ]
+    },
+    "manifestRef": { "type": "string" },
+    "diffSummary": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "rootCauseSummary": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "optimizationCandidateRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "unresolvedFeedbackRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "stopReason": { "type": "string" }
+  },
+  "additionalProperties": true
+}

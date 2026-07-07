@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/data-classification/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "DataClassification",
+  "type": "object",
+  "required": [
+    "level"
+  ],
+  "properties": {
+    "level": {
+      "type": "string",
+      "enum": [
+        "public",
+        "internal",
+        "restricted"
+      ]
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": true
+}

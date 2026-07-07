@@ -1,32 +1,31 @@
 # Implementation Roadmap
 
-## M0 文档与真值收口
+## P0：文档契约与 schema 真值面收口
 
-- 建立 `prompts/specs/README.md`
-- 建立 `docs/strategy/` 与 `docs/adr/`
-- 旧根文档迁为跳转壳
+- 新增 `product-prd.md`、`final-implementation-baseline.md`、`implementation-plan.md`
+- 收口 `docs/strategy/` 为唯一规划真值入口
+- 固定 `sample-package / sample-index / negative-candidate` 契约
+- 将 schema 校验与 answer eval diff 强化并入现有 `check-toolchain`
 
-## M1 规范分层与自动汇编
+## P1：飞轮先行
 
-- 建立 `commons/`、`compiled/`、`assemblies/`
-- 实现 human spec assembler
-- 让 `spec.md` 与 compiled 完整版由脚本生成
+- 跑通样例飞轮骨架
+- 固定 `runMode / candidateSourceType / truthExtractionStatus / inputAnswerLeakage`
+- 建立 `SampleRunRecord / FeedbackParseResult / OptimizationCandidate / DecisionRecord`
+- 接入样例真值面、负样本、反馈链与 Track A
+- 生成主链后段接入飞轮
 
-## M2 多学段物理 subject-pack
+## P2：双轨视觉与原生输入
 
-- `physics-answer -> junior-physics-answer`
-- 新增 `senior-physics-answer`
-- 去除产品与工具中的单学科默认偏置
+- Track B
+- `ProblemEvidenceBundle`
+- review 回写
+- 图片预处理副链
+- Word 原生 `docx -> NormalizedPage`
+- 分桶灰度优化
 
-## M3 snapshot 与资产校验收口
+## P3：研究项
 
-- `humanSpec` 指向 compiled 完整版
-- `validate-assets` 校验 generated 文件无漂移
-- 按 subject-pack 校验 snapshot、eval、delivery
-
-## M4 视觉高风险治理
-
-- 视觉双轨
-- 证据对象模型
-- 高风险题与哨兵样例
-- review 流程与抽检策略
+- prompt prose 优化
+- 多 VLM ensemble
+- 其他增强能力评估

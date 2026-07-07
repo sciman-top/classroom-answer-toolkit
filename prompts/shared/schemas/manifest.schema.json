@@ -1,5 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/manifest/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
   "title": "SubjectPackManifest",
   "type": "object",
   "required": [
@@ -35,6 +40,24 @@
     },
     "evaluation": {
       "type": "object",
+      "additionalProperties": true
+    },
+    "dataClassification": {
+      "$ref": "./data-classification.schema.json"
+    },
+    "egressPolicy": {
+      "type": "object",
+      "required": [
+        "allowCloud"
+      ],
+      "properties": {
+        "allowCloud": { "type": "boolean" },
+        "allowedProviders": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "redactBeforeEgress": { "type": "boolean" }
+      },
       "additionalProperties": true
     },
     "tooling": {

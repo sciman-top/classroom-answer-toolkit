@@ -1,5 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/delivery-manifest/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
   "title": "DeliveryManifest",
   "type": "object",
   "required": [
@@ -55,7 +60,15 @@
       "properties": {
         "outputDir": { "type": "string" },
         "manifestPath": { "type": "string" },
-        "scale": { "type": "string" }
+        "scale": { "type": "string" },
+        "lifecycle": {
+          "$ref": "./review-state-machine.schema.json"
+        },
+        "feedbackRefs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "visualDecisionRef": { "type": "string" }
       },
       "additionalProperties": true
     },
@@ -121,6 +134,14 @@
           ]
         },
         "trusted": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "visualPolicyVersion": { "type": "string" },
+        "optimizationVersion": { "type": "string" }
       },
       "additionalProperties": true
     }

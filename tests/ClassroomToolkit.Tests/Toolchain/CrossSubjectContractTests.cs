@@ -91,6 +91,23 @@ public sealed class CrossSubjectContractTests
     }
 
     [Fact]
+    public void AssetValidationScript_TracksSampleAndFeedbackSchemaContracts()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "tools", "rule-compiler", "validate-assets.mjs"));
+
+        script.Should().Contain("data-classification.schema.json");
+        script.Should().Contain("review-state-machine.schema.json");
+        script.Should().Contain("feedback-record.schema.json");
+        script.Should().Contain("sample-package.schema.json");
+        script.Should().Contain("sample-index.schema.json");
+        script.Should().Contain("negative-candidate.schema.json");
+        script.Should().Contain("sample-run-record.schema.json");
+        script.Should().Contain("schema should declare a non-empty $id");
+        script.Should().Contain("schema should declare compatibility metadata");
+    }
+
+    [Fact]
     public void RuleCompiler_ExposesCrossSubjectValidationScript()
     {
         var repoRoot = FindRepoRoot();

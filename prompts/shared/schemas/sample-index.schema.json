@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/sample-index/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "SampleIndex",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "samples"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "sample-index"
+      ]
+    },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sampleId",
+          "dataClassification",
+          "expectedQuestionRefs",
+          "problemSource",
+          "referenceTruth",
+          "teacherAnnotation",
+          "candidateRefs"
+        ],
+        "properties": {
+          "sampleId": { "type": "string" },
+          "dataClassification": {
+            "$ref": "./data-classification.schema.json"
+          },
+          "expectedQuestionRefs": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "problemSource": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "referenceTruth": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "teacherAnnotation": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "candidateRefs": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

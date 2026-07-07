@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/review-state-machine/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "ReviewStateMachine",
+  "type": "object",
+  "required": [
+    "state"
+  ],
+  "properties": {
+    "state": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready_for_review",
+        "under_review",
+        "visually_reviewed",
+        "needs_revision",
+        "approved",
+        "published"
+      ]
+    },
+    "updatedAt": { "type": "string" },
+    "actor": { "type": "string" },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": true
+}

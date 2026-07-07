@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/sample-package/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "SamplePackage",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "sampleId",
+    "subjectPack",
+    "dataClassification",
+    "expectedQuestionRefs",
+    "artifacts"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "sample-package"
+      ]
+    },
+    "sampleId": { "type": "string" },
+    "subjectPack": { "type": "string" },
+    "dataClassification": {
+      "$ref": "./data-classification.schema.json"
+    },
+    "expectedQuestionRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "artifactId",
+          "role",
+          "path",
+          "mediaType",
+          "sourceType",
+          "parseMode"
+        ],
+        "properties": {
+          "artifactId": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": [
+              "problem_source",
+              "reference_truth",
+              "teacher_annotation",
+              "legacy_answer",
+              "negative_candidate"
+            ]
+          },
+          "path": { "type": "string" },
+          "mediaType": { "type": "string" },
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "scan",
+              "image",
+              "docx",
+              "markdown",
+              "json"
+            ]
+          },
+          "parseMode": {
+            "type": "string",
+            "enum": [
+              "native",
+              "degraded"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

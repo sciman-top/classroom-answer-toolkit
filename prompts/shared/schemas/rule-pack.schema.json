@@ -1,5 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/rule-pack/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
   "title": "RulePack",
   "type": "object",
   "required": [

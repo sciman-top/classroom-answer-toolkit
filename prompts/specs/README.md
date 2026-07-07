@@ -17,6 +17,7 @@
 3. `compiled/` 下文件与 `prompts/<subject-pack>/spec.md` 视为 generated artifacts，不直接手改。
 4. 新增学段或学科时，先补 `subjects/` 与 `assemblies/`；只有确认可复用时才上移到 `commons/`。
 5. `subject-pack` 的 `humanSpec` 一律指向 `compiled/` 下的完整版，不指向源规范。
+6. schema、compatibility、impact analysis、回归窗口与回滚要求的执行面统一看 [docs/strategy/spec-evolution-adaptation-plan.md](../../docs/strategy/spec-evolution-adaptation-plan.md)。
 
 ## 当前分层
 
@@ -33,3 +34,6 @@
 - `commons/图文定量题通用` 不假定“这一定是物理题”，只放图文定量题共性。
 - `commons/物理通用` 只放跨初高中物理都适用的规则。
 - `subjects/` 允许在 bootstrap 阶段暂存少量尚未上移的通用内容，但后续应逐步抽离。
+- schema 与策略类规划写在 `docs/strategy/`，不写在源规范正文里。
+- 源规范只改 `platform/`、`commons/`、`subjects/`；generated artifacts 禁手改。
+- 高频变化规范下的影响分析、兼容窗口与回归要求以 strategy 文档为准。

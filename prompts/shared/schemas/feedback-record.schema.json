@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/feedback-record/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "FeedbackRecord",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "feedbackId",
+    "subjectPack",
+    "source",
+    "primaryErrorType",
+    "severity",
+    "createdAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "feedback-record"
+      ]
+    },
+    "feedbackId": { "type": "string" },
+    "subjectPack": { "type": "string" },
+    "source": {
+      "type": "string",
+      "enum": [
+        "auto_collected",
+        "teacher_input"
+      ]
+    },
+    "questionId": { "type": "string" },
+    "subQuestionId": { "type": "string" },
+    "normalizedQuestionRef": { "type": "string" },
+    "questionRef": { "type": "string" },
+    "figureId": { "type": "string" },
+    "figureRef": { "type": "string" },
+    "primaryErrorType": {
+      "type": "string",
+      "enum": [
+        "spec_gap",
+        "rule_gap",
+        "routing_error",
+        "visual_error",
+        "ocr_error",
+        "reference_parse_error",
+        "reasoning_error",
+        "format_error",
+        "data_quality_issue"
+      ]
+    },
+    "errorType": {
+      "type": "string",
+      "enum": [
+        "spec_gap",
+        "rule_gap",
+        "routing_error",
+        "visual_error",
+        "ocr_error",
+        "reference_parse_error",
+        "reasoning_error",
+        "format_error",
+        "data_quality_issue"
+      ]
+    },
+    "contributingErrorTypes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "spec_gap",
+          "rule_gap",
+          "routing_error",
+          "visual_error",
+          "ocr_error",
+          "reference_parse_error",
+          "reasoning_error",
+          "format_error",
+          "data_quality_issue"
+        ]
+      }
+    },
+    "confidence": { "type": "number" },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "expectedCorrection": { "type": "string" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "reproInput": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "reporter": { "type": "string" },
+    "status": { "type": "string" },
+    "firstObservedIteration": { "type": "integer" },
+    "resolvedIteration": { "type": "integer" },
+    "createdAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}
