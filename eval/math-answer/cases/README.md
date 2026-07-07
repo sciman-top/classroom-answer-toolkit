@@ -8,6 +8,10 @@ This directory stores the fixed fixtures referenced by
   experimental `math-answer` pack.
 - `unbalanced-dollar`: negative hard-gate fixture that confirms the shared
   markdown validator rejects broken math delimiters for `math-answer` too.
+- `basic-statistics-summary`: positive math-specific fixture that keeps average,
+  median, and mode conclusions explicit for a text-grounded case, then
+  verifies validator/render/deliver behavior with classroom and compact visual
+  baselines.
 - `stepwise-derivation`: positive math-specific fixture that keeps equivalent
   transforms explicit, then verifies validator/render/deliver behavior with
   classroom and compact visual baselines.

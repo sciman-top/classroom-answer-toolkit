@@ -1,0 +1,24 @@
+{
+  "caseId": "basic-statistics-summary",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/basic-statistics-summary.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/basic-statistics-summary.compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    }
+  },
+  "notes": [
+    "Covers the math-answer basic statistics posture with explicit average, median, and mode conclusions for a text-grounded data-list case."
+  ]
+}

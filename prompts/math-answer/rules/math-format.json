@@ -46,6 +46,26 @@
         "path": "./rules/math-format.json",
         "layer": "subject-pack"
       }
+    },
+    {
+      "id": "math-answer.statistics.basic-summary",
+      "version": "1.0.0",
+      "enabled": true,
+      "severity": "soft",
+      "priority": 77,
+      "engine": "validate",
+      "appliesTo": [
+        "answer-md"
+      ],
+      "params": {
+        "allowMeanMedianModeConclusion": true,
+        "allowShortStatisticFormula": true,
+        "restrictToTextGroundedCases": true
+      },
+      "source": {
+        "path": "./rules/math-format.json",
+        "layer": "subject-pack"
+      }
     }
   ]
 }

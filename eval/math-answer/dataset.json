@@ -6,6 +6,8 @@
   "visualBaselines": [
     "baselines/visual/linear-equation-smoke.classroom.page-001.png",
     "baselines/visual/linear-equation-smoke.compact.page-001.png",
+    "baselines/visual/basic-statistics-summary.classroom.page-001.png",
+    "baselines/visual/basic-statistics-summary.compact.page-001.png",
     "baselines/visual/basic-probability-notation.classroom.page-001.png",
     "baselines/visual/basic-probability-notation.compact.page-001.png",
     "baselines/visual/stepwise-derivation.classroom.page-001.png",
@@ -43,6 +45,18 @@
         "cross-subject",
         "math-subject",
         "probability",
+        "smoke"
+      ]
+    },
+    {
+      "id": "basic-statistics-summary",
+      "input": "cases/basic-statistics-summary.md",
+      "expected": "cases/basic-statistics-summary.expected.json",
+      "visualBaseline": "baselines/visual/basic-statistics-summary.classroom.page-001.png",
+      "tags": [
+        "cross-subject",
+        "math-subject",
+        "statistics",
         "smoke"
       ]
     },

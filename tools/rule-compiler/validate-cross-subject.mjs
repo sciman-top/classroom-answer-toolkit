@@ -17,6 +17,7 @@ function main() {
   assert(snapshot.activeProfile.name === "classroom", `Expected classroom profile, got ${snapshot.activeProfile.name}`);
   assert(snapshot.rules.some((rule) => rule.id === "math-answer.derivation.stepwise"), "Math subject rule was not merged.");
   assert(snapshot.rules.some((rule) => rule.id === "math-answer.probability.basic-notation"), "Math probability rule was not merged.");
+  assert(snapshot.rules.some((rule) => rule.id === "math-answer.statistics.basic-summary"), "Math statistics rule was not merged.");
   assert(snapshot.rules.some((rule) => rule.id.startsWith("delivery.")), "Platform delivery rules were not inherited.");
   assert(snapshot.inputRefs.subjectManifest === "prompts/math-answer/manifest.json", `Unexpected subject manifest ref: ${snapshot.inputRefs.subjectManifest}`);
   assert(snapshot.inputRefs.subjectConfig === "prompts/math-answer/config.json", `Unexpected subject config ref: ${snapshot.inputRefs.subjectConfig}`);

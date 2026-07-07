@@ -9,6 +9,10 @@ the `math-answer` subject pack.
   visual baselines
 - `unbalanced-dollar`: negative hard gate that confirms unbalanced math
   delimiters are rejected
+- `basic-statistics-summary`: positive math-specific fixture that keeps
+  average/median/mode conclusions explicit for a text-grounded data-list case,
+  then verifies validator/render/deliver behavior with classroom and compact
+  visual baselines
 - `stepwise-derivation`: positive derivation case that keeps equivalent-transform
   steps explicit and records classroom/compact visual baselines
 - `basic-probability-notation`: positive math-specific fixture that keeps
