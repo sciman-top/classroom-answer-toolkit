@@ -9,6 +9,8 @@ the `math-answer` subject pack.
   visual baselines
 - `unbalanced-dollar`: negative hard gate that confirms unbalanced math
   delimiters are rejected
+- `stepwise-derivation`: positive derivation case that keeps equivalent-transform
+  steps explicit and records classroom/compact visual baselines
 
 ## Output
 

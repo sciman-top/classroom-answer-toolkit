@@ -1,0 +1,24 @@
+{
+  "caseId": "stepwise-derivation",
+  "profiles": {
+    "classroom": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/stepwise-derivation.classroom.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    },
+    "compact": {
+      "shouldPass": true,
+      "maxWarnings": 0,
+      "visualBaseline": "baselines/visual/stepwise-derivation.compact.page-001.png",
+      "delivery": {
+        "keepReview": false
+      }
+    }
+  },
+  "notes": [
+    "Covers the math-answer stepwise derivation posture with equivalent-transform steps kept explicit."
+  ]
+}

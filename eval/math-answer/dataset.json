@@ -5,7 +5,9 @@
   "assetVersion": "v0.1",
   "visualBaselines": [
     "baselines/visual/linear-equation-smoke.classroom.page-001.png",
-    "baselines/visual/linear-equation-smoke.compact.page-001.png"
+    "baselines/visual/linear-equation-smoke.compact.page-001.png",
+    "baselines/visual/stepwise-derivation.classroom.page-001.png",
+    "baselines/visual/stepwise-derivation.compact.page-001.png"
   ],
   "resultsFile": "results/latest.json",
   "cases": [
@@ -28,6 +30,18 @@
         "cross-subject",
         "validator",
         "hard-gate"
+      ]
+    },
+    {
+      "id": "stepwise-derivation",
+      "input": "cases/stepwise-derivation.md",
+      "expected": "cases/stepwise-derivation.expected.json",
+      "visualBaseline": "baselines/visual/stepwise-derivation.classroom.page-001.png",
+      "tags": [
+        "cross-subject",
+        "math-subject",
+        "derivation",
+        "smoke"
       ]
     }
   ]

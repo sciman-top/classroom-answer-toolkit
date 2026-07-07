@@ -15,6 +15,7 @@ This checklist captures the current minimum runtime contract for the experimenta
 ## Current automated coverage
 
 - linear-equation smoke
+- stepwise derivation smoke
 - unbalanced-dollar hard gate
 - cross-subject snapshot and asset validation
 - shared markdown validator on math fixtures

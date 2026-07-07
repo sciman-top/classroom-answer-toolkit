@@ -20,7 +20,18 @@ public sealed class CrossSubjectContractTests
         File.Exists(Path.Combine(repoRoot, "prompts", "math-answer", "rules", "math-format.json")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "prompts", "specs", "assemblies", "math.json")).Should().BeTrue();
         File.Exists(Path.Combine(repoRoot, "prompts", "specs", "compiled", "试卷参考答案交付规范-初中数学-完整版-v0.1.md")).Should().BeTrue();
-        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "dataset.json")).Should().BeTrue();
+        var datasetPath = Path.Combine(repoRoot, "eval", "math-answer", "dataset.json");
+        File.Exists(datasetPath).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "stepwise-derivation.md")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "cases", "stepwise-derivation.expected.json")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "stepwise-derivation.classroom.page-001.png")).Should().BeTrue();
+        File.Exists(Path.Combine(repoRoot, "eval", "math-answer", "baselines", "visual", "stepwise-derivation.compact.page-001.png")).Should().BeTrue();
+
+        using var dataset = JsonDocument.Parse(File.ReadAllText(datasetPath));
+        var caseIds = dataset.RootElement.GetProperty("cases").EnumerateArray()
+            .Select(static element => element.GetProperty("id").GetString())
+            .ToArray();
+        caseIds.Should().Contain("stepwise-derivation");
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
         manifest.RootElement.GetProperty("status").GetString().Should().Be("experimental");
