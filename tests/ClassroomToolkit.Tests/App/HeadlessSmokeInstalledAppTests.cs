@@ -39,6 +39,11 @@ public sealed class HeadlessSmokeInstalledAppTests
         content.Should().Contain("Diagnostics bundle missing primary subject-pack acceptanceChecklist:");
         content.Should().Contain("Smoke stdout subjectPacks does not match diagnostics manifest.");
         content.Should().Contain("Smoke report:");
+        content.Should().Contain("lastDeliveryReviewState");
+        content.Should().Contain("lastDeliveryFeedbackRefCount");
+        content.Should().Contain("lastDeliveryVisualDecisionRef");
+        content.Should().Contain("lastDeliveryVisualPolicyVersion");
+        content.Should().Contain("lastDeliveryOptimizationVersion");
     }
 
     [Fact]

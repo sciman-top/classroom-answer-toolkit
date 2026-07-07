@@ -62,6 +62,24 @@ public sealed record WorkspaceDiagnosticsOcrRecord(
     int? PageCount,
     string? Error);
 
+public sealed record WorkspaceDiagnosticsReviewLifecycleRecord(
+    string? State,
+    string? UpdatedAt,
+    string? Actor,
+    string? Notes);
+
+public sealed record WorkspaceDiagnosticsReviewRecord(
+    string? OutputDir,
+    string? ManifestPath,
+    string? Scale,
+    WorkspaceDiagnosticsReviewLifecycleRecord? Lifecycle,
+    IReadOnlyList<string> FeedbackRefs,
+    string? VisualDecisionRef);
+
+public sealed record WorkspaceDiagnosticsPolicyRecord(
+    string? VisualPolicyVersion,
+    string? OptimizationVersion);
+
 public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -559,6 +577,14 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             && reviewElement.TryGetProperty("outputDir", out var reviewOutputDirElement)
                 ? reviewOutputDirElement.GetString()
                 : null;
+        var reviewManifestPath = root.TryGetProperty("review", out reviewElement)
+            && reviewElement.TryGetProperty("manifestPath", out var reviewManifestPathElement)
+                ? reviewManifestPathElement.GetString()
+                : null;
+        var reviewScale = root.TryGetProperty("review", out reviewElement)
+            && reviewElement.TryGetProperty("scale", out var reviewScaleElement)
+                ? reviewScaleElement.GetString()
+                : null;
         var snapshotVersion = root.TryGetProperty("snapshot", out var snapshotElement)
             && snapshotElement.TryGetProperty("version", out var versionElement)
                 ? versionElement.GetString()
@@ -586,6 +612,8 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
                 : (bool?)null;
         var ocr = ReadDeliveryOcr(root);
         var graphics = ReadDeliveryGraphics(root, Path.GetDirectoryName(fullPath));
+        var review = ReadDeliveryReview(root);
+        var policy = ReadDeliveryPolicy(root);
 
         return new
         {
@@ -597,6 +625,14 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             input,
             output,
             reviewDirectoryPath,
+            review = new WorkspaceDiagnosticsReviewRecord(
+                reviewDirectoryPath,
+                reviewManifestPath,
+                reviewScale,
+                review.Lifecycle,
+                review.FeedbackRefs,
+                review.VisualDecisionRef),
+            policy,
             status = new
             {
                 toolchainPassed,
@@ -612,6 +648,43 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
                 items = graphics
             }
         };
+    }
+
+    private static WorkspaceDiagnosticsReviewRecord ReadDeliveryReview(JsonElement root)
+    {
+        if (!root.TryGetProperty("review", out var reviewElement) || reviewElement.ValueKind != JsonValueKind.Object)
+        {
+            return new WorkspaceDiagnosticsReviewRecord(null, null, null, null, Array.Empty<string>(), null);
+        }
+
+        var lifecycle = reviewElement.TryGetProperty("lifecycle", out var lifecycleElement)
+            && lifecycleElement.ValueKind == JsonValueKind.Object
+                ? new WorkspaceDiagnosticsReviewLifecycleRecord(
+                    ReadOptionalString(lifecycleElement, "state"),
+                    ReadOptionalString(lifecycleElement, "updatedAt"),
+                    ReadOptionalString(lifecycleElement, "actor"),
+                    ReadOptionalString(lifecycleElement, "notes"))
+                : null;
+
+        return new WorkspaceDiagnosticsReviewRecord(
+            ReadOptionalString(reviewElement, "outputDir"),
+            ReadOptionalString(reviewElement, "manifestPath"),
+            ReadOptionalString(reviewElement, "scale"),
+            lifecycle,
+            ReadOptionalStringArray(reviewElement, "feedbackRefs"),
+            ReadOptionalString(reviewElement, "visualDecisionRef"));
+    }
+
+    private static WorkspaceDiagnosticsPolicyRecord? ReadDeliveryPolicy(JsonElement root)
+    {
+        if (!root.TryGetProperty("policy", out var policyElement) || policyElement.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return new WorkspaceDiagnosticsPolicyRecord(
+            ReadOptionalString(policyElement, "visualPolicyVersion"),
+            ReadOptionalString(policyElement, "optimizationVersion"));
     }
 
     private static WorkspaceDiagnosticsOcrRecord ReadDeliveryOcr(JsonElement root)
@@ -679,6 +752,22 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             && valueElement.ValueKind == JsonValueKind.String
                 ? valueElement.GetString()
                 : null;
+    }
+
+    private static IReadOnlyList<string> ReadOptionalStringArray(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var valueElement) || valueElement.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+
+        return valueElement
+            .EnumerateArray()
+            .Where(static item => item.ValueKind == JsonValueKind.String)
+            .Select(static item => item.GetString())
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Cast<string>()
+            .ToArray();
     }
 
     private sealed record SubjectPackSourceOfTruthPaths(

@@ -29,11 +29,16 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastDeliveryInputPath.Should().BeNull();
         result.LastDeliveryOutputPath.Should().BeNull();
         result.LastDeliveryReviewDirectoryPath.Should().BeNull();
+        result.LastDeliveryReviewState.Should().BeNull();
+        result.LastDeliveryFeedbackRefCount.Should().Be(0);
+        result.LastDeliveryVisualDecisionRef.Should().BeNull();
         result.LastDeliveryToolchainPassed.Should().BeNull();
         result.LastDeliveryComplete.Should().BeNull();
         result.LastDeliveryReviewArtifactReady.Should().BeNull();
         result.LastDeliveryVisualReviewPassed.Should().BeNull();
         result.LastDeliveryTrusted.Should().BeNull();
+        result.LastDeliveryVisualPolicyVersion.Should().BeNull();
+        result.LastDeliveryOptimizationVersion.Should().BeNull();
         result.LastDeliveryGraphicCount.Should().Be(0);
         result.DiagnosticsBundlePath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001");
         result.DiagnosticsManifestPath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001\diagnostic-manifest.json");
@@ -72,6 +77,25 @@ public sealed class HeadlessSmokeRunnerTests
                 input = @"D:\repo\样例交付\sample-answer.md",
                 output = @"D:\repo\样例交付\sample-answer.pdf",
                 reviewDirectoryPath = @"D:\repo\.pdf-review\sample-answer",
+                review = new
+                {
+                    lifecycle = new
+                    {
+                        state = "ready_for_review",
+                        updatedAt = "2026-07-07T12:00:00.000Z"
+                    },
+                    feedbackRefs = new[]
+                    {
+                        @"D:\repo\feedback\feedback-001.json",
+                        @"D:\repo\feedback\feedback-002.json"
+                    },
+                    visualDecisionRef = @"D:\repo\review\visual-decision-001.json"
+                },
+                policy = new
+                {
+                    visualPolicyVersion = "visual-policy-v1",
+                    optimizationVersion = "optimization-v2"
+                },
                 status = new
                 {
                     toolchainPassed = true,
@@ -108,11 +132,16 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastDeliveryInputPath.Should().Be(@"D:\repo\样例交付\sample-answer.md");
         result.LastDeliveryOutputPath.Should().Be(@"D:\repo\样例交付\sample-answer.pdf");
         result.LastDeliveryReviewDirectoryPath.Should().Be(@"D:\repo\.pdf-review\sample-answer");
+        result.LastDeliveryReviewState.Should().Be("ready_for_review");
+        result.LastDeliveryFeedbackRefCount.Should().Be(2);
+        result.LastDeliveryVisualDecisionRef.Should().Be(@"D:\repo\review\visual-decision-001.json");
         result.LastDeliveryToolchainPassed.Should().BeTrue();
         result.LastDeliveryComplete.Should().BeTrue();
         result.LastDeliveryReviewArtifactReady.Should().BeTrue();
         result.LastDeliveryVisualReviewPassed.Should().BeNull();
         result.LastDeliveryTrusted.Should().BeFalse();
+        result.LastDeliveryVisualPolicyVersion.Should().Be("visual-policy-v1");
+        result.LastDeliveryOptimizationVersion.Should().Be("optimization-v2");
         result.LastDeliveryGraphicCount.Should().Be(1);
     }
 
@@ -142,11 +171,16 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastDeliveryInputPath.Should().BeNull();
         result.LastDeliveryOutputPath.Should().BeNull();
         result.LastDeliveryReviewDirectoryPath.Should().BeNull();
+        result.LastDeliveryReviewState.Should().BeNull();
+        result.LastDeliveryFeedbackRefCount.Should().Be(0);
+        result.LastDeliveryVisualDecisionRef.Should().BeNull();
         result.LastDeliveryToolchainPassed.Should().BeNull();
         result.LastDeliveryComplete.Should().BeNull();
         result.LastDeliveryReviewArtifactReady.Should().BeNull();
         result.LastDeliveryVisualReviewPassed.Should().BeNull();
         result.LastDeliveryTrusted.Should().BeNull();
+        result.LastDeliveryVisualPolicyVersion.Should().BeNull();
+        result.LastDeliveryOptimizationVersion.Should().BeNull();
         result.LastDeliveryGraphicCount.Should().Be(0);
     }
 

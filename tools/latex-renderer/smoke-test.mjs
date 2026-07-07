@@ -112,6 +112,19 @@ function assertDeliveryManifestMatches(manifestPath, expectedSnapshot, expectedS
     throw new Error(`Deliver manifest status.reviewArtifactReady mismatch: expected ${expectedReviewArtifactReady}, got ${status.reviewArtifactReady}`);
   }
 
+  const expectedReviewState = expectedStatus.reviewState ?? (expectedReviewArtifactReady ? "ready_for_review" : "draft");
+  if (manifest.review?.lifecycle?.state !== expectedReviewState) {
+    throw new Error(`Deliver manifest review.lifecycle.state mismatch: expected ${expectedReviewState}, got ${manifest.review?.lifecycle?.state}`);
+  }
+
+  if (typeof manifest.review?.lifecycle?.updatedAt !== "string" || manifest.review.lifecycle.updatedAt.length === 0) {
+    throw new Error("Deliver manifest review.lifecycle.updatedAt must be a non-empty string.");
+  }
+
+  if (!Array.isArray(manifest.review?.feedbackRefs) || manifest.review.feedbackRefs.length !== 0) {
+    throw new Error(`Deliver manifest review.feedbackRefs mismatch: expected empty array, got ${JSON.stringify(manifest.review?.feedbackRefs)}`);
+  }
+
   if (status.visualReviewPassed !== null) {
     throw new Error(`Deliver manifest status.visualReviewPassed mismatch: expected null, got ${status.visualReviewPassed}`);
   }
@@ -309,6 +322,55 @@ function assertDeliveryManifestRejectsMismatchedSnapshot(explicitSnapshot) {
   );
 }
 
+function assertDeliveryManifestRejectsTrustedReviewBeforeApproval(explicitSnapshot) {
+  const manifestPath = path.join(smokeDir, "trusted-before-approval.delivery-manifest.json");
+  writeJson(manifestPath, {
+    schemaVersion: "1.0",
+    kind: "delivery-manifest",
+    generatedAt: "2026-06-22T00:00:00.000Z",
+    subjectPack: "junior-physics-answer",
+    snapshotId: explicitSnapshot.snapshotId,
+    snapshotPath: path.join(smokeDir, "resolved-snapshot.explicit.json"),
+    snapshot: {
+      id: explicitSnapshot.snapshotId,
+      version: explicitSnapshot.subjectPack?.version ?? "unknown",
+      profile: "classroom"
+    },
+    profile: "classroom",
+    input: path.join(smokeDir, "trusted-before-approval.md"),
+    output: path.join(smokeDir, "trusted-before-approval.pdf"),
+    review: {
+      outputDir: path.join(smokeDir, "trusted-before-approval-review"),
+      manifestPath: path.join(smokeDir, "trusted-before-approval-review", "manifest.json"),
+      scale: "2",
+      lifecycle: {
+        state: "ready_for_review",
+        updatedAt: "2026-06-22T00:00:00.000Z"
+      },
+      feedbackRefs: []
+    },
+    ocr: {
+      status: "not-requested"
+    },
+    graphics: {
+      items: []
+    },
+    status: {
+      toolchainPassed: true,
+      deliveryComplete: true,
+      reviewArtifactReady: false,
+      visualReviewPassed: true,
+      trusted: true
+    }
+  });
+
+  runNodeScriptExpectFailure(
+    "validate-delivery-manifest.mjs",
+    ["--manifest", path.relative(repoRoot, manifestPath)],
+    "status.trusted=true requires review.lifecycle.state to be approved or published."
+  );
+}
+
 function main() {
   ensureCleanSmokeDir();
 
@@ -428,6 +490,7 @@ function main() {
   assertDeliveryManifestRejectsMismatchedGraphic(explicitSnapshot);
   assertDeliveryManifestRejectsIncompleteOcrMetadata(explicitSnapshot);
   assertDeliveryManifestRejectsMismatchedSnapshot(explicitSnapshot);
+  assertDeliveryManifestRejectsTrustedReviewBeforeApproval(explicitSnapshot);
 
   console.log("[smoke] cleanup");
   fs.rmSync(smokeDir, { recursive: true, force: true });

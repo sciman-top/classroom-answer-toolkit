@@ -109,6 +109,82 @@ function validateOcrMetadata(errors, ocr) {
   }
 }
 
+function validateReviewMetadata(errors, manifest, manifestDir) {
+  const review = manifest.review;
+  const status = manifest.status ?? {};
+  if (!review || typeof review !== "object" || Array.isArray(review)) {
+    errors.push("review must be an object.");
+    return;
+  }
+
+  const reviewLifecycleState = review.lifecycle?.state;
+  const reviewOutputDir = typeof review.outputDir === "string" && review.outputDir.trim().length > 0
+    ? resolveManifestRelativePath(review.outputDir, manifestDir)
+    : null;
+  const reviewManifestPath = typeof review.manifestPath === "string" && review.manifestPath.trim().length > 0
+    ? resolveManifestRelativePath(review.manifestPath, manifestDir)
+    : null;
+
+  if (status.reviewArtifactReady === true) {
+    if (!reviewOutputDir || !fs.existsSync(reviewOutputDir)) {
+      errors.push("status.reviewArtifactReady cannot be true unless review.outputDir exists.");
+    }
+
+    if (!reviewManifestPath || !fs.existsSync(reviewManifestPath)) {
+      errors.push("status.reviewArtifactReady cannot be true unless review.manifestPath exists.");
+    }
+  }
+
+  if (reviewLifecycleState === "draft" && status.reviewArtifactReady === true) {
+    errors.push("review.lifecycle.state cannot be draft when review artifacts are ready.");
+  }
+
+  if (status.visualReviewPassed === true
+    && !["visually_reviewed", "approved", "published"].includes(reviewLifecycleState)) {
+    errors.push("status.visualReviewPassed=true requires review.lifecycle.state to be visually_reviewed, approved, or published.");
+  }
+
+  if (status.visualReviewPassed === false
+    && ["approved", "published"].includes(reviewLifecycleState)) {
+    errors.push("status.visualReviewPassed=false cannot coexist with an approved or published review lifecycle.");
+  }
+
+  if (status.trusted === true && !["approved", "published"].includes(reviewLifecycleState)) {
+    errors.push("status.trusted=true requires review.lifecycle.state to be approved or published.");
+  }
+
+  if (Array.isArray(review.feedbackRefs)) {
+    for (const [index, feedbackRef] of review.feedbackRefs.entries()) {
+      if (typeof feedbackRef !== "string" || feedbackRef.trim().length === 0) {
+        errors.push(`review.feedbackRefs[${index}] must be a non-empty string.`);
+      }
+    }
+  }
+
+  if (review.visualDecisionRef !== undefined
+    && (typeof review.visualDecisionRef !== "string" || review.visualDecisionRef.trim().length === 0)) {
+    errors.push("review.visualDecisionRef must be a non-empty string when provided.");
+  }
+}
+
+function validatePolicyMetadata(errors, manifest) {
+  if (manifest.policy === undefined) {
+    return;
+  }
+
+  if (!manifest.policy || typeof manifest.policy !== "object" || Array.isArray(manifest.policy)) {
+    errors.push("policy must be an object when provided.");
+    return;
+  }
+
+  for (const fieldName of ["visualPolicyVersion", "optimizationVersion"]) {
+    if (manifest.policy[fieldName] !== undefined
+      && (typeof manifest.policy[fieldName] !== "string" || manifest.policy[fieldName].trim().length === 0)) {
+      errors.push(`policy.${fieldName} must be a non-empty string when provided.`);
+    }
+  }
+}
+
 function validateReferencedSnapshot(errors, manifest, manifestDir) {
   if (typeof manifest.snapshotPath !== "string" || manifest.snapshotPath.trim().length === 0) {
     errors.push("snapshotPath must be a non-empty string.");
@@ -208,6 +284,8 @@ function main() {
   }
 
   validateOcrMetadata(errors, manifest.ocr);
+  validateReviewMetadata(errors, manifest, manifestDir);
+  validatePolicyMetadata(errors, manifest);
 
   if (manifest.graphics !== undefined && !Array.isArray(manifest.graphics?.items)) {
     errors.push("graphics.items must be an array.");

@@ -74,6 +74,17 @@ public sealed class WorkspaceDiagnosticsExporterTests
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("snapshotVersion").GetString().Should().Be("v0.1");
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("output").GetString().Should().Be(workspace.OutputPdfPath);
         manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("reviewDirectoryPath").GetString().Should().Be(workspace.ReviewDirectoryPath);
+        var review = manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("review");
+        review.GetProperty("outputDir").GetString().Should().Be(workspace.ReviewDirectoryPath);
+        review.GetProperty("manifestPath").GetString().Should().Be(Path.Combine(workspace.ReviewDirectoryPath, "manifest.json"));
+        review.GetProperty("scale").GetString().Should().Be("2");
+        review.GetProperty("lifecycle").GetProperty("state").GetString().Should().Be("ready_for_review");
+        review.GetProperty("feedbackRefs").GetArrayLength().Should().Be(1);
+        review.GetProperty("feedbackRefs").EnumerateArray().Single().GetString().Should().Be(@"D:\repo\feedback\feedback-001.json");
+        review.GetProperty("visualDecisionRef").GetString().Should().Be(@"D:\repo\review\visual-decision-001.json");
+        var policy = manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("policy");
+        policy.GetProperty("visualPolicyVersion").GetString().Should().Be("visual-policy-v1");
+        policy.GetProperty("optimizationVersion").GetString().Should().Be("optimization-v2");
         var deliveryStatus = manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("status");
         deliveryStatus.GetProperty("toolchainPassed").GetBoolean().Should().BeTrue();
         deliveryStatus.GetProperty("deliveryComplete").GetBoolean().Should().BeTrue();
@@ -366,7 +377,24 @@ public sealed class WorkspaceDiagnosticsExporterTests
                 },
                 review = new
                 {
-                    outputDir = ReviewDirectoryPath
+                    outputDir = ReviewDirectoryPath,
+                    manifestPath = Path.Combine(ReviewDirectoryPath, "manifest.json"),
+                    scale = "2",
+                    lifecycle = new
+                    {
+                        state = "ready_for_review",
+                        updatedAt = "2026-07-07T12:00:00.000Z"
+                    },
+                    feedbackRefs = new[]
+                    {
+                        @"D:\repo\feedback\feedback-001.json"
+                    },
+                    visualDecisionRef = @"D:\repo\review\visual-decision-001.json"
+                },
+                policy = new
+                {
+                    visualPolicyVersion = "visual-policy-v1",
+                    optimizationVersion = "optimization-v2"
                 },
                 status = new
                 {
@@ -436,7 +464,15 @@ public sealed class WorkspaceDiagnosticsExporterTests
                 },
                 review = new
                 {
-                    outputDir = ReviewDirectoryPath
+                    outputDir = ReviewDirectoryPath,
+                    manifestPath = Path.Combine(ReviewDirectoryPath, "manifest.json"),
+                    scale = "2",
+                    lifecycle = new
+                    {
+                        state = "draft",
+                        updatedAt = "2026-07-07T12:00:00.000Z"
+                    },
+                    feedbackRefs = Array.Empty<string>()
                 },
                 status = new
                 {

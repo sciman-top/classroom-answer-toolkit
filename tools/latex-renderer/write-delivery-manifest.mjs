@@ -224,11 +224,13 @@ function main() {
   const deliveryComplete = fs.existsSync(outputPath);
   const answerGraphics = collectAnswerGraphicReferences(inputPath);
   const ocr = collectOcrMetadata(reviewManifestPath);
+  const generatedAt = new Date().toISOString();
+  const reviewLifecycleState = reviewArtifactReady ? "ready_for_review" : "draft";
 
   const manifest = {
     schemaVersion: "1.0",
     kind: "delivery-manifest",
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     snapshotId,
     snapshotPath,
     snapshot: {
@@ -243,7 +245,12 @@ function main() {
     review: {
       outputDir: reviewDir,
       manifestPath: reviewManifestPath,
-      scale: options.reviewScale
+      scale: options.reviewScale,
+      lifecycle: {
+        state: reviewLifecycleState,
+        updatedAt: generatedAt
+      },
+      feedbackRefs: []
     },
     ocr,
     graphics: {
