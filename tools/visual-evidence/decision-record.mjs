@@ -88,7 +88,7 @@ export function compileDecisionRecord(options) {
 
   const decision = reviewRequired ? "review_required" : "accept";
   const trusted = decision === "accept" && humanApproved;
-  const visualReviewPassed = humanApproved ? true : null;
+  const visualReviewPassed = trusted ? true : null;
 
   return withoutUndefined({
     schemaVersion: "1.0",

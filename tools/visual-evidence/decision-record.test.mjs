@@ -65,3 +65,27 @@ test("compileDecisionRecord marks unsafe shortcut and insufficient grounding fai
   assert.ok(decisionRecord.decisionReasons.includes("acceptance_tier_unverified"));
   assert.deepEqual(validateDecisionRecord(decisionRecord), []);
 });
+
+test("compileDecisionRecord does not project visualReviewPassed when human approval is blocked by gates", () => {
+  const evidenceBundle = readCaseJson("unsafe-shortcut-grounding-missing.problem-evidence-bundle.json");
+  const trackResults = [
+    readCaseJson("unsafe-shortcut-grounding-missing.track-a.json"),
+    readCaseJson("unsafe-shortcut-grounding-missing.track-c.json")
+  ];
+
+  const decisionRecord = compileDecisionRecord({
+    evidenceBundle,
+    trackResults,
+    generatedAt: "2026-07-08T00:00:00.000Z",
+    humanApproved: true
+  });
+
+  assert.equal(decisionRecord.decision, "review_required");
+  assert.equal(decisionRecord.trusted, false);
+  assert.equal(decisionRecord.visualReviewPassed, null);
+  assert.equal(decisionRecord.statusProjection.trusted, false);
+  assert.equal(decisionRecord.statusProjection.visualReviewPassed, null);
+  assert.ok(decisionRecord.decisionReasons.includes("human_approved"));
+  assert.ok(decisionRecord.decisionReasons.includes("acceptance_tier_unverified"));
+  assert.deepEqual(validateDecisionRecord(decisionRecord), []);
+});
