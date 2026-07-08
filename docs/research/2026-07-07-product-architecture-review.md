@@ -2,6 +2,8 @@
 
 日期：2026-07-07
 
+> 2026-07-08 addendum：Typst 渲染口径已被 [ADR 0006](../adr/0006-typst-primary-renderer-target.md) 与 [D-017](../strategy/decision-log.md) 更新。本文中“Typst 作为第二渲染后端候选”的研究结论，已调整为“Typst 是终局主渲染目标，但当前运行时仍保持 Playwright / Chromium，直到 parity gate 与 rollback smoke 通过”。
+
 ## 1. 审查范围
 
 本次审查同时覆盖：

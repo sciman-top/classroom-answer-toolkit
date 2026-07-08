@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "renderer-contract",
+  "rendererId": "typst-primary-target",
+  "engine": "typst",
+  "status": "planned",
+  "inputFormat": "answer_markdown",
+  "outputFormats": [
+    "pdf",
+    "review_images",
+    "delivery_manifest"
+  ],
+  "artifactContract": {
+    "answerPdf": "outputs/answer.pdf",
+    "manifest": "outputs/delivery-manifest.json",
+    "rendererTrace": "outputs/renderer-trace.json",
+    "sourcePath": "outputs/answer.typ"
+  },
+  "reviewContract": {
+    "reviewImages": "review/pages",
+    "pageMap": "review/page-map.json",
+    "statusProjection": {
+      "visualReviewPassed": null,
+      "trusted": false
+    }
+  },
+  "acceptanceGates": [
+    "build",
+    "asset_validation",
+    "snapshot_compile",
+    "answer_eval",
+    "visual_review",
+    "pdf_metadata",
+    "pdf_accessibility_strategy",
+    "pagination_parity",
+    "math_rendering_parity",
+    "manifest_validation",
+    "rollback_smoke"
+  ],
+  "rollback": {
+    "fallbackEngine": "playwright_chromium",
+    "triggerConditions": [
+      "typst_compile_failed",
+      "manifest_validation_failed",
+      "review_images_missing",
+      "pagination_parity_failed",
+      "math_rendering_parity_failed"
+    ],
+    "recoveryCommand": "renderer.engine=playwright_chromium"
+  }
+}

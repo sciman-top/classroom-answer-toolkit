@@ -7,12 +7,15 @@
 1. [product-prd.md](./product-prd.md)
 2. [architecture-and-end-state.md](./architecture-and-end-state.md)
 3. [final-implementation-baseline.md](./final-implementation-baseline.md)
-4. [spec-evolution-adaptation-plan.md](./spec-evolution-adaptation-plan.md)
+4. [auto-solving-workstation-final-plan.md](./auto-solving-workstation-final-plan.md)
 5. [visual-first-answering-architecture.md](./visual-first-answering-architecture.md)
-6. [implementation-roadmap.md](./implementation-roadmap.md)
-7. [implementation-plan.md](./implementation-plan.md)
-8. [execution-backlog.md](./execution-backlog.md)
-9. [decision-log.md](./decision-log.md)
+6. [ai-gateway-config.md](./ai-gateway-config.md)
+7. [typst-primary-renderer-plan.md](./typst-primary-renderer-plan.md)
+8. [spec-evolution-adaptation-plan.md](./spec-evolution-adaptation-plan.md)
+9. [implementation-roadmap.md](./implementation-roadmap.md)
+10. [implementation-plan.md](./implementation-plan.md)
+11. [execution-backlog.md](./execution-backlog.md)
+12. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 

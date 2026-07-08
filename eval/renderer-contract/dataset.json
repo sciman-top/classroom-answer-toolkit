@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "renderer-contract-dataset",
+  "description": "Contract-level fixtures for the Typst primary renderer migration.",
+  "cases": [
+    {
+      "id": "chromium-to-typst-parity-required",
+      "currentRenderer": "playwright_chromium",
+      "targetRenderer": "typst",
+      "status": "planned",
+      "contract": "cases/chromium-to-typst-parity-required.renderer-contract.json",
+      "requiredGates": [
+        "pagination_parity",
+        "math_rendering_parity",
+        "manifest_validation",
+        "visual_review",
+        "rollback_smoke"
+      ]
+    }
+  ]
+}

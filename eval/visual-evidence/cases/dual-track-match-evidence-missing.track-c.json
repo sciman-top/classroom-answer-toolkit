@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-c-dual-track-match-evidence-missing",
+  "evidenceBundleRef": "veb-dual-track-match-evidence-missing",
+  "trackType": "rule_validator",
+  "candidateSourceType": "generated",
+  "answerCandidate": "blocked: missing local graph crop evidence",
+  "confidence": 1.0,
+  "visualDetailMode": "not_applicable",
+  "visibleEvidenceSummary": "Validator blocks trusted release because cropRefs is empty for a high-risk function graph item.",
+  "evidenceRefs": [
+    "veb-dual-track-match-evidence-missing"
+  ],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [
+    "crop:fig-12-local-high-res"
+  ],
+  "validatorFindings": [
+    {
+      "findingId": "visual-evidence.missing-local-crop",
+      "severity": "blocking",
+      "message": "High-risk graph item has no local high-resolution crop evidence.",
+      "evidenceRef": "veb-dual-track-match-evidence-missing"
+    }
+  ],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": [
+      "evidence chain missing cropRef"
+    ]
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

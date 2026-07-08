@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/renderer-contract/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "RendererContract",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "rendererId",
+    "engine",
+    "status",
+    "inputFormat",
+    "outputFormats",
+    "artifactContract",
+    "reviewContract",
+    "acceptanceGates",
+    "rollback"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "renderer-contract"
+      ]
+    },
+    "rendererId": { "type": "string" },
+    "engine": {
+      "type": "string",
+      "enum": [
+        "playwright_chromium",
+        "typst"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "current",
+        "planned",
+        "experimental",
+        "primary",
+        "fallback",
+        "deprecated"
+      ]
+    },
+    "inputFormat": {
+      "type": "string",
+      "enum": [
+        "answer_markdown",
+        "answer_ast",
+        "typst_source",
+        "html"
+      ]
+    },
+    "outputFormats": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "pdf",
+          "png",
+          "svg",
+          "html",
+          "review_images",
+          "delivery_manifest"
+        ]
+      }
+    },
+    "artifactContract": {
+      "type": "object",
+      "required": [
+        "answerPdf",
+        "manifest",
+        "rendererTrace"
+      ],
+      "properties": {
+        "answerPdf": { "type": "string" },
+        "manifest": { "type": "string" },
+        "rendererTrace": { "type": "string" },
+        "sourcePath": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "reviewContract": {
+      "type": "object",
+      "required": [
+        "reviewImages",
+        "pageMap",
+        "statusProjection"
+      ],
+      "properties": {
+        "reviewImages": { "type": "string" },
+        "pageMap": { "type": "string" },
+        "statusProjection": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "acceptanceGates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "build",
+          "asset_validation",
+          "snapshot_compile",
+          "answer_eval",
+          "visual_review",
+          "pdf_metadata",
+          "pdf_accessibility_strategy",
+          "pagination_parity",
+          "math_rendering_parity",
+          "manifest_validation",
+          "rollback_smoke"
+        ]
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "required": [
+        "fallbackEngine",
+        "triggerConditions"
+      ],
+      "properties": {
+        "fallbackEngine": {
+          "type": "string",
+          "enum": [
+            "playwright_chromium",
+            "typst"
+          ]
+        },
+        "triggerConditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "recoveryCommand": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

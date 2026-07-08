@@ -23,6 +23,8 @@
 - `snapshot` 承载运行时真相
 - `compiled spec` 承载人类可转发真相
 - 反馈链、样例飞轮和视觉证据对象形成持续改进闭环
+- 自动解题工作站承载 `原题 -> 证据 -> 候选答案 -> 风险决策 -> review -> 可信交付`
+- Typst 成为终局主渲染目标，Playwright / Chromium 在迁移期保持当前运行时和 fallback
 
 ### 第二阶段增强
 
@@ -32,14 +34,15 @@
 - 高风险视觉题全自动可信放行
 - Prompt prose 自动优化
 - 本地多 VLM ensemble
-- 第二 PDF 后端
+- Typst 运行时替换；目标已接受，但必须先通过 renderer contract 和 parity gate
 
-## 2. 四项硬约束
+## 2. 五项硬约束
 
 1. 不原地破坏 `delivery-manifest.status` 兼容语义。
 2. 不新建并列 orchestrator，继续增强现有 `check-toolchain` 与既有交付链。
 3. 不把云厂商写死，云侧必须 provider-neutral。
 4. 不让自动优化直通生产，所有灰度都必须受门禁和审批边界约束。
+5. 不在 Typst adapter、parity gate 和 rollback smoke 完成前替换 Playwright / Chromium 默认运行时。
 
 ## 3. 文档、规范与运行时真值边界
 
@@ -288,17 +291,31 @@ P1 样例集默认人工拆分题面/答案：
 
 `ProblemEvidenceBundle` 只引用既有视觉 schema 的 id，不复制、不替代。
 
+### 证据链
+
+每个视觉相关小问必须能追踪到：
+
+`questionRef -> figureRef -> cropRef -> evidenceRef`
+
+其中：
+
+- `NormalizedPage` 记录页图、页号、DPI、预处理和质量标记。
+- `VisualRegion` 记录题区、图区、表格区、公式区、坐标轴区、刻度区、图例区和局部 crop 坐标。
+- `ProblemEvidenceBundle` 聚合题目、小问、图号、局部 crop、OCR、layout、图元和风险分类。
+
 ### Track 定义
 
-- Track A：多模态视觉直答
-- Track B：OCR / 图元抽取 / 结构化证据后再求解
+- Track A：多模态视觉直答，使用原页图和局部高清 crop。
+- Track B：OCR / layout / 图元抽取 / 结构化证据后再求解。
+- Track C：规则校验器，检查单位、量程、分度值、坐标轴、图号绑定、答案格式和学科约束。
 
 ### 默认门禁
 
 1. 双轨不一致：必复核
 2. 双轨一致但命中高风险视觉题：强制复核或抽检
-3. 证据链缺失、低置信、图号绑定不稳：不得自动放行
+3. 三轨任一出现冲突、证据链缺失、低置信、图号绑定不稳或规则校验阻断：不得自动放行
 4. 局部不确定但不阻断整份交付：对应小问标记 `【疑】/待复核`
+5. `trusted=true` 只允许在无未决题、review lifecycle 达批准态、证据链完整且策略允许时出现
 
 ## 11. 分桶测评与放行门槛
 
@@ -337,6 +354,8 @@ P1 样例集默认人工拆分题面/答案：
 
 - 飞轮骨架
 - `SampleRunRecord / FeedbackParseResult / OptimizationCandidate / DecisionRecord`
+- `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` schema 契约和高风险标疑回归
+- `renderer-contract` schema 契约和 Typst 主渲染迁移计划
 - 样例真值面
 - Track A
 - WPF review 队列与反馈入口
@@ -345,7 +364,8 @@ P1 样例集默认人工拆分题面/答案：
 ### P2
 
 - Track B
-- 图片预处理副链
+- Track C 专用 validator
+- 图片预处理副链、局部高清 crop、多尺度裁剪
 - Word 原生解析
 - 双轨 evidence / review / 灰度优化
 
@@ -353,6 +373,7 @@ P1 样例集默认人工拆分题面/答案：
 
 - Prompt prose 优化
 - 多 VLM ensemble
+- Typst adapter、parity runner、rollback smoke
 - 其他研究性增强
 
 ## 13. 三类人工队列

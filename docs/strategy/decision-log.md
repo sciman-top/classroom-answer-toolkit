@@ -69,3 +69,19 @@
 
 - 决定：活跃外置参考仓只保留 `MVVM-Samples`、`Wpf.Extensions.Hosting`、`RapidOCR`；`marp-cli` 降为次级参考；`Text-Grab` 退出活跃清单；`Typst` 与 `OCRmyPDF` 只保留候选身份
 - 原因：当前主链仍是 `WPF + Generic Host + Playwright/Chromium + RapidOCR`，其余仓要么只提供模式参考，要么属于第二阶段增强，不应继续伪装成当前主设计驱动
+
+## D-015 视觉证据编译器优先
+
+- 决定：高风险视觉题先编译为 `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`，再进入 AI 解题或 review；不允许从整页图直接跳到 `trusted=true`
+- 原因：OpenAI vision 限制和文档 layout/OCR 最佳实践都说明，小字、旋转、图表样式、空间定位和结构抽取需要证据分层处理；核心目标是降低“看错还自信输出”的误放行率
+
+## D-016 Typst 保持第二渲染候选
+
+- 决定：当前主渲染链继续保持 Playwright / Chromium PDF review；Typst 只作为第二 PDF 后端候选，需通过分页、数学排版、证据定位、review 回写和维护成本对比后才可升级
+- 原因：视觉降错的主瓶颈是证据抽取、绑定和复核闭环，不是渲染引擎本身；提前改主渲染会扩大风险面
+
+## D-017 Typst 主渲染终局目标
+
+- 决定：Typst 从“第二 PDF 后端候选”升级为终局主渲染目标；当前运行时仍保持 Playwright / Chromium，直到 Typst adapter、renderer contract、parity gate 和 rollback smoke 全部通过
+- 原因：自动解题工作站终局需要更稳定的文档排版、PDF metadata、PDF 标准、可访问性策略和长期归档能力；Typst 官方导出与 PDF 能力更适合作为目标后端
+- 边界：D-017 调整 D-016 的终局目标，但不改变当前默认 renderer，也不允许跳过 Chromium fallback

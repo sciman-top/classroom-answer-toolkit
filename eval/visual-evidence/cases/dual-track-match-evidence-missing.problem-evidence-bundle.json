@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "problem-evidence-bundle",
+  "evidenceBundleId": "veb-dual-track-match-evidence-missing",
+  "subjectPack": "math-answer",
+  "questionRef": "Q12(2)",
+  "normalizedQuestionRef": "math-answer:visual-evidence:Q12:2",
+  "normalizedPageRefs": [
+    "page-001"
+  ],
+  "sourcePageRefs": [
+    "source-page-001"
+  ],
+  "regionRefs": [
+    "region-question-12"
+  ],
+  "layoutRegionRefs": [
+    "layout-function-graph-12"
+  ],
+  "figureRefs": [
+    "fig-12"
+  ],
+  "cropRefs": [],
+  "ocrRefs": [
+    "ocr-12"
+  ],
+  "evidenceRefs": [
+    "ocr-12",
+    "layout-function-graph-12"
+  ],
+  "binding": {
+    "status": "ambiguous",
+    "confidence": 0.42,
+    "reasons": [
+      "figure label is inferred from OCR only",
+      "local high-resolution crop is missing"
+    ]
+  },
+  "risk": {
+    "level": "high",
+    "categories": [
+      "function_graph"
+    ],
+    "reviewRequired": true,
+    "reasons": [
+      "function graph answer depends on visual slope and intersection evidence",
+      "cropRefs is empty"
+    ]
+  },
+  "provenance": {
+    "compilerVersion": "contract-fixture",
+    "sourceArtifactRefs": [
+      "sample-visual-evidence-source"
+    ],
+    "egressPolicy": {
+      "allowCloud": false
+    }
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

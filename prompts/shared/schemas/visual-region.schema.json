@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-region/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "VisualRegion",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "regionId",
+    "pageId",
+    "regionType",
+    "bbox",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "visual-region"
+      ]
+    },
+    "regionId": { "type": "string" },
+    "pageId": { "type": "string" },
+    "parentRegionId": { "type": "string" },
+    "regionType": {
+      "type": "string",
+      "enum": [
+        "question_area",
+        "figure_area",
+        "table_area",
+        "formula_area",
+        "text_area",
+        "crop",
+        "axis_area",
+        "scale_area",
+        "legend_area",
+        "option_area"
+      ]
+    },
+    "questionRef": { "type": "string" },
+    "normalizedQuestionRef": { "type": "string" },
+    "figureRef": { "type": "string" },
+    "cropRef": { "type": "string" },
+    "bbox": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "coordinateSpace": {
+          "type": "string",
+          "enum": [
+            "page_pixel",
+            "page_point",
+            "normalized"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "imagePath": { "type": "string" },
+    "pixelSize": {
+      "type": "object",
+      "properties": {
+        "width": { "type": "integer" },
+        "height": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "dpi": { "type": "number" },
+    "qualityFlags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "small_text",
+          "rotated",
+          "blurred",
+          "low_resolution",
+          "occluded",
+          "noisy_scan",
+          "overlapping_content",
+          "ambiguous_binding"
+        ]
+      }
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

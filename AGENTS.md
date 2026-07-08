@@ -16,7 +16,7 @@ This repo guide inherits `GlobalUser/AGENTS.md v9.54`. Rule order is `runtime/co
 - `src/`: WPF app, orchestration, domain, and infrastructure.
 - `tests/`: xUnit and contract coverage.
 - `prompts/`: subject-pack assets, rules, configs, profiles, and shared schemas.
-- `tools/`: `latex-renderer`, `rule-compiler`, `ocr`, and experimental `answer-graphics`.
+- `tools/`: `latex-renderer`, `rule-compiler`, `ai-gateway`, `ocr`, and experimental `answer-graphics`.
 
 Gate order is fixed: `build -> test -> contract/invariant -> hotspot`.
 

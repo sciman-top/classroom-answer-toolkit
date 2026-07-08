@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/normalized-page/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "NormalizedPage",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "pageId",
+    "sourceDocument",
+    "sourceKind",
+    "pageNumber",
+    "imagePath",
+    "pixelSize",
+    "dpi",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "normalized-page"
+      ]
+    },
+    "pageId": { "type": "string" },
+    "sourceDocument": { "type": "string" },
+    "sourceKind": {
+      "type": "string",
+      "enum": [
+        "pdf",
+        "scan",
+        "image",
+        "docx",
+        "review_pdf"
+      ]
+    },
+    "pageNumber": { "type": "integer" },
+    "imagePath": { "type": "string" },
+    "pixelSize": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": { "type": "integer" },
+        "height": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "dpi": { "type": "number" },
+    "renderScales": {
+      "type": "array",
+      "items": { "type": "number" }
+    },
+    "preprocessing": {
+      "type": "object",
+      "properties": {
+        "orientationDegrees": { "type": "number" },
+        "deskewApplied": { "type": "boolean" },
+        "denoiseApplied": { "type": "boolean" },
+        "trimApplied": { "type": "boolean" },
+        "perspectiveCorrectionApplied": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "regionRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ocrRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "layoutRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "qualityFlags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "small_text",
+          "rotated",
+          "blurred",
+          "low_resolution",
+          "occluded",
+          "noisy_scan",
+          "cropped_content",
+          "multi_column",
+          "dense_formula"
+        ]
+      }
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

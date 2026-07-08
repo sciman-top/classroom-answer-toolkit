@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/track-result/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "TrackResult",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "trackResultId",
+    "evidenceBundleRef",
+    "trackType",
+    "answerCandidate",
+    "confidence",
+    "evidenceRefs",
+    "risk",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "track-result"
+      ]
+    },
+    "trackResultId": { "type": "string" },
+    "evidenceBundleRef": { "type": "string" },
+    "trackType": {
+      "type": "string",
+      "enum": [
+        "vlm_direct",
+        "ocr_layout_solver",
+        "rule_validator"
+      ]
+    },
+    "candidateSourceType": {
+      "type": "string",
+      "enum": [
+        "reference_placeholder",
+        "historical_candidate",
+        "generated",
+        "perturbed_negative"
+      ]
+    },
+    "answerCandidate": { "type": "string" },
+    "confidence": { "type": "number" },
+    "visualDetailMode": {
+      "type": "string",
+      "enum": [
+        "low",
+        "high",
+        "original",
+        "not_applicable"
+      ]
+    },
+    "visibleEvidenceSummary": { "type": "string" },
+    "evidenceRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "conflictRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "missingEvidenceRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "validatorFindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "findingId",
+          "severity",
+          "message"
+        ],
+        "properties": {
+          "findingId": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "warning",
+              "error",
+              "blocking"
+            ]
+          },
+          "message": { "type": "string" },
+          "evidenceRef": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "risk": {
+      "type": "object",
+      "required": [
+        "level",
+        "reviewRequired"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "reviewRequired": { "type": "boolean" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

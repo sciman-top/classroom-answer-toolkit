@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-evidence-dataset",
+  "description": "Contract-level visual evidence fail-closed fixtures.",
+  "cases": [
+    {
+      "id": "dual-track-match-evidence-missing",
+      "subjectPack": "math-answer",
+      "riskCategory": "function_graph",
+      "evidenceBundle": "cases/dual-track-match-evidence-missing.problem-evidence-bundle.json",
+      "trackResults": [
+        "cases/dual-track-match-evidence-missing.track-a.json",
+        "cases/dual-track-match-evidence-missing.track-b.json",
+        "cases/dual-track-match-evidence-missing.track-c.json"
+      ],
+      "decisionRecord": "cases/dual-track-match-evidence-missing.decision-record.json",
+      "expectedTrusted": false,
+      "expectedReviewRequired": true,
+      "expectedVisualReviewPassed": null,
+      "expectedReasons": [
+        "dual_track_match",
+        "evidence_chain_missing",
+        "high_risk_visual"
+      ]
+    }
+  ]
+}

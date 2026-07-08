@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-a-dual-track-match-evidence-missing",
+  "evidenceBundleRef": "veb-dual-track-match-evidence-missing",
+  "trackType": "vlm_direct",
+  "candidateSourceType": "generated",
+  "answerCandidate": "候选：函数图像随 x 增大而增大。",
+  "confidence": 0.72,
+  "visualDetailMode": "high",
+  "visibleEvidenceSummary": "Track A reports a likely increasing trend but has no local graph crop reference.",
+  "evidenceRefs": [],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [
+    "crop:fig-12-local-high-res"
+  ],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": [
+      "function graph reading without crop evidence"
+    ]
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

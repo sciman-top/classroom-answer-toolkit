@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-b-dual-track-match-evidence-missing",
+  "evidenceBundleRef": "veb-dual-track-match-evidence-missing",
+  "trackType": "ocr_layout_solver",
+  "candidateSourceType": "generated",
+  "answerCandidate": "候选：函数图像随 x 增大而增大。",
+  "confidence": 0.68,
+  "visualDetailMode": "not_applicable",
+  "visibleEvidenceSummary": "Track B agrees from OCR/layout text, but the graph crop is absent.",
+  "evidenceRefs": [
+    "ocr-12",
+    "layout-function-graph-12"
+  ],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [
+    "crop:fig-12-local-high-res"
+  ],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": [
+      "OCR/layout agreement is not enough for a graph-reading item"
+    ]
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/problem-evidence-bundle/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "ProblemEvidenceBundle",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "evidenceBundleId",
+    "subjectPack",
+    "questionRef",
+    "figureRefs",
+    "cropRefs",
+    "evidenceRefs",
+    "risk",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "problem-evidence-bundle"
+      ]
+    },
+    "evidenceBundleId": { "type": "string" },
+    "subjectPack": { "type": "string" },
+    "questionId": { "type": "string" },
+    "subQuestionId": { "type": "string" },
+    "questionRef": { "type": "string" },
+    "normalizedQuestionRef": { "type": "string" },
+    "normalizedPageRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sourcePageRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "regionRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "layoutRegionRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "figureRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "cropRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ocrRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tableRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "formulaRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "binding": {
+      "type": "object",
+      "required": [
+        "status",
+        "confidence"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "ambiguous",
+            "missing"
+          ]
+        },
+        "confidence": { "type": "number" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "risk": {
+      "type": "object",
+      "required": [
+        "level",
+        "categories",
+        "reviewRequired"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "instrument_reading",
+              "coordinate_graph",
+              "function_graph",
+              "geometry",
+              "table_chart",
+              "experiment_device",
+              "circuit_diagram",
+              "multi_figure_binding",
+              "drawing_task",
+              "poor_image_quality",
+              "ocr_image_conflict",
+              "answer_truth_conflict"
+            ]
+          }
+        },
+        "reviewRequired": { "type": "boolean" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "compilerVersion": { "type": "string" },
+        "sourceArtifactRefs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "egressPolicy": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

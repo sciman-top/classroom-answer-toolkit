@@ -1,0 +1,11 @@
+{
+  "name": "classroom-toolkit-ai-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate:config": "node validate-config.mjs",
+    "probe:text": "node validate-config.mjs --live text --provider all",
+    "request:text": "node text-request.mjs"
+  }
+}

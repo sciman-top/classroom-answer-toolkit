@@ -19,8 +19,21 @@ function collectValidationTargets() {
   const sampleIndexSchema = resolveRepoPath("prompts/shared/schemas/sample-index.schema.json");
   const negativeCandidateSchema = resolveRepoPath("prompts/shared/schemas/negative-candidate.schema.json");
   const sampleRunRecordSchema = resolveRepoPath("prompts/shared/schemas/sample-run-record.schema.json");
+  const problemEvidenceBundleSchema = resolveRepoPath("prompts/shared/schemas/problem-evidence-bundle.schema.json");
+  const trackResultSchema = resolveRepoPath("prompts/shared/schemas/track-result.schema.json");
+  const decisionRecordSchema = resolveRepoPath("prompts/shared/schemas/decision-record.schema.json");
+  const rendererContractSchema = resolveRepoPath("prompts/shared/schemas/renderer-contract.schema.json");
+  const visualEvidenceSchemas = [
+    resolveRepoPath("prompts/shared/schemas/normalized-page.schema.json"),
+    resolveRepoPath("prompts/shared/schemas/visual-region.schema.json"),
+    problemEvidenceBundleSchema,
+    trackResultSchema,
+    decisionRecordSchema
+  ];
   const subjectPackDirectories = listSubjectPackDirectories();
   const sampleRoot = resolveRepoPath("样例交付");
+  const visualEvidenceRoot = resolveRepoPath("eval/visual-evidence/cases");
+  const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const figureSchemas = [
     resolveRepoPath("prompts/shared/schemas/problem-figure-asset.schema.json"),
     resolveRepoPath("prompts/shared/schemas/figure-understanding-result.schema.json"),
@@ -33,6 +46,20 @@ function collectValidationTargets() {
   const sampleIndexFiles = fs.existsSync(path.join(sampleRoot, "index.json"))
     ? [{ filePath: path.join(sampleRoot, "index.json"), schemaPath: sampleIndexSchema }]
     : [];
+  const visualEvidenceFiles = [
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".problem-evidence-bundle.json")
+      .map((filePath) => ({ filePath, schemaPath: problemEvidenceBundleSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".track-a.json")
+      .map((filePath) => ({ filePath, schemaPath: trackResultSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".track-b.json")
+      .map((filePath) => ({ filePath, schemaPath: trackResultSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".track-c.json")
+      .map((filePath) => ({ filePath, schemaPath: trackResultSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".decision-record.json")
+      .map((filePath) => ({ filePath, schemaPath: decisionRecordSchema }))
+  ];
+  const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
+    .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
 
   return {
     manifests: [
@@ -50,6 +77,8 @@ function collectValidationTargets() {
     ].map((filePath) => ({ filePath, schemaPath: profileSchema })),
     samplePackages: samplePackageFiles,
     sampleIndices: sampleIndexFiles,
+    visualEvidenceFiles,
+    rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
     schemaFiles: [
       dataClassificationSchema,
@@ -65,6 +94,8 @@ function collectValidationTargets() {
       sampleIndexSchema,
       negativeCandidateSchema,
       sampleRunRecordSchema,
+      ...visualEvidenceSchemas,
+      rendererContractSchema,
       ...figureSchemas
     ],
     snapshotSchema,
@@ -104,11 +135,33 @@ function listFilesByNameRecursive(directoryPath, fileName) {
   return results.sort((left, right) => left.localeCompare(right));
 }
 
+function listFilesBySuffixRecursive(directoryPath, fileNameSuffix) {
+  if (!fs.existsSync(directoryPath)) {
+    return [];
+  }
+
+  const results = [];
+
+  for (const entry of fs.readdirSync(directoryPath, { withFileTypes: true })) {
+    const entryPath = path.join(directoryPath, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listFilesBySuffixRecursive(entryPath, fileNameSuffix));
+      continue;
+    }
+
+    if (entry.isFile() && entry.name.endsWith(fileNameSuffix)) {
+      results.push(entryPath);
+    }
+  }
+
+  return results.sort((left, right) => left.localeCompare(right));
+}
+
 function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;

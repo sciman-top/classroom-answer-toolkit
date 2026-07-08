@@ -81,6 +81,24 @@ public sealed class CrossSubjectContractTests
     }
 
     [Fact]
+    public void MathSubjectPack_InheritsSharedVisualQuantitativeRules()
+    {
+        var repoRoot = FindRepoRoot();
+        var assemblyPath = Path.Combine(repoRoot, "prompts", "specs", "assemblies", "math.json");
+        using var assembly = JsonDocument.Parse(File.ReadAllText(assemblyPath));
+
+        var sourceLayerLabels = assembly.RootElement.GetProperty("sourceLayers").EnumerateArray()
+            .Select(static element => element.GetProperty("label").GetString())
+            .ToArray();
+        sourceLayerLabels.Should().Contain("图文定量题通用");
+
+        var mirroredSpec = File.ReadAllText(Path.Combine(repoRoot, "prompts", "math-answer", "spec.md"));
+        mirroredSpec.Should().Contain("视觉证据编译器");
+        mirroredSpec.Should().Contain("Track C");
+        mirroredSpec.Should().Contain("questionRef -> figureRef -> cropRef -> evidenceRef");
+    }
+
+    [Fact]
     public void AssetValidationScript_RequiresAssemblyCoverage_ForEverySubjectPack()
     {
         var repoRoot = FindRepoRoot();
@@ -105,6 +123,197 @@ public sealed class CrossSubjectContractTests
         script.Should().Contain("sample-run-record.schema.json");
         script.Should().Contain("schema should declare a non-empty $id");
         script.Should().Contain("schema should declare compatibility metadata");
+    }
+
+    [Fact]
+    public void AssetValidationScript_TracksVisualEvidenceCompilerSchemaContracts()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "tools", "rule-compiler", "validate-assets.mjs"));
+        var schemaRoot = Path.Combine(repoRoot, "prompts", "shared", "schemas");
+        var expectedSchemaFiles = new[]
+        {
+            "normalized-page.schema.json",
+            "visual-region.schema.json",
+            "problem-evidence-bundle.schema.json",
+            "track-result.schema.json",
+            "decision-record.schema.json"
+        };
+
+        foreach (var schemaFile in expectedSchemaFiles)
+        {
+            script.Should().Contain(schemaFile);
+            File.Exists(Path.Combine(schemaRoot, schemaFile)).Should().BeTrue();
+        }
+
+        using var evidenceBundle = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "problem-evidence-bundle.schema.json")));
+        var evidenceBundleRoot = evidenceBundle.RootElement;
+        var evidenceBundleRequired = evidenceBundleRoot.GetProperty("required").EnumerateArray()
+            .Select(static element => element.GetString())
+            .ToArray();
+        evidenceBundleRequired.Should().Contain(new[]
+        {
+            "questionRef",
+            "figureRefs",
+            "cropRefs",
+            "evidenceRefs",
+            "risk"
+        });
+
+        var evidenceBundleProperties = evidenceBundleRoot.GetProperty("properties");
+        evidenceBundleProperties.TryGetProperty("normalizedQuestionRef", out _).Should().BeTrue();
+        evidenceBundleProperties.TryGetProperty("ocrRefs", out _).Should().BeTrue();
+        evidenceBundleProperties.TryGetProperty("layoutRegionRefs", out _).Should().BeTrue();
+
+        using var trackResult = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "track-result.schema.json")));
+        var trackResultText = trackResult.RootElement.ToString();
+        trackResultText.Should().Contain("vlm_direct");
+        trackResultText.Should().Contain("ocr_layout_solver");
+        trackResultText.Should().Contain("rule_validator");
+        trackResultText.Should().Contain("evidenceBundleRef");
+        trackResultText.Should().Contain("conflictRefs");
+
+        using var decisionRecord = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "decision-record.schema.json")));
+        var decisionRecordText = decisionRecord.RootElement.ToString();
+        decisionRecordText.Should().Contain("trusted");
+        decisionRecordText.Should().Contain("visualReviewPassed");
+        decisionRecordText.Should().Contain("reviewRequired");
+        decisionRecordText.Should().Contain("high_risk_approval");
+        decisionRecordText.Should().Contain("evidence_chain_missing");
+        decisionRecordText.Should().Contain("dual_track_conflict");
+    }
+
+    [Fact]
+    public void VisualEvidenceEval_FailClosedWhenDualTrackMatchesButEvidenceIsMissing()
+    {
+        var repoRoot = FindRepoRoot();
+        var datasetPath = Path.Combine(repoRoot, "eval", "visual-evidence", "dataset.json");
+        using var dataset = JsonDocument.Parse(File.ReadAllText(datasetPath));
+        var failClosedCase = dataset.RootElement.GetProperty("cases").EnumerateArray()
+            .Single(element => element.GetProperty("id").GetString() == "dual-track-match-evidence-missing");
+
+        failClosedCase.GetProperty("expectedTrusted").GetBoolean().Should().BeFalse();
+        failClosedCase.GetProperty("expectedReviewRequired").GetBoolean().Should().BeTrue();
+
+        var decisionPath = Path.Combine(repoRoot, "eval", "visual-evidence", failClosedCase.GetProperty("decisionRecord").GetString()!);
+        using var decisionRecord = JsonDocument.Parse(File.ReadAllText(decisionPath));
+        var decision = decisionRecord.RootElement;
+        decision.GetProperty("trusted").GetBoolean().Should().BeFalse();
+        decision.GetProperty("visualReviewPassed").ValueKind.Should().Be(JsonValueKind.Null);
+        decision.GetProperty("reviewRequired").GetBoolean().Should().BeTrue();
+        decision.GetProperty("reviewQueue").GetString().Should().Be("high_risk_approval");
+
+        var decisionReasons = decision.GetProperty("decisionReasons").EnumerateArray()
+            .Select(static element => element.GetString())
+            .ToArray();
+        decisionReasons.Should().Contain("dual_track_match");
+        decisionReasons.Should().Contain("evidence_chain_missing");
+        decisionReasons.Should().Contain("high_risk_visual");
+    }
+
+    [Fact]
+    public void EndStateDocs_RecordAutoSolvingWorkstationAndTypstPrimaryRendererPlan()
+    {
+        var repoRoot = FindRepoRoot();
+        var strategyReadme = File.ReadAllText(Path.Combine(repoRoot, "docs", "strategy", "README.md"));
+        var workstationPlanPath = Path.Combine(repoRoot, "docs", "strategy", "auto-solving-workstation-final-plan.md");
+        var typstPlanPath = Path.Combine(repoRoot, "docs", "strategy", "typst-primary-renderer-plan.md");
+        var typstAdrPath = Path.Combine(repoRoot, "docs", "adr", "0006-typst-primary-renderer-target.md");
+
+        File.Exists(workstationPlanPath).Should().BeTrue();
+        File.Exists(typstPlanPath).Should().BeTrue();
+        File.Exists(typstAdrPath).Should().BeTrue();
+        strategyReadme.Should().Contain("auto-solving-workstation-final-plan.md");
+        strategyReadme.Should().Contain("typst-primary-renderer-plan.md");
+
+        var workstationPlan = File.ReadAllText(workstationPlanPath);
+        workstationPlan.Should().Contain("自动解题工作站");
+        workstationPlan.Should().Contain("视觉证据编译器");
+        workstationPlan.Should().Contain("answer.md -> PDF/review");
+        workstationPlan.Should().Contain("原题 -> answer.md");
+
+        var typstPlan = File.ReadAllText(typstPlanPath);
+        typstPlan.Should().Contain("Typst 主渲染");
+        typstPlan.Should().Contain("当前运行时仍保持 Playwright / Chromium");
+        typstPlan.Should().Contain("parity gate");
+        typstPlan.Should().Contain("rollback");
+
+        var typstAdr = File.ReadAllText(typstAdrPath);
+        typstAdr.Should().Contain("Status");
+        typstAdr.Should().Contain("Accepted target");
+        typstAdr.Should().Contain("supersedes D-016");
+        typstAdr.Should().Contain("does not switch the current runtime");
+    }
+
+    [Fact]
+    public void AssetValidationScript_TracksRendererContractSchemaAndEval()
+    {
+        var repoRoot = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(repoRoot, "tools", "rule-compiler", "validate-assets.mjs"));
+        var schemaPath = Path.Combine(repoRoot, "prompts", "shared", "schemas", "renderer-contract.schema.json");
+        var datasetPath = Path.Combine(repoRoot, "eval", "renderer-contract", "dataset.json");
+
+        File.Exists(schemaPath).Should().BeTrue();
+        File.Exists(datasetPath).Should().BeTrue();
+        script.Should().Contain("renderer-contract.schema.json");
+        script.Should().Contain("eval/renderer-contract");
+
+        using var schema = JsonDocument.Parse(File.ReadAllText(schemaPath));
+        var schemaText = schema.RootElement.ToString();
+        schemaText.Should().Contain("rendererId");
+        schemaText.Should().Contain("engine");
+        schemaText.Should().Contain("playwright_chromium");
+        schemaText.Should().Contain("typst");
+        schemaText.Should().Contain("acceptanceGates");
+
+        using var dataset = JsonDocument.Parse(File.ReadAllText(datasetPath));
+        var firstCase = dataset.RootElement.GetProperty("cases").EnumerateArray().First();
+        firstCase.GetProperty("targetRenderer").GetString().Should().Be("typst");
+        firstCase.GetProperty("currentRenderer").GetString().Should().Be("playwright_chromium");
+        firstCase.GetProperty("status").GetString().Should().Be("planned");
+    }
+
+    [Fact]
+    public void AiGatewayConfig_RecordsSecretBoundaryAndValidationContract()
+    {
+        var repoRoot = FindRepoRoot();
+        var gitignore = File.ReadAllText(Path.Combine(repoRoot, ".gitignore"));
+        var envExamplePath = Path.Combine(repoRoot, ".env.example");
+        var gatewayDocPath = Path.Combine(repoRoot, "docs", "strategy", "ai-gateway-config.md");
+        var strategyReadme = File.ReadAllText(Path.Combine(repoRoot, "docs", "strategy", "README.md"));
+        var packageJson = File.ReadAllText(Path.Combine(repoRoot, "tools", "ai-gateway", "package.json"));
+        var validator = File.ReadAllText(Path.Combine(repoRoot, "tools", "ai-gateway", "validate-config.mjs"));
+        var checkToolchain = File.ReadAllText(Path.Combine(repoRoot, "scripts", "check-toolchain.ps1"));
+
+        gitignore.Should().Contain(".env");
+        gitignore.Should().Contain(".env.*");
+        gitignore.Should().Contain("!.env.example");
+        File.Exists(envExamplePath).Should().BeTrue();
+        File.Exists(gatewayDocPath).Should().BeTrue();
+
+        var envExample = File.ReadAllText(envExamplePath);
+        envExample.Should().Contain("CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false");
+        envExample.Should().Contain("CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL=https://primary.example.com/v1");
+        envExample.Should().Contain("CLASSROOM_TOOLKIT_IMAGE_PRIMARY_MODEL=gpt-image-2");
+        envExample.Should().NotContain("TEXT_PROVIDER_API_KEY=");
+        envExample.Should().NotContain("IMAGE_PROVIDER_API_KEY_1=");
+
+        strategyReadme.Should().Contain("ai-gateway-config.md");
+        File.ReadAllText(gatewayDocPath).Should().Contain("TEXT_PROVIDER_*");
+        File.ReadAllText(gatewayDocPath).Should().Contain("live 探针通过只证明 provider 的文本入口可达");
+        packageJson.Should().Contain("validate:config");
+        packageJson.Should().Contain("probe:text");
+        packageJson.Should().Contain("request:text");
+        validator.Should().Contain("CLASSROOM_TOOLKIT_AI_PRIMARY");
+        validator.Should().Contain("TEXT_PROVIDER_FALLBACK_1");
+        validator.Should().Contain("--allow-cloud-egress");
+        validator.Should().Contain("requestTextWithFailover");
+        validator.Should().Contain("isRetryableGatewayFailure");
+        validator.Should().Contain("408, 409, 425, 429, 500, 502, 503, 504");
+        File.ReadAllText(Path.Combine(repoRoot, "tools", "ai-gateway", "text-request.mjs"))
+            .Should().Contain("--force-primary-failure");
+        checkToolchain.Should().Contain("tools/ai-gateway run validate:config");
+        checkToolchain.Should().Contain("--config-env-file .env.example --allow-missing-secrets");
     }
 
     [Fact]

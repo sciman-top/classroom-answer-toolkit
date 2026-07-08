@@ -48,6 +48,11 @@ Write-Host "browser: $browserPath"
 Write-Host "rule compiler assets:"
 Assert-CommandSuccess { npm --prefix tools/rule-compiler run validate:assets } "Rule compiler asset validation failed."
 
+Write-Host "ai gateway config template:"
+Assert-CommandSuccess {
+    npm --prefix tools/ai-gateway run validate:config -- --config-env-file .env.example --allow-missing-secrets
+} "AI gateway config template validation failed."
+
 $subjectPacks = Get-SubjectPackMetadata -RepositoryRoot $repoRoot
 if ($subjectPacks.Count -eq 0) {
     throw "No subject pack manifests were found under prompts/."

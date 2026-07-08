@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/decision-record/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "DecisionRecord",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "decisionId",
+    "subjectPack",
+    "evidenceBundleRef",
+    "trackResultRefs",
+    "decision",
+    "trusted",
+    "visualReviewPassed",
+    "reviewRequired",
+    "reviewQueue",
+    "risk",
+    "decisionReasons",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "decision-record"
+      ]
+    },
+    "decisionId": { "type": "string" },
+    "subjectPack": { "type": "string" },
+    "questionId": { "type": "string" },
+    "subQuestionId": { "type": "string" },
+    "questionRef": { "type": "string" },
+    "normalizedQuestionRef": { "type": "string" },
+    "evidenceBundleRef": { "type": "string" },
+    "trackResultRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "accept",
+        "downgrade",
+        "review_required",
+        "reject",
+        "partial"
+      ]
+    },
+    "answer": { "type": "string" },
+    "trusted": { "type": "boolean" },
+    "visualReviewPassed": {
+      "anyOf": [
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "reviewRequired": { "type": "boolean" },
+    "reviewQueue": {
+      "type": "string",
+      "enum": [
+        "none",
+        "needs_human_label",
+        "high_risk_approval",
+        "truth_needs_review"
+      ]
+    },
+    "risk": {
+      "type": "object",
+      "required": [
+        "level",
+        "categories"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "categories": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "decisionReasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "evidence_chain_complete",
+          "evidence_chain_missing",
+          "dual_track_match",
+          "dual_track_conflict",
+          "low_confidence",
+          "high_risk_visual",
+          "binding_unstable",
+          "ocr_image_conflict",
+          "rule_validator_failed",
+          "human_approved",
+          "review_pending",
+          "sentinel_required",
+          "drawing_task_unsupported",
+          "cloud_egress_not_allowed"
+        ]
+      }
+    },
+    "conflictRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "feedbackRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "statusProjection": {
+      "type": "object",
+      "properties": {
+        "visualReviewPassed": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "trusted": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

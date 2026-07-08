@@ -4,6 +4,11 @@
 _pdf_render_check/
 _docx_render_check/
 
+# Local secrets and provider overrides
+.env
+.env.*
+!.env.example
+
 # Node dependency folders
 node_modules/
 tools/latex-renderer/node_modules/

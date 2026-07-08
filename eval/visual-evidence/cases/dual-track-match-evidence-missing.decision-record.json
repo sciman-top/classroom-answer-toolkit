@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "decision-record",
+  "decisionId": "decision-dual-track-match-evidence-missing",
+  "subjectPack": "math-answer",
+  "questionRef": "Q12(2)",
+  "normalizedQuestionRef": "math-answer:visual-evidence:Q12:2",
+  "evidenceBundleRef": "veb-dual-track-match-evidence-missing",
+  "trackResultRefs": [
+    "track-a-dual-track-match-evidence-missing",
+    "track-b-dual-track-match-evidence-missing",
+    "track-c-dual-track-match-evidence-missing"
+  ],
+  "decision": "review_required",
+  "answer": "【疑：函数图像证据链缺少局部高清 crop，待复核】",
+  "trusted": false,
+  "visualReviewPassed": null,
+  "reviewRequired": true,
+  "reviewQueue": "high_risk_approval",
+  "risk": {
+    "level": "high",
+    "categories": [
+      "function_graph"
+    ]
+  },
+  "decisionReasons": [
+    "dual_track_match",
+    "evidence_chain_missing",
+    "high_risk_visual",
+    "review_pending"
+  ],
+  "conflictRefs": [],
+  "feedbackRefs": [],
+  "statusProjection": {
+    "visualReviewPassed": null,
+    "trusted": false
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

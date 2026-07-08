@@ -142,6 +142,60 @@
 - blocks: VISION-001
 - done_definition: P1 不因 Word 原生解析而膨胀
 
+### task_id: VISION-003
+
+- goal: 落地视觉证据编译器 schema 契约
+- inputs: 视觉专项设计、现有 `problem-figure-asset`、`figure-understanding-result`、review/trust 状态语义
+- changes: 新增 `normalized-page / visual-region / problem-evidence-bundle / track-result / decision-record` schema，并纳入 `validate:assets`
+- verification: 聚焦 contract test 通过，`validate:assets` 校验 schema 元数据通过
+- rollback: 删除新增 schema，恢复 `validate-assets.mjs` 与对应 contract test
+- blocks: VISION-001
+- done_definition: 每个视觉小问都能用 schema 表达 `questionRef -> figureRef -> cropRef -> evidenceRef`、三轨候选、风险分类和 fail-closed 决策
+
+### task_id: VISION-004
+
+- goal: 建立高风险看图错误难例库
+- inputs: 仪表读数、坐标图、函数图、几何图、表格统计、电路/实验装置、多图多问与低质量图像样例
+- changes: 在各 subject-pack eval 中增加高风险误放行、正确标疑、图号绑定、OCR/原图冲突和 review 回放样例
+- verification: 每个 subject-pack 单独报告高风险误放行率、正确标疑召回率和图号/小问绑定准确率
+- rollback: 移除新增 eval 样例并恢复 dataset
+- blocks: VISION-003
+- done_definition: 指标不再只报总正确率，而能看到高风险视觉误放行
+
+## Epic WORKSTATION：自动解题工作站终局
+
+### task_id: WORKSTATION-001
+
+- goal: 落地自动解题工作站终局计划
+- inputs: 当前 `answer.md -> PDF/review` 交付链、视觉证据编译器契约、样例飞轮设计
+- changes: 新增 `auto-solving-workstation-final-plan.md`，明确 `原题 -> 证据 -> 候选答案 -> 风险决策 -> review -> 可信交付`
+- verification: contract test 确认 strategy README、终局计划和运行时边界存在
+- rollback: 删除终局计划文件并恢复 strategy README
+- blocks: VISION-003
+- done_definition: 自动解题工作站不再只是会话结论，而是 strategy 真值面的一等入口
+
+## Epic RENDERER：Typst 主渲染迁移
+
+### task_id: RENDERER-001
+
+- goal: 落地 Typst 主渲染目标和迁移边界
+- inputs: 当前 Playwright / Chromium 渲染链、Typst 官方导出/PDF 能力、D-016
+- changes: 新增 `typst-primary-renderer-plan.md` 与 `docs/adr/0006-typst-primary-renderer-target.md`
+- verification: contract test 确认 ADR、迁移计划、`parity gate` 与 `rollback` 边界存在
+- rollback: 恢复 D-016 候选口径，删除 ADR 0006 和迁移计划
+- blocks: WORKSTATION-001
+- done_definition: Typst 被记录为终局主渲染目标，但当前运行时仍明确保持 Chromium
+
+### task_id: RENDERER-002
+
+- goal: 固定 renderer contract 和迁移评测入口
+- inputs: delivery manifest、review 页图、snapshot、现有 Chromium renderer
+- changes: 新增 `renderer-contract.schema.json` 与 `eval/renderer-contract/`
+- verification: `validate:assets` 校验 renderer contract fixture，contract test 确认 current/target renderer 边界
+- rollback: 删除 renderer contract schema、fixture，并恢复 `validate-assets.mjs`
+- blocks: RENDERER-001
+- done_definition: Chromium 与 Typst 后续都必须通过同一 renderer contract，而不是各自返回 PDF 路径
+
 ## Epic REVIEW：lifecycle / queues / WPF review
 
 ### task_id: REVIEW-001

@@ -57,6 +57,8 @@
 - `FeedbackParseResult`
 - `OptimizationCandidate`
 - `DecisionRecord`
+- `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` schema 契约
+- `renderer-contract` schema 契约与 Typst 主渲染迁移计划
 - 第一版自动验收飞轮
 
 ### 涉及文件面
@@ -72,6 +74,8 @@
 - 候选答案与真值分离明确
 - 三类人工队列可区分
 - Word 在 P1 明确只作为 `degraded-supported`
+- 高风险视觉题即使双轨一致，只要证据链缺失也保持 `trusted=false`
+- 当前 renderer truth 和 Typst target renderer 不再混写
 
 ### 验证方式
 
@@ -128,7 +132,8 @@
 ### 输出
 
 - Track B
-- `ProblemEvidenceBundle`
+- Track C validator
+- 视觉证据编译运行时
 - 双轨比对器
 - 图片副链与 Word 原生解析
 
@@ -146,6 +151,8 @@
 ### 验证方式
 
 - 双轨一致/不一致样例
+- 双轨一致但证据缺失样例
+- VLM 错但 OCR/layout 对、OCR 错但 VLM 对、两者都错但规则校验拦截样例
 - review 回写
 - 分桶灰度验证
 
@@ -164,6 +171,7 @@
 
 - Prompt prose 优化研究
 - 多 VLM ensemble 研究
+- Typst adapter、parity runner 与 rollback smoke 研究
 - 其他增强能力评估
 
 ### 完成定义
