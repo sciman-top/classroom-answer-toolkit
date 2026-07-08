@@ -99,6 +99,8 @@ Remove-Item Env:\CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
 
 显式视觉请求级主备切换只允许使用合成或脱敏图片。返回内容必须通过本仓 `track-result.schema.json` 校验：
 
+内置 `--synthetic-image` 是普通尺寸、无敏感内容的合成 PNG，不使用 1x1 placeholder；后者在部分 OpenAI-compatible 上游会触发 502 或超时，不能作为视觉入口不可用的唯一证据。
+
 ```powershell
 $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
 npm --prefix tools/ai-gateway run request:vision -- --allow-cloud-egress --synthetic-image --provider primary

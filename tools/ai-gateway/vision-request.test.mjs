@@ -204,6 +204,50 @@ test("responses vision surface sends input_image and json_schema format", async 
   }
 });
 
+test("built-in synthetic image is an ordinary-size PNG smoke fixture", async () => {
+  const config = createConfig();
+  config.providers = [
+    {
+      ...config.providers[0],
+      visionSurface: "responses"
+    }
+  ];
+
+  let requestBody = null;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    requestBody = JSON.parse(init.body);
+    return new Response(JSON.stringify({ output_text: JSON.stringify(validTrackResult()) }), { status: 200 });
+  };
+
+  try {
+    const result = await requestVisionWithFailover(config, {
+      provider: "primary",
+      allowCloudEgress: true,
+      syntheticImage: true,
+      prompt: buildVisionPrompt({
+        subjectPack: "math-answer",
+        evidenceBundleRef: "bundle.synthetic-vision-smoke",
+        trackResultId: "track-a.synthetic-vision-smoke"
+      }),
+      evidenceBundleRef: "bundle.synthetic-vision-smoke",
+      trackResultId: "track-a.synthetic-vision-smoke",
+      visualDetailMode: "high",
+      timeoutMs: 1000
+    });
+
+    const dataUrl = requestBody.input[0].content[1].image_url;
+    const png = Buffer.from(dataUrl.slice("data:image/png;base64,".length), "base64");
+
+    assert.equal(result.ok, true);
+    assert.equal(png.toString("ascii", 1, 4), "PNG");
+    assert.equal(png.readUInt32BE(16), 640);
+    assert.equal(png.readUInt32BE(20), 360);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("vision request records requested and provider detail modes when original is downgraded", async () => {
   const { tempDir, imagePath } = writeSyntheticImage();
   const calls = [];

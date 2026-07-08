@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import zlib from "node:zlib";
 
 import {
   assertLiveEgressAllowed,
@@ -11,7 +12,6 @@ import {
 } from "./validate-config.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 
-const syntheticPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 const trackResultSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "track-result.schema.json");
 
 function usage() {
@@ -423,7 +423,7 @@ function trackResultProviderSchema() {
 
 function imageDataUrl(options) {
   if (options.syntheticImage) {
-    return `data:image/png;base64,${syntheticPngBase64}`;
+    return `data:image/png;base64,${buildSyntheticPngBase64()}`;
   }
 
   if (!fs.existsSync(options.imagePath)) {
@@ -433,6 +433,84 @@ function imageDataUrl(options) {
   const mimeType = mimeTypeForPath(options.imagePath);
   const base64 = fs.readFileSync(options.imagePath).toString("base64");
   return `data:${mimeType};base64,${base64}`;
+}
+
+function buildSyntheticPngBase64() {
+  const width = 640;
+  const height = 360;
+  const bytesPerPixel = 4;
+  const stride = width * bytesPerPixel + 1;
+  const raw = Buffer.alloc(stride * height);
+
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * stride;
+    raw[rowStart] = 0;
+    for (let x = 0; x < width; x += 1) {
+      const pixelStart = rowStart + 1 + x * bytesPerPixel;
+      const insideFrame = x >= 48 && x <= 592 && y >= 48 && y <= 312;
+      const frameBorder = insideFrame && (x < 56 || x > 584 || y < 56 || y > 304);
+      const blueBar = x >= 128 && x <= 512 && y >= 150 && y <= 210;
+      const redDiagonal = Math.abs((x - 96) - (y - 96)) <= 2 && x >= 96 && x <= 280 && y >= 96 && y <= 280;
+
+      let r = 255;
+      let g = 255;
+      let b = 255;
+      if (frameBorder) {
+        r = 24;
+        g = 24;
+        b = 24;
+      } else if (blueBar) {
+        r = 24;
+        g = 91;
+        b = 180;
+      } else if (redDiagonal) {
+        r = 214;
+        g = 52;
+        b = 52;
+      }
+
+      raw[pixelStart] = r;
+      raw[pixelStart + 1] = g;
+      raw[pixelStart + 2] = b;
+      raw[pixelStart + 3] = 255;
+    }
+  }
+
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 6;
+  header[10] = 0;
+  header[11] = 0;
+  header[12] = 0;
+
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", header),
+    pngChunk("IDAT", zlib.deflateSync(raw, { level: 9 })),
+    pngChunk("IEND", Buffer.alloc(0))
+  ]).toString("base64");
+}
+
+function pngChunk(type, data) {
+  const typeBuffer = Buffer.from(type, "ascii");
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length, 0);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([typeBuffer, data])), 0);
+  return Buffer.concat([length, typeBuffer, data, crc]);
+}
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 function mimeTypeForPath(filePath) {
