@@ -85,3 +85,9 @@
 - 决定：Typst 从“第二 PDF 后端候选”升级为终局主渲染目标；当前运行时仍保持 Playwright / Chromium，直到 Typst adapter、renderer contract、parity gate 和 rollback smoke 全部通过
 - 原因：自动解题工作站终局需要更稳定的文档排版、PDF metadata、PDF 标准、可访问性策略和长期归档能力；Typst 官方导出与 PDF 能力更适合作为目标后端
 - 边界：D-017 调整 D-016 的终局目标，但不改变当前默认 renderer，也不允许跳过 Chromium fallback
+
+## D-018 移植 QQ 重链路为阶段化视觉证据产物
+
+- 决定：吸收 `qq-codex-bot` 的 `visual_input_bundle / grounding_snapshot / solution_snapshot / consistency_checks` 思路，但在本仓落为 `VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 阶段产物，并通过 `TrackResult.stageArtifactRefs` 引用
+- 原因：不安全捷径和 grounding 不足是视觉误放行的核心风险；阶段化 trace 能把读图事实、解题候选和一致性校验拆开，且不破坏本仓既有 `ProblemEvidenceBundle / TrackResult / DecisionRecord` canonical contract
+- 边界：不移植 NapCat、AstrBot、OneBot 或 QQ live 验收语义；本仓验收分层使用 `repo_supported / gateway_verified / workstation_accepted`

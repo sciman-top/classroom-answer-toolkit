@@ -57,6 +57,34 @@
         "not_applicable"
       ]
     },
+    "requestedVisualDetailMode": {
+      "type": "string",
+      "enum": [
+        "low",
+        "high",
+        "original",
+        "not_applicable"
+      ]
+    },
+    "providerVisualDetailMode": {
+      "type": "string",
+      "enum": [
+        "low",
+        "high",
+        "original",
+        "not_applicable"
+      ]
+    },
+    "stageArtifactRefs": {
+      "type": "object",
+      "properties": {
+        "visualInputBundleRef": { "type": "string" },
+        "groundingSnapshotRef": { "type": "string" },
+        "solutionSnapshotRef": { "type": "string" },
+        "consistencyReportRef": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "visibleEvidenceSummary": { "type": "string" },
     "evidenceRefs": {
       "type": "array",

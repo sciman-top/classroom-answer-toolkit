@@ -22,6 +22,31 @@
         "evidence_chain_missing",
         "high_risk_visual"
       ]
+    },
+    {
+      "id": "unsafe-shortcut-grounding-missing",
+      "subjectPack": "math-answer",
+      "riskCategory": "coordinate_graph",
+      "evidenceBundle": "cases/unsafe-shortcut-grounding-missing.problem-evidence-bundle.json",
+      "stageArtifacts": [
+        "cases/unsafe-shortcut-grounding-missing.visual-input-bundle.json",
+        "cases/unsafe-shortcut-grounding-missing.grounding-snapshot.json",
+        "cases/unsafe-shortcut-grounding-missing.solution-snapshot.json",
+        "cases/unsafe-shortcut-grounding-missing.consistency-report.json"
+      ],
+      "trackResults": [
+        "cases/unsafe-shortcut-grounding-missing.track-a.json",
+        "cases/unsafe-shortcut-grounding-missing.track-c.json"
+      ],
+      "decisionRecord": "cases/unsafe-shortcut-grounding-missing.decision-record.json",
+      "expectedTrusted": false,
+      "expectedReviewRequired": true,
+      "expectedVisualReviewPassed": null,
+      "expectedReasons": [
+        "unsafe_shortcut_fail",
+        "grounding_insufficient",
+        "acceptance_tier_unverified"
+      ]
     }
   ]
 }

@@ -34,11 +34,19 @@ export function compileDecisionRecord(options) {
   const lowConfidence = hasLowConfidence(trackResults);
   const ruleValidatorFailed = hasBlockingValidatorFinding(trackResults);
   const highRiskVisual = isHighRiskVisual(evidenceBundle, trackResults);
+  const unsafeShortcutFail = hasUnsafeShortcutFail(trackResults);
+  const groundingInsufficient = hasGroundingInsufficient(evidenceBundle, trackResults);
+  const acceptanceTierUnverified = hasAcceptanceTierUnverified(evidenceBundle, trackResults);
+  const strictSchemaDowngraded = hasStrictSchemaDowngraded(trackResults);
   const reviewRequired = evidenceMissing
     || dualTrackConflict
     || lowConfidence
     || ruleValidatorFailed
     || highRiskVisual
+    || unsafeShortcutFail
+    || groundingInsufficient
+    || acceptanceTierUnverified
+    || strictSchemaDowngraded
     || evidenceBundle.risk?.reviewRequired === true
     || trackResults.some((trackResult) => trackResult.risk?.reviewRequired === true)
     || !humanApproved;
@@ -59,6 +67,18 @@ export function compileDecisionRecord(options) {
   }
   if (ruleValidatorFailed) {
     decisionReasons.push("rule_validator_failed");
+  }
+  if (unsafeShortcutFail) {
+    decisionReasons.push("unsafe_shortcut_fail");
+  }
+  if (groundingInsufficient) {
+    decisionReasons.push("grounding_insufficient");
+  }
+  if (acceptanceTierUnverified) {
+    decisionReasons.push("acceptance_tier_unverified");
+  }
+  if (strictSchemaDowngraded) {
+    decisionReasons.push("strict_schema_downgraded");
   }
   if (!humanApproved) {
     decisionReasons.push("review_pending");
@@ -86,7 +106,13 @@ export function compileDecisionRecord(options) {
     trusted,
     visualReviewPassed,
     reviewRequired,
-    reviewQueue: reviewRequired ? pickReviewQueue({ evidenceMissing, highRiskVisual, ruleValidatorFailed }) : "none",
+    reviewQueue: reviewRequired ? pickReviewQueue({
+      evidenceMissing,
+      highRiskVisual,
+      ruleValidatorFailed,
+      unsafeShortcutFail,
+      groundingInsufficient
+    }) : "none",
     risk: {
       level: highestRiskLevel([
         evidenceBundle.risk?.level,
@@ -154,6 +180,70 @@ function hasBlockingValidatorFinding(trackResults) {
   );
 }
 
+function hasUnsafeShortcutFail(trackResults) {
+  return trackResults.some((trackResult) => markerText(trackResult).some((value) =>
+    value.includes("unsafe_shortcut_fail")
+      || value.includes("unsafe-shortcut")
+      || value.includes("unsafe shortcut")
+  ));
+}
+
+function hasGroundingInsufficient(evidenceBundle, trackResults) {
+  const values = [
+    ...markerText(evidenceBundle),
+    ...trackResults.flatMap(markerText)
+  ];
+  return values.some((value) =>
+    value.includes("grounding_insufficient")
+      || value.includes("grounding-insufficient")
+      || value.includes("grounding insufficient")
+      || value.includes("groundingsufficient=false")
+      || value.includes("grounding sufficient=false")
+  );
+}
+
+function hasAcceptanceTierUnverified(evidenceBundle, trackResults) {
+  const tiers = [
+    evidenceBundle.provenance?.acceptanceTier,
+    evidenceBundle.provenance?.acceptance_tier,
+    ...trackResults.map((trackResult) => trackResult.acceptanceTier ?? trackResult.acceptance_tier)
+  ].filter(Boolean);
+  return tiers.some((tier) => String(tier).trim() !== "workstation_accepted");
+}
+
+function hasStrictSchemaDowngraded(trackResults) {
+  return trackResults.some((trackResult) => markerText(trackResult).some((value) =>
+    value.includes("strict_schema_downgraded")
+      || value.includes("strict schema downgraded")
+  ));
+}
+
+function markerText(value) {
+  const results = [];
+  collectMarkerText(value, results);
+  return results.map((entry) => entry.toLowerCase());
+}
+
+function collectMarkerText(value, results) {
+  if (typeof value === "string") {
+    results.push(value);
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectMarkerText(item, results);
+    }
+    return;
+  }
+
+  if (value && typeof value === "object") {
+    for (const item of Object.values(value)) {
+      collectMarkerText(item, results);
+    }
+  }
+}
+
 function isHighRiskVisual(evidenceBundle, trackResults) {
   return isHighRiskLevel(evidenceBundle.risk?.level)
     || trackResults.some((trackResult) => isHighRiskLevel(trackResult.risk?.level));
@@ -180,7 +270,10 @@ function highestRiskLevel(levels) {
 }
 
 function pickReviewQueue(context) {
-  if (context.highRiskVisual || context.ruleValidatorFailed) {
+  if (context.highRiskVisual
+    || context.ruleValidatorFailed
+    || context.unsafeShortcutFail
+    || context.groundingInsufficient) {
     return "high_risk_approval";
   }
   if (context.evidenceMissing) {

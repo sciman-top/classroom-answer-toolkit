@@ -43,3 +43,25 @@ test("compileDecisionRecord keeps dual-track agreement fail-closed when evidence
   assert.ok(decisionRecord.decisionReasons.includes("high_risk_visual"));
   assert.deepEqual(validateDecisionRecord(decisionRecord), []);
 });
+
+test("compileDecisionRecord marks unsafe shortcut and insufficient grounding fail-closed", () => {
+  const evidenceBundle = readCaseJson("unsafe-shortcut-grounding-missing.problem-evidence-bundle.json");
+  const trackResults = [
+    readCaseJson("unsafe-shortcut-grounding-missing.track-a.json"),
+    readCaseJson("unsafe-shortcut-grounding-missing.track-c.json")
+  ];
+
+  const decisionRecord = compileDecisionRecord({
+    evidenceBundle,
+    trackResults,
+    generatedAt: "2026-07-08T00:00:00.000Z"
+  });
+
+  assert.equal(decisionRecord.decision, "review_required");
+  assert.equal(decisionRecord.trusted, false);
+  assert.equal(decisionRecord.reviewRequired, true);
+  assert.ok(decisionRecord.decisionReasons.includes("unsafe_shortcut_fail"));
+  assert.ok(decisionRecord.decisionReasons.includes("grounding_insufficient"));
+  assert.ok(decisionRecord.decisionReasons.includes("acceptance_tier_unverified"));
+  assert.deepEqual(validateDecisionRecord(decisionRecord), []);
+});

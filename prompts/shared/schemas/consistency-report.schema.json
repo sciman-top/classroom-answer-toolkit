@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/consistency-report/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "ConsistencyReport",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "consistencyReportId",
+    "evidenceBundleRef",
+    "trackResultRefs",
+    "checks",
+    "unsafeShortcutFail",
+    "groundingSufficient",
+    "recommendedDecisionReasons",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "consistency-report"
+      ]
+    },
+    "consistencyReportId": { "type": "string" },
+    "evidenceBundleRef": { "type": "string" },
+    "trackResultRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "checkId",
+          "status",
+          "message"
+        ],
+        "properties": {
+          "checkId": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "warning",
+              "fail",
+              "blocking"
+            ]
+          },
+          "message": { "type": "string" },
+          "evidenceRef": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "unsafeShortcutFail": { "type": "boolean" },
+    "groundingSufficient": { "type": "boolean" },
+    "recommendedDecisionReasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "unsafe_shortcut_fail",
+          "grounding_insufficient",
+          "acceptance_tier_unverified",
+          "strict_schema_downgraded",
+          "rule_validator_failed"
+        ]
+      }
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

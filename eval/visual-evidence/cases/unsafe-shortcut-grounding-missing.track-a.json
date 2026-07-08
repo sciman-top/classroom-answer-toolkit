@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-a-unsafe-shortcut-grounding-missing",
+  "evidenceBundleRef": "veb-unsafe-shortcut-grounding-missing",
+  "trackType": "vlm_direct",
+  "candidateSourceType": "generated",
+  "answerCandidate": "x = 2",
+  "confidence": 0.68,
+  "visualDetailMode": "original",
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "high",
+  "stageArtifactRefs": {
+    "visualInputBundleRef": "vib-unsafe-shortcut-grounding-missing",
+    "groundingSnapshotRef": "grounding-unsafe-shortcut-grounding-missing",
+    "solutionSnapshotRef": "solution-unsafe-shortcut-grounding-missing"
+  },
+  "visibleEvidenceSummary": "Track A produced a numeric answer, but the grounding snapshot does not establish axis scale or intersection relation.",
+  "evidenceRefs": [
+    "crop-fig-8-local-high-res"
+  ],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [
+    "grounding:axis-scale",
+    "grounding:intersection-relation"
+  ],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": [
+      "coordinate graph grounding is insufficient",
+      "answer appears before diagram relations are established"
+    ]
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

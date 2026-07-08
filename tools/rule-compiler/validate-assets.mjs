@@ -22,13 +22,21 @@ function collectValidationTargets() {
   const problemEvidenceBundleSchema = resolveRepoPath("prompts/shared/schemas/problem-evidence-bundle.schema.json");
   const trackResultSchema = resolveRepoPath("prompts/shared/schemas/track-result.schema.json");
   const decisionRecordSchema = resolveRepoPath("prompts/shared/schemas/decision-record.schema.json");
+  const visualInputBundleSchema = resolveRepoPath("prompts/shared/schemas/visual-input-bundle.schema.json");
+  const groundingSnapshotSchema = resolveRepoPath("prompts/shared/schemas/grounding-snapshot.schema.json");
+  const solutionSnapshotSchema = resolveRepoPath("prompts/shared/schemas/solution-snapshot.schema.json");
+  const consistencyReportSchema = resolveRepoPath("prompts/shared/schemas/consistency-report.schema.json");
   const rendererContractSchema = resolveRepoPath("prompts/shared/schemas/renderer-contract.schema.json");
   const visualEvidenceSchemas = [
     resolveRepoPath("prompts/shared/schemas/normalized-page.schema.json"),
     resolveRepoPath("prompts/shared/schemas/visual-region.schema.json"),
     problemEvidenceBundleSchema,
     trackResultSchema,
-    decisionRecordSchema
+    decisionRecordSchema,
+    visualInputBundleSchema,
+    groundingSnapshotSchema,
+    solutionSnapshotSchema,
+    consistencyReportSchema
   ];
   const subjectPackDirectories = listSubjectPackDirectories();
   const sampleRoot = resolveRepoPath("样例交付");
@@ -56,7 +64,15 @@ function collectValidationTargets() {
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".track-c.json")
       .map((filePath) => ({ filePath, schemaPath: trackResultSchema })),
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".decision-record.json")
-      .map((filePath) => ({ filePath, schemaPath: decisionRecordSchema }))
+      .map((filePath) => ({ filePath, schemaPath: decisionRecordSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".visual-input-bundle.json")
+      .map((filePath) => ({ filePath, schemaPath: visualInputBundleSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".grounding-snapshot.json")
+      .map((filePath) => ({ filePath, schemaPath: groundingSnapshotSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".solution-snapshot.json")
+      .map((filePath) => ({ filePath, schemaPath: solutionSnapshotSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".consistency-report.json")
+      .map((filePath) => ({ filePath, schemaPath: consistencyReportSchema }))
   ];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-input-bundle/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "VisualInputBundle",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "visualInputBundleId",
+    "evidenceBundleRef",
+    "sourceImageRefs",
+    "cropRefs",
+    "ocrRefs",
+    "layoutRegionRefs",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "visual-input-bundle"
+      ]
+    },
+    "visualInputBundleId": { "type": "string" },
+    "evidenceBundleRef": { "type": "string" },
+    "subjectPack": { "type": "string" },
+    "questionRef": { "type": "string" },
+    "sourceImageRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "cropRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ocrRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "layoutRegionRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "promptSafeImageRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "imageRef"
+        ],
+        "properties": {
+          "role": { "type": "string" },
+          "imageRef": { "type": "string" },
+          "sourceRef": { "type": "string" },
+          "detailIntent": {
+            "type": "string",
+            "enum": [
+              "low",
+              "high",
+              "original"
+            ]
+          },
+          "egressAllowed": { "type": "boolean" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "binding": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "ambiguous",
+            "missing"
+          ]
+        },
+        "confidence": { "type": "number" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

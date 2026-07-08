@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-input-bundle",
+  "visualInputBundleId": "vib-unsafe-shortcut-grounding-missing",
+  "evidenceBundleRef": "veb-unsafe-shortcut-grounding-missing",
+  "subjectPack": "math-answer",
+  "questionRef": "Q8(1)",
+  "sourceImageRefs": [
+    "page-002.png"
+  ],
+  "cropRefs": [
+    "crop-fig-8-local-high-res"
+  ],
+  "ocrRefs": [
+    "ocr-8"
+  ],
+  "layoutRegionRefs": [
+    "layout-coordinate-graph-8"
+  ],
+  "promptSafeImageRefs": [
+    {
+      "role": "figure_crop",
+      "imageRef": "crop-fig-8-local-high-res",
+      "sourceRef": "fig-8",
+      "detailIntent": "original",
+      "egressAllowed": false
+    }
+  ],
+  "binding": {
+    "status": "stable",
+    "confidence": 0.86,
+    "reasons": [
+      "crop is local and bound to question region"
+    ]
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

@@ -210,7 +210,7 @@ export async function requestVisionWithFailover(config, options) {
   for (const provider of providers) {
     const forcedFailure = options.forcePrimaryFailure === true && provider.role === "primary";
     const attempt = forcedFailure
-      ? forcedRetryableFailure(provider)
+      ? forcedRetryableFailure(provider, options)
       : await callVisionProvider(provider, options);
 
     attempts.push(attempt);
@@ -218,6 +218,8 @@ export async function requestVisionWithFailover(config, options) {
       return {
         ok: true,
         provider: provider.role,
+        requestedVisualDetailMode: attempt.requestedVisualDetailMode,
+        providerVisualDetailMode: attempt.providerVisualDetailMode,
         trackResult: attempt.trackResult,
         schemaErrors: attempt.schemaErrors,
         attempts
@@ -228,6 +230,8 @@ export async function requestVisionWithFailover(config, options) {
       return {
         ok: false,
         provider: provider.role,
+        requestedVisualDetailMode: attempt.requestedVisualDetailMode,
+        providerVisualDetailMode: attempt.providerVisualDetailMode,
         trackResult: null,
         schemaErrors: attempt.schemaErrors ?? [],
         attempts,
@@ -239,6 +243,8 @@ export async function requestVisionWithFailover(config, options) {
   return {
     ok: false,
     provider: attempts.at(-1)?.provider ?? null,
+    requestedVisualDetailMode: attempts.at(-1)?.requestedVisualDetailMode ?? options.visualDetailMode,
+    providerVisualDetailMode: attempts.at(-1)?.providerVisualDetailMode ?? normalizeDetailForProvider(options.visualDetailMode),
     trackResult: null,
     schemaErrors: [],
     attempts,
@@ -249,6 +255,8 @@ export async function requestVisionWithFailover(config, options) {
 async function callVisionProvider(provider, options) {
   const endpointPath = provider.visionSurface === "chat_completions" ? "chat/completions" : "responses";
   const endpoint = joinUrl(provider.baseUrl, endpointPath);
+  const requestedVisualDetailMode = options.visualDetailMode;
+  const providerVisualDetailMode = normalizeDetailForProvider(options.visualDetailMode);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
 
@@ -269,6 +277,8 @@ async function callVisionProvider(provider, options) {
     if (!response.ok) {
       return {
         provider: provider.role,
+        requestedVisualDetailMode,
+        providerVisualDetailMode,
         ok: false,
         retryable: isRetryableGatewayFailure(response.status),
         status: response.status,
@@ -282,6 +292,8 @@ async function callVisionProvider(provider, options) {
     } catch (error) {
       return {
         provider: provider.role,
+        requestedVisualDetailMode,
+        providerVisualDetailMode,
         ok: false,
         retryable: false,
         status: response.status,
@@ -296,6 +308,8 @@ async function callVisionProvider(provider, options) {
     } catch (error) {
       return {
         provider: provider.role,
+        requestedVisualDetailMode,
+        providerVisualDetailMode,
         ok: false,
         retryable: false,
         status: response.status,
@@ -307,6 +321,8 @@ async function callVisionProvider(provider, options) {
     const schemaErrors = validateTrackResult(trackResult, options);
     return {
       provider: provider.role,
+      requestedVisualDetailMode,
+      providerVisualDetailMode,
       ok: schemaErrors.length === 0,
       retryable: false,
       status: response.status,
@@ -319,6 +335,8 @@ async function callVisionProvider(provider, options) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       provider: provider.role,
+      requestedVisualDetailMode,
+      providerVisualDetailMode,
       ok: false,
       retryable: true,
       status: null,
@@ -331,6 +349,7 @@ async function callVisionProvider(provider, options) {
 
 function buildVisionRequestBody(provider, options) {
   const dataUrl = imageDataUrl(options);
+  const providerVisualDetailMode = normalizeDetailForProvider(options.visualDetailMode);
   if (provider.visionSurface === "chat_completions") {
     return {
       model: provider.visionModel,
@@ -343,7 +362,7 @@ function buildVisionRequestBody(provider, options) {
               type: "image_url",
               image_url: {
                 url: dataUrl,
-                detail: normalizeDetailForProvider(options.visualDetailMode)
+                detail: providerVisualDetailMode
               }
             }
           ]
@@ -367,7 +386,7 @@ function buildVisionRequestBody(provider, options) {
           {
             type: "input_image",
             image_url: dataUrl,
-            detail: normalizeDetailForProvider(options.visualDetailMode)
+            detail: providerVisualDetailMode
           }
         ]
       }
@@ -458,9 +477,11 @@ function providerOrder(role) {
   return match ? Number(match[1]) : 999;
 }
 
-function forcedRetryableFailure(provider) {
+function forcedRetryableFailure(provider, options) {
   return {
     provider: provider.role,
+    requestedVisualDetailMode: options.visualDetailMode,
+    providerVisualDetailMode: normalizeDetailForProvider(options.visualDetailMode),
     ok: false,
     retryable: true,
     status: null,
@@ -562,6 +583,8 @@ function extractTextOutput(parsed) {
 function redactAttempt(attempt) {
   return {
     provider: attempt.provider,
+    requestedVisualDetailMode: attempt.requestedVisualDetailMode,
+    providerVisualDetailMode: attempt.providerVisualDetailMode,
     ok: attempt.ok,
     retryable: attempt.retryable,
     status: attempt.status,
@@ -605,6 +628,8 @@ export async function main() {
     console.log(JSON.stringify({
       ok: result.ok,
       provider: result.provider,
+      requestedVisualDetailMode: result.requestedVisualDetailMode,
+      providerVisualDetailMode: result.providerVisualDetailMode,
       trackResultId: result.trackResult?.trackResultId ?? null,
       evidenceBundleRef: result.trackResult?.evidenceBundleRef ?? null,
       schemaErrors: result.schemaErrors ?? [],

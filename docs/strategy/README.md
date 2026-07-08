@@ -9,13 +9,14 @@
 3. [final-implementation-baseline.md](./final-implementation-baseline.md)
 4. [auto-solving-workstation-final-plan.md](./auto-solving-workstation-final-plan.md)
 5. [visual-first-answering-architecture.md](./visual-first-answering-architecture.md)
-6. [ai-gateway-config.md](./ai-gateway-config.md)
-7. [typst-primary-renderer-plan.md](./typst-primary-renderer-plan.md)
-8. [spec-evolution-adaptation-plan.md](./spec-evolution-adaptation-plan.md)
-9. [implementation-roadmap.md](./implementation-roadmap.md)
-10. [implementation-plan.md](./implementation-plan.md)
-11. [execution-backlog.md](./execution-backlog.md)
-12. [decision-log.md](./decision-log.md)
+6. [qq-heavy-visual-chain-transfer-plan.md](./qq-heavy-visual-chain-transfer-plan.md)
+7. [ai-gateway-config.md](./ai-gateway-config.md)
+8. [typst-primary-renderer-plan.md](./typst-primary-renderer-plan.md)
+9. [spec-evolution-adaptation-plan.md](./spec-evolution-adaptation-plan.md)
+10. [implementation-roadmap.md](./implementation-roadmap.md)
+11. [implementation-plan.md](./implementation-plan.md)
+12. [execution-backlog.md](./execution-backlog.md)
+13. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 

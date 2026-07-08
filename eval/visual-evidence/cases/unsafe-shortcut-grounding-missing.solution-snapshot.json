@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "solution-snapshot",
+  "solutionSnapshotId": "solution-unsafe-shortcut-grounding-missing",
+  "evidenceBundleRef": "veb-unsafe-shortcut-grounding-missing",
+  "groundingSnapshotRef": "grounding-unsafe-shortcut-grounding-missing",
+  "answersBySubquestion": [
+    {
+      "id": "1",
+      "answer": "x = 2",
+      "work": "直接给出交点横坐标。",
+      "evidenceRefs": []
+    }
+  ],
+  "usedKnowns": [
+    "题目要求从坐标图读取交点"
+  ],
+  "usedDiagramRelations": [],
+  "unitChecks": [],
+  "unsupportedClaims": [
+    "x = 2 缺少坐标轴刻度和交点位置证据"
+  ],
+  "renderMarkdownCandidate": "【疑】x = 2（缺少坐标图 grounding，待复核）",
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/grounding-snapshot/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "GroundingSnapshot",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "groundingSnapshotId",
+    "evidenceBundleRef",
+    "visualInputBundleRef",
+    "sourceImageRefs",
+    "visibleTextBlocks",
+    "knowns",
+    "unknowns",
+    "diagramRelations",
+    "subquestionIds",
+    "ambiguityPoints",
+    "groundingSufficient",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "grounding-snapshot"
+      ]
+    },
+    "groundingSnapshotId": { "type": "string" },
+    "evidenceBundleRef": { "type": "string" },
+    "visualInputBundleRef": { "type": "string" },
+    "sourceImageRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "visibleTextBlocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "text",
+          "evidenceRef"
+        ],
+        "properties": {
+          "text": { "type": "string" },
+          "evidenceRef": { "type": "string" },
+          "confidence": { "type": "number" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "formulasLatex": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "knowns": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "diagramRelations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "relation",
+          "evidenceRef"
+        ],
+        "properties": {
+          "relation": { "type": "string" },
+          "evidenceRef": { "type": "string" },
+          "confidence": { "type": "number" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "subquestionIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ambiguityPoints": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "groundingSufficient": { "type": "boolean" },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

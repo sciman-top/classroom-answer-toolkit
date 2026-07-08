@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-c-unsafe-shortcut-grounding-missing",
+  "evidenceBundleRef": "veb-unsafe-shortcut-grounding-missing",
+  "trackType": "rule_validator",
+  "candidateSourceType": "generated",
+  "answerCandidate": "blocked: unsafe shortcut before visual grounding",
+  "confidence": 1.0,
+  "visualDetailMode": "not_applicable",
+  "stageArtifactRefs": {
+    "consistencyReportRef": "consistency-unsafe-shortcut-grounding-missing"
+  },
+  "visibleEvidenceSummary": "Validator blocks release because the solution gives a coordinate value while grounding is insufficient.",
+  "evidenceRefs": [
+    "consistency-unsafe-shortcut-grounding-missing"
+  ],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [
+    "grounding:axis-scale",
+    "grounding:intersection-relation"
+  ],
+  "validatorFindings": [
+    {
+      "findingId": "visual-evidence.unsafe-shortcut-fail",
+      "severity": "blocking",
+      "message": "Answer jumps to a coordinate value without sufficient visual grounding.",
+      "evidenceRef": "consistency-unsafe-shortcut-grounding-missing"
+    },
+    {
+      "findingId": "visual-evidence.grounding-insufficient",
+      "severity": "blocking",
+      "message": "Grounding snapshot has groundingSufficient=false.",
+      "evidenceRef": "grounding-unsafe-shortcut-grounding-missing"
+    }
+  ],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": [
+      "unsafe_shortcut_fail",
+      "grounding_insufficient"
+    ]
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

@@ -32,9 +32,20 @@
 
 - `tools/ai-gateway/vision-request.mjs`：显式 Track A 视觉探针，返回并校验 `TrackResult`。
 - `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
-- `eval/visual-evidence/`：保存双轨一致但证据链缺失仍 fail-closed 的回归样例。
+- `eval/visual-evidence/`：保存双轨一致但证据链缺失、不安全捷径绕过 grounding 仍 fail-closed 的回归样例。
 
 该闭环证明 `TrackResult -> DecisionRecord` 的合同可以运行，但不等于局部高清 crop、OCR/layout 抽取、WPF review 队列或默认主答题流程已经产品化。
+
+### QQ 重链路可移植映射
+
+`qq-codex-bot` 的重链路经验只作为阶段化 trace 参考，不改变本仓 canonical contract：
+
+- `VisualInputBundle`：`NormalizedPage + VisualRegion + crop/OCR/layout refs` 的请求安全视图，用于控制传给模型的原图、局部 crop、OCR/layout 片段和出网边界。
+- `GroundingSnapshot`：解题前的可见事实抽取，记录文字、公式、已知量、待求量、图形关系、子问和不确定项；不能被直接当成最终答案。
+- `SolutionSnapshot`：基于 grounding 的逐小问候选答案，必须记录使用的 knowns、diagram relations、单位检查和 unsupported claims。
+- `ConsistencyReport`：Track C / validator 的结构化一致性结果，专门拦截 `unsafe_shortcut_fail`、`grounding_insufficient`、答案格式和学科约束问题。
+
+这些阶段产物通过 `TrackResult.stageArtifactRefs` 可选引用，并最终由 `DecisionRecord` 聚合为 `trusted / visualReviewPassed / reviewRequired`。不允许把阶段产物绕过 `DecisionRecord` 直接写成可信交付。
 
 ## 3. 三轨定义
 
@@ -65,6 +76,8 @@
 5. 不允许静默降级到纯文本链后假装已经完成看图。
 
 离线决策编译器必须把以下情况推导为 `review_required`：证据链缺 crop、binding 不稳、Track 结果冲突、Track C blocking finding、高风险视觉题、低置信或 review 生命周期未批准。
+
+新增 `unsafe_shortcut_fail` 作为一等失败原因：模型直接进入计算、选项或最终答案，但没有覆盖题干、可见图形关系、已知量、待求量和不确定项 grounding 时，即使候选答案碰巧正确，也必须保持 `trusted=false`。
 
 ## 5. 高风险视觉题
 
@@ -108,6 +121,7 @@ WPF review 队列需要展示：
 - OCR 与原图冲突发现率
 - review 后修正回放通过率
 - 按 `subject-pack`、题型、图像质量、`candidateSourceType` 分桶统计
+- 按 `repo_supported / gateway_verified / workstation_accepted` 分层统计，不把网关探针通过误报成工作站闭环验收
 
 必须保留“看图错误难例库”，覆盖小字刻度、坐标轴交点、函数趋势、几何辅助线、表格统计口径、电路连接、实验装置、多图多问、模糊、旋转、遮挡、低分辨率、OCR 错、VLM 错、双轨一致但证据缺失等样例。
 

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "decision-record",
+  "decisionId": "decision-unsafe-shortcut-grounding-missing",
+  "subjectPack": "math-answer",
+  "questionRef": "Q8(1)",
+  "normalizedQuestionRef": "math-answer:visual-evidence:Q8:1",
+  "evidenceBundleRef": "veb-unsafe-shortcut-grounding-missing",
+  "trackResultRefs": [
+    "track-a-unsafe-shortcut-grounding-missing",
+    "track-c-unsafe-shortcut-grounding-missing"
+  ],
+  "decision": "review_required",
+  "answer": "【疑：坐标图 grounding 不足，禁止直接可信放行】",
+  "trusted": false,
+  "visualReviewPassed": null,
+  "reviewRequired": true,
+  "reviewQueue": "high_risk_approval",
+  "risk": {
+    "level": "high",
+    "categories": [
+      "coordinate_graph"
+    ]
+  },
+  "decisionReasons": [
+    "evidence_chain_missing",
+    "high_risk_visual",
+    "rule_validator_failed",
+    "unsafe_shortcut_fail",
+    "grounding_insufficient",
+    "acceptance_tier_unverified",
+    "review_pending"
+  ],
+  "conflictRefs": [],
+  "feedbackRefs": [],
+  "statusProjection": {
+    "visualReviewPassed": null,
+    "trusted": false
+  },
+  "generatedAt": "2026-07-08T00:00:00Z"
+}

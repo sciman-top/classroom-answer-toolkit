@@ -111,7 +111,11 @@
           "review_pending",
           "sentinel_required",
           "drawing_task_unsupported",
-          "cloud_egress_not_allowed"
+          "cloud_egress_not_allowed",
+          "unsafe_shortcut_fail",
+          "grounding_insufficient",
+          "acceptance_tier_unverified",
+          "strict_schema_downgraded"
         ]
       }
     },

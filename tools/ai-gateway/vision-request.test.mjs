@@ -60,6 +60,10 @@ function validTrackResult() {
     answerCandidate: "synthetic image observed",
     confidence: 0.62,
     visualDetailMode: "high",
+    stageArtifactRefs: {
+      visualInputBundleRef: "vib.synthetic-vision-smoke",
+      groundingSnapshotRef: "grounding.synthetic-vision-smoke"
+    },
     visibleEvidenceSummary: "Synthetic one-pixel image was processed by the vision gateway.",
     evidenceRefs: ["crop.synthetic-vision-smoke"],
     conflictRefs: [],
@@ -194,6 +198,54 @@ test("responses vision surface sends input_image and json_schema format", async 
     assert.equal(requestBody.input[0].content[1].type, "input_image");
     assert.equal(requestBody.text.format.type, "json_schema");
     assert.equal(requestBody.text.format.name, "track_result");
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("vision request records requested and provider detail modes when original is downgraded", async () => {
+  const { tempDir, imagePath } = writeSyntheticImage();
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    calls.push({ body: JSON.parse(init.body) });
+    return new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              ...validTrackResult(),
+              visualDetailMode: "original"
+            })
+          }
+        }
+      ]
+    }), { status: 200 });
+  };
+
+  try {
+    const result = await requestVisionWithFailover(createConfig(), {
+      provider: "primary",
+      allowCloudEgress: true,
+      imagePath,
+      prompt: buildVisionPrompt({
+        subjectPack: "math-answer",
+        evidenceBundleRef: "bundle.synthetic-vision-smoke",
+        trackResultId: "track-a.synthetic-vision-smoke"
+      }),
+      evidenceBundleRef: "bundle.synthetic-vision-smoke",
+      trackResultId: "track-a.synthetic-vision-smoke",
+      visualDetailMode: "original",
+      timeoutMs: 1000
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(calls[0].body.messages[0].content[1].image_url.detail, "high");
+    assert.equal(result.requestedVisualDetailMode, "original");
+    assert.equal(result.providerVisualDetailMode, "high");
+    assert.equal(result.attempts[0].requestedVisualDetailMode, "original");
+    assert.equal(result.attempts[0].providerVisualDetailMode, "high");
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(tempDir, { recursive: true, force: true });

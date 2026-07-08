@@ -32,11 +32,13 @@
 - Track B：OCR / layout / 图元结构化后求解。
 - Track C：规则校验器，拦截单位、量程、分度值、坐标轴、图号绑定、答案格式和学科约束错误。
 - Track 输出统一记录为 `TrackResult`。
+- 阶段产物统一作为 `TrackResult.stageArtifactRefs` 引用：`VisualInputBundle` 控制请求安全输入，`GroundingSnapshot` 记录读图事实，`SolutionSnapshot` 记录逐小问候选，`ConsistencyReport` 记录一致性和阻断原因。
 
 ### 风险与决策层
 
 - 高风险视觉题默认 fail-closed。
 - 双轨一致但证据链缺失，仍保持 `trusted=false`。
+- 直接跳到答案但缺 grounding 的 `unsafe_shortcut_fail`，即使答案碰巧正确，也必须保持 `trusted=false`。
 - 最终决策写入 `DecisionRecord`，并投影到 delivery manifest 的 `visualReviewPassed` 与 `trusted`。
 
 ### Review 工作台
@@ -59,6 +61,7 @@
 - subject-pack、snapshot、compiled spec、eval 的资产治理。
 - 高风险视觉题可降级、可复核、可回放。
 - 视觉证据契约层、显式 Track A 网关探针、最小离线 `DecisionRecord` 编译器和 fail-closed 样例已落盘。
+- QQ 重链路经验已移植为阶段 schema、`stageArtifactRefs`、不安全捷径 fixture 和验收分层文档。
 
 ### 终局目标
 
@@ -121,6 +124,7 @@
 
 - 高风险视觉误放行率持续下降，且按 subject-pack 单独统计。
 - 双轨一致但证据缺失样例保持 `trusted=false`。
+- `unsafe_shortcut_fail / grounding_insufficient` 样例保持 `trusted=false`。
 - `visualReviewPassed=null` 不被误解释为已通过。
 - Typst 与 Chromium parity gate 通过前，当前运行时仍保持 Chromium。
 - Typst 升主后，Chromium 回滚后端仍可在失败时恢复交付。

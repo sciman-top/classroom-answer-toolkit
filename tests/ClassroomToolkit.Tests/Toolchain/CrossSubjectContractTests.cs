@@ -137,7 +137,11 @@ public sealed class CrossSubjectContractTests
             "visual-region.schema.json",
             "problem-evidence-bundle.schema.json",
             "track-result.schema.json",
-            "decision-record.schema.json"
+            "decision-record.schema.json",
+            "visual-input-bundle.schema.json",
+            "grounding-snapshot.schema.json",
+            "solution-snapshot.schema.json",
+            "consistency-report.schema.json"
         };
 
         foreach (var schemaFile in expectedSchemaFiles)
@@ -172,6 +176,7 @@ public sealed class CrossSubjectContractTests
         trackResultText.Should().Contain("rule_validator");
         trackResultText.Should().Contain("evidenceBundleRef");
         trackResultText.Should().Contain("conflictRefs");
+        trackResultText.Should().Contain("stageArtifactRefs");
 
         using var decisionRecord = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "decision-record.schema.json")));
         var decisionRecordText = decisionRecord.RootElement.ToString();
@@ -181,6 +186,30 @@ public sealed class CrossSubjectContractTests
         decisionRecordText.Should().Contain("high_risk_approval");
         decisionRecordText.Should().Contain("evidence_chain_missing");
         decisionRecordText.Should().Contain("dual_track_conflict");
+        decisionRecordText.Should().Contain("unsafe_shortcut_fail");
+        decisionRecordText.Should().Contain("grounding_insufficient");
+        decisionRecordText.Should().Contain("acceptance_tier_unverified");
+        decisionRecordText.Should().Contain("strict_schema_downgraded");
+
+        using var groundingSnapshot = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "grounding-snapshot.schema.json")));
+        var groundingSnapshotText = groundingSnapshot.RootElement.ToString();
+        groundingSnapshotText.Should().Contain("sourceImageRefs");
+        groundingSnapshotText.Should().Contain("visibleTextBlocks");
+        groundingSnapshotText.Should().Contain("diagramRelations");
+        groundingSnapshotText.Should().Contain("groundingSufficient");
+
+        using var solutionSnapshot = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "solution-snapshot.schema.json")));
+        var solutionSnapshotText = solutionSnapshot.RootElement.ToString();
+        solutionSnapshotText.Should().Contain("answersBySubquestion");
+        solutionSnapshotText.Should().Contain("usedKnowns");
+        solutionSnapshotText.Should().Contain("usedDiagramRelations");
+        solutionSnapshotText.Should().Contain("unsupportedClaims");
+
+        using var consistencyReport = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "consistency-report.schema.json")));
+        var consistencyReportText = consistencyReport.RootElement.ToString();
+        consistencyReportText.Should().Contain("consistencyReportId");
+        consistencyReportText.Should().Contain("unsafeShortcutFail");
+        consistencyReportText.Should().Contain("recommendedDecisionReasons");
     }
 
     [Fact]
@@ -209,6 +238,32 @@ public sealed class CrossSubjectContractTests
         decisionReasons.Should().Contain("dual_track_match");
         decisionReasons.Should().Contain("evidence_chain_missing");
         decisionReasons.Should().Contain("high_risk_visual");
+    }
+
+    [Fact]
+    public void VisualEvidenceEval_FailClosedWhenAnswerShortcutsPastGrounding()
+    {
+        var repoRoot = FindRepoRoot();
+        var datasetPath = Path.Combine(repoRoot, "eval", "visual-evidence", "dataset.json");
+        using var dataset = JsonDocument.Parse(File.ReadAllText(datasetPath));
+        var unsafeShortcutCase = dataset.RootElement.GetProperty("cases").EnumerateArray()
+            .Single(element => element.GetProperty("id").GetString() == "unsafe-shortcut-grounding-missing");
+
+        unsafeShortcutCase.GetProperty("expectedTrusted").GetBoolean().Should().BeFalse();
+        unsafeShortcutCase.GetProperty("expectedReviewRequired").GetBoolean().Should().BeTrue();
+
+        var decisionPath = Path.Combine(repoRoot, "eval", "visual-evidence", unsafeShortcutCase.GetProperty("decisionRecord").GetString()!);
+        using var decisionRecord = JsonDocument.Parse(File.ReadAllText(decisionPath));
+        var decision = decisionRecord.RootElement;
+        decision.GetProperty("trusted").GetBoolean().Should().BeFalse();
+        decision.GetProperty("reviewRequired").GetBoolean().Should().BeTrue();
+
+        var decisionReasons = decision.GetProperty("decisionReasons").EnumerateArray()
+            .Select(static element => element.GetString())
+            .ToArray();
+        decisionReasons.Should().Contain("unsafe_shortcut_fail");
+        decisionReasons.Should().Contain("grounding_insufficient");
+        decisionReasons.Should().Contain("acceptance_tier_unverified");
     }
 
     [Fact]
@@ -337,6 +392,8 @@ public sealed class CrossSubjectContractTests
         visionRequest.Should().Contain("data:image/png;base64");
         visionRequest.Should().Contain("chat/completions");
         visionRequest.Should().Contain("responses");
+        visionRequest.Should().Contain("requestedVisualDetailMode");
+        visionRequest.Should().Contain("providerVisualDetailMode");
 
         gatewayDoc.Should().Contain("视觉 live 探针通过只证明 provider 的显式图片理解入口可达");
         gatewayDoc.Should().Contain("TrackResult");

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/solution-snapshot/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "SolutionSnapshot",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "solutionSnapshotId",
+    "evidenceBundleRef",
+    "groundingSnapshotRef",
+    "answersBySubquestion",
+    "usedKnowns",
+    "usedDiagramRelations",
+    "unitChecks",
+    "unsupportedClaims",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "solution-snapshot"
+      ]
+    },
+    "solutionSnapshotId": { "type": "string" },
+    "evidenceBundleRef": { "type": "string" },
+    "groundingSnapshotRef": { "type": "string" },
+    "answersBySubquestion": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "answer"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "answer": { "type": "string" },
+          "work": { "type": "string" },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "usedKnowns": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "usedDiagramRelations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "unitChecks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "unsupportedClaims": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "renderMarkdownCandidate": { "type": "string" },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

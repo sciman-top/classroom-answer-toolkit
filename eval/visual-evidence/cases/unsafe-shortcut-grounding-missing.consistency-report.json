@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "consistency-report",
+  "consistencyReportId": "consistency-unsafe-shortcut-grounding-missing",
+  "evidenceBundleRef": "veb-unsafe-shortcut-grounding-missing",
+  "trackResultRefs": [
+    "track-a-unsafe-shortcut-grounding-missing"
+  ],
+  "checks": [
+    {
+      "checkId": "grounding.required-before-solution",
+      "status": "blocking",
+      "message": "Solution gives a coordinate value while groundingSufficient=false.",
+      "evidenceRef": "grounding-unsafe-shortcut-grounding-missing"
+    },
+    {
+      "checkId": "diagram-relations.required",
+      "status": "blocking",
+      "message": "No diagram relation supports the claimed intersection coordinate.",
+      "evidenceRef": "solution-unsafe-shortcut-grounding-missing"
+    }
+  ],
+  "unsafeShortcutFail": true,
+  "groundingSufficient": false,
+  "recommendedDecisionReasons": [
+    "unsafe_shortcut_fail",
+    "grounding_insufficient",
+    "acceptance_tier_unverified"
+  ],
+  "generatedAt": "2026-07-08T00:00:00Z"
+}
