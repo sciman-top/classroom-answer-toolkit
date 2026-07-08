@@ -53,6 +53,16 @@ Assert-CommandSuccess {
     npm --prefix tools/ai-gateway run validate:config -- --config-env-file .env.example --allow-missing-secrets
 } "AI gateway config template validation failed."
 
+Write-Host "ai gateway vision contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/ai-gateway run test:vision
+} "AI gateway vision contract tests failed."
+
+Write-Host "visual evidence decision contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-evidence run test:decision
+} "Visual evidence decision contract tests failed."
+
 $subjectPacks = Get-SubjectPackMetadata -RepositoryRoot $repoRoot
 if ($subjectPacks.Count -eq 0) {
     throw "No subject pack manifests were found under prompts/."

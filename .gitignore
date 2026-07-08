@@ -24,6 +24,7 @@ __pycache__/
 # Temporary render files
 .smoke-work/
 .smoke-visual/
+.eval-work/
 .snapshot-cache/
 _tmp_*
 *.render.html

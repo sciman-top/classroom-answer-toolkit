@@ -1,0 +1,10 @@
+{
+  "name": "classroom-toolkit-visual-evidence",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile:decision": "node decision-record.mjs",
+    "test:decision": "node --test decision-record.test.mjs"
+  }
+}

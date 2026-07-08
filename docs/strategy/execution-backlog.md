@@ -162,6 +162,16 @@
 - blocks: VISION-003
 - done_definition: 指标不再只报总正确率，而能看到高风险视觉误放行
 
+### task_id: VISION-005
+
+- goal: 建立显式视觉探针与最小 fail-closed 决策编译闭环
+- inputs: `tools/ai-gateway` 文本主备切换、`track-result.schema.json`、`decision-record.schema.json`、`eval/visual-evidence/`
+- changes: 新增 `request:vision` 显式 synthetic 图片探针，新增 `tools/visual-evidence` 离线 `DecisionRecord` 编译器，并纳入 `check-toolchain`
+- verification: `npm --prefix tools/ai-gateway run test:vision`、`npm --prefix tools/visual-evidence run test:decision`、`scripts/check-toolchain.ps1`
+- rollback: 删除 `vision-request.mjs`、`tools/visual-evidence/`、对应 README/strategy 文档和 check-toolchain 接入
+- blocks: VISION-003
+- done_definition: 双轨一致但证据缺失的样例可由运行时代码推导为 `review_required`、`trusted=false`，且视觉 live 探针只作为 gateway verified 边界，不升级为 workflow integrated
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

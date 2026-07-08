@@ -6,6 +6,8 @@
   "scripts": {
     "validate:config": "node validate-config.mjs",
     "probe:text": "node validate-config.mjs --live text --provider all",
-    "request:text": "node text-request.mjs"
+    "request:text": "node text-request.mjs",
+    "request:vision": "node vision-request.mjs",
+    "test:vision": "node --test vision-request.test.mjs"
   }
 }

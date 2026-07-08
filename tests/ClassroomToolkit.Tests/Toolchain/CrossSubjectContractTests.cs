@@ -317,6 +317,34 @@ public sealed class CrossSubjectContractTests
     }
 
     [Fact]
+    public void AiGatewayVisionProbe_StaysExplicitAndSchemaBound()
+    {
+        var repoRoot = FindRepoRoot();
+        var packageJson = File.ReadAllText(Path.Combine(repoRoot, "tools", "ai-gateway", "package.json"));
+        var visionRequestPath = Path.Combine(repoRoot, "tools", "ai-gateway", "vision-request.mjs");
+        var gatewayDoc = File.ReadAllText(Path.Combine(repoRoot, "docs", "strategy", "ai-gateway-config.md"));
+        var readme = File.ReadAllText(Path.Combine(repoRoot, "README.md"));
+        var checkToolchain = File.ReadAllText(Path.Combine(repoRoot, "scripts", "check-toolchain.ps1"));
+
+        File.Exists(visionRequestPath).Should().BeTrue();
+        packageJson.Should().Contain("request:vision");
+        packageJson.Should().Contain("test:vision");
+        checkToolchain.Should().Contain("test:vision");
+
+        var visionRequest = File.ReadAllText(visionRequestPath);
+        visionRequest.Should().Contain("requestVisionWithFailover");
+        visionRequest.Should().Contain("track-result.schema.json");
+        visionRequest.Should().Contain("data:image/png;base64");
+        visionRequest.Should().Contain("chat/completions");
+        visionRequest.Should().Contain("responses");
+
+        gatewayDoc.Should().Contain("视觉 live 探针通过只证明 provider 的显式图片理解入口可达");
+        gatewayDoc.Should().Contain("TrackResult");
+        gatewayDoc.Should().Contain("不等于 workflow integrated 或 live accepted");
+        readme.Should().Contain("显式开启云外发后，可用合成图片验证主备视觉请求级切换");
+    }
+
+    [Fact]
     public void RuleCompiler_ExposesCrossSubjectValidationScript()
     {
         var repoRoot = FindRepoRoot();

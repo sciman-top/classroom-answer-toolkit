@@ -28,6 +28,14 @@
 
 `ProblemEvidenceBundle` 只聚合和引用既有对象，不复制、不替代。
 
+当前仓内已具备最小运行时闭环：
+
+- `tools/ai-gateway/vision-request.mjs`：显式 Track A 视觉探针，返回并校验 `TrackResult`。
+- `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
+- `eval/visual-evidence/`：保存双轨一致但证据链缺失仍 fail-closed 的回归样例。
+
+该闭环证明 `TrackResult -> DecisionRecord` 的合同可以运行，但不等于局部高清 crop、OCR/layout 抽取、WPF review 队列或默认主答题流程已经产品化。
+
 ## 3. 三轨定义
 
 ### Track A：VLM 直看
@@ -55,6 +63,8 @@
 3. 双轨一致也不能直接可信，因为可能一致同错；必须同时检查证据链、风险分类、置信度和哨兵样例表现。
 4. `visualReviewPassed=null` 表示未裁定、自动降级或待复核；`trusted=false` 直到无未决题且 review 生命周期批准。
 5. 不允许静默降级到纯文本链后假装已经完成看图。
+
+离线决策编译器必须把以下情况推导为 `review_required`：证据链缺 crop、binding 不稳、Track 结果冲突、Track C blocking finding、高风险视觉题、低置信或 review 生命周期未批准。
 
 ## 5. 高风险视觉题
 

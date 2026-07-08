@@ -58,7 +58,7 @@
 - 本地优先的答案交付工作站。
 - subject-pack、snapshot、compiled spec、eval 的资产治理。
 - 高风险视觉题可降级、可复核、可回放。
-- 视觉证据契约层和 fail-closed 样例已落盘。
+- 视觉证据契约层、显式 Track A 网关探针、最小离线 `DecisionRecord` 编译器和 fail-closed 样例已落盘。
 
 ### 终局目标
 
@@ -86,7 +86,7 @@
 
 - `AnswerGenerationRequest / AnswerGenerationResult`。
 - 原题输入归一化入口。
-- `ProblemEvidenceBundle / TrackResult / DecisionRecord` 的运行时读写。
+- `ProblemEvidenceBundle / TrackResult / DecisionRecord` 的运行时读写；当前只完成显式视觉探针和离线决策编译，尚未接入默认主答题流程。
 - WPF review 队列的最小可用闭环。
 
 ### P2：双轨视觉运行时
