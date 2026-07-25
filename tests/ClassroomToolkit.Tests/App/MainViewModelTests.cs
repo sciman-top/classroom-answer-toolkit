@@ -34,12 +34,19 @@ public sealed class MainViewModelTests
         viewModel.LastDeliveryProfile.Should().Be("classroom");
         viewModel.LastDeliverySnapshotPath.Should().Be(@"D:\repo\.snapshot-cache\resolved-snapshot.math.json");
         viewModel.LastDeliverySnapshotVersion.Should().Be("v0.1");
+        viewModel.LastReviewLifecycleState.Should().Be("ready_for_review");
+        viewModel.LastVisualReviewStatus.Should().Be("未裁定");
+        viewModel.LastTrustStatus.Should().Be("未可信");
+        viewModel.LastVisualDecisionPath.Should().Be(@"D:\repo\review\decision-001.json");
         viewModel.StatusMessage.Should().Be("答案交付完成");
         orchestrator.LastRequest.Should().NotBeNull();
         orchestrator.LastRequest!.SubjectPack.Should().Be("math-answer");
 
         viewModel.OpenLastOutputPdfCommand.Execute(null);
         pathOpener.LastOpenedPath.Should().Be(@"D:\repo\样例交付\sample-answer.pdf");
+
+        viewModel.OpenLastVisualDecisionCommand.Execute(null);
+        pathOpener.LastOpenedPath.Should().Be(@"D:\repo\review\decision-001.json");
 
         viewModel.ExportDiagnosticsCommand.Execute(null);
         viewModel.LastDiagnosticsBundlePath.Should().Be(@"D:\repo\artifacts\diagnostics\bundle-001");
@@ -124,7 +131,13 @@ public sealed class MainViewModelTests
                 request.SubjectPack ?? "math-answer",
                 request.Profile,
                 @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
-                "v0.1");
+                "v0.1")
+            {
+                ReviewLifecycleState = "ready_for_review",
+                VisualDecisionPath = @"D:\repo\review\decision-001.json",
+                VisualReviewPassed = null,
+                Trusted = false
+            };
 
             return Task.FromResult<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)>((execution, delivery));
         }

@@ -135,7 +135,13 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 subjectPack,
                 deliveryContext.Profile ?? request.Profile,
                 deliveryContext.SnapshotPath ?? string.Empty,
-                deliveryContext.SnapshotVersion));
+                deliveryContext.SnapshotVersion)
+            {
+                ReviewLifecycleState = deliveryContext.ReviewLifecycleState,
+                VisualDecisionPath = deliveryContext.VisualDecisionPath,
+                VisualReviewPassed = deliveryContext.VisualReviewPassed,
+                Trusted = deliveryContext.Trusted
+            });
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(
@@ -206,33 +212,125 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         return builder.ToString().TrimEnd();
     }
 
-    private static (string? SnapshotId, string? Profile, string? SnapshotPath, string? SnapshotVersion) ReadDeliveryContext(string deliveryManifestPath)
+    private static DeliveryContext ReadDeliveryContext(string deliveryManifestPath)
     {
         if (!File.Exists(deliveryManifestPath))
         {
-            return (null, null, null, null);
+            return DeliveryContext.Empty;
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(deliveryManifestPath));
         var root = document.RootElement;
 
-        var profile = root.TryGetProperty("profile", out var profileElement)
-            ? profileElement.GetString()
-            : null;
-        var snapshotPath = root.TryGetProperty("snapshotPath", out var snapshotPathElement)
-            ? snapshotPathElement.GetString()
-            : null;
+        var profile = ReadOptionalString(root, "profile");
+        var snapshotPath = ReadOptionalString(root, "snapshotPath");
         var snapshotVersion = root.TryGetProperty("snapshot", out var snapshotElement)
+            && snapshotElement.ValueKind == JsonValueKind.Object
             && snapshotElement.TryGetProperty("version", out var snapshotVersionElement)
+            && snapshotVersionElement.ValueKind == JsonValueKind.String
                 ? snapshotVersionElement.GetString()
                 : null;
+        var snapshotId = root.TryGetProperty("snapshot", out var snapshotIdContainer)
+            && snapshotIdContainer.ValueKind == JsonValueKind.Object
+            && snapshotIdContainer.TryGetProperty("id", out var snapshotIdElement)
+            && snapshotIdElement.ValueKind == JsonValueKind.String
+                ? snapshotIdElement.GetString()
+                : null;
 
-        if (root.TryGetProperty("snapshot", out var snapshotIdContainer)
-            && snapshotIdContainer.TryGetProperty("id", out var snapshotIdElement))
+        var reviewExists = root.TryGetProperty("review", out var reviewElement)
+            && reviewElement.ValueKind == JsonValueKind.Object;
+        var lifecycleState = reviewExists
+            && reviewElement.TryGetProperty("lifecycle", out var lifecycleElement)
+            && lifecycleElement.ValueKind == JsonValueKind.Object
+                ? ReadOptionalString(lifecycleElement, "state")
+                : null;
+        var visualDecisionRef = reviewExists
+            ? ReadOptionalString(reviewElement, "visualDecisionRef")
+            : null;
+        var visualDecisionPath = ResolveManifestRelativePath(visualDecisionRef, deliveryManifestPath);
+
+        var statusExists = root.TryGetProperty("status", out var statusElement)
+            && statusElement.ValueKind == JsonValueKind.Object;
+        var visualReviewPassed = statusExists
+            ? ReadNullableBoolean(statusElement, "visualReviewPassed")
+            : null;
+        var trusted = statusExists
+            && statusElement.TryGetProperty("trusted", out var trustedElement)
+            && trustedElement.ValueKind == JsonValueKind.True;
+
+        return new DeliveryContext(
+            snapshotId,
+            profile,
+            snapshotPath,
+            snapshotVersion,
+            lifecycleState,
+            visualDecisionPath,
+            visualReviewPassed,
+            trusted);
+    }
+
+    private static string? ReadOptionalString(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var valueElement)
+            && valueElement.ValueKind == JsonValueKind.String
+                ? valueElement.GetString()
+                : null;
+    }
+
+    private static bool? ReadNullableBoolean(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var valueElement))
         {
-            return (snapshotIdElement.GetString(), profile, snapshotPath, snapshotVersion);
+            return null;
         }
 
-        return (null, profile, snapshotPath, snapshotVersion);
+        return valueElement.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            _ => null
+        };
+    }
+
+    private static string? ResolveManifestRelativePath(string? pathValue, string deliveryManifestPath)
+    {
+        if (string.IsNullOrWhiteSpace(pathValue))
+        {
+            return null;
+        }
+
+        if (!string.Equals(Path.GetExtension(pathValue), ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (Path.IsPathFullyQualified(pathValue))
+        {
+            return pathValue;
+        }
+
+        var manifestDirectory = Path.GetDirectoryName(deliveryManifestPath) ?? string.Empty;
+        return Path.GetFullPath(Path.Combine(manifestDirectory, pathValue));
+    }
+
+    private sealed record DeliveryContext(
+        string? SnapshotId,
+        string? Profile,
+        string? SnapshotPath,
+        string? SnapshotVersion,
+        string? ReviewLifecycleState,
+        string? VisualDecisionPath,
+        bool? VisualReviewPassed,
+        bool Trusted)
+    {
+        public static DeliveryContext Empty { get; } = new(
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false);
     }
 }

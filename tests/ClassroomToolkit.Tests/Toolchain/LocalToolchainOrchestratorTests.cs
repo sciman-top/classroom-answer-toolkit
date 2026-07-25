@@ -60,6 +60,39 @@ public sealed class LocalToolchainOrchestratorTests
         delivery.Profile.Should().Be("classroom");
         delivery.SnapshotPath.Should().Be("D:\\repo\\.snapshot-cache\\resolved-snapshot.json");
         delivery.SnapshotVersion.Should().Be("v11.1");
+        delivery.ReviewLifecycleState.Should().Be("ready_for_review");
+        delivery.VisualDecisionPath.Should().Be(Path.Combine(workspace.Root, "review", "decision-001.json"));
+        delivery.VisualReviewPassed.Should().BeNull();
+        delivery.Trusted.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RunDeliverAsync_RejectsNonJsonVisualDecisionReference()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("junior-physics-answer", "v11.1");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
+        workspace.WriteSupportFiles();
+        workspace.WriteAnswerMarkdown();
+
+        var resolver = new RepositoryRootResolver(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(
+            resolver,
+            new FakeDeliverProcessRunner("review/decision-001.exe"));
+
+        var (_, delivery) = await orchestrator.RunDeliverAsync(
+            new AnswerDeliveryRequest(
+                workspace.AnswerMarkdownPath,
+                null,
+                "classroom",
+                KeepReviewArtifacts: true,
+                SubjectPack: "junior-physics-answer"));
+
+        delivery.Should().NotBeNull();
+        delivery!.VisualDecisionPath.Should().BeNull();
+        delivery.Trusted.Should().BeFalse();
     }
 
     [Fact]
@@ -132,6 +165,13 @@ public sealed class LocalToolchainOrchestratorTests
 
     private sealed class FakeDeliverProcessRunner : IProcessRunner
     {
+        private readonly string _visualDecisionRef;
+
+        public FakeDeliverProcessRunner(string visualDecisionRef = "review/decision-001.json")
+        {
+            _visualDecisionRef = visualDecisionRef;
+        }
+
         public Task<ProcessRunResult> RunAsync(
             string fileName,
             IReadOnlyList<string> arguments,
@@ -167,7 +207,21 @@ public sealed class LocalToolchainOrchestratorTests
                     {
                         outputDir = "D:\\repo\\.pdf-review\\sample-answer",
                         manifestPath = "D:\\repo\\.pdf-review\\sample-answer\\manifest.json",
-                        scale = "2"
+                        scale = "2",
+                        lifecycle = new
+                        {
+                            state = "ready_for_review",
+                            updatedAt = "2026-06-18T00:00:00Z"
+                        },
+                        visualDecisionRef = _visualDecisionRef
+                    },
+                    status = new
+                    {
+                        toolchainPassed = true,
+                        deliveryComplete = true,
+                        reviewArtifactReady = true,
+                        visualReviewPassed = (bool?)null,
+                        trusted = false
                     }
                 };
 

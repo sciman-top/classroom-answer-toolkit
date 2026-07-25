@@ -33,8 +33,9 @@
 - `tools/ai-gateway/vision-request.mjs`：显式 Track A 视觉探针，返回并校验 `TrackResult`。
 - `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
 - `eval/visual-evidence/`：保存双轨一致但证据链缺失、不安全捷径绕过 grounding 仍 fail-closed 的回归样例。
+- WPF 交付入口：一次答案交付后只读投影 delivery manifest 的 `review.lifecycle / visualDecisionRef / visualReviewPassed / trusted`，并允许打开 JSON 决策证据；缺失状态保持 `visualReviewPassed=null / trusted=false`。
 
-该闭环证明 `TrackResult -> DecisionRecord` 的合同可以运行，但不等于局部高清 crop、OCR/layout 抽取、WPF review 队列或默认主答题流程已经产品化。
+该闭环证明 `TrackResult -> DecisionRecord` 合同和最新交付状态投影可以运行，但不等于局部高清 crop、OCR/layout 抽取、WPF review 队列、审批回写或默认主答题流程已经产品化。
 
 ### QQ 重链路可移植映射
 

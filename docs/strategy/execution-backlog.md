@@ -228,6 +228,16 @@
 - blocks: REVIEW-001
 - done_definition: 真值问题不会被误推进优化队列
 
+### task_id: REVIEW-003
+
+- goal: 将最新交付的 review/trust 状态以只读方式投影到 WPF
+- inputs: `delivery-manifest.review`、`delivery-manifest.status`、既有 WPF 答案交付入口
+- changes: `AnswerDeliveryResult` 增量承载 `review.lifecycle / visualDecisionRef / visualReviewPassed / trusted`，WPF 展示 fail-closed 状态并只允许打开 JSON 决策证据
+- verification: orchestrator 与 MainViewModel 聚焦测试、WPF build、headless smoke、完整项目门禁
+- rollback: 回滚本任务对 Domain / Services / ViewModel / XAML / tests / strategy / evidence 的修改
+- blocks: REVIEW-001, VISION-005
+- done_definition: 一次交付后 WPF 可展示最新 review/trust 投影；缺失状态保持未裁定和未可信，且不宣称完整 review 队列或默认主答题流程已经接入
+
 ## Epic EVAL：分桶指标与 gate
 
 ### task_id: EVAL-001

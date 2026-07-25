@@ -121,6 +121,18 @@ public partial class MainViewModel : ObservableObject
     private string lastDeliverySnapshotVersion = string.Empty;
 
     [ObservableProperty]
+    private string lastReviewLifecycleState = string.Empty;
+
+    [ObservableProperty]
+    private string lastVisualReviewStatus = string.Empty;
+
+    [ObservableProperty]
+    private string lastTrustStatus = string.Empty;
+
+    [ObservableProperty]
+    private string lastVisualDecisionPath = string.Empty;
+
+    [ObservableProperty]
     private string lastDiagnosticsBundlePath = string.Empty;
 
     [ObservableProperty]
@@ -203,6 +215,15 @@ public partial class MainViewModel : ObservableObject
                 LastDeliveryProfile = delivery.Profile;
                 LastDeliverySnapshotPath = delivery.SnapshotPath;
                 LastDeliverySnapshotVersion = delivery.SnapshotVersion ?? string.Empty;
+                LastReviewLifecycleState = delivery.ReviewLifecycleState ?? "unknown";
+                LastVisualReviewStatus = delivery.VisualReviewPassed switch
+                {
+                    true => "通过",
+                    false => "未通过",
+                    null => "未裁定"
+                };
+                LastTrustStatus = delivery.Trusted ? "可信" : "未可信";
+                LastVisualDecisionPath = delivery.VisualDecisionPath ?? string.Empty;
 
                 AppendLine(string.Empty);
                 AppendLine("交付产物:");
@@ -214,6 +235,10 @@ public partial class MainViewModel : ObservableObject
                 AppendLine($"- Snapshot: {delivery.SnapshotId ?? "未知"}");
                 AppendLine($"- Snapshot Path: {delivery.SnapshotPath}");
                 AppendLine($"- Snapshot Version: {delivery.SnapshotVersion ?? "未知"}");
+                AppendLine($"- Review Lifecycle: {LastReviewLifecycleState}");
+                AppendLine($"- Visual Review: {LastVisualReviewStatus}");
+                AppendLine($"- Trusted: {LastTrustStatus}");
+                AppendLine($"- Visual Decision: {(string.IsNullOrWhiteSpace(LastVisualDecisionPath) ? "未关联" : LastVisualDecisionPath)}");
             }
 
             StatusMessage = execution.Succeeded ? "答案交付完成" : "答案交付失败";
@@ -248,6 +273,12 @@ public partial class MainViewModel : ObservableObject
     private void OpenLastReviewDirectory()
     {
         OpenPath(LastReviewDirectoryPath);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void OpenLastVisualDecision()
+    {
+        OpenPath(LastVisualDecisionPath);
     }
 
     [RelayCommand(CanExecute = nameof(CanRunActions))]
