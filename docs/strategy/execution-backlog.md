@@ -238,6 +238,16 @@
 - blocks: REVIEW-001, VISION-005
 - done_definition: 一次交付后 WPF 可展示最新 review/trust 投影；缺失状态保持未裁定和未可信，且不宣称完整 review 队列或默认主答题流程已经接入
 
+### task_id: REVIEW-004
+
+- goal: 建立本地 `DecisionRecord -> delivery manifest -> WPF refresh` 受控附着闭环
+- inputs: `decision-record.schema.json`、`delivery-manifest.schema.json`、REVIEW-003 最新交付状态投影
+- changes: `tools/visual-evidence` 校验决策与 manifest、把直接前像刷新到 rollback backup 并原子更新决策引用和 fail-closed 状态；题目级决策禁止正向 trust 提升；.NET orchestrator 调用工具、重读 manifest 并验证后置条件；WPF 仅选择本地 JSON 并刷新状态
+- verification: Node 附着合同测试、orchestrator 与 MainViewModel 聚焦测试、原生 WPF UI Automation 观察、完整项目门禁
+- rollback: 回滚本任务对 visual-evidence / Domain / Application / Services / ViewModel / XAML / tests / strategy / evidence 的修改；已有 manifest 可用 `.before-visual-decision.json` 恢复
+- blocks: REVIEW-003, VISION-005
+- done_definition: WPF 能把已有本地 `DecisionRecord` 交给仓内工具校验和附着，并从更新后的 manifest 刷新 review/trust 投影；在 delivery snapshot 绑定和全题覆盖合同落地前不能提升为 trusted；WPF 不生成审批、不推进 lifecycle，且不宣称完整 review 队列或默认主答题流程已经接入
+
 ## Epic EVAL：分桶指标与 gate
 
 ### task_id: EVAL-001

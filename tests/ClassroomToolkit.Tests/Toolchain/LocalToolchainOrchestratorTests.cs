@@ -1,5 +1,7 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
 using ClassroomToolkit.Services.Toolchain;
@@ -151,6 +153,110 @@ public sealed class LocalToolchainOrchestratorTests
         delivery!.SnapshotId.Should().BeNull();
     }
 
+    [Fact]
+    public async Task AttachVisualDecisionAsync_InvokesAdapter_AndRefreshesManifestState()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        workspace.WriteDecisionRecord();
+        var processRunner = new FakeAttachmentProcessRunner();
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            processRunner);
+
+        var result = await orchestrator.AttachVisualDecisionAsync(
+            new VisualDecisionAttachmentRequest(
+                workspace.DeliveryManifestPath,
+                workspace.DecisionRecordPath));
+
+        result.Execution.Succeeded.Should().BeTrue();
+        result.Execution.Kind.Should().Be(ToolchainScriptKind.AttachVisualDecision);
+        processRunner.LastArguments.Should().ContainInOrder(
+            "--prefix",
+            Path.Combine(workspace.Root, "tools", "visual-evidence"),
+            "run",
+            "attach:decision",
+            "--",
+            "--manifest",
+            workspace.DeliveryManifestPath,
+            "--decision",
+            workspace.DecisionRecordPath);
+        result.Delivery.Should().NotBeNull();
+        result.Delivery!.VisualDecisionPath.Should().Be(workspace.DecisionRecordPath);
+        result.Delivery.VisualReviewPassed.Should().BeFalse();
+        result.Delivery.Trusted.Should().BeFalse();
+        result.Delivery.ReviewLifecycleState.Should().Be("ready_for_review");
+    }
+
+    [Fact]
+    public async Task AttachVisualDecisionAsync_ReturnsNoDelivery_WhenAdapterFails()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        workspace.WriteDecisionRecord();
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new FailingAttachmentProcessRunner());
+
+        var result = await orchestrator.AttachVisualDecisionAsync(
+            new VisualDecisionAttachmentRequest(
+                workspace.DeliveryManifestPath,
+                workspace.DecisionRecordPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(2);
+        result.Execution.Output.Should().Contain("subjectPack mismatch");
+        result.Delivery.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task AttachVisualDecisionAsync_RejectsNonJsonInput_BeforeStartingProcess()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        var invalidDecisionPath = Path.Combine(workspace.Root, "decision.txt");
+        File.WriteAllText(invalidDecisionPath, "{}");
+        var processRunner = new CapturingProcessRunner();
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            processRunner);
+
+        var result = await orchestrator.AttachVisualDecisionAsync(
+            new VisualDecisionAttachmentRequest(
+                workspace.DeliveryManifestPath,
+                invalidDecisionPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.Output.Should().Contain("must be a JSON file");
+        result.Delivery.Should().BeNull();
+        processRunner.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AttachVisualDecisionAsync_Fails_WhenProcessDoesNotAttachRequestedDecision()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        workspace.WriteDecisionRecord();
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new CapturingProcessRunner());
+
+        var result = await orchestrator.AttachVisualDecisionAsync(
+            new VisualDecisionAttachmentRequest(
+                workspace.DeliveryManifestPath,
+                workspace.DecisionRecordPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(-2);
+        result.Execution.Output.Should().Contain("does not reference the requested DecisionRecord");
+        result.Delivery.Should().BeNull();
+    }
+
     private sealed class FakeProcessRunner : IProcessRunner
     {
         public Task<ProcessRunResult> RunAsync(
@@ -266,6 +372,55 @@ public sealed class LocalToolchainOrchestratorTests
         }
     }
 
+    private sealed class FakeAttachmentProcessRunner : IProcessRunner
+    {
+        public IReadOnlyList<string> LastArguments { get; private set; } = [];
+
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            LastArguments = arguments.ToArray();
+            var manifestPath = arguments[6];
+            var decisionPath = arguments[8];
+            var manifest = JsonNode.Parse(File.ReadAllText(manifestPath))!.AsObject();
+            manifest["review"]!["visualDecisionRef"] = decisionPath;
+            manifest["status"]!["visualReviewPassed"] = false;
+            manifest["status"]!["trusted"] = false;
+            File.WriteAllText(manifestPath, manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            return Task.FromResult(new ProcessRunResult(0, "{\"changed\":true}", string.Empty, TimeSpan.Zero));
+        }
+    }
+
+    private sealed class FailingAttachmentProcessRunner : IProcessRunner
+    {
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ProcessRunResult(2, string.Empty, "subjectPack mismatch", TimeSpan.Zero));
+        }
+    }
+
+    private sealed class CapturingProcessRunner : IProcessRunner
+    {
+        public int CallCount { get; private set; }
+
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));
+        }
+    }
+
     private sealed class LegacyTopLevelSnapshotIdProcessRunner : IProcessRunner
     {
         public Task<ProcessRunResult> RunAsync(
@@ -304,6 +459,10 @@ public sealed class LocalToolchainOrchestratorTests
         public string Root { get; }
 
         public string AnswerMarkdownPath => Path.Combine(Root, "sample-answer.md");
+
+        public string DeliveryManifestPath => Path.Combine(Root, "sample-answer.delivery-manifest.json");
+
+        public string DecisionRecordPath => Path.Combine(Root, "review", "decision.json");
 
         public void WriteRootSpec(string version)
         {
@@ -375,7 +534,7 @@ public sealed class LocalToolchainOrchestratorTests
 
         public void WriteDeliveryManifest(string snapshotId)
         {
-            WriteJson(Path.Combine(Root, "sample-answer.delivery-manifest.json"), new
+            WriteJson(DeliveryManifestPath, new
             {
                 schemaVersion = "1.0",
                 kind = "delivery-manifest",
@@ -396,7 +555,36 @@ public sealed class LocalToolchainOrchestratorTests
                 {
                     outputDir = Path.Combine(Root, ".pdf-review", "sample-answer"),
                     manifestPath = Path.Combine(Root, ".pdf-review", "sample-answer", "manifest.json"),
-                    scale = "2"
+                    scale = "2",
+                    lifecycle = new
+                    {
+                        state = "ready_for_review",
+                        updatedAt = "2026-07-25T00:00:00Z"
+                    },
+                    feedbackRefs = Array.Empty<string>()
+                },
+                status = new
+                {
+                    toolchainPassed = true,
+                    deliveryComplete = true,
+                    reviewArtifactReady = true,
+                    visualReviewPassed = (bool?)null,
+                    trusted = false
+                }
+            });
+        }
+
+        public void WriteDecisionRecord()
+        {
+            WriteJson(DecisionRecordPath, new
+            {
+                schemaVersion = "1.0",
+                kind = "decision-record",
+                subjectPack = "junior-physics-answer",
+                statusProjection = new
+                {
+                    visualReviewPassed = false,
+                    trusted = false
                 }
             });
         }

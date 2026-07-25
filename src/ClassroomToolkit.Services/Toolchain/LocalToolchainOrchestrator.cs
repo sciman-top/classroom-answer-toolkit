@@ -144,6 +144,103 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             });
     }
 
+    public async Task<VisualDecisionAttachmentResult> AttachVisualDecisionAsync(
+        VisualDecisionAttachmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var repositoryRoot = GetWorkspaceInfo().RepositoryRoot;
+        var toolPath = Path.Combine(repositoryRoot, "tools", "visual-evidence", "attach-decision.mjs");
+        var manifestPath = Path.GetFullPath(request.DeliveryManifestPath);
+        var decisionPath = Path.GetFullPath(request.DecisionRecordPath);
+        var startedAt = DateTimeOffset.Now;
+
+        var validationError = ValidateJsonInput(manifestPath, "Delivery manifest")
+            ?? ValidateJsonInput(decisionPath, "DecisionRecord");
+        if (validationError is not null)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachVisualDecision,
+                toolPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                validationError);
+            return new VisualDecisionAttachmentResult(failed, null);
+        }
+
+        var processResult = await _processRunner.RunAsync(
+            "npm",
+            [
+                "--prefix",
+                Path.Combine(repositoryRoot, "tools", "visual-evidence"),
+                "run",
+                "attach:decision",
+                "--",
+                "--manifest",
+                manifestPath,
+                "--decision",
+                decisionPath
+            ],
+            repositoryRoot,
+            cancellationToken);
+
+        var finishedAt = DateTimeOffset.Now;
+        var output = BuildOutput(processResult.StandardOutput, processResult.StandardError);
+        var execution = processResult.ExitCode == 0
+            ? ToolchainExecutionResult.Success(
+                ToolchainScriptKind.AttachVisualDecision,
+                toolPath,
+                startedAt,
+                finishedAt,
+                output)
+            : ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachVisualDecision,
+                toolPath,
+                processResult.ExitCode,
+                startedAt,
+                finishedAt,
+                output);
+
+        if (!execution.Succeeded)
+        {
+            return new VisualDecisionAttachmentResult(execution, null);
+        }
+
+        try
+        {
+            var delivery = ReadDeliveryResult(manifestPath);
+            var projection = ReadDecisionProjection(decisionPath);
+            var postconditionError = ValidateAttachmentPostcondition(delivery, decisionPath, projection);
+            if (postconditionError is null)
+            {
+                return new VisualDecisionAttachmentResult(execution, delivery);
+            }
+
+            var failedOutput = string.IsNullOrWhiteSpace(output)
+                ? postconditionError
+                : $"{output}{Environment.NewLine}{Environment.NewLine}[postcondition]{Environment.NewLine}{postconditionError}";
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachVisualDecision,
+                toolPath,
+                -2,
+                startedAt,
+                finishedAt,
+                failedOutput);
+            return new VisualDecisionAttachmentResult(failed, null);
+        }
+        catch (Exception ex)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachVisualDecision,
+                toolPath,
+                -2,
+                startedAt,
+                finishedAt,
+                $"Attachment postcondition validation failed: {ex.Message}");
+            return new VisualDecisionAttachmentResult(failed, null);
+        }
+    }
+
     private async Task<ToolchainExecutionResult> RunScriptAsync(
         ToolchainScriptKind kind,
         string scriptPath,
@@ -212,6 +309,106 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         return builder.ToString().TrimEnd();
     }
 
+    private static string? ValidateJsonInput(string filePath, string label)
+    {
+        if (!string.Equals(Path.GetExtension(filePath), ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{label} must be a JSON file: {filePath}";
+        }
+
+        return File.Exists(filePath) ? null : $"{label} not found: {filePath}";
+    }
+
+    private static DecisionProjection ReadDecisionProjection(string decisionPath)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(decisionPath));
+        var root = document.RootElement;
+        if (!root.TryGetProperty("statusProjection", out var projection)
+            || projection.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException("DecisionRecord.statusProjection is missing.");
+        }
+
+        return new DecisionProjection(
+            ReadNullableBoolean(projection, "visualReviewPassed"),
+            projection.TryGetProperty("trusted", out var trustedElement)
+                && trustedElement.ValueKind == JsonValueKind.True);
+    }
+
+    private static string? ValidateAttachmentPostcondition(
+        AnswerDeliveryResult? delivery,
+        string decisionPath,
+        DecisionProjection projection)
+    {
+        if (delivery is null)
+        {
+            return "Updated delivery manifest could not be projected.";
+        }
+
+        if (delivery.VisualDecisionPath is null
+            || !string.Equals(
+                Path.GetFullPath(delivery.VisualDecisionPath),
+                Path.GetFullPath(decisionPath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Updated delivery manifest does not reference the requested DecisionRecord.";
+        }
+
+        if (delivery.VisualReviewPassed != projection.VisualReviewPassed
+            || delivery.Trusted != projection.Trusted)
+        {
+            return "Updated delivery manifest status does not match DecisionRecord.statusProjection.";
+        }
+
+        return null;
+    }
+
+    private static AnswerDeliveryResult? ReadDeliveryResult(string deliveryManifestPath)
+    {
+        if (!File.Exists(deliveryManifestPath))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(File.ReadAllText(deliveryManifestPath));
+        var root = document.RootElement;
+        var deliveryContext = ReadDeliveryContext(root, deliveryManifestPath);
+        var inputPath = ResolveManifestPath(ReadOptionalString(root, "input"), deliveryManifestPath);
+        var outputPath = ResolveManifestPath(ReadOptionalString(root, "output"), deliveryManifestPath);
+        var subjectPack = ReadOptionalString(root, "subjectPack");
+        var profile = deliveryContext.Profile;
+        var reviewDirectoryPath = root.TryGetProperty("review", out var reviewElement)
+            && reviewElement.ValueKind == JsonValueKind.Object
+                ? ResolveManifestPath(ReadOptionalString(reviewElement, "outputDir"), deliveryManifestPath)
+                : null;
+
+        if (inputPath is null
+            || outputPath is null
+            || subjectPack is null
+            || profile is null
+            || reviewDirectoryPath is null)
+        {
+            return null;
+        }
+
+        return new AnswerDeliveryResult(
+            inputPath,
+            outputPath,
+            deliveryManifestPath,
+            reviewDirectoryPath,
+            deliveryContext.SnapshotId,
+            subjectPack,
+            profile,
+            deliveryContext.SnapshotPath ?? string.Empty,
+            deliveryContext.SnapshotVersion)
+        {
+            ReviewLifecycleState = deliveryContext.ReviewLifecycleState,
+            VisualDecisionPath = deliveryContext.VisualDecisionPath,
+            VisualReviewPassed = deliveryContext.VisualReviewPassed,
+            Trusted = deliveryContext.Trusted
+        };
+    }
+
     private static DeliveryContext ReadDeliveryContext(string deliveryManifestPath)
     {
         if (!File.Exists(deliveryManifestPath))
@@ -220,8 +417,11 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(deliveryManifestPath));
-        var root = document.RootElement;
+        return ReadDeliveryContext(document.RootElement, deliveryManifestPath);
+    }
 
+    private static DeliveryContext ReadDeliveryContext(JsonElement root, string deliveryManifestPath)
+    {
         var profile = ReadOptionalString(root, "profile");
         var snapshotPath = ReadOptionalString(root, "snapshotPath");
         var snapshotVersion = root.TryGetProperty("snapshot", out var snapshotElement)
@@ -304,6 +504,16 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             return null;
         }
 
+        return ResolveManifestPath(pathValue, deliveryManifestPath);
+    }
+
+    private static string? ResolveManifestPath(string? pathValue, string deliveryManifestPath)
+    {
+        if (string.IsNullOrWhiteSpace(pathValue))
+        {
+            return null;
+        }
+
         if (Path.IsPathFullyQualified(pathValue))
         {
             return pathValue;
@@ -333,4 +543,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             null,
             false);
     }
+
+    private sealed record DecisionProjection(bool? VisualReviewPassed, bool Trusted);
 }

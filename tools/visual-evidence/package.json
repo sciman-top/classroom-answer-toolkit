@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "compile:decision": "node decision-record.mjs",
-    "test:decision": "node --test decision-record.test.mjs"
+    "attach:decision": "node attach-decision.mjs",
+    "test:decision": "node --test *.test.mjs"
   }
 }

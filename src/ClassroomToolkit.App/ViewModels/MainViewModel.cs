@@ -100,6 +100,7 @@ public partial class MainViewModel : ObservableObject
     private string lastOutputPdfPath = string.Empty;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
     private string lastDeliveryManifestPath = string.Empty;
 
     [ObservableProperty]
@@ -149,11 +150,17 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
     [NotifyCanExecuteChangedFor(nameof(BrowseAnswerMarkdownCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
     private bool isBusy;
 
     private bool CanRunActions() => !IsBusy;
 
     private bool CanDeliver() => !IsBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
+
+    private bool CanAttachVisualDecision()
+    {
+        return !IsBusy && File.Exists(LastDeliveryManifestPath);
+    }
 
     [RelayCommand(CanExecute = nameof(CanRunActions))]
     private void BrowseAnswerMarkdown()
@@ -207,23 +214,7 @@ public partial class MainViewModel : ObservableObject
 
             if (delivery is not null)
             {
-                LastOutputPdfPath = delivery.OutputPdfPath;
-                LastDeliveryManifestPath = delivery.DeliveryManifestPath;
-                LastReviewDirectoryPath = delivery.ReviewDirectoryPath;
-                LastSnapshotId = delivery.SnapshotId ?? string.Empty;
-                LastDeliverySubjectPack = delivery.SubjectPack;
-                LastDeliveryProfile = delivery.Profile;
-                LastDeliverySnapshotPath = delivery.SnapshotPath;
-                LastDeliverySnapshotVersion = delivery.SnapshotVersion ?? string.Empty;
-                LastReviewLifecycleState = delivery.ReviewLifecycleState ?? "unknown";
-                LastVisualReviewStatus = delivery.VisualReviewPassed switch
-                {
-                    true => "通过",
-                    false => "未通过",
-                    null => "未裁定"
-                };
-                LastTrustStatus = delivery.Trusted ? "可信" : "未可信";
-                LastVisualDecisionPath = delivery.VisualDecisionPath ?? string.Empty;
+                ApplyDeliveryState(delivery);
 
                 AppendLine(string.Empty);
                 AppendLine("交付产物:");
@@ -249,6 +240,60 @@ public partial class MainViewModel : ObservableObject
         {
             AppendLine(ex.Message);
             StatusMessage = "答案交付异常";
+            LastResultSummary = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanAttachVisualDecision))]
+    private async Task AttachVisualDecisionAsync(string? decisionPath)
+    {
+        if (string.IsNullOrWhiteSpace(decisionPath))
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择 DecisionRecord",
+                Filter = "JSON 文件 (*.json)|*.json",
+                InitialDirectory = Directory.Exists(LastReviewDirectoryPath)
+                    ? LastReviewDirectoryPath
+                    : Path.GetDirectoryName(LastDeliveryManifestPath)
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            decisionPath = dialog.FileName;
+        }
+
+        IsBusy = true;
+        StatusMessage = "关联视觉决策中...";
+        AppendSectionTitle("关联视觉决策");
+
+        try
+        {
+            var result = await _toolchainOrchestrator.AttachVisualDecisionAsync(
+                new VisualDecisionAttachmentRequest(LastDeliveryManifestPath, decisionPath));
+            AppendExecution("关联视觉决策", result.Execution);
+
+            if (result.Delivery is not null)
+            {
+                ApplyDeliveryState(result.Delivery);
+            }
+
+            StatusMessage = result.Execution.Succeeded && result.Delivery is not null
+                ? "视觉决策已关联"
+                : "视觉决策关联失败";
+            LastResultSummary = $"关联视觉决策 | 退出码 {result.Execution.ExitCode} | {result.Execution.Duration.TotalSeconds:0.0}s";
+        }
+        catch (Exception ex)
+        {
+            AppendLine(ex.Message);
+            StatusMessage = "视觉决策关联异常";
             LastResultSummary = ex.Message;
         }
         finally
@@ -418,6 +463,27 @@ public partial class MainViewModel : ObservableObject
                 AppendLine($"- {issue}");
             }
         }
+    }
+
+    private void ApplyDeliveryState(AnswerDeliveryResult delivery)
+    {
+        LastOutputPdfPath = delivery.OutputPdfPath;
+        LastDeliveryManifestPath = delivery.DeliveryManifestPath;
+        LastReviewDirectoryPath = delivery.ReviewDirectoryPath;
+        LastSnapshotId = delivery.SnapshotId ?? string.Empty;
+        LastDeliverySubjectPack = delivery.SubjectPack;
+        LastDeliveryProfile = delivery.Profile;
+        LastDeliverySnapshotPath = delivery.SnapshotPath;
+        LastDeliverySnapshotVersion = delivery.SnapshotVersion ?? string.Empty;
+        LastReviewLifecycleState = delivery.ReviewLifecycleState ?? "unknown";
+        LastVisualReviewStatus = delivery.VisualReviewPassed switch
+        {
+            true => "通过",
+            false => "未通过",
+            null => "未裁定"
+        };
+        LastTrustStatus = delivery.Trusted ? "可信" : "未可信";
+        LastVisualDecisionPath = delivery.VisualDecisionPath ?? string.Empty;
     }
 
     private void AppendExecution(string title, ToolchainExecutionResult result)

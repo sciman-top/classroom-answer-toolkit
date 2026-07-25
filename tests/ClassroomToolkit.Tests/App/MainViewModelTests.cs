@@ -69,9 +69,45 @@ public sealed class MainViewModelTests
         viewModel.AvailableSubjectPacks.Should().ContainInOrder("math-answer", "junior-physics-answer");
     }
 
+    [Fact]
+    public async Task AttachVisualDecisionAsync_RefreshesReviewAndTrustProjection()
+    {
+        var manifestPath = Path.Combine(Path.GetTempPath(), $"delivery-{Guid.NewGuid():N}.json");
+        var decisionPath = Path.Combine(Path.GetTempPath(), $"decision-{Guid.NewGuid():N}.json");
+        File.WriteAllText(manifestPath, "{}");
+        File.WriteAllText(decisionPath, "{}");
+        try
+        {
+            var orchestrator = new FakeToolchainOrchestrator();
+            var viewModel = new MainViewModel(
+                orchestrator,
+                new FakePathOpener(),
+                new FakeDiagnosticsExporter())
+            {
+                LastDeliveryManifestPath = manifestPath
+            };
+
+            await viewModel.AttachVisualDecisionCommand.ExecuteAsync(decisionPath);
+
+            orchestrator.LastAttachmentRequest.Should().Be(
+                new VisualDecisionAttachmentRequest(manifestPath, decisionPath));
+            viewModel.LastVisualDecisionPath.Should().Be(decisionPath);
+            viewModel.LastVisualReviewStatus.Should().Be("未通过");
+            viewModel.LastTrustStatus.Should().Be("未可信");
+            viewModel.StatusMessage.Should().Be("视觉决策已关联");
+        }
+        finally
+        {
+            File.Delete(manifestPath);
+            File.Delete(decisionPath);
+        }
+    }
+
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator
     {
         public AnswerDeliveryRequest? LastRequest { get; private set; }
+
+        public VisualDecisionAttachmentRequest? LastAttachmentRequest { get; private set; }
 
         public ToolchainWorkspaceInfo GetWorkspaceInfo()
         {
@@ -140,6 +176,33 @@ public sealed class MainViewModelTests
             };
 
             return Task.FromResult<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)>((execution, delivery));
+        }
+
+        public Task<VisualDecisionAttachmentResult> AttachVisualDecisionAsync(
+            VisualDecisionAttachmentRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            LastAttachmentRequest = request;
+            var execution = Success(
+                ToolchainScriptKind.AttachVisualDecision,
+                @"D:\repo\tools\visual-evidence\attach-decision.mjs");
+            var delivery = new AnswerDeliveryResult(
+                @"D:\repo\样例交付\sample-answer.md",
+                @"D:\repo\样例交付\sample-answer.pdf",
+                request.DeliveryManifestPath,
+                @"D:\repo\.pdf-review\sample-answer",
+                "snapshot-test",
+                "math-answer",
+                "classroom",
+                @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
+                "v0.1")
+            {
+                ReviewLifecycleState = "ready_for_review",
+                VisualDecisionPath = request.DecisionRecordPath,
+                VisualReviewPassed = false,
+                Trusted = false
+            };
+            return Task.FromResult(new VisualDecisionAttachmentResult(execution, delivery));
         }
 
         private static ToolchainExecutionResult Success(ToolchainScriptKind kind, string scriptPath)

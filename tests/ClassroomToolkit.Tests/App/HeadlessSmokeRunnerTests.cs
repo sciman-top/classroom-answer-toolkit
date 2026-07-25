@@ -234,6 +234,13 @@ public sealed class HeadlessSmokeRunnerTests
         {
             throw new NotSupportedException();
         }
+
+        public Task<VisualDecisionAttachmentResult> AttachVisualDecisionAsync(
+            VisualDecisionAttachmentRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
     }
 
     private sealed class FakeDiagnosticsExporter : IWorkspaceDiagnosticsExporter

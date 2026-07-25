@@ -16,4 +16,8 @@ public interface IToolchainOrchestrator
     Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
         AnswerDeliveryRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<VisualDecisionAttachmentResult> AttachVisualDecisionAsync(
+        VisualDecisionAttachmentRequest request,
+        CancellationToken cancellationToken = default);
 }
