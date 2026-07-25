@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
@@ -58,6 +58,22 @@ function resolveManifestRelativePath(filePath, manifestDir) {
 
 function readJsonWithBom(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/u, ""));
+}
+
+function isFile(filePath) {
+  try {
+    return fs.statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function isDirectory(filePath) {
+  try {
+    return fs.statSync(filePath).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 function addPlacementFieldMismatchErrors(errors, item, placement, itemIndex) {
@@ -126,12 +142,12 @@ function validateReviewMetadata(errors, manifest, manifestDir) {
     : null;
 
   if (status.reviewArtifactReady === true) {
-    if (!reviewOutputDir || !fs.existsSync(reviewOutputDir)) {
-      errors.push("status.reviewArtifactReady cannot be true unless review.outputDir exists.");
+    if (!reviewOutputDir || !isDirectory(reviewOutputDir)) {
+      errors.push("status.reviewArtifactReady cannot be true unless review.outputDir is a directory.");
     }
 
-    if (!reviewManifestPath || !fs.existsSync(reviewManifestPath)) {
-      errors.push("status.reviewArtifactReady cannot be true unless review.manifestPath exists.");
+    if (!reviewManifestPath || !isFile(reviewManifestPath)) {
+      errors.push("status.reviewArtifactReady cannot be true unless review.manifestPath is a file.");
     }
   }
 
@@ -226,27 +242,13 @@ function validateReferencedSnapshot(errors, manifest, manifestDir) {
   }
 }
 
-function main() {
-  const options = parseArgs(process.argv.slice(2));
-  if (options.help) {
-    console.log(`Usage: node validate-delivery-manifest.mjs --manifest <delivery-manifest.json> [--schema <schema.json>]`);
-    process.exit(0);
-  }
-
-  if (!options.manifest) {
-    fail("Missing required --manifest argument.");
-  }
-
-  const callerCwd = process.env.INIT_CWD || process.cwd();
-  const manifestPath = path.resolve(callerCwd, options.manifest);
-  const manifestDir = path.dirname(manifestPath);
-  const schemaPath = path.resolve(callerCwd, options.schema);
-
-  if (!fs.existsSync(manifestPath)) {
-    fail(`Delivery manifest not found: ${manifestPath}`);
-  }
-
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+export function validateDeliveryManifest(
+  manifest,
+  manifestPath,
+  schemaPath = defaultSchemaPath
+) {
+  const resolvedManifestPath = path.resolve(manifestPath);
+  const manifestDir = path.dirname(resolvedManifestPath);
   const errors = validateValueAgainstSchema(manifest, schemaPath);
 
   if (manifest.kind !== "delivery-manifest") {
@@ -281,6 +283,14 @@ function main() {
 
   if (typeof manifest.output === "string" && !manifest.output.toLowerCase().endsWith(".pdf")) {
     errors.push("output should point to a PDF file.");
+  }
+  if (manifest.status?.deliveryComplete === true) {
+    const outputPath = typeof manifest.output === "string" && manifest.output.trim().length > 0
+      ? resolveManifestRelativePath(manifest.output, manifestDir)
+      : null;
+    if (!outputPath || !isFile(outputPath)) {
+      errors.push("status.deliveryComplete cannot be true unless output is a file.");
+    }
   }
 
   validateOcrMetadata(errors, manifest.ocr);
@@ -363,6 +373,30 @@ function main() {
     errors.push("status.trusted cannot be true unless status.visualReviewPassed is true.");
   }
 
+  return errors;
+}
+
+function main() {
+  const options = parseArgs(process.argv.slice(2));
+  if (options.help) {
+    console.log(`Usage: node validate-delivery-manifest.mjs --manifest <delivery-manifest.json> [--schema <schema.json>]`);
+    process.exit(0);
+  }
+
+  if (!options.manifest) {
+    fail("Missing required --manifest argument.");
+  }
+
+  const callerCwd = process.env.INIT_CWD || process.cwd();
+  const manifestPath = path.resolve(callerCwd, options.manifest);
+  const schemaPath = path.resolve(callerCwd, options.schema);
+
+  if (!fs.existsSync(manifestPath)) {
+    fail(`Delivery manifest not found: ${manifestPath}`);
+  }
+
+  const manifest = readJsonWithBom(manifestPath);
+  const errors = validateDeliveryManifest(manifest, manifestPath, schemaPath);
   if (errors.length > 0) {
     fail(`Delivery manifest validation failed for ${manifestPath}:\n${errors.map((error) => `- ${error}`).join("\n")}`, 1);
   }
@@ -370,4 +404,6 @@ function main() {
   console.log(`Validated delivery manifest: ${manifestPath}`);
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

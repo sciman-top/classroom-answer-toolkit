@@ -22,6 +22,8 @@ function collectValidationTargets() {
   const problemEvidenceBundleSchema = resolveRepoPath("prompts/shared/schemas/problem-evidence-bundle.schema.json");
   const trackResultSchema = resolveRepoPath("prompts/shared/schemas/track-result.schema.json");
   const decisionRecordSchema = resolveRepoPath("prompts/shared/schemas/decision-record.schema.json");
+  const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
+  const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const visualInputBundleSchema = resolveRepoPath("prompts/shared/schemas/visual-input-bundle.schema.json");
   const groundingSnapshotSchema = resolveRepoPath("prompts/shared/schemas/grounding-snapshot.schema.json");
   const solutionSnapshotSchema = resolveRepoPath("prompts/shared/schemas/solution-snapshot.schema.json");
@@ -33,6 +35,8 @@ function collectValidationTargets() {
     problemEvidenceBundleSchema,
     trackResultSchema,
     decisionRecordSchema,
+    deliveryQuestionCoverageSchema,
+    deliveryDecisionAggregateSchema,
     visualInputBundleSchema,
     groundingSnapshotSchema,
     solutionSnapshotSchema,
@@ -65,6 +69,10 @@ function collectValidationTargets() {
       .map((filePath) => ({ filePath, schemaPath: trackResultSchema })),
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".decision-record.json")
       .map((filePath) => ({ filePath, schemaPath: decisionRecordSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".delivery-question-coverage.json")
+      .map((filePath) => ({ filePath, schemaPath: deliveryQuestionCoverageSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".delivery-decision-aggregate.json")
+      .map((filePath) => ({ filePath, schemaPath: deliveryDecisionAggregateSchema })),
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".visual-input-bundle.json")
       .map((filePath) => ({ filePath, schemaPath: visualInputBundleSchema })),
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".grounding-snapshot.json")

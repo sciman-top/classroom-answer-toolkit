@@ -1,0 +1,38 @@
+{
+  "snapshotId": "snapshot-delivery-aggregate-fixture",
+  "generatedAt": "2026-07-25T00:00:00Z",
+  "layers": {
+    "platformCore": "v1.0",
+    "subjectPack": "v0.1"
+  },
+  "subjectPack": {
+    "schemaVersion": "1.0",
+    "assetId": "math-answer",
+    "displayName": "Synthetic Math Aggregate Fixture",
+    "version": "v0.1",
+    "status": "experimental",
+    "locale": "zh-CN",
+    "kind": "subject-pack",
+    "sourceOfTruth": {}
+  },
+  "activeProfile": {
+    "name": "classroom"
+  },
+  "rules": [],
+  "profiles": {
+    "classroom": {
+      "name": "classroom"
+    }
+  },
+  "toolchain": {
+    "compiler": "synthetic-fixture"
+  },
+  "inputRefs": {
+    "subjectManifest": "synthetic-manifest.json",
+    "subjectConfig": "synthetic-config.json"
+  },
+  "meta": {
+    "ruleCount": 0,
+    "profileCount": 1
+  }
+}

@@ -172,6 +172,16 @@
 - blocks: VISION-003
 - done_definition: 双轨一致但证据缺失的样例可由运行时代码推导为 `review_required`、`trusted=false`，且视觉 live 探针只作为 gateway verified 边界，不升级为 workflow integrated
 
+### task_id: VISION-006
+
+- goal: 建立交付题目覆盖证明与 delivery-level DecisionRecord 聚合合同
+- inputs: `sample-package.expectedQuestionRefs`、delivery manifest、snapshot/input bytes、题目级 DecisionRecord
+- changes: 新增 `DeliveryQuestionCoverage / DeliveryDecisionAggregate` schema、SHA-256 delivery binding、离线聚合编译器、合成完整覆盖 fixture 和 fail-closed 测试；纳入 `validate:assets` 与 `check-toolchain`
+- verification: visual-evidence aggregate 聚焦测试、静态 fixture 确定性重编译、cross-subject contract、完整项目门禁
+- rollback: 删除两个 schema、aggregate 工具/fixture/测试，回滚 DecisionRecord/ProblemEvidenceBundle 可选 binding、validator/hotspot 和 strategy/evidence 修改
+- blocks: VISION-005, SAMPLE-001
+- done_definition: 对 schema-valid sample-package inventory，仓内可证明 snapshot/input/manifest bytes 与逐题 DecisionRecord 的完整覆盖并生成离线 aggregate；不修改 delivery manifest，不开放 WPF 正向 trust，不宣称真实试卷 inventory 或 live acceptance 已完成
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001
@@ -246,7 +256,7 @@
 - verification: Node 附着合同测试、orchestrator 与 MainViewModel 聚焦测试、原生 WPF UI Automation 观察、完整项目门禁
 - rollback: 回滚本任务对 visual-evidence / Domain / Application / Services / ViewModel / XAML / tests / strategy / evidence 的修改；已有 manifest 可用 `.before-visual-decision.json` 恢复
 - blocks: REVIEW-003, VISION-005
-- done_definition: WPF 能把已有本地 `DecisionRecord` 交给仓内工具校验和附着，并从更新后的 manifest 刷新 review/trust 投影；在 delivery snapshot 绑定和全题覆盖合同落地前不能提升为 trusted；WPF 不生成审批、不推进 lifecycle，且不宣称完整 review 队列或默认主答题流程已经接入
+- done_definition: WPF 能把已有本地题目级 `DecisionRecord` 交给仓内工具校验和附着，并从更新后的 manifest 刷新 review/trust 投影；该入口不接受 delivery aggregate，不能提升为 trusted；WPF 不生成审批、不推进 lifecycle，且不宣称完整 review 队列或默认主答题流程已经接入
 
 ## Epic EVAL：分桶指标与 gate
 

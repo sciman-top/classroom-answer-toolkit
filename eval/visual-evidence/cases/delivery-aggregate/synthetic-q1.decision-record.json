@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "decision-record",
+  "decisionId": "decision-delivery-aggregate-q1",
+  "subjectPack": "math-answer",
+  "questionRef": "Q1",
+  "normalizedQuestionRef": "math-answer:delivery-aggregate:Q1",
+  "deliveryBinding": {
+    "snapshotId": "snapshot-delivery-aggregate-fixture",
+    "snapshotSha256": "2f434653196c670a0f39013de4e8bb87a93a8c3f219401f3a1bca816114b772e",
+    "inputSha256": "30c3da982ef8d82b5837a387479cb09e9c299dc7e49dc8c6525246349469094a",
+    "manifestSha256": "a398d25f2fd61ddaa158f1fdb55c9e36fe21094f800191a094380dde0a1392b6"
+  },
+  "evidenceBundleRef": "evidence-delivery-aggregate-q1",
+  "trackResultRefs": [
+    "track-delivery-aggregate-q1"
+  ],
+  "decision": "accept",
+  "answer": "Synthetic answer one.",
+  "trusted": true,
+  "visualReviewPassed": true,
+  "reviewRequired": false,
+  "reviewQueue": "none",
+  "risk": {
+    "level": "low",
+    "categories": []
+  },
+  "decisionReasons": [
+    "evidence_chain_complete",
+    "human_approved"
+  ],
+  "conflictRefs": [],
+  "feedbackRefs": [],
+  "statusProjection": {
+    "visualReviewPassed": true,
+    "trusted": true
+  },
+  "generatedAt": "2026-07-25T00:00:00Z"
+}

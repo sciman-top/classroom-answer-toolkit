@@ -63,6 +63,11 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:decision
 } "Visual evidence decision contract tests failed."
 
+Write-Host "visual evidence delivery aggregate contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-evidence run test:aggregate
+} "Visual evidence delivery aggregate contract tests failed."
+
 $subjectPacks = Get-SubjectPackMetadata -RepositoryRoot $repoRoot
 if ($subjectPacks.Count -eq 0) {
     throw "No subject pack manifests were found under prompts/."

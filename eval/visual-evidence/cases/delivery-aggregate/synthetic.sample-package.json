@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "sample-package",
+  "sampleId": "delivery-aggregate-fixture",
+  "subjectPack": "math-answer",
+  "dataClassification": {
+    "level": "internal",
+    "containsPersonalData": false,
+    "cloudEgressAllowed": false,
+    "notes": "Synthetic and de-identified contract fixture."
+  },
+  "expectedQuestionRefs": [
+    "Q1",
+    "Q2"
+  ],
+  "artifacts": [
+    {
+      "artifactId": "synthetic-delivery-input",
+      "role": "reference_truth",
+      "path": "synthetic-input.md",
+      "mediaType": "text/markdown",
+      "sourceType": "markdown",
+      "parseMode": "native"
+    }
+  ]
+}

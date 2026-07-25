@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "delivery-decision-aggregate",
+  "aggregateId": "delivery-aggregate-df878ca8bdb30049",
+  "subjectPack": "math-answer",
+  "deliveryBinding": {
+    "snapshotId": "snapshot-delivery-aggregate-fixture",
+    "snapshotSha256": "2f434653196c670a0f39013de4e8bb87a93a8c3f219401f3a1bca816114b772e",
+    "inputSha256": "30c3da982ef8d82b5837a387479cb09e9c299dc7e49dc8c6525246349469094a",
+    "manifestSha256": "a398d25f2fd61ddaa158f1fdb55c9e36fe21094f800191a094380dde0a1392b6"
+  },
+  "coverageRef": "synthetic.delivery-question-coverage.json",
+  "coverageSha256": "c7492254c74f8b7a8e4e1260049fcc15fbfa0fe08a4d866fc8bb41a66599b9d1",
+  "decisionRecords": [
+    {
+      "questionRef": "Q1",
+      "decisionRecordRef": "synthetic-q1.decision-record.json",
+      "decisionRecordSha256": "69c4b5ac73b421b7c929da3f5b4c0e4e8213b8900bd749048001ca47dd940adc"
+    },
+    {
+      "questionRef": "Q2",
+      "decisionRecordRef": "synthetic-q2.decision-record.json",
+      "decisionRecordSha256": "d9a425f34d6aadd2359603019d7905facbab6b0f82f06233056179e253ad7f28"
+    }
+  ],
+  "summary": {
+    "expectedCount": 2,
+    "decidedCount": 2,
+    "acceptedCount": 2,
+    "unresolvedCount": 0,
+    "unresolvedQuestionRefs": []
+  },
+  "decision": "accept",
+  "trusted": true,
+  "visualReviewPassed": true,
+  "reviewRequired": false,
+  "reviewQueue": "none",
+  "decisionReasons": [
+    "delivery_binding_verified",
+    "coverage_complete",
+    "all_questions_accepted",
+    "manifest_gates_passed",
+    "review_lifecycle_approved"
+  ],
+  "statusProjection": {
+    "visualReviewPassed": true,
+    "trusted": true
+  },
+  "generatedAt": "2026-07-25T00:00:00Z"
+}

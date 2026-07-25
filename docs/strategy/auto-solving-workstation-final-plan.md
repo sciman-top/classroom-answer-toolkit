@@ -60,7 +60,7 @@
 - 本地优先的答案交付工作站。
 - subject-pack、snapshot、compiled spec、eval 的资产治理。
 - 高风险视觉题可降级、可复核、可回放。
-- 视觉证据契约层、显式 Track A 网关探针、最小离线 `DecisionRecord` 编译器、fail-closed 样例，以及受控的 `DecisionRecord -> delivery manifest -> WPF refresh` 路径已落盘。
+- 视觉证据契约层、显式 Track A 网关探针、最小离线 `DecisionRecord` 编译器、交付级 coverage/aggregate 合成合同、fail-closed 样例，以及受控的 `DecisionRecord -> delivery manifest -> WPF refresh` 路径已落盘。
 - QQ 重链路经验已移植为阶段 schema、`stageArtifactRefs`、不安全捷径 fixture 和验收分层文档。
 
 ### 终局目标

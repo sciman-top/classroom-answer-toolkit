@@ -33,6 +33,22 @@
     "subQuestionId": { "type": "string" },
     "questionRef": { "type": "string" },
     "normalizedQuestionRef": { "type": "string" },
+    "deliveryBinding": {
+      "type": "object",
+      "required": [
+        "snapshotId",
+        "snapshotSha256",
+        "inputSha256",
+        "manifestSha256"
+      ],
+      "properties": {
+        "snapshotId": { "type": "string" },
+        "snapshotSha256": { "type": "string" },
+        "inputSha256": { "type": "string" },
+        "manifestSha256": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "normalizedPageRefs": {
       "type": "array",
       "items": { "type": "string" }

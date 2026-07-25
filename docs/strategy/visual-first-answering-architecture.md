@@ -20,6 +20,8 @@
 - `ProblemEvidenceBundle`：聚合每个小问的 `questionRef -> figureRef -> cropRef -> evidenceRef` 链，不复制既有视觉对象。
 - `TrackResult`：记录 Track A / B / C 的候选答案、证据、冲突、缺失证据、置信度和风险。
 - `DecisionRecord`：记录最终是否可放行、是否标疑、是否进入 review 队列，并投影到 `visualReviewPassed` 与 `trusted`。
+- `DeliveryQuestionCoverage`：把 delivery snapshot/input/manifest bytes 绑定到 `sample-package.expectedQuestionRefs` 题目 inventory。
+- `DeliveryDecisionAggregate`：聚合覆盖集合内逐题 DecisionRecord，重算缺题、未决题、门禁和 lifecycle，形成交付级状态投影候选。
 
 ### 既有视觉真值对象
 
@@ -33,6 +35,7 @@
 - `tools/ai-gateway/vision-request.mjs`：显式 Track A 视觉探针，返回并校验 `TrackResult`。
 - `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
 - `tools/visual-evidence/attach-decision.mjs`：校验本地 `DecisionRecord` 与 delivery manifest，把本次写入的直接前像原子刷新到 rollback backup 后，再原子附着 `visualDecisionRef / visualReviewPassed / trusted`；不生成审批、不推进 lifecycle。
+- `tools/visual-evidence/delivery-decision-aggregate.mjs`：基于原始 bytes SHA-256、snapshot/input/manifest、sample-package inventory 和逐题 DecisionRecord 编译交付级 aggregate；只生成离线证据，不修改 manifest。
 - `eval/visual-evidence/`：保存双轨一致但证据链缺失、不安全捷径绕过 grounding 仍 fail-closed 的回归样例。
 - WPF 交付入口：一次答案交付后投影 delivery manifest 的 `review.lifecycle / visualDecisionRef / visualReviewPassed / trusted`，并允许选择本地 JSON 决策证据交给上述工具附着；成功后从 manifest 重读状态，缺失状态保持 `visualReviewPassed=null / trusted=false`。
 
@@ -76,7 +79,8 @@
 3. 双轨一致也不能直接可信，因为可能一致同错；必须同时检查证据链、风险分类、置信度和哨兵样例表现。
 4. `visualReviewPassed=null` 表示未裁定、自动降级或待复核；`trusted=false` 直到无未决题且 review 生命周期批准。
 5. 不允许静默降级到纯文本链后假装已经完成看图。
-6. 当前题目级 `DecisionRecord` 尚无 delivery snapshot 绑定与全题覆盖证明，因此本地附着入口只能维持或降低信任，不能投影 `visualReviewPassed=true / trusted=true`；可信提升必须等待交付级聚合合同。
+6. 当前本地附着入口只接受题目级 `DecisionRecord`，不能把离线 aggregate 的覆盖证明投影到 manifest，因此只能维持或降低信任；可信提升必须等待 aggregate 附着、直接前像回滚和后置条件合同。
+7. 离线 aggregate 只有在 inventory 非空且唯一、逐题 DecisionRecord 无缺失/额外/重复、无阻断原因、manifest 三门禁通过且 lifecycle 为 `approved/published` 时才可生成 `trusted=true`。当前 aggregate 尚未接入 attach/WPF，不能据此宣称真实交付已提升信任。
 
 离线决策编译器必须把以下情况推导为 `review_required`：证据链缺 crop、binding 不稳、Track 结果冲突、Track C blocking finding、高风险视觉题、低置信或 review 生命周期未批准。
 

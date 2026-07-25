@@ -288,8 +288,17 @@ P1 样例集默认人工拆分题面/答案：
 - `ProblemEvidenceBundle`
 - `TrackResult`
 - `DecisionRecord`
+- `DeliveryQuestionCoverage`
+- `DeliveryDecisionAggregate`
 
 `ProblemEvidenceBundle` 只引用既有视觉 schema 的 id，不复制、不替代。
+
+### 交付级聚合绑定
+
+- `deliveryBinding` 固定绑定 `snapshotId / snapshotSha256 / inputSha256 / manifestSha256`，哈希基于同一次读取的原始 bytes。
+- `DeliveryQuestionCoverage.expectedQuestionRefs` 必须与 schema-valid `sample-package.expectedQuestionRefs` 完全一致，不允许从答案 Markdown 猜题号。
+- `DeliveryDecisionAggregate` 必须对 expected refs、逐题 DecisionRecord refs 和缺失/额外/重复项重新计数。
+- 正向 `trusted=true` 只表示对已绑定 inventory 的完整覆盖；在真实原题 inventory 生成和 review 回写接入前，不等于 workflow integrated 或 live accepted。
 
 ### 证据链
 

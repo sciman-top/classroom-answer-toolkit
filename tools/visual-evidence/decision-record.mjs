@@ -99,6 +99,7 @@ export function compileDecisionRecord(options) {
     subQuestionId: evidenceBundle.subQuestionId,
     questionRef: evidenceBundle.questionRef,
     normalizedQuestionRef: evidenceBundle.normalizedQuestionRef,
+    deliveryBinding: evidenceBundle.deliveryBinding,
     evidenceBundleRef: evidenceBundle.evidenceBundleId,
     trackResultRefs: trackResults.map((trackResult) => trackResult.trackResultId),
     decision,

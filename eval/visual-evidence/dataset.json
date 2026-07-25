@@ -47,6 +47,22 @@
         "grounding_insufficient",
         "acceptance_tier_unverified"
       ]
+    },
+    {
+      "id": "delivery-aggregate-complete-synthetic",
+      "subjectPack": "math-answer",
+      "riskCategory": "delivery_coverage",
+      "questionInventory": "cases/delivery-aggregate/synthetic.sample-package.json",
+      "coverage": "cases/delivery-aggregate/synthetic.delivery-question-coverage.json",
+      "decisionRecords": [
+        "cases/delivery-aggregate/synthetic-q1.decision-record.json",
+        "cases/delivery-aggregate/synthetic-q2.decision-record.json"
+      ],
+      "aggregate": "cases/delivery-aggregate/synthetic.delivery-decision-aggregate.json",
+      "expectedTrusted": true,
+      "expectedReviewRequired": false,
+      "expectedVisualReviewPassed": true,
+      "boundary": "contract_fixture_only_not_manifest_attached"
     }
   ]
 }

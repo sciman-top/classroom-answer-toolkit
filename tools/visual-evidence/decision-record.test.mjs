@@ -89,3 +89,26 @@ test("compileDecisionRecord does not project visualReviewPassed when human appro
   assert.ok(decisionRecord.decisionReasons.includes("acceptance_tier_unverified"));
   assert.deepEqual(validateDecisionRecord(decisionRecord), []);
 });
+
+test("compileDecisionRecord carries delivery binding from the evidence bundle", () => {
+  const evidenceBundle = readCaseJson("unsafe-shortcut-grounding-missing.problem-evidence-bundle.json");
+  evidenceBundle.deliveryBinding = {
+    snapshotId: "snapshot-binding-test",
+    snapshotSha256: "a".repeat(64),
+    inputSha256: "b".repeat(64),
+    manifestSha256: "c".repeat(64)
+  };
+  const trackResults = [
+    readCaseJson("unsafe-shortcut-grounding-missing.track-a.json"),
+    readCaseJson("unsafe-shortcut-grounding-missing.track-c.json")
+  ];
+
+  const decisionRecord = compileDecisionRecord({
+    evidenceBundle,
+    trackResults,
+    generatedAt: "2026-07-25T00:00:00Z"
+  });
+
+  assert.deepEqual(decisionRecord.deliveryBinding, evidenceBundle.deliveryBinding);
+  assert.deepEqual(validateDecisionRecord(decisionRecord), []);
+});

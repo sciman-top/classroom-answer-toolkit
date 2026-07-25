@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-07-25T00:00:00Z",
+  "subjectPack": "math-answer",
+  "snapshotId": "snapshot-delivery-aggregate-fixture",
+  "snapshotPath": "synthetic.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-delivery-aggregate-fixture",
+    "version": "v0.1",
+    "profile": "classroom"
+  },
+  "profile": "classroom",
+  "input": "synthetic-input.md",
+  "output": "synthetic-output.pdf",
+  "review": {
+    "outputDir": "synthetic-review",
+    "manifestPath": "synthetic-review/manifest.json",
+    "scale": "2",
+    "lifecycle": {
+      "state": "approved",
+      "updatedAt": "2026-07-25T00:00:00Z"
+    },
+    "feedbackRefs": []
+  },
+  "ocr": {
+    "status": "not-requested"
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true,
+    "visualReviewPassed": null,
+    "trusted": false
+  }
+}

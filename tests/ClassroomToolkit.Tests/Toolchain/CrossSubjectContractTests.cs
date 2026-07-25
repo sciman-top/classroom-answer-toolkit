@@ -138,6 +138,8 @@ public sealed class CrossSubjectContractTests
             "problem-evidence-bundle.schema.json",
             "track-result.schema.json",
             "decision-record.schema.json",
+            "delivery-question-coverage.schema.json",
+            "delivery-decision-aggregate.schema.json",
             "visual-input-bundle.schema.json",
             "grounding-snapshot.schema.json",
             "solution-snapshot.schema.json",
@@ -190,6 +192,22 @@ public sealed class CrossSubjectContractTests
         decisionRecordText.Should().Contain("grounding_insufficient");
         decisionRecordText.Should().Contain("acceptance_tier_unverified");
         decisionRecordText.Should().Contain("strict_schema_downgraded");
+        decisionRecordText.Should().Contain("deliveryBinding");
+
+        using var deliveryQuestionCoverage = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(schemaRoot, "delivery-question-coverage.schema.json")));
+        var coverageText = deliveryQuestionCoverage.RootElement.ToString();
+        coverageText.Should().Contain("questionInventory");
+        coverageText.Should().Contain("expectedQuestionRefs");
+        coverageText.Should().Contain("manifestSha256");
+
+        using var deliveryDecisionAggregate = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(schemaRoot, "delivery-decision-aggregate.schema.json")));
+        var aggregateText = deliveryDecisionAggregate.RootElement.ToString();
+        aggregateText.Should().Contain("coverageSha256");
+        aggregateText.Should().Contain("decisionRecordSha256");
+        aggregateText.Should().Contain("unresolvedQuestionRefs");
+        aggregateText.Should().Contain("statusProjection");
 
         using var groundingSnapshot = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "grounding-snapshot.schema.json")));
         var groundingSnapshotText = groundingSnapshot.RootElement.ToString();

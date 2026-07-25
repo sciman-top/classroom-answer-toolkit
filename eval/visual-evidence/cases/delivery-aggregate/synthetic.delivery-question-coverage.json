@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "delivery-question-coverage",
+  "coverageId": "coverage-delivery-aggregate-fixture",
+  "subjectPack": "math-answer",
+  "deliveryBinding": {
+    "snapshotId": "snapshot-delivery-aggregate-fixture",
+    "snapshotSha256": "2f434653196c670a0f39013de4e8bb87a93a8c3f219401f3a1bca816114b772e",
+    "inputSha256": "30c3da982ef8d82b5837a387479cb09e9c299dc7e49dc8c6525246349469094a",
+    "manifestSha256": "a398d25f2fd61ddaa158f1fdb55c9e36fe21094f800191a094380dde0a1392b6"
+  },
+  "questionInventory": {
+    "ref": "synthetic.sample-package.json",
+    "sha256": "247ab5ed13489a4afff7a026ca54333850a20a91b4004af699c0f0b75071749c"
+  },
+  "expectedQuestionRefs": [
+    "Q1",
+    "Q2"
+  ],
+  "coverageComplete": true,
+  "generatedAt": "2026-07-25T00:00:00Z"
+}
