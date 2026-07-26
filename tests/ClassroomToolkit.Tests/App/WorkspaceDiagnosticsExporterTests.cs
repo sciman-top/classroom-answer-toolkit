@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;
@@ -109,6 +110,85 @@ public sealed class WorkspaceDiagnosticsExporterTests
         assets.Should().Contain(asset => asset.GetProperty("kind").GetString() == "latest-delivery-graphic-preview");
         assets.Should().Contain(asset => asset.GetProperty("kind").GetString() == "latest-delivery-graphic-index");
         assets.Length.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public void Export_ClampsAttachedAggregateTrust_UntilSourceAwareVerificationIsIntegrated()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteWorkspaceInputs();
+        workspace.WriteDeliveryArtifacts();
+        workspace.MarkDeliveryAggregateAttachedAsTrusted();
+
+        var exporter = new WorkspaceDiagnosticsExporter();
+        var result = exporter.Export(new WorkspaceDiagnosticsExportRequest(
+            workspace.Root,
+            new WorkspaceHealthReport(
+                "math-answer",
+                ["math-answer"],
+                "v11.2",
+                "v0.1",
+                SnapshotExists: true,
+                SnapshotPath: @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
+                SnapshotVersion: "v0.1",
+                SnapshotProfile: "classroom",
+                EvalExists: true,
+                EvalOk: true,
+                EvalCaseCount: 1,
+                GraphicsExists: false,
+                GraphicsSummary: null,
+                Summary: "workspace healthy",
+                Issues: Array.Empty<string>()),
+            workspace.OutputPdfPath,
+            workspace.DeliveryManifestPath,
+            workspace.ReviewDirectoryPath,
+            "snapshot-test"));
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
+        var status = manifest.RootElement
+            .GetProperty("lastDeliveryContext")
+            .GetProperty("status");
+
+        status.GetProperty("visualReviewPassed").ValueKind.Should().Be(JsonValueKind.Null);
+        status.GetProperty("trusted").GetBoolean().Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"malformed\"")]
+    [InlineData("[]")]
+    public void Export_ClampsMalformedAggregateAttachmentTrust(string attachmentJson)
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteWorkspaceInputs();
+        workspace.WriteDeliveryArtifacts();
+        workspace.MarkMalformedDeliveryAggregateAttachedAsTrusted(attachmentJson);
+
+        var exporter = new WorkspaceDiagnosticsExporter();
+        var result = exporter.Export(new WorkspaceDiagnosticsExportRequest(
+            workspace.Root,
+            new WorkspaceHealthReport(
+                "math-answer", ["math-answer"], "v11.2", "v0.1",
+                SnapshotExists: true,
+                SnapshotPath: @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
+                SnapshotVersion: "v0.1",
+                SnapshotProfile: "classroom",
+                EvalExists: true,
+                EvalOk: true,
+                EvalCaseCount: 1,
+                GraphicsExists: false,
+                GraphicsSummary: null,
+                Summary: "workspace healthy",
+                Issues: Array.Empty<string>()),
+            workspace.OutputPdfPath,
+            workspace.DeliveryManifestPath,
+            workspace.ReviewDirectoryPath,
+            "snapshot-test"));
+
+        using var manifest = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
+        var status = manifest.RootElement.GetProperty("lastDeliveryContext").GetProperty("status");
+        status.GetProperty("visualReviewPassed").ValueKind.Should().Be(JsonValueKind.Null);
+        status.GetProperty("trusted").GetBoolean().Should().BeFalse();
     }
 
     [Fact]
@@ -427,6 +507,34 @@ public sealed class WorkspaceDiagnosticsExporterTests
             });
             WriteFile(Path.Combine(ReviewDirectoryPath, "review.html"), "<html></html>");
             WriteFile(Path.Combine(ReviewDirectoryPath, "sample-answer.page-001.png"), "png");
+        }
+
+        public void MarkDeliveryAggregateAttachedAsTrusted()
+        {
+            var manifest = JsonNode.Parse(File.ReadAllText(DeliveryManifestPath))!.AsObject();
+            manifest["review"]!.AsObject()["deliveryDecisionAggregateAttachment"] = new JsonObject
+            {
+                ["attachmentId"] = "aggregate-attachment-001",
+                ["aggregateRef"] = Path.Combine(Root, "delivery-decision-aggregate.json"),
+                ["aggregateSha256"] = new string('a', 64),
+                ["manifestPreimageSha256"] = new string('b', 64),
+                ["preimageBackupRef"] = Path.Combine(Root, "delivery-manifest.preimage.json"),
+                ["receiptRef"] = Path.Combine(Root, "aggregate-attachment-receipt.json")
+            };
+            var status = manifest["status"]!.AsObject();
+            status["visualReviewPassed"] = true;
+            status["trusted"] = true;
+            File.WriteAllText(DeliveryManifestPath, manifest.ToJsonString(Indented));
+        }
+
+        public void MarkMalformedDeliveryAggregateAttachedAsTrusted(string attachmentJson)
+        {
+            var manifest = JsonNode.Parse(File.ReadAllText(DeliveryManifestPath))!.AsObject();
+            manifest["review"]!.AsObject()["deliveryDecisionAggregateAttachment"] = JsonNode.Parse(attachmentJson);
+            var status = manifest["status"]!.AsObject();
+            status["visualReviewPassed"] = true;
+            status["trusted"] = true;
+            File.WriteAllText(DeliveryManifestPath, manifest.ToJsonString(Indented));
         }
 
         public void WriteRelativeDeliveryGraphicArtifacts()

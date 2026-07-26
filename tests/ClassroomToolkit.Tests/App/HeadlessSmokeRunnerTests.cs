@@ -4,6 +4,7 @@ using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ClassroomToolkit.Tests.App;
 
@@ -182,6 +183,74 @@ public sealed class HeadlessSmokeRunnerTests
         result.LastDeliveryVisualPolicyVersion.Should().BeNull();
         result.LastDeliveryOptimizationVersion.Should().BeNull();
         result.LastDeliveryGraphicCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void Run_KeepsAggregateAttachmentFailClosed_UntilSourceAwareVerificationIsIntegrated()
+    {
+        using var root = new TemporaryDirectory();
+        var bundlePath = Path.Combine(root.Path, "artifacts", "diagnostics", "bundle-aggregate");
+        Directory.CreateDirectory(bundlePath);
+        var manifestPath = Path.Combine(bundlePath, "diagnostic-manifest.json");
+        File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
+        {
+            lastDeliveryContext = new
+            {
+                review = new
+                {
+                    deliveryDecisionAggregateAttachment = new { attachmentId = "attachment-test" }
+                },
+                status = new
+                {
+                    visualReviewPassed = true,
+                    trusted = true
+                }
+            }
+        }));
+
+        var runner = new HeadlessSmokeRunner(
+            new FakeToolchainOrchestrator(),
+            new FakeDiagnosticsExporter(bundlePath, manifestPath, 4));
+
+        var result = runner.Run();
+
+        result.LastDeliveryVisualReviewPassed.Should().BeNull();
+        result.LastDeliveryTrusted.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"malformed\"")]
+    [InlineData("[]")]
+    public void Run_KeepsMalformedAggregateAttachmentFailClosed(string attachmentJson)
+    {
+        using var root = new TemporaryDirectory();
+        var bundlePath = Path.Combine(root.Path, "artifacts", "diagnostics", "bundle-malformed-aggregate");
+        Directory.CreateDirectory(bundlePath);
+        var manifestPath = Path.Combine(bundlePath, "diagnostic-manifest.json");
+        var manifest = JsonNode.Parse("""
+            {
+              "lastDeliveryContext": {
+                "review": {},
+                "status": {
+                  "visualReviewPassed": true,
+                  "trusted": true
+                }
+              }
+            }
+            """)!.AsObject();
+        manifest["lastDeliveryContext"]!["review"]!["deliveryDecisionAggregateAttachment"] =
+            JsonNode.Parse(attachmentJson);
+        File.WriteAllText(manifestPath, manifest.ToJsonString());
+
+        var runner = new HeadlessSmokeRunner(
+            new FakeToolchainOrchestrator(),
+            new FakeDiagnosticsExporter(bundlePath, manifestPath, 1));
+
+        var result = runner.Run();
+
+        result.LastDeliveryVisualReviewPassed.Should().BeNull();
+        result.LastDeliveryTrusted.Should().BeFalse();
     }
 
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator

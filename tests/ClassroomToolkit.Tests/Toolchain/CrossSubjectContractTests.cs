@@ -140,6 +140,7 @@ public sealed class CrossSubjectContractTests
             "decision-record.schema.json",
             "delivery-question-coverage.schema.json",
             "delivery-decision-aggregate.schema.json",
+            "delivery-decision-aggregate-attachment-receipt.schema.json",
             "visual-input-bundle.schema.json",
             "grounding-snapshot.schema.json",
             "solution-snapshot.schema.json",
@@ -208,6 +209,13 @@ public sealed class CrossSubjectContractTests
         aggregateText.Should().Contain("decisionRecordSha256");
         aggregateText.Should().Contain("unresolvedQuestionRefs");
         aggregateText.Should().Contain("statusProjection");
+
+        using var aggregateAttachmentReceipt = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(schemaRoot, "delivery-decision-aggregate-attachment-receipt.schema.json")));
+        var receiptText = aggregateAttachmentReceipt.RootElement.ToString();
+        receiptText.Should().Contain("manifestPreimageSha256");
+        receiptText.Should().Contain("manifestResultSha256");
+        receiptText.Should().Contain("preimageBackupRef");
 
         using var groundingSnapshot = JsonDocument.Parse(File.ReadAllText(Path.Combine(schemaRoot, "grounding-snapshot.schema.json")));
         var groundingSnapshotText = groundingSnapshot.RootElement.ToString();

@@ -150,6 +150,8 @@ public sealed class HeadlessSmokeRunner : IHeadlessSmokeRunner
             && feedbackRefsElement.ValueKind == System.Text.Json.JsonValueKind.Array
                 ? feedbackRefsElement.GetArrayLength()
                 : 0;
+        var aggregateAttachmentRequiresVerification = reviewElementExists
+            && reviewElement.TryGetProperty("deliveryDecisionAggregateAttachment", out _);
 
         return (
             deliveryContextElement.TryGetProperty("subjectPack", out var subjectPackElement) ? subjectPackElement.GetString() : null,
@@ -173,8 +175,8 @@ public sealed class HeadlessSmokeRunner : IHeadlessSmokeRunner
             ReadNullableBoolean(statusElementExists, statusElement, "toolchainPassed"),
             ReadNullableBoolean(statusElementExists, statusElement, "deliveryComplete"),
             ReadNullableBoolean(statusElementExists, statusElement, "reviewArtifactReady"),
-            ReadNullableBoolean(statusElementExists, statusElement, "visualReviewPassed"),
-            ReadNullableBoolean(statusElementExists, statusElement, "trusted"),
+            aggregateAttachmentRequiresVerification ? null : ReadNullableBoolean(statusElementExists, statusElement, "visualReviewPassed"),
+            aggregateAttachmentRequiresVerification ? false : ReadNullableBoolean(statusElementExists, statusElement, "trusted"),
             ReadOptionalString(policyElementExists, policyElement, "visualPolicyVersion"),
             ReadOptionalString(policyElementExists, policyElement, "optimizationVersion"),
             graphicCount);

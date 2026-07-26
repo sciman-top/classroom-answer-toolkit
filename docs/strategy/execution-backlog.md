@@ -258,6 +258,16 @@
 - blocks: REVIEW-003, VISION-005
 - done_definition: WPF 能把已有本地题目级 `DecisionRecord` 交给仓内工具校验和附着，并从更新后的 manifest 刷新 review/trust 投影；该入口不接受 delivery aggregate，不能提升为 trusted；WPF 不生成审批、不推进 lifecycle，且不宣称完整 review 队列或默认主答题流程已经接入
 
+### task_id: REVIEW-005
+
+- goal: 建立 `DeliveryDecisionAggregate -> delivery manifest` 的受控附着与可重验 hash receipt
+- inputs: `DeliveryDecisionAggregate`、其原始 manifest preimage、delivery manifest review/status、attachment receipt
+- changes: 新增 aggregate attachment receipt schema 和本地 attach/verify 工具；附件前重算 aggregate 并要求 preimage bytes 匹配，两个 attach 共用 manifest 写锁，receipt 后替换前复核全源稳定快照，再原子替换 manifest；.NET 消费者在 source-aware verifier 接入前保持 fail-closed；不推进 lifecycle
+- verification: aggregate attachment 合同测试覆盖成功、幂等、preimage/source 漂移、receipt/backup 篡改、canonical/physical 双锁、hardlink alias 串行化、dangling symlink 拒绝、部分获取/action 异常/token 替换清理、stale-lock 保留；malformed attachment 的 .NET fail-closed 回归；assets/cross-subject/full gates
+- rollback: 用 `<manifest>.before-delivery-decision-aggregate.json` 恢复 preimage，并删除同名 attachment receipt；代码不自动回收 stale lock，仅在确认 owner PID 已死亡、没有 writer 活动且保存锁证据后人工清理 canonical/physical lock；回滚本任务 schema/tool/test/doc 修改
+- blocks: VISION-006, REVIEW-004
+- done_definition: 合成受控 aggregate 可把 trusted projection 写入 manifest，且后续 verifier 能从 manifest、receipt、backup、aggregate 及其绑定源重算稳定 hash chain；WPF/diagnostics/headless 在 source-aware verifier 接入前保持 fail-closed；不接入 WPF 正向附着、不生成审批、不推进 lifecycle、不宣称 workflow integrated 或 live acceptance
+
 ## Epic EVAL：分桶指标与 gate
 
 ### task_id: EVAL-001

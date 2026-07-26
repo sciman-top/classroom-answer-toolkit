@@ -181,6 +181,32 @@ function validateReviewMetadata(errors, manifest, manifestDir) {
     && (typeof review.visualDecisionRef !== "string" || review.visualDecisionRef.trim().length === 0)) {
     errors.push("review.visualDecisionRef must be a non-empty string when provided.");
   }
+
+  const attachment = review.deliveryDecisionAggregateAttachment;
+  if (attachment !== undefined) {
+    if (!attachment || typeof attachment !== "object" || Array.isArray(attachment)) {
+      errors.push("review.deliveryDecisionAggregateAttachment must be an object when provided.");
+      return;
+    }
+
+    for (const fieldName of ["attachmentId", "aggregateRef", "preimageBackupRef", "receiptRef"]) {
+      if (typeof attachment[fieldName] !== "string" || attachment[fieldName].trim().length === 0) {
+        errors.push(`review.deliveryDecisionAggregateAttachment.${fieldName} must be a non-empty string.`);
+      }
+    }
+    for (const fieldName of ["aggregateSha256", "manifestPreimageSha256"]) {
+      if (!isSha256(attachment[fieldName])) {
+        errors.push(`review.deliveryDecisionAggregateAttachment.${fieldName} must be a lowercase SHA-256 digest.`);
+      }
+    }
+    if (status.visualReviewPassed !== true || status.trusted !== true) {
+      errors.push("deliveryDecisionAggregateAttachment requires trusted visual review status.");
+    }
+  }
+}
+
+function isSha256(value) {
+  return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
 function validatePolicyMetadata(errors, manifest) {

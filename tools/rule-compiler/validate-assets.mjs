@@ -24,6 +24,7 @@ function collectValidationTargets() {
   const decisionRecordSchema = resolveRepoPath("prompts/shared/schemas/decision-record.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
+  const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
   const visualInputBundleSchema = resolveRepoPath("prompts/shared/schemas/visual-input-bundle.schema.json");
   const groundingSnapshotSchema = resolveRepoPath("prompts/shared/schemas/grounding-snapshot.schema.json");
   const solutionSnapshotSchema = resolveRepoPath("prompts/shared/schemas/solution-snapshot.schema.json");
@@ -37,6 +38,7 @@ function collectValidationTargets() {
     decisionRecordSchema,
     deliveryQuestionCoverageSchema,
     deliveryDecisionAggregateSchema,
+    deliveryDecisionAggregateAttachmentReceiptSchema,
     visualInputBundleSchema,
     groundingSnapshotSchema,
     solutionSnapshotSchema,
@@ -73,6 +75,8 @@ function collectValidationTargets() {
       .map((filePath) => ({ filePath, schemaPath: deliveryQuestionCoverageSchema })),
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".delivery-decision-aggregate.json")
       .map((filePath) => ({ filePath, schemaPath: deliveryDecisionAggregateSchema })),
+    ...listFilesBySuffixRecursive(visualEvidenceRoot, ".delivery-decision-aggregate-attachment-receipt.json")
+      .map((filePath) => ({ filePath, schemaPath: deliveryDecisionAggregateAttachmentReceiptSchema })),
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".visual-input-bundle.json")
       .map((filePath) => ({ filePath, schemaPath: visualInputBundleSchema })),
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".grounding-snapshot.json")

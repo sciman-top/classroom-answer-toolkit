@@ -68,7 +68,27 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "visualDecisionRef": { "type": "string" }
+        "visualDecisionRef": { "type": "string" },
+        "deliveryDecisionAggregateAttachment": {
+          "type": "object",
+          "required": [
+            "attachmentId",
+            "aggregateRef",
+            "aggregateSha256",
+            "manifestPreimageSha256",
+            "preimageBackupRef",
+            "receiptRef"
+          ],
+          "properties": {
+            "attachmentId": { "type": "string" },
+            "aggregateRef": { "type": "string" },
+            "aggregateSha256": { "type": "string" },
+            "manifestPreimageSha256": { "type": "string" },
+            "preimageBackupRef": { "type": "string" },
+            "receiptRef": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },

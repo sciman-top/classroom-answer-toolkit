@@ -448,13 +448,15 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             ? ReadOptionalString(reviewElement, "visualDecisionRef")
             : null;
         var visualDecisionPath = ResolveManifestRelativePath(visualDecisionRef, deliveryManifestPath);
+        var aggregateAttachmentRequiresVerification = reviewExists
+            && reviewElement.TryGetProperty("deliveryDecisionAggregateAttachment", out _);
 
         var statusExists = root.TryGetProperty("status", out var statusElement)
             && statusElement.ValueKind == JsonValueKind.Object;
-        var visualReviewPassed = statusExists
+        var visualReviewPassed = statusExists && !aggregateAttachmentRequiresVerification
             ? ReadNullableBoolean(statusElement, "visualReviewPassed")
             : null;
-        var trusted = statusExists
+        var trusted = statusExists && !aggregateAttachmentRequiresVerification
             && statusElement.TryGetProperty("trusted", out var trustedElement)
             && trustedElement.ValueKind == JsonValueKind.True;
 

@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 
 import { attachDecisionRecord } from "./attach-decision.mjs";
+import { manifestWriteLockPath } from "../manifest-write-lock.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "..", "..");
 const caseRoot = path.join(repoRoot, "eval", "visual-evidence", "cases");
@@ -200,6 +201,25 @@ test("attachDecisionRecord is idempotent for the same decision projection", () =
     assert.equal(secondResult.changed, false);
     assert.equal(fs.readFileSync(workspace.manifestPath, "utf8"), firstManifest);
     assert.equal(fs.readFileSync(firstResult.backupPath, "utf8"), firstBackup);
+  } finally {
+    workspace.dispose();
+  }
+});
+
+test("attachDecisionRecord uses the shared delivery manifest write lock", () => {
+  const workspace = createWorkspace();
+  const lockPath = manifestWriteLockPath(workspace.manifestPath);
+  try {
+    fs.writeFileSync(lockPath, "active writer\n", "utf8");
+
+    assert.throws(
+      () => attachDecisionRecord({
+        manifestPath: workspace.manifestPath,
+        decisionPath: workspace.decisionPath
+      }),
+      /manifest write lock is unavailable/
+    );
+    assert.equal(JSON.parse(fs.readFileSync(workspace.manifestPath, "utf8")).review.visualDecisionRef, undefined);
   } finally {
     workspace.dispose();
   }

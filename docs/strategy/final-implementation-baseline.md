@@ -300,6 +300,16 @@ P1 样例集默认人工拆分题面/答案：
 - `DeliveryDecisionAggregate` 必须对 expected refs、逐题 DecisionRecord refs 和缺失/额外/重复项重新计数。
 - 正向 `trusted=true` 只表示对已绑定 inventory 的完整覆盖；在真实原题 inventory 生成和 review 回写接入前，不等于 workflow integrated 或 live accepted。
 
+### Aggregate 附着 receipt
+
+- `DeliveryDecisionAggregate` 只能附着到其 `deliveryBinding.manifestSha256` 与当前 manifest 原始 bytes 完全一致的 preimage。
+- delivery manifest writer、`attach:decision` 与 `attach:aggregate` 必须同时获取 canonical path lock 和基于 `stat.dev/stat.ino` 的 physical identity lock；aggregate 附着在最终替换 manifest 前再次核对 manifest、aggregate、coverage、DecisionRecord、snapshot、input 和 inventory 的稳定 bytes 快照。
+- 写锁记录本机 PID、hostname、acquiredAt、canonical manifest path、physical identity 与随机 token；代码不得自动删除既有锁。stale/malformed/remote-owner 锁必须保留原 bytes，经人工确认 owner 已死亡、没有 writer 活动并保存审计副本后才能清理。
+- delivery manifest 文件自身不得是 symlink（包括 dangling symlink）；writer 必须 fail-closed。父目录别名由 canonical parent 归一，既有 hardlink 文件由 physical identity lock 串行化。
+- 附着工具在写入前原子保存 `<manifest>.before-delivery-decision-aggregate.json`，并将 aggregate ref/hash、preimage hash、backup ref 与 receipt ref 写入 `review.deliveryDecisionAggregateAttachment`。
+- `manifestResultSha256` 只记录在独立 receipt，避免 manifest 内的自引用哈希；verify 必须从当前 manifest、receipt、backup 和 aggregate 重算并交叉检查 hash chain。
+- 附着不推进 `review.lifecycle`，不生成审批；WPF/diagnostics/headless 未接 source-aware verifier 前，只要 attachment 属性存在（包括 malformed 值）就必须投影为 `visualReviewPassed=null / trusted=false`。
+
 ### 证据链
 
 每个视觉相关小问必须能追踪到：

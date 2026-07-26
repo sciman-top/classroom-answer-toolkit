@@ -22,6 +22,7 @@
 - `DecisionRecord`：记录最终是否可放行、是否标疑、是否进入 review 队列，并投影到 `visualReviewPassed` 与 `trusted`。
 - `DeliveryQuestionCoverage`：把 delivery snapshot/input/manifest bytes 绑定到 `sample-package.expectedQuestionRefs` 题目 inventory。
 - `DeliveryDecisionAggregate`：聚合覆盖集合内逐题 DecisionRecord，重算缺题、未决题、门禁和 lifecycle，形成交付级状态投影候选。
+- `DeliveryDecisionAggregateAttachmentReceipt`：记录 aggregate 附着的 manifest preimage/result hash、backup 与 aggregate 引用，避免把 result hash 自引用写入 manifest。
 
 ### 既有视觉真值对象
 
@@ -36,6 +37,7 @@
 - `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
 - `tools/visual-evidence/attach-decision.mjs`：校验本地 `DecisionRecord` 与 delivery manifest，把本次写入的直接前像原子刷新到 rollback backup 后，再原子附着 `visualDecisionRef / visualReviewPassed / trusted`；不生成审批、不推进 lifecycle。
 - `tools/visual-evidence/delivery-decision-aggregate.mjs`：基于原始 bytes SHA-256、snapshot/input/manifest、sample-package inventory 和逐题 DecisionRecord 编译交付级 aggregate；只生成离线证据，不修改 manifest。
+- `tools/visual-evidence/attach-delivery-decision-aggregate.mjs`：重验 aggregate 对应的 manifest preimage，在共享 manifest 写锁内固定全部绑定源的 bytes 快照，写 receipt 与 backup 后、最终替换前再次核对，再原子附着 delivery-level trust；不推进 lifecycle，未接 WPF。
 - `eval/visual-evidence/`：保存双轨一致但证据链缺失、不安全捷径绕过 grounding 仍 fail-closed 的回归样例。
 - WPF 交付入口：一次答案交付后投影 delivery manifest 的 `review.lifecycle / visualDecisionRef / visualReviewPassed / trusted`，并允许选择本地 JSON 决策证据交给上述工具附着；成功后从 manifest 重读状态，缺失状态保持 `visualReviewPassed=null / trusted=false`。
 
@@ -79,8 +81,8 @@
 3. 双轨一致也不能直接可信，因为可能一致同错；必须同时检查证据链、风险分类、置信度和哨兵样例表现。
 4. `visualReviewPassed=null` 表示未裁定、自动降级或待复核；`trusted=false` 直到无未决题且 review 生命周期批准。
 5. 不允许静默降级到纯文本链后假装已经完成看图。
-6. 当前本地附着入口只接受题目级 `DecisionRecord`，不能把离线 aggregate 的覆盖证明投影到 manifest，因此只能维持或降低信任；可信提升必须等待 aggregate 附着、直接前像回滚和后置条件合同。
-7. 离线 aggregate 只有在 inventory 非空且唯一、逐题 DecisionRecord 无缺失/额外/重复、无阻断原因、manifest 三门禁通过且 lifecycle 为 `approved/published` 时才可生成 `trusted=true`。当前 aggregate 尚未接入 attach/WPF，不能据此宣称真实交付已提升信任。
+6. 当前本地 CLI 已能把 aggregate 的覆盖证明连同 preimage/result receipt 受控附着到 manifest；renderer manifest writer 与两个 attach 同时获取 canonical path lock 和 physical identity lock，代码不自动删除 stale lock，并拒绝 manifest 文件自身为 symlink。WPF、headless 和诊断读取面在 source-aware verifier 接入前，只要 attachment 属性存在（包括 malformed 值）就必须把正向状态钳制为未裁定/未可信。
+7. 离线 aggregate 只有在 inventory 非空且唯一、逐题 DecisionRecord 无缺失/额外/重复、无阻断原因、manifest 三门禁通过且 lifecycle 为 `approved/published` 时才可生成 `trusted=true`。CLI attach 不等于 WPF workflow integrated，不能据此宣称真实交付已验收。
 
 离线决策编译器必须把以下情况推导为 `review_required`：证据链缺 crop、binding 不稳、Track 结果冲突、Track C blocking finding、高风险视觉题、低置信或 review 生命周期未批准。
 
@@ -107,6 +109,7 @@
 
 - `DecisionRecord`
 - `review.visualDecisionRef`
+- `review.deliveryDecisionAggregateAttachment`
 - `review.feedbackRefs[]`
 
 WPF review 队列需要展示：

@@ -22,7 +22,7 @@ This project provides a local Windows workflow for generating, validating, and r
 - PDF 渲染保留真实数学公式输出，而不是降级为普通文本。
 - 支持源 PDF 与答案 PDF 的页面审阅图生成。
 - 已落地视觉证据编译器契约层 schema 和最小离线 `DecisionRecord` 编译器，用于表达 `questionRef -> figureRef -> cropRef -> evidenceRef`、三轨候选、风险分类和 review/trust 决策。
-- 已落地离线 `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` 编译器，用原始 bytes SHA-256、snapshot、sample-package 题目 inventory 和逐题 DecisionRecord 证明全题覆盖；当前仅是合成合同能力，尚未接入 manifest/WPF 正向 trust 投影。
+- 已落地离线 `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` 编译器，以及受控 aggregate manifest 附着和 preimage/result receipt；当前仅完成本地 repo-side attach，尚未接入 WPF 正向 trust 投影。
 - 已把 QQ 重链路经验移植为阶段化视觉证据产物：`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 通过 `TrackResult.stageArtifactRefs` 接入，并新增 `unsafe_shortcut_fail` fail-closed 样例。
 - 已落地可选 AI 网关配置校验入口、文本请求主备切换和显式视觉 TrackResult 探针；云外发默认关闭，真实密钥只保留在本地 `.env`。
 - WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；完整 review 队列、审批生成和原题生成主链仍未接入。
@@ -37,7 +37,7 @@ English summary:
 - PDF output keeps real LaTeX math rendering.
 - Source PDFs and rendered answers can be reviewed through generated page images.
 - Visual-evidence compiler schemas and a minimal offline `DecisionRecord` compiler define evidence chains, track results, risk labels, and review/trust decisions.
-- An offline `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` compiler verifies byte hashes, snapshot binding, sample-package question inventory, and per-question decisions; this is synthetic contract capability only and is not yet connected to positive manifest/WPF trust projection.
+- An offline `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` compiler verifies byte hashes, snapshot binding, sample-package question inventory, and per-question decisions. A controlled CLI can attach that aggregate with a preimage/result receipt; WPF remains fail-closed until source-aware verification is integrated.
 - QQ heavy-chain lessons are now mapped into staged visual artifacts: `VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` are referenced through `TrackResult.stageArtifactRefs`, with an `unsafe_shortcut_fail` fail-closed fixture.
 - Optional AI gateway config validation, text failover, and explicit vision TrackResult probes are available; cloud egress is disabled by default and real keys stay in local `.env`.
 - After a delivery, WPF can project the latest manifest's review lifecycle, visual-review, and trust state and use a fail-closed tool to attach, refresh, and open a local JSON `DecisionRecord`; the full review queue, approval generation, and source-question generation workflow remain open.
@@ -121,6 +121,8 @@ npm --prefix tools/visual-evidence run test:decision
 npm --prefix tools/visual-evidence run test:aggregate
 npm --prefix tools/visual-evidence run compile:aggregate -- --manifest "<delivery-manifest.json>" --coverage "<delivery-question-coverage.json>" --decision "<decision-record.json>" --out "<delivery-decision-aggregate.json>"
 npm --prefix tools/visual-evidence run attach:decision -- --manifest "<delivery-manifest.json>" --decision "<decision-record.json>"
+npm --prefix tools/visual-evidence run attach:aggregate -- --manifest "<delivery-manifest.json>" --aggregate "<delivery-decision-aggregate.json>"
+npm --prefix tools/visual-evidence run verify:aggregate-attachment -- --manifest "<delivery-manifest.json>"
 ```
 
 显式开启云外发后，可用合成短文本验证主备请求级切换：
@@ -167,8 +169,8 @@ dotnet build ClassroomToolkit.sln -c Debug
 当前最完整的链路是初中物理参考答案生成与渲染。多学段/多学科支持已经在资产层、规范层和契约层展开，但产品层仍在演进中。
 当前最成熟的交付主链仍是 `answer.md -> PDF/review`。项目正在按“飞轮先行、生成主链后接、视觉双轨后落地”的路线推进。
 视觉降错本轮已进入契约层并具备最小离线决策编译：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` 已纳入 schema 与资产校验，`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 已作为阶段产物落盘，双轨一致但证据缺失和直接跳答案缺 grounding 的样例都可由运行时代码推导为 `trusted=false`；真正的双轨/三轨运行时、局部高清 crop 和 review 队列产品化仍是后续工程。
-WPF 当前完成最新交付的 review/trust 投影，以及本地题目级 `DecisionRecord` 的受控附着、刷新和打开；附着工具只更新 manifest 的决策引用与 fail-closed 状态投影，不生成审批、不推进 lifecycle。离线 aggregate 尚未接入该入口，因此不能把交付提升为 `trusted=true`。这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
-离线 delivery aggregate 已能对合成 `sample-package` inventory、snapshot/input/manifest bytes 和逐题决策做完整覆盖证明，但它尚未接入现有 attach/WPF；因此正向 aggregate fixture 不能被表述为真实交付已可信或 workflow/live acceptance 已完成。
+WPF 当前完成最新交付的 review/trust 投影，以及本地题目级 `DecisionRecord` 的受控附着、刷新和打开；附着工具不生成审批、不推进 lifecycle。离线 aggregate 可通过 preimage/result receipt 受控附着到 manifest，但尚未接入 WPF，因此当前桌面入口不能把交付提升为 `trusted=true`。这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
+离线 delivery aggregate 已能对合成 `sample-package` inventory、snapshot/input/manifest bytes 和逐题决策做完整覆盖证明，并记录 aggregate attach 的可重验 hash chain；它仍不代表真实试卷全题识别、WPF workflow integration 或 live acceptance。
 自动解题工作站和 Typst 主渲染已作为终局计划落盘；Typst 未通过 parity gate 前，默认交付链仍是 Playwright / Chromium。
 自动基于题图生成作图题答案图不再作为本项目的主需求；当前只保留“受控插图插入 PDF”的实验性底座。
 

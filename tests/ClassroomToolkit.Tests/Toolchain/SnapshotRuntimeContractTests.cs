@@ -64,6 +64,7 @@ public sealed class SnapshotRuntimeContractTests
         script.Should().Contain("Resolved snapshot is missing activeProfile.name");
         script.Should().Contain("Resolved snapshot is missing subjectPack.assetId");
         script.Should().Contain("Resolved snapshot is missing subjectPack.version");
+        script.Should().Contain("withManifestWriteLock(manifestOutPath");
         script.Should().NotContain("snapshot?.snapshotId ?? options.snapshotId");
         script.Should().NotContain("snapshot?.activeProfile?.name ?? options.profile");
         script.Should().NotContain("snapshot?.subjectPack?.assetId ?? options.subjectPack");

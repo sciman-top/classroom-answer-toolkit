@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { withManifestWriteLock } from "../manifest-write-lock.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -25,8 +26,16 @@ function usage() {
 export function attachDecisionRecord(options) {
   const manifestPath = requireJsonPath(options.manifestPath, "manifestPath");
   const decisionPath = requireJsonPath(options.decisionPath, "decisionPath");
+  return withManifestWriteLock(manifestPath, () =>
+    attachDecisionRecordUnlocked({ ...options, manifestPath, decisionPath }), options.lockOptions);
+}
+
+function attachDecisionRecordUnlocked(options) {
+  const { manifestPath, decisionPath } = options;
   const backupPath = `${manifestPath}.before-visual-decision.json`;
-  const manifest = readJson(manifestPath);
+  const manifestBytes = fs.readFileSync(manifestPath);
+  const manifestSha256 = sha256(manifestBytes);
+  const manifest = JSON.parse(manifestBytes.toString("utf8").replace(/^\uFEFF/, ""));
   const decisionRecord = readJson(decisionPath);
 
   assertSchema("DecisionRecord", decisionRecord, decisionRecordSchemaPath);
@@ -57,7 +66,10 @@ export function attachDecisionRecord(options) {
   assertSchema("updated delivery manifest", updatedManifest, deliveryManifestSchemaPath);
   assertManifestProjectionLifecycle(updatedManifest, projection);
 
-  atomicCopyFile(manifestPath, backupPath);
+  if (sha256(fs.readFileSync(manifestPath)) !== manifestSha256) {
+    throw new Error("delivery manifest changed after verification and before decision attachment write.");
+  }
+  atomicWriteBuffer(backupPath, manifestBytes);
   atomicWriteJson(manifestPath, updatedManifest);
 
   return buildResult({
@@ -184,16 +196,20 @@ function atomicWriteJson(filePath, value) {
   }
 }
 
-function atomicCopyFile(sourcePath, destinationPath) {
+function atomicWriteBuffer(destinationPath, contents) {
   const temporaryPath = `${destinationPath}.tmp-${process.pid}-${crypto.randomUUID()}`;
   try {
-    fs.copyFileSync(sourcePath, temporaryPath, fs.constants.COPYFILE_EXCL);
+    fs.writeFileSync(temporaryPath, contents, { flag: "wx" });
     fs.renameSync(temporaryPath, destinationPath);
   } finally {
     if (fs.existsSync(temporaryPath)) {
       fs.rmSync(temporaryPath, { force: true });
     }
   }
+}
+
+function sha256(bytes) {
+  return crypto.createHash("sha256").update(bytes).digest("hex");
 }
 
 function buildResult(context) {

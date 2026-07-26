@@ -585,6 +585,9 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             && reviewElement.TryGetProperty("scale", out var reviewScaleElement)
                 ? reviewScaleElement.GetString()
                 : null;
+        var aggregateAttachmentRequiresVerification = root.TryGetProperty("review", out reviewElement)
+            && reviewElement.ValueKind == JsonValueKind.Object
+            && reviewElement.TryGetProperty("deliveryDecisionAggregateAttachment", out _);
         var snapshotVersion = root.TryGetProperty("snapshot", out var snapshotElement)
             && snapshotElement.TryGetProperty("version", out var versionElement)
                 ? versionElement.GetString()
@@ -601,15 +604,18 @@ public sealed class WorkspaceDiagnosticsExporter : IWorkspaceDiagnosticsExporter
             && statusElement.TryGetProperty("reviewArtifactReady", out var reviewArtifactReadyElement)
                 ? reviewArtifactReadyElement.GetBoolean()
                 : (bool?)null;
-        var visualReviewPassed = root.TryGetProperty("status", out statusElement)
+        var visualReviewPassed = !aggregateAttachmentRequiresVerification
+            && root.TryGetProperty("status", out statusElement)
             && statusElement.TryGetProperty("visualReviewPassed", out var visualReviewPassedElement)
             && visualReviewPassedElement.ValueKind != JsonValueKind.Null
                 ? visualReviewPassedElement.GetBoolean()
                 : (bool?)null;
-        var trusted = root.TryGetProperty("status", out statusElement)
-            && statusElement.TryGetProperty("trusted", out var trustedElement)
-                ? trustedElement.GetBoolean()
-                : (bool?)null;
+        var trusted = aggregateAttachmentRequiresVerification
+            ? false
+            : root.TryGetProperty("status", out statusElement)
+                && statusElement.TryGetProperty("trusted", out var trustedElement)
+                    ? trustedElement.GetBoolean()
+                    : (bool?)null;
         var ocr = ReadDeliveryOcr(root);
         var graphics = ReadDeliveryGraphics(root, Path.GetDirectoryName(fullPath));
         var review = ReadDeliveryReview(root);

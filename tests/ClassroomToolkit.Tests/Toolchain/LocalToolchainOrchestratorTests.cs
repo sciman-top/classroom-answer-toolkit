@@ -98,6 +98,67 @@ public sealed class LocalToolchainOrchestratorTests
     }
 
     [Fact]
+    public async Task RunDeliverAsync_KeepsAggregateAttachmentFailClosed_UntilSourceAwareVerificationIsIntegrated()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("junior-physics-answer", "v11.1");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
+        workspace.WriteSupportFiles();
+        workspace.WriteAnswerMarkdown();
+
+        var resolver = new RepositoryRootResolver(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(
+            resolver,
+            new FakeDeliverProcessRunner(includeAggregateAttachment: true));
+
+        var (_, delivery) = await orchestrator.RunDeliverAsync(
+            new AnswerDeliveryRequest(
+                workspace.AnswerMarkdownPath,
+                null,
+                "classroom",
+                KeepReviewArtifacts: true,
+                SubjectPack: "junior-physics-answer"));
+
+        delivery.Should().NotBeNull();
+        delivery!.VisualReviewPassed.Should().BeNull();
+        delivery.Trusted.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"malformed\"")]
+    [InlineData("[]")]
+    public async Task RunDeliverAsync_KeepsMalformedAggregateAttachmentFailClosed(string attachmentJson)
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("junior-physics-answer", "v11.1");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.1", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.1", ok: true, caseCount: 5);
+        workspace.WriteSupportFiles();
+        workspace.WriteAnswerMarkdown();
+
+        var resolver = new RepositoryRootResolver(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(
+            resolver,
+            new FakeDeliverProcessRunner(aggregateAttachmentJson: attachmentJson));
+
+        var (_, delivery) = await orchestrator.RunDeliverAsync(
+            new AnswerDeliveryRequest(
+                workspace.AnswerMarkdownPath,
+                null,
+                "classroom",
+                KeepReviewArtifacts: true,
+                SubjectPack: "junior-physics-answer"));
+
+        delivery.Should().NotBeNull();
+        delivery!.VisualReviewPassed.Should().BeNull();
+        delivery.Trusted.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task RunDeliverAsync_PassesPrimarySubjectPack_ToDeliverScript()
     {
         using var workspace = new TemporaryWorkspace();
@@ -272,10 +333,17 @@ public sealed class LocalToolchainOrchestratorTests
     private sealed class FakeDeliverProcessRunner : IProcessRunner
     {
         private readonly string _visualDecisionRef;
+        private readonly bool _includeAggregateAttachment;
+        private readonly string? _aggregateAttachmentJson;
 
-        public FakeDeliverProcessRunner(string visualDecisionRef = "review/decision-001.json")
+        public FakeDeliverProcessRunner(
+            string visualDecisionRef = "review/decision-001.json",
+            bool includeAggregateAttachment = false,
+            string? aggregateAttachmentJson = null)
         {
             _visualDecisionRef = visualDecisionRef;
+            _includeAggregateAttachment = includeAggregateAttachment;
+            _aggregateAttachmentJson = aggregateAttachmentJson;
         }
 
         public Task<ProcessRunResult> RunAsync(
@@ -331,7 +399,30 @@ public sealed class LocalToolchainOrchestratorTests
                     }
                 };
 
-                File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
+                var manifestNode = JsonSerializer.SerializeToNode(manifest)!.AsObject();
+                if (_includeAggregateAttachment)
+                {
+                    manifestNode["review"]!["deliveryDecisionAggregateAttachment"] = new JsonObject
+                    {
+                        ["attachmentId"] = "attachment-test",
+                        ["aggregateRef"] = "aggregate.json",
+                        ["aggregateSha256"] = new string('a', 64),
+                        ["manifestPreimageSha256"] = new string('b', 64),
+                        ["preimageBackupRef"] = "manifest.before.json",
+                        ["receiptRef"] = "receipt.json"
+                    };
+                    manifestNode["status"]!["visualReviewPassed"] = true;
+                    manifestNode["status"]!["trusted"] = true;
+                }
+                else if (_aggregateAttachmentJson is not null)
+                {
+                    manifestNode["review"]!["deliveryDecisionAggregateAttachment"] =
+                        JsonNode.Parse(_aggregateAttachmentJson);
+                    manifestNode["status"]!["visualReviewPassed"] = true;
+                    manifestNode["status"]!["trusted"] = true;
+                }
+
+                File.WriteAllText(manifestPath, manifestNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             }
 
             return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/delivery-decision-aggregate-attachment-receipt/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "DeliveryDecisionAggregateAttachmentReceipt",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "attachmentId",
+    "aggregateRef",
+    "aggregateSha256",
+    "manifestPreimageSha256",
+    "manifestResultSha256",
+    "preimageBackupRef",
+    "createdAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": ["delivery-decision-aggregate-attachment-receipt"]
+    },
+    "attachmentId": { "type": "string" },
+    "aggregateRef": { "type": "string" },
+    "aggregateSha256": { "type": "string" },
+    "manifestPreimageSha256": { "type": "string" },
+    "manifestResultSha256": { "type": "string" },
+    "preimageBackupRef": { "type": "string" },
+    "createdAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}
