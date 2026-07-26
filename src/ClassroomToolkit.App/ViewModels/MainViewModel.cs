@@ -101,6 +101,7 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(VerifyDeliveryDecisionAggregateAttachmentCommand))]
     private string lastDeliveryManifestPath = string.Empty;
 
     [ObservableProperty]
@@ -131,6 +132,12 @@ public partial class MainViewModel : ObservableObject
     private string lastTrustStatus = string.Empty;
 
     [ObservableProperty]
+    private string lastAggregateVerificationStatus = "未验证";
+
+    [ObservableProperty]
+    private string lastAggregateManifestResultSha256 = string.Empty;
+
+    [ObservableProperty]
     private string lastVisualDecisionPath = string.Empty;
 
     [ObservableProperty]
@@ -151,6 +158,7 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(BrowseAnswerMarkdownCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(VerifyDeliveryDecisionAggregateAttachmentCommand))]
     private bool isBusy;
 
     private bool CanRunActions() => !IsBusy;
@@ -158,6 +166,11 @@ public partial class MainViewModel : ObservableObject
     private bool CanDeliver() => !IsBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
 
     private bool CanAttachVisualDecision()
+    {
+        return !IsBusy && File.Exists(LastDeliveryManifestPath);
+    }
+
+    private bool CanVerifyDeliveryDecisionAggregateAttachment()
     {
         return !IsBusy && File.Exists(LastDeliveryManifestPath);
     }
@@ -294,6 +307,54 @@ public partial class MainViewModel : ObservableObject
         {
             AppendLine(ex.Message);
             StatusMessage = "视觉决策关联异常";
+            LastResultSummary = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanVerifyDeliveryDecisionAggregateAttachment))]
+    private async Task VerifyDeliveryDecisionAggregateAttachmentAsync()
+    {
+        IsBusy = true;
+        StatusMessage = "重验交付聚合凭据中...";
+        LastVisualReviewStatus = "未裁定";
+        LastTrustStatus = "未可信";
+        LastAggregateVerificationStatus = "验证中";
+        LastAggregateManifestResultSha256 = string.Empty;
+        AppendSectionTitle("重验交付聚合凭据");
+
+        try
+        {
+            var result = await _toolchainOrchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+                new DeliveryDecisionAggregateAttachmentVerificationRequest(LastDeliveryManifestPath));
+            AppendExecution("重验交付聚合凭据", result.Execution);
+
+            if (result.Execution.Succeeded
+                && result.Verification is not null
+                && result.Delivery is not null)
+            {
+                ApplyDeliveryState(result.Delivery);
+                LastAggregateVerificationStatus = "已验证";
+                LastAggregateManifestResultSha256 = result.Verification.ManifestResultSha256;
+                StatusMessage = "交付聚合凭据已验证";
+            }
+            else
+            {
+                LastAggregateVerificationStatus = "验证失败";
+                StatusMessage = "交付聚合凭据验证失败";
+            }
+
+            LastResultSummary =
+                $"重验交付聚合凭据 | 退出码 {result.Execution.ExitCode} | {result.Execution.Duration.TotalSeconds:0.0}s";
+        }
+        catch (Exception ex)
+        {
+            AppendLine(ex.Message);
+            LastAggregateVerificationStatus = "验证异常";
+            StatusMessage = "交付聚合凭据验证异常";
             LastResultSummary = ex.Message;
         }
         finally
@@ -484,6 +545,8 @@ public partial class MainViewModel : ObservableObject
         };
         LastTrustStatus = delivery.Trusted ? "可信" : "未可信";
         LastVisualDecisionPath = delivery.VisualDecisionPath ?? string.Empty;
+        LastAggregateVerificationStatus = "未验证";
+        LastAggregateManifestResultSha256 = string.Empty;
     }
 
     private void AppendExecution(string title, ToolchainExecutionResult result)

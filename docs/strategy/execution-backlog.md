@@ -278,6 +278,16 @@
 - blocks: REVIEW-005
 - done_definition: .NET 调用方可显式重验已附着 aggregate 并取得与请求 manifest 绑定的强类型凭据；现有 `ReadDeliveryContext`、WPF、diagnostics/headless 仍保持 fail-closed，不自动执行 verifier、不正向投影 trust、不生成审批、不推进 lifecycle、不宣称 workflow integrated 或 live acceptance
 
+### task_id: REVIEW-007
+
+- goal: 将 source-aware aggregate attachment verifier 以显式、只读方式接入 WPF 正向状态投影
+- inputs: REVIEW-006 强类型 verifier、当前 delivery manifest、receipt `manifestResultSha256`
+- changes: verifier 成功后从同一次读取的 manifest bytes 重算 SHA-256，只在匹配 `manifestResultSha256` 时构造正向 `AnswerDeliveryResult`；WPF 增加手动重验命令、验证状态和 verified manifest hash，命令开始或失败时先钳制为未裁定/未可信；普通 deliver、题目级附着、diagnostics、headless 和自动读取不复用旧凭据
+- verification: manifest 漂移拒绝、普通读取 fail-closed、真实 Node integration、MainViewModel 成功/失败/旧状态清理、原生 WPF UI Automation、完整项目门禁
+- rollback: 回滚本任务对 Domain / Services / ViewModel / XAML / tests / strategy / evidence 的修改；本能力只读，不恢复或删除 delivery artifacts
+- blocks: REVIEW-006
+- done_definition: WPF 能由用户显式重验已附着 aggregate，并只投影与 verifier result hash 绑定的时间点状态；不自动验证、不提供 aggregate 附着、不生成审批、不推进 lifecycle，diagnostics/headless 仍 fail-closed，不宣称完整 workflow integrated 或 live acceptance
+
 ## Epic EVAL：分桶指标与 gate
 
 ### task_id: EVAL-001

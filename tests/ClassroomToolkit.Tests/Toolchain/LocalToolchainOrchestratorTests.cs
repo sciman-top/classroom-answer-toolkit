@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Security.Cryptography;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
@@ -324,6 +325,7 @@ public sealed class LocalToolchainOrchestratorTests
         using var workspace = new TemporaryWorkspace();
         workspace.WriteSupportFiles();
         workspace.WriteDeliveryManifest("snapshot-test");
+        workspace.WriteTrustedAggregateAttachment();
         var processRunner = new AggregateVerificationProcessRunner(
             BuildAggregateVerificationOutput(workspace.DeliveryManifestPath));
         var orchestrator = new LocalToolchainOrchestrator(
@@ -351,9 +353,36 @@ public sealed class LocalToolchainOrchestratorTests
         result.Verification.ReceiptPath.Should().Be(Path.Combine(workspace.Root, "receipt.json"));
         result.Verification.AttachmentId.Should().Be("aggregate-attachment-test");
         result.Verification.ManifestPreimageSha256.Should().Be(new string('a', 64));
-        result.Verification.ManifestResultSha256.Should().Be(new string('b', 64));
+        result.Verification.ManifestResultSha256.Should().Be(ComputeSha256(workspace.DeliveryManifestPath));
         result.Verification.VisualReviewPassed.Should().BeTrue();
         result.Verification.Trusted.Should().BeTrue();
+        result.Delivery.Should().NotBeNull();
+        result.Delivery!.VisualReviewPassed.Should().BeTrue();
+        result.Delivery.Trusted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_FailsClosed_WhenManifestBytesDriftAfterVerifier()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        workspace.WriteTrustedAggregateAttachment();
+        var verifierOutput = BuildAggregateVerificationOutput(workspace.DeliveryManifestPath);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new AggregateVerificationProcessRunner(
+                verifierOutput,
+                afterRun: () => File.AppendAllText(workspace.DeliveryManifestPath, Environment.NewLine)));
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(workspace.DeliveryManifestPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(-2);
+        result.Execution.Output.Should().Contain("bytes changed after source-aware verification");
+        result.Verification.Should().BeNull();
+        result.Delivery.Should().BeNull();
     }
 
     [Fact]
@@ -705,15 +734,18 @@ public sealed class LocalToolchainOrchestratorTests
         private readonly string _standardOutput;
         private readonly int _exitCode;
         private readonly string _standardError;
+        private readonly Action? _afterRun;
 
         public AggregateVerificationProcessRunner(
             string standardOutput,
             int exitCode = 0,
-            string standardError = "")
+            string standardError = "",
+            Action? afterRun = null)
         {
             _standardOutput = standardOutput;
             _exitCode = exitCode;
             _standardError = standardError;
+            _afterRun = afterRun;
         }
 
         public int CallCount { get; private set; }
@@ -731,6 +763,7 @@ public sealed class LocalToolchainOrchestratorTests
             CallCount++;
             LastFileName = fileName;
             LastArguments = arguments.ToArray();
+            _afterRun?.Invoke();
             return Task.FromResult(new ProcessRunResult(
                 _exitCode,
                 _standardOutput,
@@ -926,6 +959,23 @@ public sealed class LocalToolchainOrchestratorTests
             });
         }
 
+        public void WriteTrustedAggregateAttachment()
+        {
+            var manifest = JsonNode.Parse(File.ReadAllText(DeliveryManifestPath))!.AsObject();
+            manifest["review"]!["deliveryDecisionAggregateAttachment"] = new JsonObject
+            {
+                ["attachmentId"] = "aggregate-attachment-test",
+                ["aggregateRef"] = "aggregate.json",
+                ["aggregateSha256"] = new string('c', 64),
+                ["manifestPreimageSha256"] = new string('a', 64),
+                ["preimageBackupRef"] = "manifest.before.json",
+                ["receiptRef"] = "receipt.json"
+            };
+            manifest["status"]!["visualReviewPassed"] = true;
+            manifest["status"]!["trusted"] = true;
+            File.WriteAllText(DeliveryManifestPath, manifest.ToJsonString(Indented));
+        }
+
         public void WriteSupportFiles()
         {
             Directory.CreateDirectory(Path.Combine(Root, "scripts"));
@@ -973,9 +1023,14 @@ public sealed class LocalToolchainOrchestratorTests
             receiptPath = Path.Combine(directory, "receipt.json"),
             attachmentId = "aggregate-attachment-test",
             manifestPreimageSha256 = new string('a', 64),
-            manifestResultSha256 = new string('b', 64),
+            manifestResultSha256 = ComputeSha256(manifestPath),
             visualReviewPassed = true,
             trusted
         });
+    }
+
+    private static string ComputeSha256(string filePath)
+    {
+        return Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(filePath))).ToLowerInvariant();
     }
 }

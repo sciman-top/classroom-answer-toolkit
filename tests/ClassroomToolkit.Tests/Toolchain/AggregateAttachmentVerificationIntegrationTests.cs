@@ -44,6 +44,9 @@ public sealed class AggregateAttachmentVerificationIntegrationTests
         result.Verification.AggregatePath.Should().Be(workspace.AggregatePath);
         result.Verification.VisualReviewPassed.Should().BeTrue();
         result.Verification.Trusted.Should().BeTrue();
+        result.Delivery.Should().NotBeNull();
+        result.Delivery!.VisualReviewPassed.Should().BeTrue();
+        result.Delivery.Trusted.Should().BeTrue();
     }
 
     private static string FindRepoRoot()

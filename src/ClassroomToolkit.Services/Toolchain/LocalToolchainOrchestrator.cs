@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text;
+using System.Security.Cryptography;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Domain.Toolchain;
@@ -330,13 +331,39 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             var verification = ParseAggregateAttachmentVerification(
                 processResult.StandardOutput,
                 manifestPath);
+            var manifestBytes = File.ReadAllBytes(manifestPath);
+            var manifestSha256 = Convert.ToHexString(SHA256.HashData(manifestBytes)).ToLowerInvariant();
+            if (!string.Equals(
+                manifestSha256,
+                verification.ManifestResultSha256,
+                StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "Delivery manifest bytes changed after source-aware verification.");
+            }
+
+            var delivery = ReadDeliveryResult(
+                manifestBytes,
+                manifestPath,
+                aggregateAttachmentVerified: true);
+            if (delivery is null
+                || delivery.VisualReviewPassed != true
+                || !delivery.Trusted)
+            {
+                throw new InvalidDataException(
+                    "Verified delivery manifest could not be projected as trusted.");
+            }
+
             var succeeded = ToolchainExecutionResult.Success(
                 ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
                 toolPath,
                 startedAt,
                 finishedAt,
                 output);
-            return new DeliveryDecisionAggregateAttachmentVerificationResult(succeeded, verification);
+            return new DeliveryDecisionAggregateAttachmentVerificationResult(
+                succeeded,
+                verification,
+                delivery);
         }
         catch (Exception ex)
         {
@@ -608,9 +635,23 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             return null;
         }
 
-        using var document = JsonDocument.Parse(File.ReadAllText(deliveryManifestPath));
+        return ReadDeliveryResult(
+            File.ReadAllBytes(deliveryManifestPath),
+            deliveryManifestPath,
+            aggregateAttachmentVerified: false);
+    }
+
+    private static AnswerDeliveryResult? ReadDeliveryResult(
+        ReadOnlyMemory<byte> manifestBytes,
+        string deliveryManifestPath,
+        bool aggregateAttachmentVerified)
+    {
+        using var document = JsonDocument.Parse(manifestBytes);
         var root = document.RootElement;
-        var deliveryContext = ReadDeliveryContext(root, deliveryManifestPath);
+        var deliveryContext = ReadDeliveryContext(
+            root,
+            deliveryManifestPath,
+            aggregateAttachmentVerified);
         var inputPath = ResolveManifestPath(ReadOptionalString(root, "input"), deliveryManifestPath);
         var outputPath = ResolveManifestPath(ReadOptionalString(root, "output"), deliveryManifestPath);
         var subjectPack = ReadOptionalString(root, "subjectPack");
@@ -658,7 +699,10 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         return ReadDeliveryContext(document.RootElement, deliveryManifestPath);
     }
 
-    private static DeliveryContext ReadDeliveryContext(JsonElement root, string deliveryManifestPath)
+    private static DeliveryContext ReadDeliveryContext(
+        JsonElement root,
+        string deliveryManifestPath,
+        bool aggregateAttachmentVerified = false)
     {
         var profile = ReadOptionalString(root, "profile");
         var snapshotPath = ReadOptionalString(root, "snapshotPath");
@@ -686,7 +730,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             ? ReadOptionalString(reviewElement, "visualDecisionRef")
             : null;
         var visualDecisionPath = ResolveManifestRelativePath(visualDecisionRef, deliveryManifestPath);
-        var aggregateAttachmentRequiresVerification = reviewExists
+        var aggregateAttachmentRequiresVerification = !aggregateAttachmentVerified
+            && reviewExists
             && reviewElement.TryGetProperty("deliveryDecisionAggregateAttachment", out _);
 
         var statusExists = root.TryGetProperty("status", out var statusElement)

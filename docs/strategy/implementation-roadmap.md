@@ -15,6 +15,7 @@
 - 固定视觉证据编译器 schema：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`
 - 固定 renderer contract schema 和 Typst 主渲染迁移计划
 - 补高风险视觉题标疑与 `trusted=false` 回归样例
+- 接入 hash-bound、用户显式触发的 WPF aggregate attachment 重验投影
 - 接入样例真值面、负样本、反馈链与 Track A
 - 生成主链后段接入飞轮
 

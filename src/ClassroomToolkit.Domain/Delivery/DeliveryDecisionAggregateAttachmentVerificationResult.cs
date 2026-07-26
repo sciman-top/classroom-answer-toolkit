@@ -4,4 +4,5 @@ namespace ClassroomToolkit.Domain.Delivery;
 
 public sealed record DeliveryDecisionAggregateAttachmentVerificationResult(
     ToolchainExecutionResult Execution,
-    DeliveryDecisionAggregateAttachmentVerification? Verification);
+    DeliveryDecisionAggregateAttachmentVerification? Verification,
+    AnswerDeliveryResult? Delivery = null);

@@ -104,6 +104,8 @@
                                 <TextBlock Margin="0,10,0,0" Text="{Binding LastReviewLifecycleState, StringFormat=Review Lifecycle: {0}}" TextWrapping="Wrap" FontSize="13" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding LastVisualReviewStatus, StringFormat=Visual Review: {0}}" TextWrapping="Wrap" FontSize="13" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding LastTrustStatus, StringFormat=Trust: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastAggregateVerificationStatus, StringFormat=Aggregate Verification: {0}}" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Margin="0,6,0,0" Text="{Binding LastAggregateManifestResultSha256, StringFormat=Verified Manifest SHA-256: {0}}" TextWrapping="Wrap" FontSize="13" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding LastVisualDecisionPath, StringFormat=Visual Decision: {0}}" TextWrapping="Wrap" FontSize="13" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsBundlePath, StringFormat=Diagnostics Bundle: {0}}" TextWrapping="Wrap" FontSize="13" />
                                 <TextBlock Margin="0,6,0,0" Text="{Binding LastDiagnosticsManifestPath, StringFormat=Diagnostics Manifest: {0}}" TextWrapping="Wrap" FontSize="13" />
@@ -112,6 +114,7 @@
                                     <Button Margin="0,0,12,8" Content="打开 Manifest" Command="{Binding OpenLastDeliveryManifestCommand}" />
                                     <Button Margin="0,0,12,8" Content="打开 Review" Command="{Binding OpenLastReviewDirectoryCommand}" />
                                     <Button Margin="0,0,12,8" Content="关联视觉决策" Command="{Binding AttachVisualDecisionCommand}" />
+                                    <Button Margin="0,0,12,8" Content="重验聚合凭据" Command="{Binding VerifyDeliveryDecisionAggregateAttachmentCommand}" />
                                     <Button Margin="0,0,12,8" Content="打开视觉决策" Command="{Binding OpenLastVisualDecisionCommand}" />
                                     <Button Margin="0,0,12,8" Content="导出诊断包" Command="{Binding ExportDiagnosticsCommand}" />
                                     <Button Margin="0,0,12,8" Content="打开诊断包" Command="{Binding OpenLastDiagnosticsBundleCommand}" />

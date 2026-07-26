@@ -308,7 +308,7 @@ P1 样例集默认人工拆分题面/答案：
 - delivery manifest 文件自身不得是 symlink（包括 dangling symlink）；writer 必须 fail-closed。父目录别名由 canonical parent 归一，既有 hardlink 文件由 physical identity lock 串行化。
 - 附着工具在写入前原子保存 `<manifest>.before-delivery-decision-aggregate.json`，并将 aggregate ref/hash、preimage hash、backup ref 与 receipt ref 写入 `review.deliveryDecisionAggregateAttachment`。
 - `manifestResultSha256` 只记录在独立 receipt，避免 manifest 内的自引用哈希；verify 必须从当前 manifest、receipt、backup 和 aggregate 重算并交叉检查 hash chain。
-- 附着不推进 `review.lifecycle`，不生成审批；.NET orchestration 已提供显式、只读、强类型的 source-aware verifier 适配器，但尚未接入自动读取和 WPF 正向投影。WPF/diagnostics/headless 只要 attachment 属性存在（包括 malformed 值）仍必须投影为 `visualReviewPassed=null / trusted=false`。
+- 附着不推进 `review.lifecycle`，不生成审批；.NET orchestration 提供显式、只读、强类型的 source-aware verifier，WPF 仅在用户手动重验且同批 manifest bytes 的 SHA-256 匹配 receipt `manifestResultSha256` 时投影正向时间点状态。普通 WPF 读取、diagnostics/headless 和未重验 attachment（包括 malformed 值）仍必须投影为 `visualReviewPassed=null / trusted=false`；旧验证结果不得跨 manifest bytes 复用。
 
 ### 证据链
 

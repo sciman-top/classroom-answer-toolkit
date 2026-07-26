@@ -37,6 +37,8 @@ public sealed class MainViewModelTests
         viewModel.LastReviewLifecycleState.Should().Be("ready_for_review");
         viewModel.LastVisualReviewStatus.Should().Be("未裁定");
         viewModel.LastTrustStatus.Should().Be("未可信");
+        viewModel.LastAggregateVerificationStatus.Should().Be("未验证");
+        viewModel.LastAggregateManifestResultSha256.Should().BeEmpty();
         viewModel.LastVisualDecisionPath.Should().Be(@"D:\repo\review\decision-001.json");
         viewModel.StatusMessage.Should().Be("答案交付完成");
         orchestrator.LastRequest.Should().NotBeNull();
@@ -94,6 +96,8 @@ public sealed class MainViewModelTests
             viewModel.LastVisualDecisionPath.Should().Be(decisionPath);
             viewModel.LastVisualReviewStatus.Should().Be("未通过");
             viewModel.LastTrustStatus.Should().Be("未可信");
+            viewModel.LastAggregateVerificationStatus.Should().Be("未验证");
+            viewModel.LastAggregateManifestResultSha256.Should().BeEmpty();
             viewModel.StatusMessage.Should().Be("视觉决策已关联");
         }
         finally
@@ -103,11 +107,157 @@ public sealed class MainViewModelTests
         }
     }
 
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_AppliesHashBoundPositiveProjection()
+    {
+        var manifestPath = Path.Combine(Path.GetTempPath(), $"delivery-{Guid.NewGuid():N}.json");
+        File.WriteAllText(manifestPath, "{}");
+        try
+        {
+            var orchestrator = new FakeToolchainOrchestrator();
+            var viewModel = new MainViewModel(
+                orchestrator,
+                new FakePathOpener(),
+                new FakeDiagnosticsExporter())
+            {
+                LastDeliveryManifestPath = manifestPath
+            };
+
+            await viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.ExecuteAsync(null);
+
+            orchestrator.LastVerificationRequest.Should().Be(
+                new DeliveryDecisionAggregateAttachmentVerificationRequest(manifestPath));
+            viewModel.LastVisualReviewStatus.Should().Be("通过");
+            viewModel.LastTrustStatus.Should().Be("可信");
+            viewModel.LastAggregateVerificationStatus.Should().Be("已验证");
+            viewModel.LastAggregateManifestResultSha256.Should().Be(new string('d', 64));
+            viewModel.StatusMessage.Should().Be("交付聚合凭据已验证");
+        }
+        finally
+        {
+            File.Delete(manifestPath);
+        }
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_ClampsStaleTrust_WhenVerificationFails()
+    {
+        var manifestPath = Path.Combine(Path.GetTempPath(), $"delivery-{Guid.NewGuid():N}.json");
+        File.WriteAllText(manifestPath, "{}");
+        try
+        {
+            var orchestrator = new FakeToolchainOrchestrator
+            {
+                FailAggregateVerification = true
+            };
+            var viewModel = new MainViewModel(
+                orchestrator,
+                new FakePathOpener(),
+                new FakeDiagnosticsExporter())
+            {
+                LastDeliveryManifestPath = manifestPath,
+                LastVisualReviewStatus = "通过",
+                LastTrustStatus = "可信",
+                LastAggregateVerificationStatus = "已验证",
+                LastAggregateManifestResultSha256 = new string('d', 64)
+            };
+
+            await viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.ExecuteAsync(null);
+
+            viewModel.LastVisualReviewStatus.Should().Be("未裁定");
+            viewModel.LastTrustStatus.Should().Be("未可信");
+            viewModel.LastAggregateVerificationStatus.Should().Be("验证失败");
+            viewModel.LastAggregateManifestResultSha256.Should().BeEmpty();
+            viewModel.StatusMessage.Should().Be("交付聚合凭据验证失败");
+        }
+        finally
+        {
+            File.Delete(manifestPath);
+        }
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_ClampsStaleTrust_WhenVerificationThrows()
+    {
+        var manifestPath = Path.Combine(Path.GetTempPath(), $"delivery-{Guid.NewGuid():N}.json");
+        File.WriteAllText(manifestPath, "{}");
+        try
+        {
+            var orchestrator = new FakeToolchainOrchestrator
+            {
+                ThrowAggregateVerification = true
+            };
+            var viewModel = new MainViewModel(
+                orchestrator,
+                new FakePathOpener(),
+                new FakeDiagnosticsExporter())
+            {
+                LastDeliveryManifestPath = manifestPath,
+                LastVisualReviewStatus = "通过",
+                LastTrustStatus = "可信",
+                LastAggregateVerificationStatus = "已验证",
+                LastAggregateManifestResultSha256 = new string('d', 64)
+            };
+
+            await viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.ExecuteAsync(null);
+
+            viewModel.LastVisualReviewStatus.Should().Be("未裁定");
+            viewModel.LastTrustStatus.Should().Be("未可信");
+            viewModel.LastAggregateVerificationStatus.Should().Be("验证异常");
+            viewModel.LastAggregateManifestResultSha256.Should().BeEmpty();
+            viewModel.StatusMessage.Should().Be("交付聚合凭据验证异常");
+        }
+        finally
+        {
+            File.Delete(manifestPath);
+        }
+    }
+
+    [Fact]
+    public void VerifyDeliveryDecisionAggregateAttachmentCommand_TracksManifestAndBusyState()
+    {
+        var manifestPath = Path.Combine(Path.GetTempPath(), $"delivery-{Guid.NewGuid():N}.json");
+        var viewModel = new MainViewModel(
+            new FakeToolchainOrchestrator(),
+            new FakePathOpener(),
+            new FakeDiagnosticsExporter());
+
+        viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.CanExecute(null).Should().BeFalse();
+        File.WriteAllText(manifestPath, "{}");
+        try
+        {
+            viewModel.LastDeliveryManifestPath = manifestPath;
+            viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.CanExecute(null).Should().BeTrue();
+
+            viewModel.IsBusy = true;
+            viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.CanExecute(null).Should().BeFalse();
+
+            viewModel.IsBusy = false;
+            viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.CanExecute(null).Should().BeTrue();
+
+            File.Delete(manifestPath);
+            viewModel.VerifyDeliveryDecisionAggregateAttachmentCommand.CanExecute(null).Should().BeFalse();
+        }
+        finally
+        {
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator
     {
         public AnswerDeliveryRequest? LastRequest { get; private set; }
 
         public VisualDecisionAttachmentRequest? LastAttachmentRequest { get; private set; }
+
+        public DeliveryDecisionAggregateAttachmentVerificationRequest? LastVerificationRequest { get; private set; }
+
+        public bool FailAggregateVerification { get; init; }
+
+        public bool ThrowAggregateVerification { get; init; }
 
         public ToolchainWorkspaceInfo GetWorkspaceInfo()
         {
@@ -209,7 +359,59 @@ public sealed class MainViewModelTests
             DeliveryDecisionAggregateAttachmentVerificationRequest request,
             CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
+            LastVerificationRequest = request;
+            if (ThrowAggregateVerification)
+            {
+                throw new InvalidOperationException("synthetic verification exception");
+            }
+
+            var execution = FailAggregateVerification
+                ? ToolchainExecutionResult.Failure(
+                    ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                    @"D:\repo\tools\visual-evidence\verify-delivery-decision-aggregate-attachment.mjs",
+                    1,
+                    DateTimeOffset.Now,
+                    DateTimeOffset.Now,
+                    "synthetic verification failure")
+                : Success(
+                    ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                    @"D:\repo\tools\visual-evidence\verify-delivery-decision-aggregate-attachment.mjs");
+            if (FailAggregateVerification)
+            {
+                return Task.FromResult(
+                    new DeliveryDecisionAggregateAttachmentVerificationResult(execution, null));
+            }
+
+            var verification = new DeliveryDecisionAggregateAttachmentVerification(
+                request.DeliveryManifestPath,
+                @"D:\repo\aggregate.json",
+                @"D:\repo\manifest.before.json",
+                @"D:\repo\receipt.json",
+                "aggregate-attachment-test",
+                new string('a', 64),
+                new string('d', 64),
+                VisualReviewPassed: true,
+                Trusted: true);
+            var delivery = new AnswerDeliveryResult(
+                @"D:\repo\样例交付\sample-answer.md",
+                @"D:\repo\样例交付\sample-answer.pdf",
+                request.DeliveryManifestPath,
+                @"D:\repo\.pdf-review\sample-answer",
+                "snapshot-test",
+                "math-answer",
+                "classroom",
+                @"D:\repo\.snapshot-cache\resolved-snapshot.math.json",
+                "v0.1")
+            {
+                ReviewLifecycleState = "approved",
+                VisualReviewPassed = true,
+                Trusted = true
+            };
+            return Task.FromResult(
+                new DeliveryDecisionAggregateAttachmentVerificationResult(
+                    execution,
+                    verification,
+                    delivery));
         }
 
         private static ToolchainExecutionResult Success(ToolchainScriptKind kind, string scriptPath)
