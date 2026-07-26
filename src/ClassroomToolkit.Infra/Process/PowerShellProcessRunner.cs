@@ -28,6 +28,7 @@ public sealed class PowerShellProcessRunner : IProcessRunner
         }
 
         using var process = new System.Diagnostics.Process { StartInfo = startInfo };
+        cancellationToken.ThrowIfCancellationRequested();
         if (!process.Start())
         {
             throw new InvalidOperationException($"Failed to start process: {fileName}");

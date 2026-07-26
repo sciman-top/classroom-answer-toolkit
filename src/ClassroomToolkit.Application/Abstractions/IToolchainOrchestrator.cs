@@ -24,4 +24,8 @@ public interface IToolchainOrchestrator
     Task<DeliveryDecisionAggregateAttachmentVerificationResult> VerifyDeliveryDecisionAggregateAttachmentAsync(
         DeliveryDecisionAggregateAttachmentVerificationRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<DeliveryDecisionAggregateAttachmentResult> AttachDeliveryDecisionAggregateAsync(
+        DeliveryDecisionAggregateAttachmentRequest request,
+        CancellationToken cancellationToken = default);
 }

@@ -288,6 +288,16 @@
 - blocks: REVIEW-006
 - done_definition: WPF 能由用户显式重验已附着 aggregate，并只投影与 verifier result hash 绑定的时间点状态；不自动验证、不提供 aggregate 附着、不生成审批、不推进 lifecycle，diagnostics/headless 仍 fail-closed，不宣称完整 workflow integrated 或 live acceptance
 
+### task_id: REVIEW-008
+
+- goal: 建立 `DeliveryDecisionAggregate -> delivery manifest -> source-aware reverify -> WPF projection` 受控闭环
+- inputs: REVIEW-005 attach 工具、REVIEW-006 强类型 verifier、REVIEW-007 hash-bound WPF 投影
+- changes: Domain/Application 增加 aggregate 附着请求与结果；orchestrator 以 `node` 直接调用既有 attach CLI，只有附着成功才立即调用 source-aware verifier；WPF 允许用户选择已有本地 aggregate，开始、失败或异常时先钳制旧 review/trust/hash，只有两阶段成功才投影正向状态
+- verification: attach 失败不触发 verifier、附着后重验失败保持 fail-closed、真实 `PowerShellProcessRunner -> node attach -> node verify -> synthetic fixture` 集成测试、MainViewModel 正向/失败/旧状态清理、原生 WPF UI Automation、完整项目门禁
+- rollback: 代码回滚本任务 Domain / Application / Services / ViewModel / XAML / tests / strategy / evidence 修改；对已附着 manifest，先保全当前 manifest/receipt/backup，重验 hash chain，确认当前 manifest hash 仍等于 receipt `manifestResultSha256`，并通过同一 canonical/physical 双锁原子恢复 `<manifest>.before-delivery-decision-aggregate.json` 后再处理 receipt。hash 漂移或锁归属不明时转人工 reconciliation，禁止覆盖后续合法更新；stale lock 仍只允许按 REVIEW-005 人工审计流程清理
+- blocks: REVIEW-007
+- done_definition: WPF 能把已有本地 aggregate 交给既有受控工具附着，并在同一显式动作中立即 source-aware 重验；正向状态绑定当前 `manifestResultSha256`。不生成 aggregate、不生成审批、不推进 lifecycle、不自动验证、不接入原题生成或云网关主流程，不宣称完整 workflow integrated 或 live acceptance
+
 ## Epic EVAL：分桶指标与 gate
 
 ### task_id: EVAL-001

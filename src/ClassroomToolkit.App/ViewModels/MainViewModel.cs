@@ -101,6 +101,7 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AttachDeliveryDecisionAggregateCommand))]
     [NotifyCanExecuteChangedFor(nameof(VerifyDeliveryDecisionAggregateAttachmentCommand))]
     private string lastDeliveryManifestPath = string.Empty;
 
@@ -158,6 +159,7 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(BrowseAnswerMarkdownCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AttachDeliveryDecisionAggregateCommand))]
     [NotifyCanExecuteChangedFor(nameof(VerifyDeliveryDecisionAggregateAttachmentCommand))]
     private bool isBusy;
 
@@ -171,6 +173,11 @@ public partial class MainViewModel : ObservableObject
     }
 
     private bool CanVerifyDeliveryDecisionAggregateAttachment()
+    {
+        return !IsBusy && File.Exists(LastDeliveryManifestPath);
+    }
+
+    private bool CanAttachDeliveryDecisionAggregate()
     {
         return !IsBusy && File.Exists(LastDeliveryManifestPath);
     }
@@ -355,6 +362,84 @@ public partial class MainViewModel : ObservableObject
             AppendLine(ex.Message);
             LastAggregateVerificationStatus = "验证异常";
             StatusMessage = "交付聚合凭据验证异常";
+            LastResultSummary = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanAttachDeliveryDecisionAggregate))]
+    private async Task AttachDeliveryDecisionAggregateAsync(string? aggregatePath)
+    {
+        if (string.IsNullOrWhiteSpace(aggregatePath))
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择 DeliveryDecisionAggregate",
+                Filter = "JSON 文件 (*.json)|*.json",
+                InitialDirectory = Directory.Exists(LastReviewDirectoryPath)
+                    ? LastReviewDirectoryPath
+                    : Path.GetDirectoryName(LastDeliveryManifestPath)
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            aggregatePath = dialog.FileName;
+        }
+
+        IsBusy = true;
+        StatusMessage = "关联并重验交付聚合凭据中...";
+        LastVisualReviewStatus = "未裁定";
+        LastTrustStatus = "未可信";
+        LastAggregateVerificationStatus = "验证中";
+        LastAggregateManifestResultSha256 = string.Empty;
+        AppendSectionTitle("关联并重验交付聚合凭据");
+
+        try
+        {
+            var result = await _toolchainOrchestrator.AttachDeliveryDecisionAggregateAsync(
+                new DeliveryDecisionAggregateAttachmentRequest(
+                    LastDeliveryManifestPath,
+                    aggregatePath));
+            AppendExecution("关联交付聚合凭据", result.AttachmentExecution);
+
+            if (result.Verification is not null)
+            {
+                AppendExecution("重验交付聚合凭据", result.Verification.Execution);
+            }
+
+            if (result.Succeeded)
+            {
+                ApplyDeliveryState(result.Verification!.Delivery!);
+                LastAggregateVerificationStatus = "已验证";
+                LastAggregateManifestResultSha256 =
+                    result.Verification.Verification!.ManifestResultSha256;
+                StatusMessage = "交付聚合凭据已关联并验证";
+            }
+            else
+            {
+                LastAggregateVerificationStatus = result.AttachmentExecution.Succeeded
+                    ? "验证失败"
+                    : "附着失败";
+                StatusMessage = result.AttachmentExecution.Succeeded
+                    ? "交付聚合凭据关联后验证失败"
+                    : "交付聚合凭据关联失败";
+            }
+
+            var verificationExitCode = result.Verification?.Execution.ExitCode.ToString() ?? "N/A";
+            LastResultSummary =
+                $"关联交付聚合凭据 | 附着退出码 {result.AttachmentExecution.ExitCode} | 重验退出码 {verificationExitCode}";
+        }
+        catch (Exception ex)
+        {
+            AppendLine(ex.Message);
+            LastAggregateVerificationStatus = "附着异常";
+            StatusMessage = "交付聚合凭据关联异常";
             LastResultSummary = ex.Message;
         }
         finally

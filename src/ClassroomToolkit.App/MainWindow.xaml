@@ -114,6 +114,7 @@
                                     <Button Margin="0,0,12,8" Content="打开 Manifest" Command="{Binding OpenLastDeliveryManifestCommand}" />
                                     <Button Margin="0,0,12,8" Content="打开 Review" Command="{Binding OpenLastReviewDirectoryCommand}" />
                                     <Button Margin="0,0,12,8" Content="关联视觉决策" Command="{Binding AttachVisualDecisionCommand}" />
+                                    <Button Margin="0,0,12,8" Content="关联聚合凭据" Command="{Binding AttachDeliveryDecisionAggregateCommand}" />
                                     <Button Margin="0,0,12,8" Content="重验聚合凭据" Command="{Binding VerifyDeliveryDecisionAggregateAttachmentCommand}" />
                                     <Button Margin="0,0,12,8" Content="打开视觉决策" Command="{Binding OpenLastVisualDecisionCommand}" />
                                     <Button Margin="0,0,12,8" Content="导出诊断包" Command="{Binding ExportDiagnosticsCommand}" />

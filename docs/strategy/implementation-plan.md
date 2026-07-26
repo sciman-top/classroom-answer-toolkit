@@ -59,7 +59,7 @@
 - `DecisionRecord`
 - `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` schema 契约
 - `renderer-contract` schema 契约与 Typst 主渲染迁移计划
-- hash-bound、用户显式触发的 WPF aggregate attachment 重验投影
+- hash-bound、用户显式触发的 WPF aggregate 附着后立即重验投影
 - 第一版自动验收飞轮
 
 ### 涉及文件面
@@ -77,7 +77,7 @@
 - Word 在 P1 明确只作为 `degraded-supported`
 - 高风险视觉题即使双轨一致，只要证据链缺失也保持 `trusted=false`
 - 当前 renderer truth 和 Typst target renderer 不再混写
-- WPF 正向 trust 只来自匹配 `manifestResultSha256` 的本次显式重验；普通读取仍 fail-closed
+- WPF 可显式选择已有本地 aggregate 交给受控工具附着；正向 trust 只来自附着后立即执行且匹配 `manifestResultSha256` 的本次重验，普通读取仍 fail-closed
 
 ### 验证方式
 

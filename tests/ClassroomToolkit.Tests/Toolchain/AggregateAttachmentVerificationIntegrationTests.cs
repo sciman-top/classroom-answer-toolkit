@@ -9,6 +9,32 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class AggregateAttachmentVerificationIntegrationTests
 {
     [Fact]
+    public async Task AttachmentAdapter_UsesRealNodeProcesses_AndReturnsVerifiedProjection()
+    {
+        var repositoryRoot = FindRepoRoot();
+        using var workspace = new SyntheticFixtureWorkspace(repositoryRoot);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(repositoryRootOverride: repositoryRoot),
+            new PowerShellProcessRunner());
+
+        var result = await orchestrator.AttachDeliveryDecisionAggregateAsync(
+            new DeliveryDecisionAggregateAttachmentRequest(
+                workspace.ManifestPath,
+                workspace.AggregatePath));
+
+        result.Succeeded.Should().BeTrue(result.AttachmentExecution.Output);
+        result.AttachmentExecution.Succeeded.Should().BeTrue();
+        result.Verification.Should().NotBeNull();
+        result.Verification!.Execution.Succeeded.Should().BeTrue(
+            result.Verification.Execution.Output);
+        result.Verification.Verification.Should().NotBeNull();
+        result.Verification.Verification!.AggregatePath.Should().Be(workspace.AggregatePath);
+        result.Verification.Delivery.Should().NotBeNull();
+        result.Verification.Delivery!.VisualReviewPassed.Should().BeTrue();
+        result.Verification.Delivery.Trusted.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task VerifierAdapter_UsesRealNodeProcess_AgainstSyntheticAttachedFixture()
     {
         var repositoryRoot = FindRepoRoot();

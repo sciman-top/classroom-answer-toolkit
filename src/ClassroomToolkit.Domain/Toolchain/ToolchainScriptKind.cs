@@ -6,5 +6,6 @@ public enum ToolchainScriptKind
     Check = 1,
     Deliver = 2,
     AttachVisualDecision = 3,
-    VerifyDeliveryDecisionAggregateAttachment = 4
+    VerifyDeliveryDecisionAggregateAttachment = 4,
+    AttachDeliveryDecisionAggregate = 5
 }

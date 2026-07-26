@@ -382,6 +382,111 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
     }
 
+    public async Task<DeliveryDecisionAggregateAttachmentResult> AttachDeliveryDecisionAggregateAsync(
+        DeliveryDecisionAggregateAttachmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var repositoryRoot = GetWorkspaceInfo().RepositoryRoot;
+        var toolPath = Path.Combine(
+            repositoryRoot,
+            "tools",
+            "visual-evidence",
+            "attach-delivery-decision-aggregate.mjs");
+        var startedAt = DateTimeOffset.Now;
+        string manifestPath;
+        string aggregatePath;
+        try
+        {
+            manifestPath = Path.GetFullPath(request.DeliveryManifestPath);
+            aggregatePath = Path.GetFullPath(request.AggregatePath);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachDeliveryDecisionAggregate,
+                toolPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Aggregate attachment path is invalid: {ex.Message}");
+            return new DeliveryDecisionAggregateAttachmentResult(failed, null);
+        }
+
+        var validationError = ValidateJsonInput(manifestPath, "Delivery manifest")
+            ?? ValidateJsonInput(aggregatePath, "DeliveryDecisionAggregate");
+        if (validationError is not null)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachDeliveryDecisionAggregate,
+                toolPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                validationError);
+            return new DeliveryDecisionAggregateAttachmentResult(failed, null);
+        }
+
+        ProcessRunResult processResult;
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            processResult = await _processRunner.RunAsync(
+                "node",
+                [
+                    toolPath,
+                    "--manifest",
+                    manifestPath,
+                    "--aggregate",
+                    aggregatePath
+                ],
+                repositoryRoot,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachDeliveryDecisionAggregate,
+                toolPath,
+                -3,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Aggregate attachment process failed: {ex.Message}");
+            return new DeliveryDecisionAggregateAttachmentResult(failed, null);
+        }
+
+        var finishedAt = DateTimeOffset.Now;
+        var output = BuildOutput(processResult.StandardOutput, processResult.StandardError);
+        var execution = processResult.ExitCode == 0
+            ? ToolchainExecutionResult.Success(
+                ToolchainScriptKind.AttachDeliveryDecisionAggregate,
+                toolPath,
+                startedAt,
+                finishedAt,
+                output)
+            : ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.AttachDeliveryDecisionAggregate,
+                toolPath,
+                processResult.ExitCode,
+                startedAt,
+                finishedAt,
+                output);
+        if (!execution.Succeeded)
+        {
+            return new DeliveryDecisionAggregateAttachmentResult(execution, null);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var verification = await VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(manifestPath),
+            cancellationToken);
+        return new DeliveryDecisionAggregateAttachmentResult(execution, verification);
+    }
+
     private async Task<ToolchainExecutionResult> RunScriptAsync(
         ToolchainScriptKind kind,
         string scriptPath,
