@@ -56,6 +56,7 @@
 - canonical index/package/candidate-descriptor hash authority 约束下、通过仓内有限 shape validator、compiler semantic invariants 与 current canonical authority bytes 重验的 `SampleRunRecord`
 - source-run-byte-bound、只接受 non-exact synthetic fixture scoring 的 `FeedbackParseResult`
 - source-run/input-byte-bound、仅对公开 synthetic 明确词典信号做确定性归因或 `needs_human_label` 分流的 teacher-text `FeedbackParseResult`
+- inventory/result-byte-bound、独立于 candidate readiness 的 `TeacherFeedbackDiagnosticReport`
 - canonical-case-inventory-bound、缺 run/反馈仍计入召回分母的 fail-closed `OptimizationReadinessReport`
 - clean-revision、ordered-gate-log-bound、保持 controls 未验证的 `ReadinessControlReceipt`
 - `OptimizationCandidate`
@@ -89,6 +90,7 @@
 - 分层判错验证
 - 负样本判错召回验证
 - teacher feedback 唯一信号、歧义信号与缺失信号的 fail-closed 分流验证
+- teacher feedback structured/human-label rate 与 error/severity/reason 完整分布的确定性重算验证
 
 ### 禁止扩张点
 

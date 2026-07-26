@@ -246,6 +246,17 @@ teacher parse result 当前不进入 readiness 判错统计；既有 auto-collec
 `OptimizationCandidate` 均不属于该切片。v1 feedback result 不静默兼容，必须从绑定的
 current run/input 重新编译。
 
+FLYWHEEL-009 新增独立 `TeacherFeedbackDiagnosticReport`，只对 FLYWHEEL-008 的
+hash-bound canonical synthetic fixture inventory 做 ingestion diagnostics。报告逐项绑定 result
+raw-byte SHA-256，确定性统计 `parsed / needs_human_label` 数量与比率，并按固定 9 类根因、
+4 档 severity、5 类人工分流 reason code 输出完整分布。零计数类别也必须保留，避免消费者
+把“当前未观测”误解为“合同不存在”。
+
+该报告不是 `OptimizationReadinessReport` 的子面，也不进入 candidateSourceType 分桶、判错
+recall、release qualification、controls 或 eligibility。它的 structured rate 只证明当前受控
+synthetic fixture 的 parser 分流覆盖，不代表真实教师语言理解准确率、模型质量或生产验收；
+`optimizationCandidateRefs` 必须为空。
+
 ### optimization-readiness-input / optimization-readiness-report
 
 首个分桶准入评估切片由独立、hash-bound canonical case inventory 提供召回率分母，

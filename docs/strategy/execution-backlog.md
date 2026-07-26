@@ -158,6 +158,16 @@
 - blocks: FLYWHEEL-004, FLYWHEEL-007
 - done_definition: 仓内能把三份公开 synthetic 教师文本分别稳定投影为两个 parsed feedback record 和一个 `needs_human_label` 结果；不声称开放域语义理解，不消费真实教师/学生数据，不接 readiness 判错统计、WPF 或云，不生成 `OptimizationCandidate`，不宣称 workflow integrated 或 live accepted
 
+### task_id: FLYWHEEL-009
+
+- goal: 建立 canonical synthetic teacher feedback 的独立诊断统计闭环，使结构化率、人工分流率和归因分布可被稳定重算
+- inputs: FLYWHEEL-008 canonical teacher fixture inventory、三份 hash-bound `FeedbackParseResult`、9 类根因、4 档 severity、5 类人工分流 reason code
+- changes: 新增 provider-neutral `TeacherFeedbackDiagnosticReport` schema/compiler；逐项重验 inventory/result raw-byte SHA-256 与 FLYWHEEL-008 semantic authority；输出完整 result bindings、parsed/needs-human-label 计数和比率、固定顺序 error/severity/reason 分布；将 committed report 纳入 assets semantic recompile；与 candidate readiness 完全分离
+- verification: 当前三份 fixture 稳定报告 total=3、parsed=2、needsHumanLabel=1、structuredRate=0.666667、humanLabelRate=0.333333；reasoning/format 与 medium/low 各 1，ambiguous_error_signal=1；inventory/result/report/computed field/path/output alias 漂移 fail closed；optimization refs 为空；完整固定顺序项目门禁
+- rollback: 回滚 FLYWHEEL-009 提交；删除 diagnostic report schema/compiler/fixture 和对应 assets/README/策略增量；不得回滚 FLYWHEEL-008 teacher parsing authority，不得修改 readiness、`.env`、仓外 receipt、WPF、真实数据或 cloud-egress 配置
+- blocks: FLYWHEEL-008
+- done_definition: 仓内能从 canonical synthetic teacher feedback authority 确定性生成并重验一个独立诊断报告；该报告只衡量受控 fixture 的解析分流，不贡献 candidate recall、release qualification、controls、eligibility 或 `OptimizationCandidate`，不宣称真实教师反馈效果、workflow integrated 或 live accepted
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001

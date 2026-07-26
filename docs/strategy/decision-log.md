@@ -103,3 +103,9 @@
 - 决定：首个 teacher feedback parser 只处理 hash-bound canonical fixture inventory 准入的公开 synthetic input；唯一非否定根因和唯一 severity 显式短语才生成 `teacher_input` record，其余情况统一进入 `needs_human_label`
 - 原因：当前没有受验收的开放域中文语义模型或真实教师数据 authority；显式词典能先验证 input/run/hash/queue 合同而不伪装自然语言理解能力
 - 边界：teacher parse result 当前不进入 readiness 判错统计，不消费真实数据，不生成 `OptimizationCandidate`，不接 WPF 或云
+
+## D-021 教师反馈解析质量使用独立诊断报告
+
+- 决定：canonical synthetic teacher feedback 的结构化率、人工分流率和归因分布由独立 `TeacherFeedbackDiagnosticReport` 统计，不扩展 `OptimizationReadinessReport`
+- 原因：同一 candidate run 可同时产生 auto fixture label 和 teacher input feedback；若把 teacher parse result 当作新的 candidate evaluation unit，会重复计算判错 recall 并混淆 parser ingestion quality 与 candidate quality
+- 边界：diagnostic report 必须绑定 inventory/result 原始字节、保留零计数类别且 optimization refs 为空；它不贡献 qualification、controls、eligibility 或真实教师语言理解结论

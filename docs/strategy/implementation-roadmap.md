@@ -22,6 +22,7 @@
 - 以 GEN-003 provider-neutral schema、明确标记的 deterministic `synthetic_fixture`、三个 hash-bound generated candidates 接入飞轮；当前只证明 repo-side contract plumbing，controls 仍未验证且 workflow/live acceptance 后接
 - 以 FLYWHEEL-007 将 raw diagnostic bucket 与 release-qualified bucket 分离；synthetic fixture 只保留 `diagnostic_only` provenance，不得贡献非扰动放行门槛
 - 以 FLYWHEEL-008 用公开 synthetic teacher text 跑通确定性显式词典解析与 `needs_human_label` 分流；真实教师数据、开放域语义解析和 readiness 判错接入后接
+- 以 FLYWHEEL-009 从 canonical synthetic teacher authority 独立统计结构化率、人工分流率和归因分布；该诊断面不接 candidate readiness、qualification 或 eligibility
 
 ## P2：双轨视觉与原生输入
 
