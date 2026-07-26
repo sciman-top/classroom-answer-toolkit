@@ -256,6 +256,8 @@ raw-byte SHA-256，确定性统计 `parsed / needs_human_label` 数量与比率�
 recall、release qualification、controls 或 eligibility。它的 structured rate 只证明当前受控
 synthetic fixture 的 parser 分流覆盖，不代表真实教师语言理解准确率、模型质量或生产验收；
 `optimizationCandidateRefs` 必须为空。
+CLI 重编译输出必须位于仓库根目录之外；任何仓内 readiness、generated、teacher 或其他
+canonical asset 都不得作为输出目标，拒绝时必须保持原始 bytes 不变。
 
 ### optimization-readiness-input / optimization-readiness-report
 

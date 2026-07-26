@@ -68,7 +68,7 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `tools/latex-renderer/`: Markdown、LaTeX、PDF 渲染、审阅与交付工具链。
 - `tools/ai-gateway/`: 可选 AI 网关配置校验与显式 live 探针入口。
 - `tools/visual-evidence/`: 视觉证据 `DecisionRecord`、交付级 coverage/aggregate 离线编译、受控 manifest 附着与 fail-closed 合同测试。
-- `tools/sample-flywheel/`: 合成样例的 index/package 准入、plumbing/scoring 门禁、`SampleRunRecord` 编译与 fixture-label `FeedbackParseResult` 归因；当前 scoring 只做 SHA-256 exact-diff。
+- `tools/sample-flywheel/`: 合成样例的 index/package 准入、plumbing/scoring 门禁、`SampleRunRecord` 编译、fixture/teacher-text `FeedbackParseResult` 归因与独立 teacher diagnostic report；当前 scoring 只做 SHA-256 exact-diff。
 - `tools/answer-graphics/`: 实验性受控插图工具链，不是默认主交付链。
 - `tools/ocr/`: 面向低质量扫描件和批量处理的本地 OCR 路径。
 - `eval/`: 固定评测数据集、视觉基线和回归结果。
@@ -172,7 +172,7 @@ dotnet build ClassroomToolkit.sln -c Debug
 
 当前最完整的链路是初中物理参考答案生成与渲染。多学段/多学科支持已经在资产层、规范层和契约层展开，但产品层仍在演进中。
 当前最成熟的交付主链仍是 `answer.md -> PDF/review`。项目正在按“飞轮先行、生成主链后接、视觉双轨后落地”的路线推进。
-样例飞轮现已具备完全合成 fixture 的首个可执行准入、记账与反馈归因闭环：`样例交付/index.json` 是不可覆盖的 canonical authority，并通过 `subjectPack / packageRef / packageSha256` 绑定唯一 structured package，通过 `candidateBindings` 绑定 negative-candidate descriptor bytes；hash-bound 样例资产由 `.gitattributes` 固定 LF。package 与内部引用必须留在对应 canonical root。`plumbing` 不产优化信号，`scoring` 要求显式 candidate/truth/leakage 状态并受 fail-closed 门禁约束；只有 current-authority-valid、non-exact、fixture-labelled scoring run 可编译 `FeedbackParseResult`，并绑定 source run bytes。输出通过仓内有限 shape validator、compiler semantic invariants 和当前 canonical authority bytes 重验，不代表完整 Draft 2020-12、任意归档 authority、教师自由文本解析或语义答案评分；`optimizationCandidateRefs` 仍为空，不构成优化候选或灰度放行。
+样例飞轮现已具备完全合成 fixture 的可执行准入、记账与反馈归因闭环：`样例交付/index.json` 是不可覆盖的 canonical authority，并通过 `subjectPack / packageRef / packageSha256` 绑定唯一 structured package，通过 `candidateBindings` 绑定 negative-candidate descriptor bytes；hash-bound 样例资产由 `.gitattributes` 固定 LF。package 与内部引用必须留在对应 canonical root。`plumbing` 不产优化信号，`scoring` 要求显式 candidate/truth/leakage 状态并受 fail-closed 门禁约束；current-authority-valid、non-exact fixture-labelled scoring run 可编译 auto feedback，canonical public synthetic teacher text 可经有限显式词典投影为 parsed 或 `needs_human_label`，并由独立 diagnostic report 统计结构化率与分流分布。输出通过仓内有限 shape validator、compiler semantic invariants 和当前 canonical authority bytes 重验，不代表完整 Draft 2020-12、真实教师自由文本理解、任意归档 authority 或语义答案评分；teacher diagnostics 不进入 candidate readiness，`optimizationCandidateRefs` 仍为空，不构成优化候选或灰度放行。
 视觉降错本轮已进入契约层并具备最小离线决策编译：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` 已纳入 schema 与资产校验，`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 已作为阶段产物落盘，双轨一致但证据缺失和直接跳答案缺 grounding 的样例都可由运行时代码推导为 `trusted=false`；真正的双轨/三轨运行时、局部高清 crop 和 review 队列产品化仍是后续工程。
 WPF 当前完成最新交付的 review/trust 投影、本地题目级 `DecisionRecord` 的受控附着，以及本地 aggregate 的显式附着后立即重验；只有 source-aware verifier 与同批 manifest bytes 的 `manifestResultSha256` 一致时才显示正向时间点状态。该入口不生成 aggregate、不生成审批、不推进 lifecycle；这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
 离线 delivery aggregate 已能对合成 `sample-package` inventory、snapshot/input/manifest bytes 和逐题决策做完整覆盖证明，并记录 aggregate attach 的可重验 hash chain；它仍不代表真实试卷全题识别、WPF workflow integration 或 live acceptance。

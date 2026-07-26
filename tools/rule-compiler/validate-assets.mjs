@@ -7,6 +7,7 @@ import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs"
 import { validateCanonicalSampleAuthorities } from "../sample-flywheel/sample-run.mjs";
 import { validateOptimizationReadinessReport } from "../sample-flywheel/optimization-readiness.mjs";
 import { validateCanonicalTeacherFeedbackFixtures } from "../sample-flywheel/teacher-feedback-parse.mjs";
+import { validateTeacherFeedbackDiagnosticReport } from "../sample-flywheel/teacher-feedback-diagnostic.mjs";
 import { validateCanonicalSyntheticGenerationFixtures } from "../answer-generator/synthetic-generator.mjs";
 
 function collectValidationTargets() {
@@ -22,6 +23,7 @@ function collectValidationTargets() {
   const feedbackParseResultSchema = resolveRepoPath("prompts/shared/schemas/feedback-parse-result.schema.json");
   const teacherFeedbackSubmissionSchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-submission.schema.json");
   const teacherFeedbackFixtureInventorySchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-fixture-inventory.schema.json");
+  const teacherFeedbackDiagnosticReportSchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-diagnostic-report.schema.json");
   const answerGenerationRequestSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-request.schema.json");
   const answerGenerationResultSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-result.schema.json");
   const samplePackageSchema = resolveRepoPath("prompts/shared/schemas/sample-package.schema.json");
@@ -139,6 +141,12 @@ function collectValidationTargets() {
         schemaPath: teacherFeedbackFixtureInventorySchema
       }]
     : [];
+  const teacherFeedbackDiagnosticReportFiles = [{
+    filePath: path.join(
+      teacherFeedbackFixtureRoot,
+      "teacher-feedback-diagnostic-report.json"),
+    schemaPath: teacherFeedbackDiagnosticReportSchema
+  }];
   const answerGenerationRequestFiles = listFilesBySuffixRecursive(
     answerGenerationEvalRoot,
     ".answer-generation-request.json")
@@ -173,6 +181,7 @@ function collectValidationTargets() {
     teacherFeedbackSubmissions: teacherFeedbackSubmissionFiles,
     teacherFeedbackParseResults: teacherFeedbackParseResultFiles,
     teacherFeedbackFixtureInventories: teacherFeedbackFixtureInventoryFiles,
+    teacherFeedbackDiagnosticReports: teacherFeedbackDiagnosticReportFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -189,6 +198,7 @@ function collectValidationTargets() {
       feedbackParseResultSchema,
       teacherFeedbackSubmissionSchema,
       teacherFeedbackFixtureInventorySchema,
+      teacherFeedbackDiagnosticReportSchema,
       answerGenerationRequestSchema,
       answerGenerationResultSchema,
       samplePackageSchema,
@@ -267,7 +277,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -492,6 +502,15 @@ function main() {
   } catch (error) {
     teacherFeedbackFixtureError = error instanceof Error ? error.message : String(error);
   }
+  let teacherFeedbackDiagnosticReportError;
+  try {
+    const reportPath = targets.teacherFeedbackDiagnosticReports[0].filePath;
+    validateTeacherFeedbackDiagnosticReport(readJsonFile(reportPath));
+  } catch (error) {
+    teacherFeedbackDiagnosticReportError = error instanceof Error
+      ? error.message
+      : String(error);
+  }
 
   const errors = [
     ...fileValidation.errors,
@@ -503,6 +522,9 @@ function main() {
     ...optimizationReadinessErrors,
     ...(teacherFeedbackFixtureError
       ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
+      : []),
+    ...(teacherFeedbackDiagnosticReportError
+      ? [`Canonical teacher feedback diagnostic report: ${teacherFeedbackDiagnosticReportError}`]
       : []),
     ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : []),
     ...(answerGenerationFixtureError

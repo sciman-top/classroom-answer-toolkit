@@ -15,6 +15,7 @@ This tool provides the first executable, fully synthetic sample-run admission an
 - feedback attribution uses hash-bound fixture severity/confidence and always emits no optimization candidate.
 - bounded teacher-text parsing accepts hash-inventory-admitted, repository-owned public `synthetic_fixture` submissions only; one explicit non-negated error type and one explicit severity produce `source=teacher_input`, while missing, ambiguous, or explicitly negated signals fail closed to `needs_human_label` with no feedback record. Negation handling is a finite prefix lexicon, not general linguistic interpretation.
 - teacher-text results are diagnostic fixtures and are not admitted into readiness recall or optimization eligibility.
+- the canonical `TeacherFeedbackDiagnosticReport` independently reports fixture ingestion structure/human-label rates and complete error/severity/reason distributions; it does not contribute candidate readiness or eligibility.
 - a hash-bound canonical case inventory plus a complete runtime manifest can compile a per-source `OptimizationReadinessReport`; missing runs or feedback remain in the recall denominator and unmet gates fail closed.
 - without a receipt, toolchain and restricted-egress controls remain `not_verified`.
 - `run:control-gates` executes the fixed gate sequence from a clean HEAD, forces cloud egress disabled, writes logs and a hash-bound receipt outside the repository, and rechecks the clean revision after execution.
@@ -32,6 +33,15 @@ Compile the committed synthetic readiness fixture:
 npm --prefix tools/sample-flywheel run compile:readiness -- `
   --manifest eval/sample-flywheel/cases/synthetic-readiness/readiness-input.json `
   --out eval/sample-flywheel/cases/synthetic-readiness/readiness-report.json
+```
+
+Compile the canonical synthetic teacher-feedback diagnostic report to a
+path outside the repository (repository-owned canonical assets are never valid
+CLI output targets):
+
+```powershell
+npm --prefix tools/sample-flywheel run compile:teacher-diagnostics -- `
+  --out "$env:TEMP/classroom-teacher-feedback-diagnostic-report.json"
 ```
 
 Run the controlled gates from a clean checkout. The output directory must be
