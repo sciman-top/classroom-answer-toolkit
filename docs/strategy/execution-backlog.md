@@ -108,6 +108,16 @@
 - blocks: FLYWHEEL-002, SAMPLE-001
 - done_definition: 仓内可执行并验证一轮不产优化信号的 plumbing 和一轮受门禁的合成 scoring；当前只证明 current canonical authority、exact-diff 与预标注记账，不宣称任意归档 authority 验真、语义判题、OptimizationCandidate、灰度放行、真实样例或 live acceptance
 
+### task_id: FLYWHEEL-004
+
+- goal: 建立首个可执行 `scoring SampleRunRecord -> FeedbackParseResult` 合成反馈归因闭环
+- inputs: FLYWHEEL-003 current-authority-valid scoring run、9 类反馈根因、hash-bound fixture severity/confidence
+- changes: 新增 `feedback-parse-result` schema 与离线 parser；只接受 non-exact synthetic fixture scoring；结果绑定 source run bytes 和 index/package/descriptor hashes；生成一个 `auto_collected feedback-record`；createdAt 显式输入；optimization refs 强制为空；纳入 assets 与 hotspot
+- verification: fixture 归因成功；plumbing、exact/authority/attribution 漂移、非法时间、direct/hardlink output alias 拒绝；完整项目门禁
+- rollback: 回滚 FLYWHEEL-004 commit；手工 CLI 输出需独立盘点清理
+- blocks: FLYWHEEL-003
+- done_definition: 仓内可从一个受控合成 scoring run 生成 source-byte-bound feedback parse result；不宣称教师自由文本解析、语义评分、OptimizationCandidate、灰度、WPF、云或 live acceptance
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001

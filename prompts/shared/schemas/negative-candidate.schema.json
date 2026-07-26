@@ -76,6 +76,20 @@
         "policy"
       ]
     },
+    "expectedSeverity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "expectedLabelConfidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
     "originRef": { "type": "string" },
     "mutationRef": { "type": "string" }
   },

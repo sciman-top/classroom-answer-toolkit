@@ -7,6 +7,8 @@
   "expectedPrimaryErrorType": "reasoning_error",
   "expectedContributingErrorTypes": [],
   "expectedDiffLayer": "answer",
+  "expectedSeverity": "medium",
+  "expectedLabelConfidence": 1,
   "originRef": "reference.md",
   "mutationRef": "synthetic-wrong-final-value"
 }

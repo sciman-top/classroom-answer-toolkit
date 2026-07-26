@@ -54,7 +54,7 @@
 ### 输出
 
 - canonical index/package/candidate-descriptor hash authority 约束下、通过仓内有限 shape validator、compiler semantic invariants 与 current canonical authority bytes 重验的 `SampleRunRecord`
-- `FeedbackParseResult`
+- source-run-byte-bound、只接受 non-exact synthetic fixture scoring 的 `FeedbackParseResult`
 - `OptimizationCandidate`
 - `DecisionRecord`
 - `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` schema 契约

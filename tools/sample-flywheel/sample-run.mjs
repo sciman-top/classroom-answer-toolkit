@@ -22,6 +22,7 @@ const scoringCandidateTypes = new Set([
   "generated",
   "perturbed_negative"
 ]);
+const feedbackSeverities = new Set(["low", "medium", "high", "critical"]);
 const sha256Pattern = /^[a-f0-9]{64}$/;
 const kebabIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -172,6 +173,8 @@ function compileScoringRecord(context) {
           primaryErrorType: candidateArtifact.value.expectedPrimaryErrorType,
           contributingErrorTypes: candidateArtifact.value.expectedContributingErrorTypes ?? [],
           expectedDiffLayer: candidateArtifact.value.expectedDiffLayer,
+          expectedSeverity: candidateArtifact.value.expectedSeverity,
+          labelConfidence: candidateArtifact.value.expectedLabelConfidence,
           labelSource: "negative_candidate_fixture"
         },
     stopReason: "scoring_recorded_no_optimizer"
@@ -219,6 +222,20 @@ function assertPackageMatchesIndex(packageArtifact, indexArtifact, indexEntry, p
     assertSchema("indexed negative candidate", candidateArtifact.value, schemas.candidate);
     if (candidateArtifact.sha256 !== binding.sha256) {
       throw new Error("indexed negative candidate SHA-256 does not match candidateBinding.");
+    }
+    const contributingErrorTypes = candidateArtifact.value.expectedContributingErrorTypes ?? [];
+    if (new Set(contributingErrorTypes).size !== contributingErrorTypes.length
+      || contributingErrorTypes.includes(candidateArtifact.value.expectedPrimaryErrorType)) {
+      throw new Error("indexed negative candidate contributing errors must be unique and exclude primary.");
+    }
+    if (!feedbackSeverities.has(candidateArtifact.value.expectedSeverity)) {
+      throw new Error("indexed negative candidate expectedSeverity is required.");
+    }
+    if (typeof candidateArtifact.value.expectedLabelConfidence !== "number"
+      || !Number.isFinite(candidateArtifact.value.expectedLabelConfidence)
+      || candidateArtifact.value.expectedLabelConfidence < 0
+      || candidateArtifact.value.expectedLabelConfidence > 1) {
+      throw new Error("indexed negative candidate expectedLabelConfidence must be from 0 to 1.");
     }
     const candidateContentPath = resolveContainedRef(
       candidateArtifact.value.artifactRef,
@@ -390,11 +407,53 @@ export function verifySampleRunRecordAuthority(record) {
       || !isDeepStrictEqual(
         record.rootCauseSummary.contributingErrorTypes,
         candidateArtifact.value.expectedContributingErrorTypes ?? [])
-      || record.rootCauseSummary.expectedDiffLayer !== candidateArtifact.value.expectedDiffLayer) {
+      || record.rootCauseSummary.expectedDiffLayer !== candidateArtifact.value.expectedDiffLayer
+      || record.rootCauseSummary.expectedSeverity !== candidateArtifact.value.expectedSeverity
+      || record.rootCauseSummary.labelConfidence !== candidateArtifact.value.expectedLabelConfidence) {
       throw new Error("SampleRunRecord root cause does not match its bound negative-candidate descriptor.");
     }
   }
   return record;
+}
+
+export function getCanonicalSampleAuthorityPaths(sampleId) {
+  const authority = readCanonicalSampleAuthority(sampleId);
+  const paths = [
+    authority.indexArtifact.path,
+    authority.packageArtifact.path
+  ];
+  for (const field of ["problemSource", "referenceTruth", "teacherAnnotation", "candidateRefs"]) {
+    paths.push(...resolveRefs(
+      authority.indexEntry[field],
+      authority.indexArtifact.path,
+      authority.packageRoot,
+      field));
+  }
+  for (const artifact of authority.packageArtifact.value.artifacts) {
+    paths.push(resolveContainedRef(
+      artifact.path,
+      authority.packageArtifact.path,
+      authority.packageRoot,
+      "artifact.path"));
+  }
+  for (const binding of resolveCandidateBindings(
+    authority.indexEntry,
+    authority.indexArtifact,
+    authority.packageRoot)) {
+    paths.push(binding.path);
+    const descriptor = readJsonArtifact(binding.path, "indexed negative candidate");
+    paths.push(resolveContainedRef(
+      descriptor.value.artifactRef,
+      descriptor.path,
+      authority.packageRoot,
+      "artifactRef"));
+    paths.push(resolveContainedRef(
+      descriptor.value.originRef,
+      descriptor.path,
+      authority.packageRoot,
+      "originRef"));
+  }
+  return [...new Map(paths.map((filePath) => [normalizePath(filePath), filePath])).values()];
 }
 
 function readCanonicalSampleAuthority(sampleId) {

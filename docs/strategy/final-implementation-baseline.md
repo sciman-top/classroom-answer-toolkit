@@ -214,6 +214,23 @@ authority bytes。任意归档 authority 验真不属于当前能力。
 
 兼容字段 `errorType` 只保留为 `primaryErrorType` 的别名，不再作为新模型演进面。
 
+### feedback-parse-result.schema.json
+
+首个可执行反馈归因切片只接受 current-authority-valid、`exactMatch=false` 且
+`labelSource=negative_candidate_fixture` 的 scoring `SampleRunRecord`。结果必须绑定 source
+run 原始 bytes SHA-256、index/package/descriptor authority hashes，并只生成一个
+`source=auto_collected` 的 `feedback-record`。severity 与 confidence 来自 hash-bound
+negative-candidate fixture 标注；`createdAt` 由调用者显式提供 canonical UTC timestamp。
+`optimizationCandidateRefs` 必须为空，`stopReason=feedback_recorded_no_optimizer`。
+
+`negative-candidate.schema.json` 保持 additive base contract，新增 severity/confidence 属性不对
+所有历史 descriptor 设为 schema required；进入 canonical FLYWHEEL-004 authority 的 descriptor
+由 assets/compiler semantic admission 强制要求这两个字段、合法值域、唯一 contributing errors
+且 contributing 不得重复 primary。
+
+该切片不解析教师自由文本，不做语义答案评分，不验证任意归档 authority，不生成
+`OptimizationCandidate`，也不构成灰度放行。
+
 9 类权威值域固定为：
 
 - `spec_gap`
@@ -263,7 +280,7 @@ authority bytes。任意归档 authority 验真不属于当前能力。
 - flat scoring 只能通过 `样例交付/index.json` 选择候选；index 与 structured package 的 classification、question inventory、problem/truth/annotation 引用必须一致。
 - `plumbing` 可在 truth/leakage 尚未满足 scoring 时验证流程，但不得生成 diff、根因或 optimization refs。
 - 首个合成 scoring 只比较 candidate/reference 原始 bytes 的 SHA-256，并使用 `negative-candidate` 的预标注根因记账；它不代表语义答案评分。
-- 在 `FeedbackParseResult / OptimizationCandidate` 运行时与分桶指标落地前，`optimizationCandidateRefs` 必须为空，不能据此进入灰度。
+- 在 `OptimizationCandidate` 运行时与分桶指标落地前，`SampleRunRecord` 和 `FeedbackParseResult` 的 `optimizationCandidateRefs` 必须为空，不能据此进入灰度。
 
 ## 9. 输入归一化与答案泄漏策略
 

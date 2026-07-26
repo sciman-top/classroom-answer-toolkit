@@ -13,6 +13,7 @@
 - 先以完全合成 fixture 跑通不可覆盖 canonical index、package 与 candidate descriptor path/hash、contained refs 准入、plumbing 与 SHA-256 exact-diff scoring 记账；输出由仓内有限 shape validator、compiler semantic invariants 和 current canonical authority bytes 重验约束，语义评分、归档 authority 验真和优化候选仍后接
 - 固定 `runMode / candidateSourceType / truthExtractionStatus / inputAnswerLeakage`
 - 建立 `SampleRunRecord / FeedbackParseResult / OptimizationCandidate / DecisionRecord`
+- 先以 hash-bound fixture label 跑通 `SampleRunRecord -> FeedbackParseResult`；教师自由文本解析、语义归因与 `OptimizationCandidate` 后接
 - 固定视觉证据编译器 schema：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`
 - 固定 renderer contract schema 和 Typst 主渲染迁移计划
 - 补高风险视觉题标疑与 `trusted=false` 回归样例

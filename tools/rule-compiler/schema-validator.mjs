@@ -82,6 +82,13 @@ function validateArray(value, schema, currentPath, state) {
   for (let index = 0; index < value.length; index += 1) {
     validateValue(value[index], schema.items ?? {}, `${currentPath}/${index}`, state);
   }
+
+  if (schema.uniqueItems === true) {
+    const serialized = value.map((item) => JSON.stringify(item));
+    if (new Set(serialized).size !== serialized.length) {
+      state.errors.push(`${formatPath(currentPath)} should contain unique items.`);
+    }
+  }
 }
 
 function validatePrimitive(value, schema, currentPath, state) {
@@ -111,6 +118,12 @@ function validatePrimitive(value, schema, currentPath, state) {
     && typeof schema.minimum === "number"
     && value < schema.minimum) {
     state.errors.push(`${formatPath(currentPath)} should be >= ${schema.minimum}.`);
+  }
+
+  if ((actualType === "number" || Number.isInteger(value))
+    && typeof schema.maximum === "number"
+    && value > schema.maximum) {
+    state.errors.push(`${formatPath(currentPath)} should be <= ${schema.maximum}.`);
   }
 }
 

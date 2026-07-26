@@ -10,5 +10,8 @@ This tool provides the first executable, fully synthetic sample-run admission an
 - `scoring` enforces indexed candidate, truth-extraction, and leakage gates.
 - records pass the repository's limited shape validator, compiler semantic invariants, and verification against current canonical authority bytes.
 - the current comparator is SHA-256 exact-diff only; root cause comes from the synthetic negative-candidate label.
+- current-authority-valid, non-exact fixture scoring runs can compile one source-byte-bound `FeedbackParseResult`.
+- feedback attribution uses hash-bound fixture severity/confidence and always emits no optimization candidate.
 - no semantic answer grading, `OptimizationCandidate`, cloud egress, or live acceptance is implemented.
+- teacher free-text parsing is not implemented.
 - arbitrary archived-authority verification is not implemented.

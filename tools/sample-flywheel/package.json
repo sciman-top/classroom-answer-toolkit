@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "compile:run": "node sample-run.mjs",
-    "test": "node --test sample-run.test.mjs"
+    "compile:feedback": "node feedback-parse.mjs",
+    "test": "node --test sample-run.test.mjs feedback-parse.test.mjs"
   }
 }

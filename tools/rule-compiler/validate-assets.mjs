@@ -16,6 +16,7 @@ function collectValidationTargets() {
   const deliveryManifestSchema = resolveRepoPath("prompts/shared/schemas/delivery-manifest.schema.json");
   const reviewStateMachineSchema = resolveRepoPath("prompts/shared/schemas/review-state-machine.schema.json");
   const feedbackRecordSchema = resolveRepoPath("prompts/shared/schemas/feedback-record.schema.json");
+  const feedbackParseResultSchema = resolveRepoPath("prompts/shared/schemas/feedback-parse-result.schema.json");
   const samplePackageSchema = resolveRepoPath("prompts/shared/schemas/sample-package.schema.json");
   const sampleIndexSchema = resolveRepoPath("prompts/shared/schemas/sample-index.schema.json");
   const negativeCandidateSchema = resolveRepoPath("prompts/shared/schemas/negative-candidate.schema.json");
@@ -122,6 +123,7 @@ function collectValidationTargets() {
       deliveryManifestSchema,
       reviewStateMachineSchema,
       feedbackRecordSchema,
+      feedbackParseResultSchema,
       samplePackageSchema,
       sampleIndexSchema,
       negativeCandidateSchema,

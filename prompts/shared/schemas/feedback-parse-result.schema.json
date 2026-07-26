@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/feedback-parse-result/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "FeedbackParseResult",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "sampleId",
+    "subjectPack",
+    "parseMode",
+    "sourceRunSha256",
+    "sampleIndexSha256",
+    "samplePackageSha256",
+    "candidateDescriptorSha256",
+    "feedbackRecords",
+    "optimizationCandidateRefs",
+    "stopReason"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "feedback-parse-result"
+      ]
+    },
+    "sampleId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "subjectPack": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "parseMode": {
+      "type": "string",
+      "enum": [
+        "synthetic_fixture_label"
+      ]
+    },
+    "sourceRunSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sampleIndexSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "samplePackageSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "candidateDescriptorSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "feedbackRecords": {
+      "type": "array",
+      "items": {
+        "$ref": "./feedback-record.schema.json"
+      }
+    },
+    "optimizationCandidateRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "stopReason": { "type": "string" }
+  },
+  "additionalProperties": true
+}
