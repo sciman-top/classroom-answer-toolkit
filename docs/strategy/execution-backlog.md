@@ -262,11 +262,21 @@
 
 - goal: 建立 `DeliveryDecisionAggregate -> delivery manifest` 的受控附着与可重验 hash receipt
 - inputs: `DeliveryDecisionAggregate`、其原始 manifest preimage、delivery manifest review/status、attachment receipt
-- changes: 新增 aggregate attachment receipt schema 和本地 attach/verify 工具；附件前重算 aggregate 并要求 preimage bytes 匹配，两个 attach 共用 manifest 写锁，receipt 后替换前复核全源稳定快照，再原子替换 manifest；.NET 消费者在 source-aware verifier 接入前保持 fail-closed；不推进 lifecycle
+- changes: 新增 aggregate attachment receipt schema 和本地 attach/verify 工具；附件前重算 aggregate 并要求 preimage bytes 匹配，两个 attach 共用 manifest 写锁，receipt 后替换前复核全源稳定快照，再原子替换 manifest；.NET 消费者在 source-aware verifier 正向投影接入前保持 fail-closed；不推进 lifecycle
 - verification: aggregate attachment 合同测试覆盖成功、幂等、preimage/source 漂移、receipt/backup 篡改、canonical/physical 双锁、hardlink alias 串行化、dangling symlink 拒绝、部分获取/action 异常/token 替换清理、stale-lock 保留；malformed attachment 的 .NET fail-closed 回归；assets/cross-subject/full gates
 - rollback: 用 `<manifest>.before-delivery-decision-aggregate.json` 恢复 preimage，并删除同名 attachment receipt；代码不自动回收 stale lock，仅在确认 owner PID 已死亡、没有 writer 活动且保存锁证据后人工清理 canonical/physical lock；回滚本任务 schema/tool/test/doc 修改
 - blocks: VISION-006, REVIEW-004
-- done_definition: 合成受控 aggregate 可把 trusted projection 写入 manifest，且后续 verifier 能从 manifest、receipt、backup、aggregate 及其绑定源重算稳定 hash chain；WPF/diagnostics/headless 在 source-aware verifier 接入前保持 fail-closed；不接入 WPF 正向附着、不生成审批、不推进 lifecycle、不宣称 workflow integrated 或 live acceptance
+- done_definition: 合成受控 aggregate 可把 trusted projection 写入 manifest，且后续 verifier 能从 manifest、receipt、backup、aggregate 及其绑定源重算稳定 hash chain；WPF/diagnostics/headless 在 source-aware verifier 正向投影接入前保持 fail-closed；不接入 WPF 正向附着、不生成审批、不推进 lifecycle、不宣称 workflow integrated 或 live acceptance
+
+### task_id: REVIEW-006
+
+- goal: 把既有 aggregate attachment source-aware verifier 暴露为显式、只读、强类型的 .NET orchestration 能力
+- inputs: 已附着 delivery manifest 与 `verify:aggregate-attachment` JSON 输出
+- changes: Domain/Application 增加验证请求、结果与强类型凭据；orchestrator 以 `node` 进程直接调用既有 verifier，严格校验输出 kind、请求 manifest 相关性、绝对 artifact paths、attachment id、SHA-256 与正向状态；进程启动、执行或结构化输出失败时不返回验证凭据
+- verification: orchestrator 聚焦测试覆盖成功、进程/启动失败、取消透传、输入拒绝、非 JSON、多 JSON、重复/未知/缺失字段、路径不匹配、hash 非法和非正向状态；真实 `PowerShellProcessRunner -> node -> synthetic fixture` 集成测试；完整项目门禁
+- rollback: 回滚本任务对 Domain / Application / Services / tests / strategy / evidence 的修改；本能力只读，不需要恢复 manifest 或外部数据
+- blocks: REVIEW-005
+- done_definition: .NET 调用方可显式重验已附着 aggregate 并取得与请求 manifest 绑定的强类型凭据；现有 `ReadDeliveryContext`、WPF、diagnostics/headless 仍保持 fail-closed，不自动执行 verifier、不正向投影 trust、不生成审批、不推进 lifecycle、不宣称 workflow integrated 或 live acceptance
 
 ## Epic EVAL：分桶指标与 gate
 

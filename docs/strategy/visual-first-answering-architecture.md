@@ -81,7 +81,7 @@
 3. 双轨一致也不能直接可信，因为可能一致同错；必须同时检查证据链、风险分类、置信度和哨兵样例表现。
 4. `visualReviewPassed=null` 表示未裁定、自动降级或待复核；`trusted=false` 直到无未决题且 review 生命周期批准。
 5. 不允许静默降级到纯文本链后假装已经完成看图。
-6. 当前本地 CLI 已能把 aggregate 的覆盖证明连同 preimage/result receipt 受控附着到 manifest；renderer manifest writer 与两个 attach 同时获取 canonical path lock 和 physical identity lock，代码不自动删除 stale lock，并拒绝 manifest 文件自身为 symlink。WPF、headless 和诊断读取面在 source-aware verifier 接入前，只要 attachment 属性存在（包括 malformed 值）就必须把正向状态钳制为未裁定/未可信。
+6. 当前本地 CLI 已能把 aggregate 的覆盖证明连同 preimage/result receipt 受控附着到 manifest；renderer manifest writer 与两个 attach 同时获取 canonical path lock 和 physical identity lock，代码不自动删除 stale lock，并拒绝 manifest 文件自身为 symlink。.NET orchestration 已提供显式 source-aware verifier 适配器，但尚未连接自动读取或正向状态投影；WPF、headless 和诊断读取面只要 attachment 属性存在（包括 malformed 值）仍必须把正向状态钳制为未裁定/未可信。
 7. 离线 aggregate 只有在 inventory 非空且唯一、逐题 DecisionRecord 无缺失/额外/重复、无阻断原因、manifest 三门禁通过且 lifecycle 为 `approved/published` 时才可生成 `trusted=true`。CLI attach 不等于 WPF workflow integrated，不能据此宣称真实交付已验收。
 
 离线决策编译器必须把以下情况推导为 `review_required`：证据链缺 crop、binding 不稳、Track 结果冲突、Track C blocking finding、高风险视觉题、低置信或 review 生命周期未批准。

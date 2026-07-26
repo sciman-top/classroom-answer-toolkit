@@ -20,4 +20,8 @@ public interface IToolchainOrchestrator
     Task<VisualDecisionAttachmentResult> AttachVisualDecisionAsync(
         VisualDecisionAttachmentRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<DeliveryDecisionAggregateAttachmentVerificationResult> VerifyDeliveryDecisionAggregateAttachmentAsync(
+        DeliveryDecisionAggregateAttachmentVerificationRequest request,
+        CancellationToken cancellationToken = default);
 }

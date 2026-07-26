@@ -241,6 +241,120 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
     }
 
+    public async Task<DeliveryDecisionAggregateAttachmentVerificationResult> VerifyDeliveryDecisionAggregateAttachmentAsync(
+        DeliveryDecisionAggregateAttachmentVerificationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var repositoryRoot = GetWorkspaceInfo().RepositoryRoot;
+        var toolPath = Path.Combine(
+            repositoryRoot,
+            "tools",
+            "visual-evidence",
+            "verify-delivery-decision-aggregate-attachment.mjs");
+        var startedAt = DateTimeOffset.Now;
+        string manifestPath;
+        try
+        {
+            manifestPath = Path.GetFullPath(request.DeliveryManifestPath);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                toolPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Delivery manifest path is invalid: {ex.Message}");
+            return new DeliveryDecisionAggregateAttachmentVerificationResult(failed, null);
+        }
+
+        var validationError = ValidateJsonInput(manifestPath, "Delivery manifest");
+        if (validationError is not null)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                toolPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                validationError);
+            return new DeliveryDecisionAggregateAttachmentVerificationResult(failed, null);
+        }
+
+        ProcessRunResult processResult;
+        try
+        {
+            processResult = await _processRunner.RunAsync(
+                "node",
+                [
+                    toolPath,
+                    "--manifest",
+                    manifestPath
+                ],
+                repositoryRoot,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                toolPath,
+                -3,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Aggregate attachment verifier process failed: {ex.Message}");
+            return new DeliveryDecisionAggregateAttachmentVerificationResult(failed, null);
+        }
+
+        var finishedAt = DateTimeOffset.Now;
+        var output = BuildOutput(processResult.StandardOutput, processResult.StandardError);
+        if (processResult.ExitCode != 0)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                toolPath,
+                processResult.ExitCode,
+                startedAt,
+                finishedAt,
+                output);
+            return new DeliveryDecisionAggregateAttachmentVerificationResult(failed, null);
+        }
+
+        try
+        {
+            var verification = ParseAggregateAttachmentVerification(
+                processResult.StandardOutput,
+                manifestPath);
+            var succeeded = ToolchainExecutionResult.Success(
+                ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                toolPath,
+                startedAt,
+                finishedAt,
+                output);
+            return new DeliveryDecisionAggregateAttachmentVerificationResult(succeeded, verification);
+        }
+        catch (Exception ex)
+        {
+            var parseError = $"Aggregate attachment verification output was rejected: {ex.Message}";
+            var failedOutput = string.IsNullOrWhiteSpace(output)
+                ? parseError
+                : $"{output}{Environment.NewLine}{Environment.NewLine}[postcondition]{Environment.NewLine}{parseError}";
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment,
+                toolPath,
+                -2,
+                startedAt,
+                finishedAt,
+                failedOutput);
+            return new DeliveryDecisionAggregateAttachmentVerificationResult(failed, null);
+        }
+    }
+
     private async Task<ToolchainExecutionResult> RunScriptAsync(
         ToolchainScriptKind kind,
         string scriptPath,
@@ -361,6 +475,130 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
 
         return null;
+    }
+
+    private static DeliveryDecisionAggregateAttachmentVerification ParseAggregateAttachmentVerification(
+        string standardOutput,
+        string requestedManifestPath)
+    {
+        using var document = JsonDocument.Parse(standardOutput);
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException("Verifier output must be one JSON object.");
+        }
+
+        ValidateAggregateAttachmentVerificationProperties(root);
+        var kind = ReadRequiredString(root, "kind");
+        if (!string.Equals(kind, "delivery-decision-aggregate-attachment", StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Verifier output kind is invalid.");
+        }
+
+        var manifestPath = ReadRequiredAbsolutePath(root, "manifestPath");
+        if (!string.Equals(
+            Path.GetFullPath(manifestPath),
+            Path.GetFullPath(requestedManifestPath),
+            StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("Verifier output does not reference the requested delivery manifest.");
+        }
+
+        var aggregatePath = ReadRequiredAbsolutePath(root, "aggregatePath");
+        var preimageBackupPath = ReadRequiredAbsolutePath(root, "preimageBackupPath");
+        var receiptPath = ReadRequiredAbsolutePath(root, "receiptPath");
+        var attachmentId = ReadRequiredString(root, "attachmentId");
+        var manifestPreimageSha256 = ReadRequiredSha256(root, "manifestPreimageSha256");
+        var manifestResultSha256 = ReadRequiredSha256(root, "manifestResultSha256");
+        var visualReviewPassed = ReadRequiredTrue(root, "visualReviewPassed");
+        var trusted = ReadRequiredTrue(root, "trusted");
+
+        return new DeliveryDecisionAggregateAttachmentVerification(
+            manifestPath,
+            aggregatePath,
+            preimageBackupPath,
+            receiptPath,
+            attachmentId,
+            manifestPreimageSha256,
+            manifestResultSha256,
+            visualReviewPassed,
+            trusted);
+    }
+
+    private static void ValidateAggregateAttachmentVerificationProperties(JsonElement root)
+    {
+        string[] expectedPropertyNames =
+        [
+            "kind",
+            "manifestPath",
+            "aggregatePath",
+            "preimageBackupPath",
+            "receiptPath",
+            "attachmentId",
+            "manifestPreimageSha256",
+            "manifestResultSha256",
+            "visualReviewPassed",
+            "trusted"
+        ];
+        var expected = new HashSet<string>(expectedPropertyNames, StringComparer.Ordinal);
+        var observed = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in root.EnumerateObject())
+        {
+            if (!expected.Contains(property.Name))
+            {
+                throw new InvalidDataException($"Verifier output contains unknown property {property.Name}.");
+            }
+
+            if (!observed.Add(property.Name))
+            {
+                throw new InvalidDataException($"Verifier output contains duplicate property {property.Name}.");
+            }
+        }
+    }
+
+    private static string ReadRequiredString(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var valueElement)
+            || valueElement.ValueKind != JsonValueKind.String
+            || string.IsNullOrWhiteSpace(valueElement.GetString()))
+        {
+            throw new InvalidDataException($"Verifier output {propertyName} is missing or invalid.");
+        }
+
+        return valueElement.GetString()!;
+    }
+
+    private static string ReadRequiredAbsolutePath(JsonElement element, string propertyName)
+    {
+        var value = ReadRequiredString(element, propertyName);
+        if (!Path.IsPathFullyQualified(value))
+        {
+            throw new InvalidDataException($"Verifier output {propertyName} must be an absolute path.");
+        }
+
+        return value;
+    }
+
+    private static string ReadRequiredSha256(JsonElement element, string propertyName)
+    {
+        var value = ReadRequiredString(element, propertyName);
+        if (value.Length != 64 || value.Any(character => !Uri.IsHexDigit(character)))
+        {
+            throw new InvalidDataException($"Verifier output {propertyName} must be a SHA-256 hex digest.");
+        }
+
+        return value.ToLowerInvariant();
+    }
+
+    private static bool ReadRequiredTrue(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var valueElement)
+            || valueElement.ValueKind != JsonValueKind.True)
+        {
+            throw new InvalidDataException($"Verifier output {propertyName} must be true.");
+        }
+
+        return true;
     }
 
     private static AnswerDeliveryResult? ReadDeliveryResult(string deliveryManifestPath)

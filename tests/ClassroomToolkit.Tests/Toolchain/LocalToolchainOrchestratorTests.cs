@@ -318,6 +318,194 @@ public sealed class LocalToolchainOrchestratorTests
         result.Delivery.Should().BeNull();
     }
 
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_InvokesReadOnlyVerifier_AndParsesTypedResult()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        var processRunner = new AggregateVerificationProcessRunner(
+            BuildAggregateVerificationOutput(workspace.DeliveryManifestPath));
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            processRunner);
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(workspace.DeliveryManifestPath));
+
+        result.Execution.Succeeded.Should().BeTrue();
+        result.Execution.Kind.Should().Be(ToolchainScriptKind.VerifyDeliveryDecisionAggregateAttachment);
+        processRunner.LastFileName.Should().Be("node");
+        processRunner.LastArguments.Should().ContainInOrder(
+            Path.Combine(
+                workspace.Root,
+                "tools",
+                "visual-evidence",
+                "verify-delivery-decision-aggregate-attachment.mjs"),
+            "--manifest",
+            workspace.DeliveryManifestPath);
+        result.Verification.Should().NotBeNull();
+        result.Verification!.ManifestPath.Should().Be(workspace.DeliveryManifestPath);
+        result.Verification.AggregatePath.Should().Be(Path.Combine(workspace.Root, "aggregate.json"));
+        result.Verification.PreimageBackupPath.Should().Be(Path.Combine(workspace.Root, "manifest.before.json"));
+        result.Verification.ReceiptPath.Should().Be(Path.Combine(workspace.Root, "receipt.json"));
+        result.Verification.AttachmentId.Should().Be("aggregate-attachment-test");
+        result.Verification.ManifestPreimageSha256.Should().Be(new string('a', 64));
+        result.Verification.ManifestResultSha256.Should().Be(new string('b', 64));
+        result.Verification.VisualReviewPassed.Should().BeTrue();
+        result.Verification.Trusted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_ReturnsNoVerification_WhenVerifierFails()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new AggregateVerificationProcessRunner(
+                string.Empty,
+                exitCode: 1,
+                standardError: "Aggregate attachment hash chain does not match referenced artifacts."));
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(workspace.DeliveryManifestPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(1);
+        result.Execution.Output.Should().Contain("hash chain");
+        result.Verification.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_ReturnsTypedFailure_WhenProcessCannotStart()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new ThrowingProcessRunner(new InvalidOperationException("node executable not found")));
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(workspace.DeliveryManifestPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(-3);
+        result.Execution.Output.Should().Contain("node executable not found");
+        result.Verification.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_PropagatesCancellation()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new ThrowingProcessRunner(new OperationCanceledException()));
+
+        var action = () => orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(workspace.DeliveryManifestPath));
+
+        await action.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("{}")]
+    [InlineData("{\"kind\":\"delivery-decision-aggregate-attachment\"}")]
+    [InlineData("{\"kind\":\"delivery-decision-aggregate-attachment\"} {\"trusted\":true}")]
+    [InlineData("{\"kind\":\"delivery-decision-aggregate-attachment\",\"kind\":\"delivery-decision-aggregate-attachment\"}")]
+    [InlineData("{\"kind\":\"delivery-decision-aggregate-attachment\",\"unexpected\":true}")]
+    [InlineData("{\"kind\":\"delivery-decision-aggregate-attachment\",\"manifestPath\":\"C:\\\\other.json\",\"aggregatePath\":\"C:\\\\aggregate.json\",\"preimageBackupPath\":\"C:\\\\before.json\",\"receiptPath\":\"C:\\\\receipt.json\",\"attachmentId\":\"id\",\"manifestPreimageSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"manifestResultSha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"visualReviewPassed\":true,\"trusted\":true}")]
+    [InlineData("{\"kind\":\"delivery-decision-aggregate-attachment\",\"manifestPath\":\"C:\\\\manifest.json\",\"aggregatePath\":\"C:\\\\aggregate.json\",\"preimageBackupPath\":\"C:\\\\before.json\",\"receiptPath\":\"C:\\\\receipt.json\",\"attachmentId\":\"id\",\"manifestPreimageSha256\":\"invalid\",\"manifestResultSha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"visualReviewPassed\":true,\"trusted\":true}")]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_FailsClosed_OnMalformedOrMismatchedOutput(
+        string standardOutput)
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new AggregateVerificationProcessRunner(standardOutput));
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(workspace.DeliveryManifestPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(-2);
+        result.Execution.Output.Should().Contain("output was rejected");
+        result.Verification.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_FailsClosed_WhenVerifierDoesNotReportPositiveTrust()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        workspace.WriteDeliveryManifest("snapshot-test");
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new AggregateVerificationProcessRunner(
+                BuildAggregateVerificationOutput(workspace.DeliveryManifestPath, trusted: false)));
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(workspace.DeliveryManifestPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(-2);
+        result.Execution.Output.Should().Contain("trusted must be true");
+        result.Verification.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\0")]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_RejectsInvalidPath_BeforeStartingProcess(
+        string manifestPath)
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        var processRunner = new AggregateVerificationProcessRunner(string.Empty);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            processRunner);
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(manifestPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(-1);
+        result.Verification.Should().BeNull();
+        processRunner.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task VerifyDeliveryDecisionAggregateAttachmentAsync_RejectsNonJsonInput_BeforeStartingProcess()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        var invalidManifestPath = Path.Combine(workspace.Root, "manifest.txt");
+        File.WriteAllText(invalidManifestPath, "{}");
+        var processRunner = new AggregateVerificationProcessRunner(string.Empty);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            processRunner);
+
+        var result = await orchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
+            new DeliveryDecisionAggregateAttachmentVerificationRequest(invalidManifestPath));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.ExitCode.Should().Be(-1);
+        result.Execution.Output.Should().Contain("must be a JSON file");
+        result.Verification.Should().BeNull();
+        processRunner.CallCount.Should().Be(0);
+    }
+
     private sealed class FakeProcessRunner : IProcessRunner
     {
         public Task<ProcessRunResult> RunAsync(
@@ -509,6 +697,64 @@ public sealed class LocalToolchainOrchestratorTests
         {
             CallCount++;
             return Task.FromResult(new ProcessRunResult(0, string.Empty, string.Empty, TimeSpan.Zero));
+        }
+    }
+
+    private sealed class AggregateVerificationProcessRunner : IProcessRunner
+    {
+        private readonly string _standardOutput;
+        private readonly int _exitCode;
+        private readonly string _standardError;
+
+        public AggregateVerificationProcessRunner(
+            string standardOutput,
+            int exitCode = 0,
+            string standardError = "")
+        {
+            _standardOutput = standardOutput;
+            _exitCode = exitCode;
+            _standardError = standardError;
+        }
+
+        public int CallCount { get; private set; }
+
+        public string? LastFileName { get; private set; }
+
+        public IReadOnlyList<string> LastArguments { get; private set; } = [];
+
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+            LastFileName = fileName;
+            LastArguments = arguments.ToArray();
+            return Task.FromResult(new ProcessRunResult(
+                _exitCode,
+                _standardOutput,
+                _standardError,
+                TimeSpan.Zero));
+        }
+    }
+
+    private sealed class ThrowingProcessRunner : IProcessRunner
+    {
+        private readonly Exception _exception;
+
+        public ThrowingProcessRunner(Exception exception)
+        {
+            _exception = exception;
+        }
+
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromException<ProcessRunResult>(_exception);
         }
     }
 
@@ -713,5 +959,23 @@ public sealed class LocalToolchainOrchestratorTests
                 _ => $"../specs/compiled/{subjectPack}-full-{version}.md"
             };
         }
+    }
+
+    private static string BuildAggregateVerificationOutput(string manifestPath, bool trusted = true)
+    {
+        var directory = Path.GetDirectoryName(manifestPath)!;
+        return JsonSerializer.Serialize(new
+        {
+            kind = "delivery-decision-aggregate-attachment",
+            manifestPath,
+            aggregatePath = Path.Combine(directory, "aggregate.json"),
+            preimageBackupPath = Path.Combine(directory, "manifest.before.json"),
+            receiptPath = Path.Combine(directory, "receipt.json"),
+            attachmentId = "aggregate-attachment-test",
+            manifestPreimageSha256 = new string('a', 64),
+            manifestResultSha256 = new string('b', 64),
+            visualReviewPassed = true,
+            trusted
+        });
     }
 }

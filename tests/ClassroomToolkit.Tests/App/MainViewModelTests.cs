@@ -205,6 +205,13 @@ public sealed class MainViewModelTests
             return Task.FromResult(new VisualDecisionAttachmentResult(execution, delivery));
         }
 
+        public Task<DeliveryDecisionAggregateAttachmentVerificationResult> VerifyDeliveryDecisionAggregateAttachmentAsync(
+            DeliveryDecisionAggregateAttachmentVerificationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
         private static ToolchainExecutionResult Success(ToolchainScriptKind kind, string scriptPath)
         {
             var startedAt = new DateTimeOffset(2026, 6, 18, 10, 0, 0, TimeSpan.Zero);

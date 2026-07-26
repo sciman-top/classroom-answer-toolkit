@@ -310,6 +310,13 @@ public sealed class HeadlessSmokeRunnerTests
         {
             throw new NotSupportedException();
         }
+
+        public Task<DeliveryDecisionAggregateAttachmentVerificationResult> VerifyDeliveryDecisionAggregateAttachmentAsync(
+            DeliveryDecisionAggregateAttachmentVerificationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
     }
 
     private sealed class FakeDiagnosticsExporter : IWorkspaceDiagnosticsExporter
