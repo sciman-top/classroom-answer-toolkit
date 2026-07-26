@@ -64,11 +64,12 @@ export function compileFeedbackParseResult(options = {}) {
     createdAt
   };
   const result = {
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     kind: "feedback-parse-result",
     sampleId: sourceRun.sampleId,
     subjectPack: sourceRun.subjectPack,
     parseMode: "synthetic_fixture_label",
+    parseDisposition: "parsed",
     sourceRunSha256: sourceRunArtifact.sha256,
     sampleIndexSha256: sourceRun.sampleIndexSha256,
     samplePackageSha256: sourceRun.samplePackageSha256,
@@ -84,6 +85,9 @@ export function compileFeedbackParseResult(options = {}) {
 
 export function validateFeedbackParseResult(result, sourceRunPath) {
   assertSchema("FeedbackParseResult", result, feedbackParseResultSchema);
+  if (result.schemaVersion !== "2.0") {
+    throw new Error("FeedbackParseResult schemaVersion is unsupported.");
+  }
   const sourceRunArtifact = readJsonArtifact(sourceRunPath, "source SampleRunRecord");
   const sourceRun = sourceRunArtifact.value;
   validateSampleRunRecord(sourceRun);
@@ -105,6 +109,13 @@ export function validateFeedbackParseResult(result, sourceRunPath) {
   }
   if (result.parseMode !== "synthetic_fixture_label") {
     throw new Error("FeedbackParseResult parseMode is unsupported.");
+  }
+  if (result.parseDisposition !== "parsed"
+    || result.sourceFeedbackId !== undefined
+    || result.sourceFeedbackSha256 !== undefined
+    || result.humanQueue !== undefined
+    || result.reasonCode !== undefined) {
+    throw new Error("fixture FeedbackParseResult has unsupported teacher-text fields.");
   }
   if (!Array.isArray(result.optimizationCandidateRefs)
     || result.optimizationCandidateRefs.length !== 0) {

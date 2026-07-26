@@ -97,3 +97,9 @@
 - 决定：`SampleRunRecord` 从 current canonical provenance 派生 `ReleaseQualification`，readiness 同时报告 raw 与 qualified 指标，非扰动放行门槛只读取 qualified 指标
 - 原因：raw recall 证明当前 fixture 的诊断链路有效，但 deterministic `synthetic_fixture`、未认证历史样本或本地 unattested receipt 都不具 release authority；若复用 raw `n/recall`，未来 controls 转正会产生错误放行
 - 边界：当前编译器只产生 `not_applicable / diagnostic_only / unverified`，不自行产生 `qualified`，不生成 `OptimizationCandidate`
+
+## D-020 教师文本首切片采用显式词典并 fail closed
+
+- 决定：首个 teacher feedback parser 只处理 hash-bound canonical fixture inventory 准入的公开 synthetic input；唯一非否定根因和唯一 severity 显式短语才生成 `teacher_input` record，其余情况统一进入 `needs_human_label`
+- 原因：当前没有受验收的开放域中文语义模型或真实教师数据 authority；显式词典能先验证 input/run/hash/queue 合同而不伪装自然语言理解能力
+- 边界：teacher parse result 当前不进入 readiness 判错统计，不消费真实数据，不生成 `OptimizationCandidate`，不接 WPF 或云

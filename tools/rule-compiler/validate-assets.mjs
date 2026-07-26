@@ -6,6 +6,7 @@ import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./sch
 import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs";
 import { validateCanonicalSampleAuthorities } from "../sample-flywheel/sample-run.mjs";
 import { validateOptimizationReadinessReport } from "../sample-flywheel/optimization-readiness.mjs";
+import { validateCanonicalTeacherFeedbackFixtures } from "../sample-flywheel/teacher-feedback-parse.mjs";
 import { validateCanonicalSyntheticGenerationFixtures } from "../answer-generator/synthetic-generator.mjs";
 
 function collectValidationTargets() {
@@ -19,6 +20,8 @@ function collectValidationTargets() {
   const reviewStateMachineSchema = resolveRepoPath("prompts/shared/schemas/review-state-machine.schema.json");
   const feedbackRecordSchema = resolveRepoPath("prompts/shared/schemas/feedback-record.schema.json");
   const feedbackParseResultSchema = resolveRepoPath("prompts/shared/schemas/feedback-parse-result.schema.json");
+  const teacherFeedbackSubmissionSchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-submission.schema.json");
+  const teacherFeedbackFixtureInventorySchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-fixture-inventory.schema.json");
   const answerGenerationRequestSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-request.schema.json");
   const answerGenerationResultSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-result.schema.json");
   const samplePackageSchema = resolveRepoPath("prompts/shared/schemas/sample-package.schema.json");
@@ -60,6 +63,9 @@ function collectValidationTargets() {
   const visualEvidenceRoot = resolveRepoPath("eval/visual-evidence/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
+  const teacherFeedbackFixtureRoot = path.join(
+    sampleFlywheelEvalRoot,
+    "synthetic-teacher-feedback");
   const answerGenerationEvalRoot = resolveRepoPath("eval/answer-generation/cases");
   const figureSchemas = [
     resolveRepoPath("prompts/shared/schemas/problem-figure-asset.schema.json"),
@@ -115,6 +121,24 @@ function collectValidationTargets() {
     sampleFlywheelEvalRoot,
     "readiness-report.json")
     .map((filePath) => ({ filePath, schemaPath: optimizationReadinessReportSchema }));
+  const teacherFeedbackSubmissionFiles = listFilesBySuffixRecursive(
+    teacherFeedbackFixtureRoot,
+    ".teacher-feedback-submission.json")
+    .map((filePath) => ({ filePath, schemaPath: teacherFeedbackSubmissionSchema }));
+  const teacherFeedbackParseResultFiles = listFilesBySuffixRecursive(
+    teacherFeedbackFixtureRoot,
+    ".feedback-parse-result.json")
+    .map((filePath) => ({ filePath, schemaPath: feedbackParseResultSchema }));
+  const teacherFeedbackFixtureInventoryFiles = fs.existsSync(path.join(
+    teacherFeedbackFixtureRoot,
+    "teacher-feedback-fixture-inventory.json"))
+    ? [{
+        filePath: path.join(
+          teacherFeedbackFixtureRoot,
+          "teacher-feedback-fixture-inventory.json"),
+        schemaPath: teacherFeedbackFixtureInventorySchema
+      }]
+    : [];
   const answerGenerationRequestFiles = listFilesBySuffixRecursive(
     answerGenerationEvalRoot,
     ".answer-generation-request.json")
@@ -146,6 +170,9 @@ function collectValidationTargets() {
     optimizationReadinessCaseInventories: optimizationReadinessCaseInventoryFiles,
     optimizationReadinessInputs: optimizationReadinessInputFiles,
     optimizationReadinessReports: optimizationReadinessReportFiles,
+    teacherFeedbackSubmissions: teacherFeedbackSubmissionFiles,
+    teacherFeedbackParseResults: teacherFeedbackParseResultFiles,
+    teacherFeedbackFixtureInventories: teacherFeedbackFixtureInventoryFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -160,6 +187,8 @@ function collectValidationTargets() {
       reviewStateMachineSchema,
       feedbackRecordSchema,
       feedbackParseResultSchema,
+      teacherFeedbackSubmissionSchema,
+      teacherFeedbackFixtureInventorySchema,
       answerGenerationRequestSchema,
       answerGenerationResultSchema,
       samplePackageSchema,
@@ -238,7 +267,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -457,6 +486,12 @@ function main() {
   } catch (error) {
     answerGenerationFixtureError = error instanceof Error ? error.message : String(error);
   }
+  let teacherFeedbackFixtureError;
+  try {
+    validateCanonicalTeacherFeedbackFixtures();
+  } catch (error) {
+    teacherFeedbackFixtureError = error instanceof Error ? error.message : String(error);
+  }
 
   const errors = [
     ...fileValidation.errors,
@@ -466,6 +501,9 @@ function main() {
     ...assemblyErrors,
     ...schemaFileErrors,
     ...optimizationReadinessErrors,
+    ...(teacherFeedbackFixtureError
+      ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
+      : []),
     ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : []),
     ...(answerGenerationFixtureError
       ? [`Canonical answer generation fixtures: ${answerGenerationFixtureError}`]

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "teacher-feedback-fixture-inventory",
+  "fixtureSetId": "synthetic-teacher-feedback-v1",
+  "entries": [
+    {
+      "fixtureId": "reasoning-medium",
+      "submissionRef": "reasoning-medium.teacher-feedback-submission.json",
+      "submissionSha256": "7b34f75874ebc5396f10e77419963cac669db430a4d87818ad56db5909f85439",
+      "resultRef": "reasoning-medium.feedback-parse-result.json",
+      "resultSha256": "d745a7118dcf8213cdad1a94f4d53cf99553124b8f18cdb092ff08b538a6b821"
+    },
+    {
+      "fixtureId": "format-low",
+      "submissionRef": "format-low.teacher-feedback-submission.json",
+      "submissionSha256": "5fce4956c2d60bfec61d32afb4b5d35ef887e0b5a062f94ef910a59a8259ddbf",
+      "resultRef": "format-low.feedback-parse-result.json",
+      "resultSha256": "949e6749c0cd947f6dfd8dcb017d8de26604ddccfe03cbadf5be55e916b25b8a"
+    },
+    {
+      "fixtureId": "ambiguous-reasoning-format",
+      "submissionRef": "ambiguous-reasoning-format.teacher-feedback-submission.json",
+      "submissionSha256": "1d4b93ebc7ebcc1a28635d14695ffe3c449df2ce69b3c509e35ba733a17010d3",
+      "resultRef": "ambiguous-reasoning-format.feedback-parse-result.json",
+      "resultSha256": "4d686c719ed6672e8837b1d2e739809ddd2e3f6244c6672bcef1e5eefcae2660"
+    }
+  ]
+}

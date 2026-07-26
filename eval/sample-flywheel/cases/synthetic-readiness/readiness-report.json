@@ -2,7 +2,7 @@
   "schemaVersion": "2.0",
   "kind": "optimization-readiness-report",
   "evaluationId": "synthetic-readiness",
-  "sourceManifestSha256": "88b7b596f0c405b260f1d319fd7816cfb376ad3b60dce56867b117d7754a51ec",
+  "sourceManifestSha256": "65512a6fb7af53ede786cd1cc3cff43645dc9d594b4b550cc7614a96d4c0e23b",
   "thresholds": {
     "perturbedNegativeRecall": 0.8,
     "nonPerturbedMinimumSampleCount": 3,
@@ -25,7 +25,7 @@
       "expectedError": true,
       "detected": true,
       "runSha256": "8e8049455ca2f2e9cd0bd4bf0dc16c042b8f97e8d8acd653c020b2a2bda7b793",
-      "feedbackSha256": "bd7ec382adc038fca54ea59d59bf2473b8503bf2ebd02e9c25aafb1ab2d73012"
+      "feedbackSha256": "f2cdb7efe507cf50de482870b89eb42cec4e41d58a8ce5cc0fb1d97383bc3752"
     },
     {
       "caseId": "synthetic-linear-equation-generated-arithmetic-slip",
@@ -43,7 +43,7 @@
       "expectedError": true,
       "detected": true,
       "runSha256": "ba5b6fe543624d8c40fe8ac7fa3788a2c73dfbb39bbf1bb75e04e5811140f9ec",
-      "feedbackSha256": "a4de08a191a49ae93c3e4aa5ffbf37ad58b3fbb5d335f1d08097f60f86d5dffe"
+      "feedbackSha256": "fc886910f92c8da71c761de608c6bf782156364342556872c2863adc2350dd9c"
     },
     {
       "caseId": "synthetic-linear-equation-generated-transposition-slip",
@@ -61,7 +61,7 @@
       "expectedError": true,
       "detected": true,
       "runSha256": "358587ad029abdfe3964cdd4a69cce3d9885da5581bd382d887716a04044824c",
-      "feedbackSha256": "b49860b28e3b1452dc72e0b6ad11b2325db8db2d513e0d457489d32e8c0ccf66"
+      "feedbackSha256": "1199ef9a187bdfd3c21eaa723848461d8f0f4448c0f78b77fdbd9b903d59d52b"
     },
     {
       "caseId": "synthetic-linear-equation-generated-format-omission",
@@ -79,7 +79,7 @@
       "expectedError": true,
       "detected": true,
       "runSha256": "d19f8766895cdeaa13408756156edba723c6dd4b28aaaa27dbe9dc0c4a62a1b9",
-      "feedbackSha256": "0ee0748621bfa29ac2d751a3f4c722447b733c0cb135afb650f51f699646dc27"
+      "feedbackSha256": "11f84cc9b9ddd56dca22c5257128c211957aa0638d7593153147a0ea65875444"
     }
   ],
   "buckets": [

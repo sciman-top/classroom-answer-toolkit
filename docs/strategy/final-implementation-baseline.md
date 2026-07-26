@@ -231,6 +231,21 @@ negative-candidate fixture 标注；`createdAt` 由调用者显式提供 canonic
 该切片不解析教师自由文本，不做语义答案评分，不验证任意归档 authority，不生成
 `OptimizationCandidate`，也不构成灰度放行。
 
+FLYWHEEL-008 将 `FeedbackParseResult` 升级为 `2.0`，并新增独立
+`TeacherFeedbackSubmission` 输入合同。首个 teacher-text parser 只接受仓内 hash-bound canonical
+fixture inventory 准入的公开 `synthetic_fixture`，以 current-authority-valid scoring run 和
+submission/result 原始 bytes SHA-256 绑定。它只识别 9 类根因与 4 档 severity 的显式短语
+词典，不声称开放域语义理解：唯一非否定根因且唯一 severity 才生成一个
+`source=teacher_input` record；缺失、歧义或显式否定信号输出
+`parseDisposition=needs_human_label`、空 records、`humanQueue=needs_human_label` 和稳定 reason
+code。v2 schema 以互斥 shape 阻断不可能字段组合；两类结果的
+`optimizationCandidateRefs` 都必须为空。
+
+teacher parse result 当前不进入 readiness 判错统计；既有 auto-collected fixture 迁移到 v2
+后继续沿原路径统计。真实教师反馈、restricted 数据、自由文本模型解析、WPF 入口与
+`OptimizationCandidate` 均不属于该切片。v1 feedback result 不静默兼容，必须从绑定的
+current run/input 重新编译。
+
 ### optimization-readiness-input / optimization-readiness-report
 
 首个分桶准入评估切片由独立、hash-bound canonical case inventory 提供召回率分母，

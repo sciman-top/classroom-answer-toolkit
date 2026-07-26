@@ -6,7 +6,10 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-import { compileFeedbackParseResult } from "./feedback-parse.mjs";
+import {
+  compileFeedbackParseResult,
+  validateFeedbackParseResult
+} from "./feedback-parse.mjs";
 import {
   compileOptimizationReadinessReport,
   validateOptimizationReadinessInput,
@@ -114,6 +117,26 @@ test("committed readiness fixture reports generated candidates independently", (
     "restricted_egress_not_verified"
   ]);
   assert.deepEqual(report.optimizationCandidateRefs, []);
+});
+
+test("readiness rejects teacher-text feedback until explicitly integrated", () => {
+  const fixtureRoot = path.join(
+    repoRoot,
+    "eval",
+    "sample-flywheel",
+    "cases");
+  const runPath = path.join(
+    fixtureRoot,
+    "synthetic-readiness",
+    "generated-arithmetic-slip.sample-run-record.json");
+  const feedbackPath = path.join(
+    fixtureRoot,
+    "synthetic-teacher-feedback",
+    "reasoning-medium.feedback-parse-result.json");
+
+  assert.throws(
+    () => validateFeedbackParseResult(readJson(feedbackPath), runPath),
+    /parseMode is unsupported/);
 });
 
 test("missing feedback remains in the denominator and lowers recall", () => {

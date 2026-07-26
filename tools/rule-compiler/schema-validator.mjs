@@ -89,6 +89,14 @@ function validateArray(value, schema, currentPath, state) {
       state.errors.push(`${formatPath(currentPath)} should contain unique items.`);
     }
   }
+
+  if (Number.isInteger(schema.minItems) && value.length < schema.minItems) {
+    state.errors.push(`${formatPath(currentPath)} should contain at least ${schema.minItems} items.`);
+  }
+
+  if (Number.isInteger(schema.maxItems) && value.length > schema.maxItems) {
+    state.errors.push(`${formatPath(currentPath)} should contain at most ${schema.maxItems} items.`);
+  }
 }
 
 function validatePrimitive(value, schema, currentPath, state) {
@@ -143,6 +151,27 @@ function validateValue(value, schema, currentPath, state) {
 
   if (!effectiveSchema || typeof effectiveSchema !== "object") {
     return;
+  }
+
+  if (Array.isArray(effectiveSchema.anyOf)) {
+    const matchesAnyBranch = effectiveSchema.anyOf.some((branch) => {
+      const branchState = { ...nextState, errors: [] };
+      validateValue(value, branch, currentPath, branchState);
+      return branchState.errors.length === 0;
+    });
+    if (!matchesAnyBranch) {
+      state.errors.push(`${formatPath(currentPath)} should match at least one anyOf branch.`);
+      return;
+    }
+  }
+
+  if (effectiveSchema.not && typeof effectiveSchema.not === "object") {
+    const branchState = { ...nextState, errors: [] };
+    validateValue(value, effectiveSchema.not, currentPath, branchState);
+    if (branchState.errors.length === 0) {
+      state.errors.push(`${formatPath(currentPath)} should not match the forbidden schema.`);
+      return;
+    }
   }
 
   if (Array.isArray(effectiveSchema.oneOf)) {

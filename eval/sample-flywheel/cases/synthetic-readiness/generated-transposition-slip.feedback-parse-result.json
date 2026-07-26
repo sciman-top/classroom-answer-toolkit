@@ -1,9 +1,10 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "kind": "feedback-parse-result",
   "sampleId": "synthetic-linear-equation",
   "subjectPack": "math-answer",
   "parseMode": "synthetic_fixture_label",
+  "parseDisposition": "parsed",
   "sourceRunSha256": "358587ad029abdfe3964cdd4a69cce3d9885da5581bd382d887716a04044824c",
   "sampleIndexSha256": "0c8a6b48c6abe8e1a010a6813451fe79ebdad76f1f016668627bd7a74677b3c7",
   "samplePackageSha256": "04c8c1fdfeec27ef4bf8b712e90e8ee557f71cb51f4b4b43cecff81f667907e1",

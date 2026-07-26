@@ -29,6 +29,8 @@ test("fixture-labelled scoring run compiles one attributed feedback record", () 
 
     assert.equal(result.kind, "feedback-parse-result");
     assert.equal(result.parseMode, "synthetic_fixture_label");
+    assert.equal(result.schemaVersion, "2.0");
+    assert.equal(result.parseDisposition, "parsed");
     assert.match(result.sourceRunSha256, /^[a-f0-9]{64}$/);
     assert.equal(result.feedbackRecords.length, 1);
     assert.equal(result.feedbackRecords[0].primaryErrorType, "reasoning_error");
@@ -98,17 +100,35 @@ test("feedback result validator rejects authority and attribution drift", () => 
   usingScoringRun(({ runPath }) => {
     const result = compileFeedbackParseResult({ runPath, createdAt });
     assert.throws(
+      () => validateFeedbackParseResult({ ...result, schemaVersion: "1.0" }, runPath),
+      /schema validation/);
+    assert.throws(
       () => validateFeedbackParseResult({
         ...result,
-        sourceRunSha256: "0".repeat(64)
+        sourceFeedbackId: "not-allowed-on-auto-result"
       }, runPath),
-      /does not match source run bytes/);
+      /schema validation/);
+    assert.throws(
+      () => validateFeedbackParseResult({
+        ...result,
+        feedbackRecords: [{
+          ...result.feedbackRecords[0],
+          source: "teacher_input"
+        }]
+      }, runPath),
+      /schema validation/);
     assert.throws(
       () => validateFeedbackParseResult({
         ...result,
         optimizationCandidateRefs: ["optimization.json"]
       }, runPath),
-      /must remain empty/);
+      /schema validation/);
+    assert.throws(
+      () => validateFeedbackParseResult({
+        ...result,
+        sourceRunSha256: "0".repeat(64)
+      }, runPath),
+      /does not match source run bytes/);
     assert.throws(
       () => validateFeedbackParseResult({
         ...result,

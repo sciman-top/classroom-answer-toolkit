@@ -148,6 +148,16 @@
 - blocks: FLYWHEEL-006, GEN-003
 - done_definition: 仓内 generated 诊断样本可继续证明 plumbing/recall，但不能贡献 release-qualified 非扰动门槛；本切片不生成 `qualified` authority 或 `OptimizationCandidate`，不接 WPF，不开启 cloud egress，不运行 live provider，不宣称 gateway live verified、workflow integrated 或 live accepted
 
+### task_id: FLYWHEEL-008
+
+- goal: 建立首个公开 synthetic 教师文本反馈到 `FeedbackParseResult` 的确定性、fail-closed 归因闭环
+- inputs: FLYWHEEL-004 source-run-byte authority、FLYWHEEL-007 v2 run authority、9 类根因、4 档 severity、`needs_human_label` 人工队列边界
+- changes: 新增 `TeacherFeedbackSubmission` 合同、hash-bound canonical fixture inventory 和只接受 inventory-admitted `fixtureKind=synthetic_fixture / dataClassification.level=public` 的本地 parser；固定显式短语词典，唯一非否定根因且唯一 severity 才生成 `source=teacher_input` feedback record，否则输出 `needs_human_label`、空 records 与稳定 reason code；input/result 绑定 current scoring run 与原始 bytes SHA-256；`FeedbackParseResult` 升级 v2 并以 schema `oneOf` 阻断不可能字段组合；readiness 仅迁移既有 auto-collected feedback hash，不把 teacher parse result 接入判错统计；纳入 assets 与 hotspot
+- verification: reasoning/medium 与 format/low 两条公开 synthetic 文本可确定性解析；多根因、缺根因、重复 severity、显式否定、非 public/non-synthetic、非 canonical inventory input、run/input/hash/path/output alias、junction ancestor、computed field 与 schema 状态组合漂移均 fail closed 或进入 `needs_human_label`；所有 optimization refs 为空；完整固定顺序项目门禁
+- rollback: 回滚 FLYWHEEL-008 提交；删除 teacher feedback schema/tool/eval fixtures，恢复 v1 feedback result schema、既有 auto feedback artifacts、readiness input hashes/report；不得修改 `.env`、仓外 receipt、真实教师数据、live provider 或 cloud-egress 配置
+- blocks: FLYWHEEL-004, FLYWHEEL-007
+- done_definition: 仓内能把三份公开 synthetic 教师文本分别稳定投影为两个 parsed feedback record 和一个 `needs_human_label` 结果；不声称开放域语义理解，不消费真实教师/学生数据，不接 readiness 判错统计、WPF 或云，不生成 `OptimizationCandidate`，不宣称 workflow integrated 或 live accepted
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001

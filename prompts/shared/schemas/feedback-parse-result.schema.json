@@ -1,18 +1,97 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://classroom-toolkit.dev/schemas/feedback-parse-result/v1.json",
+  "$id": "https://classroom-toolkit.dev/schemas/feedback-parse-result/v2.json",
   "compatibility": {
-    "forward": "additive",
-    "backward": "additive"
+    "forward": "breaking_v2_requires_parse_disposition",
+    "backward": "breaking_v2_requires_parse_disposition"
   },
   "title": "FeedbackParseResult",
   "type": "object",
+  "oneOf": [
+    {
+      "required": ["parseMode", "parseDisposition", "feedbackRecords", "stopReason"],
+      "properties": {
+        "parseMode": { "const": "synthetic_fixture_label" },
+        "parseDisposition": { "const": "parsed" },
+        "feedbackRecords": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["source"],
+            "properties": { "source": { "const": "auto_collected" } }
+          }
+        },
+        "stopReason": { "const": "feedback_recorded_no_optimizer" }
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["sourceFeedbackId"] },
+          { "required": ["sourceFeedbackSha256"] },
+          { "required": ["humanQueue"] },
+          { "required": ["reasonCode"] }
+        ]
+      }
+    },
+    {
+      "required": [
+        "parseMode",
+        "parseDisposition",
+        "sourceFeedbackId",
+        "sourceFeedbackSha256",
+        "feedbackRecords",
+        "stopReason"
+      ],
+      "properties": {
+        "parseMode": { "const": "teacher_text_lexicon" },
+        "parseDisposition": { "const": "parsed" },
+        "feedbackRecords": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["source"],
+            "properties": { "source": { "const": "teacher_input" } }
+          }
+        },
+        "stopReason": { "const": "feedback_recorded_no_optimizer" }
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["humanQueue"] },
+          { "required": ["reasonCode"] }
+        ]
+      }
+    },
+    {
+      "required": [
+        "parseMode",
+        "parseDisposition",
+        "sourceFeedbackId",
+        "sourceFeedbackSha256",
+        "humanQueue",
+        "reasonCode",
+        "feedbackRecords",
+        "stopReason"
+      ],
+      "properties": {
+        "parseMode": { "const": "teacher_text_lexicon" },
+        "parseDisposition": { "const": "needs_human_label" },
+        "humanQueue": { "const": "needs_human_label" },
+        "feedbackRecords": { "type": "array", "maxItems": 0 },
+        "stopReason": { "const": "feedback_needs_human_label_no_optimizer" }
+      }
+    }
+  ],
   "required": [
     "schemaVersion",
     "kind",
     "sampleId",
     "subjectPack",
     "parseMode",
+    "parseDisposition",
     "sourceRunSha256",
     "sampleIndexSha256",
     "samplePackageSha256",
@@ -22,7 +101,7 @@
     "stopReason"
   ],
   "properties": {
-    "schemaVersion": { "type": "string" },
+    "schemaVersion": { "type": "string", "enum": ["2.0"] },
     "kind": {
       "type": "string",
       "enum": [
@@ -40,8 +119,13 @@
     "parseMode": {
       "type": "string",
       "enum": [
-        "synthetic_fixture_label"
+        "synthetic_fixture_label",
+        "teacher_text_lexicon"
       ]
+    },
+    "parseDisposition": {
+      "type": "string",
+      "enum": ["parsed", "needs_human_label"]
     },
     "sourceRunSha256": {
       "type": "string",
@@ -59,6 +143,25 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
     },
+    "sourceFeedbackId": { "type": "string" },
+    "sourceFeedbackSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "humanQueue": {
+      "type": "string",
+      "enum": ["needs_human_label"]
+    },
+    "reasonCode": {
+      "type": "string",
+      "enum": [
+        "missing_error_signal",
+        "ambiguous_error_signal",
+        "negated_error_signal",
+        "missing_severity_signal",
+        "ambiguous_severity_signal"
+      ]
+    },
     "feedbackRecords": {
       "type": "array",
       "items": {
@@ -67,9 +170,10 @@
     },
     "optimizationCandidateRefs": {
       "type": "array",
+      "maxItems": 0,
       "items": { "type": "string" }
     },
     "stopReason": { "type": "string" }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

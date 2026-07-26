@@ -13,6 +13,8 @@ This tool provides the first executable, fully synthetic sample-run admission an
 - the current comparator is SHA-256 exact-diff only; root cause comes from the synthetic negative-candidate label.
 - current-authority-valid, non-exact fixture scoring runs can compile one source-byte-bound `FeedbackParseResult`.
 - feedback attribution uses hash-bound fixture severity/confidence and always emits no optimization candidate.
+- bounded teacher-text parsing accepts hash-inventory-admitted, repository-owned public `synthetic_fixture` submissions only; one explicit non-negated error type and one explicit severity produce `source=teacher_input`, while missing, ambiguous, or explicitly negated signals fail closed to `needs_human_label` with no feedback record. Negation handling is a finite prefix lexicon, not general linguistic interpretation.
+- teacher-text results are diagnostic fixtures and are not admitted into readiness recall or optimization eligibility.
 - a hash-bound canonical case inventory plus a complete runtime manifest can compile a per-source `OptimizationReadinessReport`; missing runs or feedback remain in the recall denominator and unmet gates fail closed.
 - without a receipt, toolchain and restricted-egress controls remain `not_verified`.
 - `run:control-gates` executes the fixed gate sequence from a clean HEAD, forces cloud egress disabled, writes logs and a hash-bound receipt outside the repository, and rechecks the clean revision after execution.
@@ -21,7 +23,7 @@ This tool provides the first executable, fully synthetic sample-run admission an
   `not_verified` and cannot authorize eligibility.
 - the committed synthetic readiness fixture reports `generated n=3` independently, but controls remain `not_verified`, eligibility remains false, and optimization refs remain empty.
 - no semantic answer grading, `OptimizationCandidate`, WPF generation workflow, cloud egress, or live acceptance is implemented.
-- teacher free-text parsing is not implemented.
+- open-domain teacher free-text interpretation and real teacher-data admission are not implemented.
 - arbitrary archived-authority verification is not implemented.
 
 Compile the committed synthetic readiness fixture:
