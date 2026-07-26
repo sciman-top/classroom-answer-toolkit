@@ -17,6 +17,22 @@ const receiptSchema = path.join(
 const sha256Pattern = /^[a-f0-9]{64}$/;
 const revisionPattern = /^[a-f0-9]{40}$/;
 
+export function createNpmExecution(args) {
+  if (process.platform !== "win32") {
+    return {
+      executable: "npm",
+      args
+    };
+  }
+  return {
+    executable: process.execPath,
+    args: [
+      path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
+      ...args
+    ]
+  };
+}
+
 const gateExecutions = Object.freeze([
   {
     gateId: "build",
@@ -33,14 +49,12 @@ const gateExecutions = Object.freeze([
   {
     gateId: "assets",
     command: "npm --prefix tools/rule-compiler run validate:assets",
-    executable: process.platform === "win32" ? "npm.cmd" : "npm",
-    args: ["--prefix", "tools/rule-compiler", "run", "validate:assets"]
+    ...createNpmExecution(["--prefix", "tools/rule-compiler", "run", "validate:assets"])
   },
   {
     gateId: "cross_subject",
     command: "npm --prefix tools/rule-compiler run validate:cross-subject",
-    executable: process.platform === "win32" ? "npm.cmd" : "npm",
-    args: ["--prefix", "tools/rule-compiler", "run", "validate:cross-subject"]
+    ...createNpmExecution(["--prefix", "tools/rule-compiler", "run", "validate:cross-subject"])
   },
   {
     gateId: "toolchain",
@@ -51,8 +65,7 @@ const gateExecutions = Object.freeze([
   {
     gateId: "gateway_config",
     command: "npm --prefix tools/ai-gateway run validate:config",
-    executable: process.platform === "win32" ? "npm.cmd" : "npm",
-    args: ["--prefix", "tools/ai-gateway", "run", "validate:config"]
+    ...createNpmExecution(["--prefix", "tools/ai-gateway", "run", "validate:config"])
   }
 ]);
 export const gateDefinitions = Object.freeze(

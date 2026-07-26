@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import {
+  createNpmExecution,
   gateDefinitions,
   validateReadinessControlReceipt
 } from "./readiness-control-receipt.mjs";
@@ -210,6 +211,24 @@ test("receipt log paths are unique fixed names", () => {
     `${String(index + 1).padStart(2, "0")}-${gate.gateId}.log`);
   assert.equal(new Set(names).size, gateDefinitions.length);
   assert.ok(names.every((name) => /^[0-9]{2}-[a-z_]+\.log$/.test(name)));
+});
+
+test("npm gate invocation runs without a command shell", () => {
+  const invocation = createNpmExecution(["--version"]);
+  if (process.platform === "win32") {
+    assert.equal(invocation.executable, process.execPath);
+    assert.equal(path.basename(invocation.args[0]), "npm-cli.js");
+  } else {
+    assert.equal(invocation.executable, "npm");
+  }
+  const result = spawnSync(invocation.executable, invocation.args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    shell: false
+  });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /^\d+\.\d+\.\d+/);
 });
 
 function usingReceipt(action) {
