@@ -12,6 +12,7 @@ import {
   validateOptimizationReadinessInput,
   validateOptimizationReadinessReport
 } from "./optimization-readiness.mjs";
+import { gateDefinitions } from "./readiness-control-receipt.mjs";
 import { compileSampleRun } from "./sample-run.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "..", "..");
@@ -204,6 +205,54 @@ test("positive toolchain or egress status is rejected without verifiable receipt
   });
 });
 
+test("hash-bound local receipt remains unattested and cannot authorize controls", () => {
+  usingFixture(({ directory, manifestPath, manifest }) => {
+    attachSyntheticControlReceipt(directory, manifest);
+    writeJson(manifestPath, manifest);
+    const report = compileOptimizationReadinessReport({
+      manifestPath,
+      requireCurrentControlSource: false
+    });
+    assert.deepEqual(report.controls, {
+      toolchainStatus: "not_verified",
+      restrictedEgressStatus: "not_verified",
+      receiptStatus: "unattested_local_record",
+      receiptSha256: manifest.controlReceiptSha256,
+      sourceRevision: "0".repeat(40)
+    });
+    assert.deepEqual(report.reasonCodes, [
+      "non_perturbed_bucket_sample_count_insufficient",
+      "toolchain_not_verified",
+      "restricted_egress_not_verified",
+      "control_receipt_unattested"
+    ]);
+    assert.equal(report.eligible, false);
+    assert.deepEqual(report.optimizationCandidateRefs, []);
+  });
+});
+
+test("control receipt binding rejects partial refs and log drift", () => {
+  usingFixture(({ directory, manifestPath, manifest }) => {
+    manifest.controlReceiptRef = "readiness-control-receipt.json";
+    writeJson(manifestPath, manifest);
+    assert.throws(
+      () => compileOptimizationReadinessReport({ manifestPath }),
+      /provided together|schema validation/);
+  });
+
+  usingFixture(({ directory, manifestPath, manifest }) => {
+    const receipt = attachSyntheticControlReceipt(directory, manifest);
+    writeJson(manifestPath, manifest);
+    fs.appendFileSync(path.join(directory, receipt.gateSequence[0].logRef), "drift");
+    assert.throws(
+      () => compileOptimizationReadinessReport({
+        manifestPath,
+        requireCurrentControlSource: false
+      }),
+      /does not match log bytes/);
+  });
+});
+
 test("compiler rejects run, feedback, and current-authority drift", () => {
   usingFixture(({ manifestPath, manifest }) => {
     writeJson(manifestPath, {
@@ -305,6 +354,26 @@ test("CLI rejects direct, hardlink, and canonical-authority aliases", (context) 
   });
 });
 
+test("CLI rejects a symlink ancestor targeting canonical sample authority", (context) => {
+  usingFixture(({ directory, manifestPath }) => {
+    const linkedRoot = path.join(directory, "sample-root-link");
+    try {
+      fs.symlinkSync(path.dirname(indexPath), linkedRoot, "junction");
+    } catch (error) {
+      if (["EPERM", "EACCES", "ENOSYS"].includes(error?.code)) {
+        context.skip(`symlink unavailable: ${error.code}`);
+        return;
+      }
+      throw error;
+    }
+    const escapedOutput = path.join(linkedRoot, "new-output-dir", "report.json");
+    const result = runCli(manifestPath, escapedOutput);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /outside the canonical sample root/);
+    assert.equal(fs.existsSync(path.join(path.dirname(indexPath), "new-output-dir")), false);
+  });
+});
+
 function usingFixture(action) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-toolkit-readiness-"));
   try {
@@ -394,4 +463,40 @@ function readJson(filePath) {
 
 function sha256File(filePath) {
   return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+}
+
+function attachSyntheticControlReceipt(directory, manifest) {
+  const gateSequence = gateDefinitions.map((gate, index) => {
+    const logRef = `control-${String(index + 1).padStart(2, "0")}-${gate.gateId}.log`;
+    const logPath = path.join(directory, logRef);
+    fs.writeFileSync(logPath, `${gate.gateId} synthetic contract log\n`);
+    return {
+      ...gate,
+      exitCode: 0,
+      logRef,
+      logSha256: sha256File(logPath)
+    };
+  });
+  const receipt = {
+    schemaVersion: "1.0",
+    kind: "readiness-control-receipt",
+    receiptId: "readiness-control-fedcba9876543210",
+    sourceRevision: "0".repeat(40),
+    sourceTreeCleanBefore: true,
+    sourceTreeCleanAfter: true,
+    startedAt: "2026-07-26T12:00:00.000Z",
+    completedAt: "2026-07-26T12:01:00.000Z",
+    gateSequence,
+    cloudEgress: {
+      environmentForcedDisabled: true,
+      liveProbesRun: false,
+      scope: "controlled_gate_processes_only"
+    },
+    verdict: "passed"
+  };
+  const receiptPath = path.join(directory, "readiness-control-receipt.json");
+  writeJson(receiptPath, receipt);
+  manifest.controlReceiptRef = path.basename(receiptPath);
+  manifest.controlReceiptSha256 = sha256File(receiptPath);
+  return receipt;
 }

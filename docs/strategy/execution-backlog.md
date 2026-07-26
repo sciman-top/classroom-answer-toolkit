@@ -128,6 +128,16 @@
 - blocks: FLYWHEEL-004
 - done_definition: 仓内可从完整 case 清单诚实计算分桶 readiness 并在样本或控制条件不足时拒绝准入；不生成 OptimizationCandidate，不宣称灰度、WPF workflow integration、云网关验证或 live acceptance
 
+### task_id: FLYWHEEL-006
+
+- goal: 建立 readiness 可重验但不具正向 authority 的本地 control receipt 诊断面
+- inputs: FLYWHEEL-005 readiness controls、固定项目门禁顺序、AI gateway 双重 cloud-egress opt-in
+- changes: 新增 ReadinessControlReceipt schema/runner/verifier；仅从 clean HEAD 在仓外空目录无 shell 执行固定六 gate并设置 timeout，强制关闭本仓 gateway cloud opt-in，记录 ordered logs/hash 与前后 source revision/clean 状态；readiness 绑定 receipt bytes 并重验当前 clean revision，但只投影 unattested_local_record，controls 保持 not_verified
+- verification: 完整/缺失/乱序/失败 gate，log drift/path escape/hardlink，source drift/dirty tree，timeout/启动错误，partial receipt ref，手写 receipt 不能提升 controls，symlink ancestor 输出逃逸拒绝；真实 clean-HEAD runner；完整项目门禁
+- rollback: 回滚 FLYWHEEL-006 实现提交；仓外 runtime receipt/log 独立盘点删除，不修改 `.env` 或 canonical samples
+- blocks: FLYWHEEL-005
+- done_definition: readiness 能消费一次本地、hash-bound、当前 clean revision 的诊断 receipt，但 toolchain/egress controls 仍为 not_verified 且 eligibility 保持 fail-closed；该 receipt 不具 runner provenance，不证明宿主或子进程无网络活动，不运行 live probes，不生成 OptimizationCandidate，不授权灰度/WPF/live acceptance
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001

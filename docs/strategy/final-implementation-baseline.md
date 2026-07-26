@@ -244,9 +244,19 @@ feedback 的 expected-error case 仍保留在分母，不能通过改 `caseId/it
 expected/detected error count、recall availability 和可用时的 recall。报告同时投影
 `toolchainStatus / restrictedEgressStatus / unresolvedLeakageCount`，并从 inventory 独立
 投影 truth/leakage 未决和 missing run，按第 11 节门槛计算稳定 reason codes；任一条件
-不足时 `eligible=false`。在 verifiable gate/egress receipt 能力落地前，两项 control
-只能是 `not_verified`，因此当前编译器不能产生 `eligible=true`，也不把一次后续门禁结果
-固化成持续有效许可。
+不足时 `eligible=false`。两项 control 当前只能是 `not_verified`。仓外运行目录中的
+`ReadinessControlReceipt` 是 pre-attestation 诊断面：runner 必须从 clean HEAD 开始，按
+固定顺序执行 build/test/assets/cross-subject/toolchain/gateway-config，强制 cloud egress
+disabled，保存逐 gate log/hash，并在结束后重验 HEAD 与 clean worktree 未漂移。readiness
+重验 receipt 原始 bytes、完整有序 gate、log bytes 与当前 clean revision后，只投影
+`receiptStatus=unattested_local_record`，不得据此把 toolchain 或 restricted-egress control
+提升为正向，也不得移除 eligibility blocker。
+
+receipt 的字段和日志可被本地 writer 重建，不具 runner provenance，不是签名 attestation；
+强制 false 只关闭本仓 gateway cloud opt-in，不观测或阻断子进程的其他网络活动。因此它
+不证明 restricted egress 无违规，不运行 live probes，也不构成 gateway verified、
+workflow integrated 或 live accepted。正向 control 必须等待可信 CI 签名、受保护密钥
+attestation 或等价 authority。
 
 该报告的 `optimizationCandidateRefs` 必须为空；它只证明 fail-closed readiness 计算与
 证据绑定，不生成 `OptimizationCandidate`，不授权灰度，不构成 WPF workflow integration

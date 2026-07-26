@@ -7,6 +7,7 @@
     "compile:run": "node sample-run.mjs",
     "compile:feedback": "node feedback-parse.mjs",
     "compile:readiness": "node optimization-readiness.mjs",
-    "test": "node --test sample-run.test.mjs feedback-parse.test.mjs optimization-readiness.test.mjs"
+    "run:control-gates": "node readiness-control-receipt.mjs",
+    "test": "node --test sample-run.test.mjs feedback-parse.test.mjs optimization-readiness.test.mjs readiness-control-receipt.test.mjs"
   }
 }

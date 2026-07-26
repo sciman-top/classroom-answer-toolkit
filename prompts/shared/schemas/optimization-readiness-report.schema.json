@@ -60,6 +60,18 @@
         "restrictedEgressStatus": {
           "type": "string",
           "enum": ["not_verified", "no_violation_observed", "violation"]
+        },
+        "receiptStatus": {
+          "type": "string",
+          "enum": ["unattested_local_record"]
+        },
+        "receiptSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourceRevision": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
         }
       },
       "additionalProperties": false

@@ -25,6 +25,7 @@ function collectValidationTargets() {
   const optimizationReadinessCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-case-inventory.schema.json");
   const optimizationReadinessInputSchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-input.schema.json");
   const optimizationReadinessReportSchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-report.schema.json");
+  const readinessControlReceiptSchema = resolveRepoPath("prompts/shared/schemas/readiness-control-receipt.schema.json");
   const problemEvidenceBundleSchema = resolveRepoPath("prompts/shared/schemas/problem-evidence-bundle.schema.json");
   const trackResultSchema = resolveRepoPath("prompts/shared/schemas/track-result.schema.json");
   const decisionRecordSchema = resolveRepoPath("prompts/shared/schemas/decision-record.schema.json");
@@ -151,6 +152,7 @@ function collectValidationTargets() {
       optimizationReadinessCaseInventorySchema,
       optimizationReadinessInputSchema,
       optimizationReadinessReportSchema,
+      readinessControlReceiptSchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas

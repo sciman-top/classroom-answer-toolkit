@@ -35,6 +35,11 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
     },
+    "controlReceiptRef": { "type": "string", "minLength": 1 },
+    "controlReceiptSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
     "toolchainStatus": {
       "type": "string",
       "enum": ["not_verified"]

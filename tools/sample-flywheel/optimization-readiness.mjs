@@ -7,6 +7,10 @@ import { isDeepStrictEqual } from "node:util";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { validateFeedbackParseResult } from "./feedback-parse.mjs";
 import {
+  getReadinessControlReceiptPaths,
+  validateReadinessControlReceipt
+} from "./readiness-control-receipt.mjs";
+import {
   getCanonicalSampleCandidateAuthority,
   getCanonicalSampleAuthorityPaths,
   validateSampleRunRecord
@@ -35,7 +39,9 @@ const sha256Pattern = /^[a-f0-9]{64}$/;
 
 export function compileOptimizationReadinessReport(options = {}) {
   const manifestArtifact = readJsonArtifact(options.manifestPath, "readiness input manifest");
-  const evaluation = evaluateManifest(manifestArtifact);
+  const evaluation = evaluateManifest(manifestArtifact, {
+    requireCurrentSource: options.requireCurrentControlSource !== false
+  });
   const report = {
     schemaVersion: "1.0",
     kind: "optimization-readiness-report",
@@ -43,8 +49,7 @@ export function compileOptimizationReadinessReport(options = {}) {
     sourceManifestSha256: manifestArtifact.sha256,
     thresholds: { ...thresholds },
     controls: {
-      toolchainStatus: manifestArtifact.value.toolchainStatus,
-      restrictedEgressStatus: manifestArtifact.value.restrictedEgressStatus
+      ...evaluation.controls
     },
     caseBindings: evaluation.caseBindings,
     buckets: evaluation.buckets,
@@ -54,14 +59,18 @@ export function compileOptimizationReadinessReport(options = {}) {
     optimizationCandidateRefs: []
   };
 
-  validateOptimizationReadinessReport(report, manifestArtifact.path);
+  validateOptimizationReadinessReport(report, manifestArtifact.path, {
+    requireCurrentControlSource: options.requireCurrentControlSource
+  });
   return report;
 }
 
-export function validateOptimizationReadinessReport(report, manifestPath) {
+export function validateOptimizationReadinessReport(report, manifestPath, options = {}) {
   assertSchema("OptimizationReadinessReport", report, reportSchema);
   const manifestArtifact = readJsonArtifact(manifestPath, "readiness input manifest");
-  const expected = compileExpectedReport(manifestArtifact);
+  const expected = compileExpectedReport(manifestArtifact, {
+    requireCurrentSource: options.requireCurrentControlSource !== false
+  });
   if (!isDeepStrictEqual(report, expected)) {
     throw new Error("OptimizationReadinessReport does not match its bound manifest and current authority.");
   }
@@ -107,6 +116,19 @@ export function validateOptimizationReadinessInput(manifest, manifestPath) {
   if (manifest.toolchainStatus !== "not_verified"
     || manifest.restrictedEgressStatus !== "not_verified") {
     throw new Error("positive control status requires a verifiable receipt and is not supported.");
+  }
+  const hasControlRef = manifest.controlReceiptRef !== undefined;
+  const hasControlSha256 = manifest.controlReceiptSha256 !== undefined;
+  if (hasControlRef !== hasControlSha256) {
+    throw new Error("controlReceiptRef and controlReceiptSha256 must be provided together.");
+  }
+  if (hasControlRef) {
+    assertSha256(manifest.controlReceiptSha256, "controlReceiptSha256");
+    resolveContainedRef(
+      manifest.controlReceiptRef,
+      manifestPath,
+      manifestDirectory,
+      "controlReceiptRef");
   }
 
   const runHashes = [];
@@ -184,8 +206,8 @@ export function validateOptimizationReadinessCaseInventory(inventory) {
   return inventory;
 }
 
-function compileExpectedReport(manifestArtifact) {
-  const evaluation = evaluateManifest(manifestArtifact);
+function compileExpectedReport(manifestArtifact, options) {
+  const evaluation = evaluateManifest(manifestArtifact, options);
   return {
     schemaVersion: "1.0",
     kind: "optimization-readiness-report",
@@ -193,8 +215,7 @@ function compileExpectedReport(manifestArtifact) {
     sourceManifestSha256: manifestArtifact.sha256,
     thresholds: { ...thresholds },
     controls: {
-      toolchainStatus: manifestArtifact.value.toolchainStatus,
-      restrictedEgressStatus: manifestArtifact.value.restrictedEgressStatus
+      ...evaluation.controls
     },
     caseBindings: evaluation.caseBindings,
     buckets: evaluation.buckets,
@@ -205,7 +226,7 @@ function compileExpectedReport(manifestArtifact) {
   };
 }
 
-function evaluateManifest(manifestArtifact) {
+function evaluateManifest(manifestArtifact, options) {
   const manifest = validateOptimizationReadinessInput(
     manifestArtifact.value,
     manifestArtifact.path);
@@ -217,6 +238,7 @@ function evaluateManifest(manifestArtifact) {
     "caseInventoryRef");
   const inventoryArtifact = readJsonArtifact(inventoryPath, "readiness case inventory");
   const inventory = validateOptimizationReadinessCaseInventory(inventoryArtifact.value);
+  const controls = evaluateControls(manifest, manifestArtifact.path, manifestDirectory, options);
   const inputByCaseId = new Map(manifest.cases.map((entry) => [entry.caseId, entry]));
   const counters = new Map(bucketOrder.map((sourceType) => [
     sourceType,
@@ -310,9 +332,36 @@ function evaluateManifest(manifestArtifact) {
     unresolvedLeakageCount,
     missingScoringRunCount,
     truthNotReadyCount,
-    manifest.toolchainStatus,
-    manifest.restrictedEgressStatus);
-  return { caseBindings, buckets, unresolvedLeakageCount, reasonCodes };
+    controls.toolchainStatus,
+    controls.restrictedEgressStatus,
+    controls.receiptStatus);
+  return { caseBindings, buckets, unresolvedLeakageCount, reasonCodes, controls };
+}
+
+function evaluateControls(manifest, manifestPath, manifestDirectory, options) {
+  if (manifest.controlReceiptRef === undefined) {
+    return {
+      toolchainStatus: "not_verified",
+      restrictedEgressStatus: "not_verified"
+    };
+  }
+  const receiptPath = resolveContainedRef(
+    manifest.controlReceiptRef,
+    manifestPath,
+    manifestDirectory,
+    "controlReceiptRef");
+  const receiptArtifact = readJsonArtifact(receiptPath, "readiness control receipt");
+  if (receiptArtifact.sha256 !== manifest.controlReceiptSha256) {
+    throw new Error("controlReceiptSha256 does not match receipt bytes.");
+  }
+  validateReadinessControlReceipt(receiptArtifact.value, receiptArtifact.path, options);
+  return {
+    toolchainStatus: "not_verified",
+    restrictedEgressStatus: "not_verified",
+    receiptStatus: "unattested_local_record",
+    receiptSha256: receiptArtifact.sha256,
+    sourceRevision: receiptArtifact.value.sourceRevision
+  };
 }
 
 function computeReasonCodes(
@@ -321,7 +370,8 @@ function computeReasonCodes(
   missingScoringRunCount,
   truthNotReadyCount,
   toolchainStatus,
-  restrictedEgressStatus) {
+  restrictedEgressStatus,
+  receiptStatus) {
   const reasons = [];
   const perturbed = buckets[0];
   if (perturbed.recallStatus !== "available") {
@@ -357,6 +407,9 @@ function computeReasonCodes(
   }
   if (missingScoringRunCount > 0) {
     reasons.push("scoring_run_missing_present");
+  }
+  if (receiptStatus === "unattested_local_record") {
+    reasons.push("control_receipt_unattested");
   }
   return reasons;
 }
@@ -433,6 +486,15 @@ function assertOutputDoesNotAliasInputs(outputPath, manifestPath) {
     "caseInventoryRef");
   const inventory = readJsonArtifact(inventoryPath, "readiness case inventory").value;
   const protectedInputs = [manifestArtifact.path, inventoryPath];
+  if (manifestArtifact.value.controlReceiptRef !== undefined) {
+    const receiptPath = resolveContainedRef(
+      manifestArtifact.value.controlReceiptRef,
+      manifestArtifact.path,
+      manifestDirectory,
+      "controlReceiptRef");
+    const receipt = readJsonArtifact(receiptPath, "readiness control receipt").value;
+    protectedInputs.push(...getReadinessControlReceiptPaths(receipt, receiptPath));
+  }
   for (const entry of manifestArtifact.value.cases) {
     if (entry.runRef === undefined) {
       continue;
@@ -463,6 +525,7 @@ function assertOutputDoesNotAliasInputs(outputPath, manifestPath) {
     || sameFileIdentity(outputIdentity, fileIdentity(inputPath)))) {
     throw new Error("--out must not alias readiness inputs or canonical sample authority.");
   }
+  return outputCanonical;
 }
 
 function pathIsWithin(filePath, allowedRoot) {
@@ -478,11 +541,17 @@ function canonicalPath(filePath) {
   if (fs.existsSync(resolvedPath)) {
     return normalizePath(fs.realpathSync.native(resolvedPath));
   }
-  const parentPath = path.dirname(resolvedPath);
-  const canonicalParent = fs.existsSync(parentPath)
-    ? fs.realpathSync.native(parentPath)
-    : path.resolve(parentPath);
-  return normalizePath(path.join(canonicalParent, path.basename(resolvedPath)));
+  let existing = resolvedPath;
+  const missing = [];
+  while (!fs.existsSync(existing)) {
+    missing.unshift(path.basename(existing));
+    const parent = path.dirname(existing);
+    if (parent === existing) {
+      break;
+    }
+    existing = parent;
+  }
+  return normalizePath(path.join(fs.realpathSync.native(existing), ...missing));
 }
 
 function fileIdentity(filePath) {
@@ -541,9 +610,11 @@ function main() {
     return;
   }
   const report = compileOptimizationReadinessReport(options);
-  assertOutputDoesNotAliasInputs(options.outPath, options.manifestPath);
-  atomicWriteJson(options.outPath, report);
-  process.stdout.write(`${path.resolve(options.outPath)}\n`);
+  const safeOutputPath = assertOutputDoesNotAliasInputs(
+    options.outPath,
+    options.manifestPath);
+  atomicWriteJson(safeOutputPath, report);
+  process.stdout.write(`${safeOutputPath}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

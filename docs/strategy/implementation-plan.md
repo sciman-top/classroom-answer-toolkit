@@ -56,6 +56,7 @@
 - canonical index/package/candidate-descriptor hash authority 约束下、通过仓内有限 shape validator、compiler semantic invariants 与 current canonical authority bytes 重验的 `SampleRunRecord`
 - source-run-byte-bound、只接受 non-exact synthetic fixture scoring 的 `FeedbackParseResult`
 - canonical-case-inventory-bound、缺 run/反馈仍计入召回分母的 fail-closed `OptimizationReadinessReport`
+- clean-revision、ordered-gate-log-bound、保持 controls 未验证的 `ReadinessControlReceipt`
 - `OptimizationCandidate`
 - `DecisionRecord`
 - `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` schema 契约
