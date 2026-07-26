@@ -65,6 +65,19 @@ test("scoring records exact hash diff and fixture-labelled root cause", () => {
   assert.equal(record.stopReason, "scoring_recorded_no_optimizer");
 });
 
+test("generated scoring binds deterministic synthetic generation provenance", () => {
+  const record = compileSampleRun(scoringOptions({
+    candidatePath: path.join(
+      fixtureRoot,
+      "candidate.generated-arithmetic-slip.negative-candidate.json")
+  }));
+
+  assert.equal(record.candidateSourceType, "generated");
+  assert.equal(record.diffSummary.exactMatch, false);
+  assert.equal(record.rootCauseSummary.labelSource, "negative_candidate_fixture");
+  assert.deepEqual(record.optimizationCandidateRefs, []);
+});
+
 test("all runs require explicit truth extraction status", () => {
   assert.throws(
     () => compileSampleRun(scoringOptions({ truthExtractionStatus: undefined })),

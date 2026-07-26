@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "answer-generation-request",
+  "requestId": "synthetic-arithmetic-slip",
+  "subjectPack": "math-answer",
+  "problemArtifactRef": "../../../样例交付/structured/math-answer/synthetic-linear-equation/problem.md",
+  "problemArtifactSha256": "7189a05e2ba043a7470bec569e7d510430463740918221fef5554235fc6a7c54",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic deterministic generation fixture."
+  }
+}

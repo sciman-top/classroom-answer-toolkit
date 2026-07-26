@@ -73,6 +73,11 @@ Assert-CommandSuccess {
     npm --prefix tools/sample-flywheel test
 } "Sample flywheel contract tests failed."
 
+Write-Host "synthetic answer generation contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/answer-generator test
+} "Synthetic answer generation contract tests failed."
+
 $subjectPacks = Get-SubjectPackMetadata -RepositoryRoot $repoRoot
 if ($subjectPacks.Count -eq 0) {
     throw "No subject pack manifests were found under prompts/."

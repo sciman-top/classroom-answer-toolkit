@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/answer-generation-request/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "AnswerGenerationRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "requestId",
+    "subjectPack",
+    "problemArtifactRef",
+    "problemArtifactSha256",
+    "dataClassification"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["answer-generation-request"]
+    },
+    "requestId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "subjectPack": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "problemArtifactRef": { "type": "string", "minLength": 1 },
+    "problemArtifactSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "dataClassification": {
+      "$ref": "./data-classification.schema.json"
+    }
+  },
+  "additionalProperties": false
+}

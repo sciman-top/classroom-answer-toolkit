@@ -103,29 +103,37 @@
 
 ### 输出
 
-- `AnswerGenerationRequest`
-- `AnswerGenerationResult`
-- `generated` 类型候选接入飞轮
+- provider-neutral、严格 schema 化的 `AnswerGenerationRequest / AnswerGenerationResult`
+- 明确标记 `synthetic_fixture` 且 `liveProvider=false` 的确定性本地 generator
+- request/result/candidate raw bytes 的 SHA-256 与 canonical provenance 绑定
+- 三个脱敏 `generated` 类型候选接入飞轮
 
 ### 涉及文件面
 
 - 生成主链接口
-- 输入归一化链
+- `tools/answer-generator`
+- `prompts/shared/schemas/` 与 `ClassroomToolkit.Domain.Generation`
+- 完全合成的 generation eval 与 canonical sample authority
 - 飞轮 candidate source 接口
 
 ### 完成定义
 
 - `generated` 候选能被飞轮读取、比对、记账和分桶统计
 - 与现有 `AnswerDeliveryRequest` 明确分离
+- 生成物结构、provenance、request/result/candidate 原始字节和 canonical authority 漂移均 fail closed
+- `generated n=3` 可独立统计，但 `toolchain/restricted-egress=not_verified`、`eligible=false`、`optimizationCandidateRefs=[]`
 
 ### 验证方式
 
 - 生成候选进入 scoring
 - `candidateSourceType=generated` 的分桶结果可被单独查看
+- generation 与 sample-flywheel focused tests、assets semantic recompile、完整固定顺序门禁
 
 ### 禁止扩张点
 
 - 不在这一阶段把生成主链与交付主链揉成一条黑盒链
+- 不接 WPF、不启 cloud egress、不使用真实试卷、不生成 `OptimizationCandidate`
+- deterministic fixture 不冒充真实模型或 historical candidate，不提升本地 receipt authority
 
 ## P2：双轨视觉与原生输入
 

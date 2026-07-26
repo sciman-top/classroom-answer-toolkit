@@ -34,6 +34,30 @@
       "mediaType": "text/markdown",
       "sourceType": "markdown",
       "parseMode": "native"
+    },
+    {
+      "artifactId": "synthetic-linear-equation-generated-arithmetic-slip",
+      "role": "negative_candidate",
+      "path": "candidate.generated-arithmetic-slip.md",
+      "mediaType": "text/markdown",
+      "sourceType": "markdown",
+      "parseMode": "native"
+    },
+    {
+      "artifactId": "synthetic-linear-equation-generated-transposition-slip",
+      "role": "negative_candidate",
+      "path": "candidate.generated-transposition-slip.md",
+      "mediaType": "text/markdown",
+      "sourceType": "markdown",
+      "parseMode": "native"
+    },
+    {
+      "artifactId": "synthetic-linear-equation-generated-format-omission",
+      "role": "negative_candidate",
+      "path": "candidate.generated-format-omission.md",
+      "mediaType": "text/markdown",
+      "sourceType": "markdown",
+      "parseMode": "native"
     }
   ]
 }

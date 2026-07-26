@@ -91,7 +91,17 @@
       "maximum": 1
     },
     "originRef": { "type": "string" },
-    "mutationRef": { "type": "string" }
+    "mutationRef": { "type": "string" },
+    "generationRequestRef": { "type": "string", "minLength": 1 },
+    "generationRequestSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "generationResultRef": { "type": "string", "minLength": 1 },
+    "generationResultSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
   },
   "additionalProperties": true
 }

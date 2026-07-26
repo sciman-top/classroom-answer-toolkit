@@ -313,6 +313,15 @@ attestation 或等价 authority。
 - 首个合成 scoring 只比较 candidate/reference 原始 bytes 的 SHA-256，并使用 `negative-candidate` 的预标注根因记账；它不代表语义答案评分。
 - 在 `OptimizationCandidate` 运行时落地前，`SampleRunRecord`、`FeedbackParseResult` 和 `OptimizationReadinessReport` 的 `optimizationCandidateRefs` 必须为空；readiness report 即使指标可用也不能据此直接进入灰度。
 
+### 答案生成合同与 GEN-003 边界
+
+- `AnswerGenerationRequest / AnswerGenerationResult` 是 provider-neutral 生成合同，位于 `ClassroomToolkit.Domain.Generation` 和 `prompts/shared/schemas/`；不得复用或嵌入 `AnswerDeliveryRequest` 的 PDF/profile/review 字段。
+- 首个 generator 只允许仓内三个完全合成的 `synthetic_fixture`，输出必须固定 `liveProvider=false`，不得把确定性模板描述为真实模型输出或 historical sample。
+- generation request、result、candidate 原始 UTF-8 bytes、generated descriptor、sample package 与 flat index 逐层以 SHA-256 绑定；路径 containment、schema、deterministic recompile 或任一 hash 漂移都 fail closed。
+- generated 候选仍需满足 scoring 的 truth/leakage 条件，并沿既有 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 进入独立桶。
+- GEN-003 即使 generated 桶 `n >= 3` 且 recall 达标，也必须保持 `toolchainStatus=not_verified`、`restrictedEgressStatus=not_verified`、`eligible=false` 和所有 `optimizationCandidateRefs=[]`。
+- 本切片不接 WPF，不开启 cloud egress，不消费真实试卷，不运行 live provider，不宣称 workflow integrated、live gateway verified 或 live accepted。
+
 ## 9. 输入归一化与答案泄漏策略
 
 ### 输入归一化

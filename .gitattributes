@@ -1,2 +1,4 @@
 样例交付/**/*.json text eol=lf
 样例交付/**/*.md text eol=lf
+eval/answer-generation/**/*.json text eol=lf
+eval/sample-flywheel/**/*.json text eol=lf

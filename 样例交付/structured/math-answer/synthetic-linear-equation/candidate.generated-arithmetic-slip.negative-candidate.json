@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "negative-candidate",
+  "candidateId": "synthetic-linear-equation-generated-arithmetic-slip",
+  "candidateSourceType": "generated",
+  "artifactRef": "candidate.generated-arithmetic-slip.md",
+  "expectedPrimaryErrorType": "reasoning_error",
+  "expectedContributingErrorTypes": [],
+  "expectedDiffLayer": "answer",
+  "expectedSeverity": "medium",
+  "expectedLabelConfidence": 1,
+  "originRef": "reference.md",
+  "mutationRef": "synthetic-fixture-arithmetic-slip",
+  "generationRequestRef": "eval/answer-generation/cases/synthetic-arithmetic-slip.answer-generation-request.json",
+  "generationRequestSha256": "4723c7d8dbafe484a4c1b8d929671af1fe2646b1f82e68b2f016235b8d2f3545",
+  "generationResultRef": "样例交付/structured/math-answer/synthetic-linear-equation/candidate.generated-arithmetic-slip.answer-generation-result.json",
+  "generationResultSha256": "5c2745cf1500f2c3bc635a5a958e77f31248a2abc70e360892858d4571e34300"
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "negative-candidate",
+  "candidateId": "synthetic-linear-equation-generated-transposition-slip",
+  "candidateSourceType": "generated",
+  "artifactRef": "candidate.generated-transposition-slip.md",
+  "expectedPrimaryErrorType": "reasoning_error",
+  "expectedContributingErrorTypes": [],
+  "expectedDiffLayer": "answer",
+  "expectedSeverity": "medium",
+  "expectedLabelConfidence": 1,
+  "originRef": "reference.md",
+  "mutationRef": "synthetic-fixture-transposition-slip",
+  "generationRequestRef": "eval/answer-generation/cases/synthetic-transposition-slip.answer-generation-request.json",
+  "generationRequestSha256": "171c6b0cedbee943cfc6ba265e766d454aa522d9ba4b6ce92a409952ae66ec22",
+  "generationResultRef": "样例交付/structured/math-answer/synthetic-linear-equation/candidate.generated-transposition-slip.answer-generation-result.json",
+  "generationResultSha256": "6a32f7d284e290640ca3b0f8bcb6dcbae3e533bc399eeb3302d30059cfd89ea4"
+}

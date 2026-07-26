@@ -3,16 +3,37 @@
   "kind": "optimization-readiness-input",
   "evaluationId": "synthetic-readiness",
   "caseInventoryRef": "readiness-case-inventory.json",
-  "caseInventorySha256": "1775b0c565d20220b5acf2ad1223cc57b091ad363c6fb45b33962adecc41883a",
+  "caseInventorySha256": "a9af2c42530cfcc57f80ecae60402aa928672c3a6da54160c8c9c5508c2b04ed",
   "toolchainStatus": "not_verified",
   "restrictedEgressStatus": "not_verified",
   "cases": [
     {
       "caseId": "synthetic-linear-equation-perturbed",
       "runRef": "scoring.sample-run-record.json",
-      "runSha256": "05f9d1d8d88c62c1465afb03614076459010627ec5f5211ba1c86839069f45ca",
+      "runSha256": "9bea3f7f33d827754cf9c65fe353016a650d664359caa19487b46e1ebe812bdc",
       "feedbackRef": "feedback-parse-result.json",
-      "feedbackSha256": "98e8f9e04e4d38a743c849351c57d06cf213b9d0e51cacad90f1fb489ea4ad56"
+      "feedbackSha256": "75f457ab7daed87537e3504fb1e80a93cad59240c773554e707d5b2edb8aee87"
+    },
+    {
+      "caseId": "synthetic-linear-equation-generated-arithmetic-slip",
+      "runRef": "generated-arithmetic-slip.sample-run-record.json",
+      "runSha256": "25dc407634c793ed9e682d995b418c18ede053112e885667b4bbe2eef606081a",
+      "feedbackRef": "generated-arithmetic-slip.feedback-parse-result.json",
+      "feedbackSha256": "1f6b2aeef32b50867352ca1a5c95bbfd1cd149d630dfb4faae6ca9bb645d877d"
+    },
+    {
+      "caseId": "synthetic-linear-equation-generated-transposition-slip",
+      "runRef": "generated-transposition-slip.sample-run-record.json",
+      "runSha256": "0c33b39e41dd7fef4bf1fffeead5e991a05b1e899ac7ad596e35c7c44637c57e",
+      "feedbackRef": "generated-transposition-slip.feedback-parse-result.json",
+      "feedbackSha256": "02efbbe107b14509b981938668fa6158a7d1e87bf78470266b5c7ec99ab98536"
+    },
+    {
+      "caseId": "synthetic-linear-equation-generated-format-omission",
+      "runRef": "generated-format-omission.sample-run-record.json",
+      "runSha256": "5d685865fc08c1c7c2dbd1d9c5e3d6dcd3428a6686a5058defce941319693ac9",
+      "feedbackRef": "generated-format-omission.feedback-parse-result.json",
+      "feedbackSha256": "3d1d4ddd6115ea6da4ff9fc3f44b1eafabec8bedfbcec8fa1c22179265b21cdf"
     }
   ]
 }

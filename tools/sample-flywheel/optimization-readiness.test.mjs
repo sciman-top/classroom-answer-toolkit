@@ -70,6 +70,35 @@ test("readiness report exposes all buckets and fails closed on current fixture",
   });
 });
 
+test("committed readiness fixture reports generated candidates independently", () => {
+  const fixtureRoot = path.join(
+    repoRoot,
+    "eval",
+    "sample-flywheel",
+    "cases",
+    "synthetic-readiness");
+  const report = compileOptimizationReadinessReport({
+    manifestPath: path.join(fixtureRoot, "readiness-input.json")
+  });
+  const generated = report.buckets.find(
+    (bucket) => bucket.candidateSourceType === "generated");
+
+  assert.deepEqual(generated, {
+    candidateSourceType: "generated",
+    n: 3,
+    expectedErrorCount: 3,
+    detectedErrorCount: 3,
+    recallStatus: "available",
+    recall: 1
+  });
+  assert.equal(report.eligible, false);
+  assert.deepEqual(report.reasonCodes, [
+    "toolchain_not_verified",
+    "restricted_egress_not_verified"
+  ]);
+  assert.deepEqual(report.optimizationCandidateRefs, []);
+});
+
 test("missing feedback remains in the denominator and lowers recall", () => {
   usingFixture(({ directory, manifestPath, manifest }) => {
     writeJson(manifestPath, {

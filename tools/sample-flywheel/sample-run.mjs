@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
+import { validateSyntheticGenerationBinding } from "../answer-generator/synthetic-generator.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -242,6 +243,20 @@ function assertPackageMatchesIndex(packageArtifact, indexArtifact, indexEntry, p
       candidateArtifact.path,
       packageRoot,
       "artifactRef");
+    const generationFields = [
+      "generationRequestRef",
+      "generationRequestSha256",
+      "generationResultRef",
+      "generationResultSha256"
+    ];
+    if (candidateArtifact.value.candidateSourceType === "generated") {
+      validateSyntheticGenerationBinding(
+        candidateArtifact.value,
+        candidateArtifact.path,
+        candidateContentPath);
+    } else if (generationFields.some((field) => candidateArtifact.value[field] !== undefined)) {
+      throw new Error("Only generated candidates may contain generation provenance fields.");
+    }
     const originPath = resolveContainedRef(
       candidateArtifact.value.originRef,
       candidateArtifact.path,
@@ -452,6 +467,17 @@ export function getCanonicalSampleAuthorityPaths(sampleId) {
       descriptor.path,
       authority.packageRoot,
       "originRef"));
+    if (descriptor.value.candidateSourceType === "generated") {
+      const generationPaths = validateSyntheticGenerationBinding(
+        descriptor.value,
+        descriptor.path,
+        resolveContainedRef(
+          descriptor.value.artifactRef,
+          descriptor.path,
+          authority.packageRoot,
+          "artifactRef"));
+      paths.push(generationPaths.requestPath, generationPaths.resultPath);
+    }
   }
   return [...new Map(paths.map((filePath) => [normalizePath(filePath), filePath])).values()];
 }

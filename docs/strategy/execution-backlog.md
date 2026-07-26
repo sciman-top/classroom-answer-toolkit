@@ -160,6 +160,16 @@
 - blocks: GEN-001, FLYWHEEL-001
 - done_definition: 飞轮不会因生成主链未就绪而被阻塞
 
+### task_id: GEN-003
+
+- goal: 建立 provider-neutral、与交付链严格分离的首个确定性合成答案生成闭环，并让 `generated` 桶进入现有飞轮统计
+- inputs: GEN-001/GEN-002 边界、FLYWHEEL-003 到 FLYWHEEL-006 canonical authority 与 fail-closed readiness、完全合成 math fixture
+- changes: 新增 `AnswerGenerationRequest / AnswerGenerationResult` schema 与 `ClassroomToolkit.Domain.Generation` 合同；新增只支持三个仓内 `synthetic_fixture` 的确定性本地 generator；request/result/candidate raw bytes 以 SHA-256 和 provenance 绑定到 generated negative-candidate descriptor、sample package 与 canonical index；生成三个脱敏 generated run/feedback 并纳入 readiness inventory/report；assets/hotspot 重验生成物
+- verification: generation request 禁止 delivery 字段且结构化输出通过 schema；三个 fixture 可确定性复现并拒绝 problem/request/result/candidate/path/hash 漂移；generated scoring、feedback、bucket 独立统计为 `n=3`；controls 保持 `not_verified`、`eligible=false`、所有 optimization refs 为空；完整固定顺序项目门禁与 gateway config validation
+- rollback: 回滚 GEN-003 提交；删除本切片 generation schema/domain/tool/eval/generated canonical artifacts，恢复本切片前 sample package/index 与 readiness fixture；不得修改 `.env`、仓外 receipt 或 live provider 配置
+- blocks: GEN-001, GEN-002, FLYWHEEL-006
+- done_definition: 仓内可从 provider-neutral request 通过明确标记的 deterministic `synthetic_fixture` 生成三个 hash-bound 候选，并闭环进入 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 的 generated 桶；不生成 `OptimizationCandidate`，不接 WPF，不开启 cloud egress，不使用真实试卷，不宣称 live gateway verified、workflow integrated 或 live accepted
+
 ## Epic VISION：视觉双轨与 evidence
 
 ### task_id: VISION-001

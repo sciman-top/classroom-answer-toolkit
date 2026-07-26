@@ -4,6 +4,7 @@ This tool provides the first executable, fully synthetic sample-run admission an
 
 - `样例交付/index.json` is the non-overridable canonical authority and binds each package by subject, path, and SHA-256.
 - `candidateBindings` bind each admitted negative-candidate descriptor by path and SHA-256; records carry that descriptor hash.
+- generated descriptors additionally bind the provider-neutral generation request, deterministic result, and raw candidate bytes; any provenance or hash drift fails closed.
 - `.gitattributes` fixes hash-bound sample JSON/Markdown assets to LF across checkouts.
 - package and artifact references must remain under their canonical roots after realpath resolution.
 - `plumbing` requires explicit truth/leakage states and emits no diff or optimization signal.
@@ -18,7 +19,8 @@ This tool provides the first executable, fully synthetic sample-run admission an
 - readiness can reverify receipt bytes, ordered logs, and current clean revision,
   but treats the unsigned result as `unattested_local_record`; controls remain
   `not_verified` and cannot authorize eligibility.
-- no semantic answer grading, `OptimizationCandidate`, cloud egress, or live acceptance is implemented.
+- the committed synthetic readiness fixture reports `generated n=3` independently, but controls remain `not_verified`, eligibility remains false, and optimization refs remain empty.
+- no semantic answer grading, `OptimizationCandidate`, WPF generation workflow, cloud egress, or live acceptance is implemented.
 - teacher free-text parsing is not implemented.
 - arbitrary archived-authority verification is not implemented.
 

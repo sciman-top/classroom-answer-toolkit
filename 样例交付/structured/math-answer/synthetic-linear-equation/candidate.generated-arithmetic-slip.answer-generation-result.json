@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "answer-generation-result",
+  "requestId": "synthetic-arithmetic-slip",
+  "subjectPack": "math-answer",
+  "sourceRequestSha256": "4723c7d8dbafe484a4c1b8d929671af1fe2646b1f82e68b2f016235b8d2f3545",
+  "answerMarkdown": "# Synthetic generated answer\n\n`2x + 3 = 11`\n\n`2x = 4`\n\n`x = 2`\n",
+  "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-arithmetic-slip.md",
+  "rawAnswerSha256": "c518f114c4fdca82a71957a5556372dd891c3aff069e50bb1021145943c9fffe",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic deterministic generation fixture."
+  },
+  "provenance": {
+    "providerKind": "synthetic_fixture",
+    "providerId": "deterministic-local-generator",
+    "providerVersion": "1.0.0",
+    "liveProvider": false
+  },
+  "stopReason": "synthetic_fixture_generated_no_live_provider"
+}

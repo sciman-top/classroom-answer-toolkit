@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "answer-generation-result",
+  "requestId": "synthetic-format-omission",
+  "subjectPack": "math-answer",
+  "sourceRequestSha256": "81b442cb95e2d66595abca8253ac412564f1724706d0f862026a8a6b06efacf8",
+  "answerMarkdown": "**Answer:** `x = 4`\n",
+  "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-format-omission.md",
+  "rawAnswerSha256": "b7de4dab36b2dbcbe7d94b0b4597971e05d3879b42cba76f3784bb1376d5dc35",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic deterministic generation fixture."
+  },
+  "provenance": {
+    "providerKind": "synthetic_fixture",
+    "providerId": "deterministic-local-generator",
+    "providerVersion": "1.0.0",
+    "liveProvider": false
+  },
+  "stopReason": "synthetic_fixture_generated_no_live_provider"
+}

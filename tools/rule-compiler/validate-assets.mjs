@@ -6,6 +6,7 @@ import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./sch
 import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs";
 import { validateCanonicalSampleAuthorities } from "../sample-flywheel/sample-run.mjs";
 import { validateOptimizationReadinessReport } from "../sample-flywheel/optimization-readiness.mjs";
+import { validateCanonicalSyntheticGenerationFixtures } from "../answer-generator/synthetic-generator.mjs";
 
 function collectValidationTargets() {
   const dataClassificationSchema = resolveRepoPath("prompts/shared/schemas/data-classification.schema.json");
@@ -18,6 +19,8 @@ function collectValidationTargets() {
   const reviewStateMachineSchema = resolveRepoPath("prompts/shared/schemas/review-state-machine.schema.json");
   const feedbackRecordSchema = resolveRepoPath("prompts/shared/schemas/feedback-record.schema.json");
   const feedbackParseResultSchema = resolveRepoPath("prompts/shared/schemas/feedback-parse-result.schema.json");
+  const answerGenerationRequestSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-request.schema.json");
+  const answerGenerationResultSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-result.schema.json");
   const samplePackageSchema = resolveRepoPath("prompts/shared/schemas/sample-package.schema.json");
   const sampleIndexSchema = resolveRepoPath("prompts/shared/schemas/sample-index.schema.json");
   const negativeCandidateSchema = resolveRepoPath("prompts/shared/schemas/negative-candidate.schema.json");
@@ -56,6 +59,7 @@ function collectValidationTargets() {
   const visualEvidenceRoot = resolveRepoPath("eval/visual-evidence/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
+  const answerGenerationEvalRoot = resolveRepoPath("eval/answer-generation/cases");
   const figureSchemas = [
     resolveRepoPath("prompts/shared/schemas/problem-figure-asset.schema.json"),
     resolveRepoPath("prompts/shared/schemas/figure-understanding-result.schema.json"),
@@ -110,6 +114,14 @@ function collectValidationTargets() {
     sampleFlywheelEvalRoot,
     "readiness-report.json")
     .map((filePath) => ({ filePath, schemaPath: optimizationReadinessReportSchema }));
+  const answerGenerationRequestFiles = listFilesBySuffixRecursive(
+    answerGenerationEvalRoot,
+    ".answer-generation-request.json")
+    .map((filePath) => ({ filePath, schemaPath: answerGenerationRequestSchema }));
+  const answerGenerationResultFiles = listFilesBySuffixRecursive(
+    sampleRoot,
+    ".answer-generation-result.json")
+    .map((filePath) => ({ filePath, schemaPath: answerGenerationResultSchema }));
 
   return {
     manifests: [
@@ -128,6 +140,8 @@ function collectValidationTargets() {
     samplePackages: samplePackageFiles,
     sampleIndices: sampleIndexFiles,
     sampleNegativeCandidates: sampleNegativeCandidateFiles,
+    answerGenerationRequests: answerGenerationRequestFiles,
+    answerGenerationResults: answerGenerationResultFiles,
     optimizationReadinessCaseInventories: optimizationReadinessCaseInventoryFiles,
     optimizationReadinessInputs: optimizationReadinessInputFiles,
     optimizationReadinessReports: optimizationReadinessReportFiles,
@@ -145,6 +159,8 @@ function collectValidationTargets() {
       reviewStateMachineSchema,
       feedbackRecordSchema,
       feedbackParseResultSchema,
+      answerGenerationRequestSchema,
+      answerGenerationResultSchema,
       samplePackageSchema,
       sampleIndexSchema,
       negativeCandidateSchema,
@@ -220,7 +236,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -433,6 +449,12 @@ function main() {
   } catch (error) {
     sampleAuthorityError = error instanceof Error ? error.message : String(error);
   }
+  let answerGenerationFixtureError;
+  try {
+    validateCanonicalSyntheticGenerationFixtures();
+  } catch (error) {
+    answerGenerationFixtureError = error instanceof Error ? error.message : String(error);
+  }
 
   const errors = [
     ...fileValidation.errors,
@@ -442,7 +464,10 @@ function main() {
     ...assemblyErrors,
     ...schemaFileErrors,
     ...optimizationReadinessErrors,
-    ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : [])
+    ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : []),
+    ...(answerGenerationFixtureError
+      ? [`Canonical answer generation fixtures: ${answerGenerationFixtureError}`]
+      : [])
   ];
 
   for (const validation of mergedAssetValidations) {

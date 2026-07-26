@@ -4,7 +4,7 @@
   "sampleId": "synthetic-linear-equation",
   "subjectPack": "math-answer",
   "runMode": "scoring",
-  "candidateSourceType": "perturbed_negative",
+  "candidateSourceType": "generated",
   "iteration": 1,
   "truthExtractionStatus": "ok",
   "inputAnswerLeakage": "none",
@@ -12,13 +12,13 @@
   "samplePackageSha256": "04c8c1fdfeec27ef4bf8b712e90e8ee557f71cb51f4b4b43cecff81f667907e1",
   "optimizationCandidateRefs": [],
   "unresolvedFeedbackRefs": [],
-  "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.md",
-  "candidateDescriptorRef": "structured/math-answer/synthetic-linear-equation/candidate.negative-candidate.json",
-  "candidateDescriptorSha256": "0c74f4c7a6e25777e36f6191691cf0c52834794415552112f11a7b264d0131fb",
+  "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-transposition-slip.md",
+  "candidateDescriptorRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-transposition-slip.negative-candidate.json",
+  "candidateDescriptorSha256": "f4d93f4415787d27d1c2e120268aafa462b201f4a095a4437a16a0d24258b817",
   "diffSummary": {
     "method": "sha256_exact",
     "exactMatch": false,
-    "candidateSha256": "557585fdebe7cf2e00731dfeb3de6e6e7595f445ce691cbc78186b1721db0aee",
+    "candidateSha256": "dce7bbff8f0b42df3541d836394889eb3f70006059f420213e3ebdf8866c1da1",
     "referenceSha256": "b039b350fc2fbeccfd152a036fecffc9948f7e613bf213b4ee52a79498536ce5"
   },
   "rootCauseSummary": {

@@ -19,7 +19,7 @@
 - 补高风险视觉题标疑与 `trusted=false` 回归样例
 - 接入 hash-bound、用户显式触发的 WPF aggregate 附着后立即重验投影
 - 接入样例真值面、负样本、反馈链与 Track A
-- 生成主链后段接入飞轮
+- 以 GEN-003 provider-neutral schema、明确标记的 deterministic `synthetic_fixture`、三个 hash-bound generated candidates 接入飞轮；当前只证明 repo-side contract plumbing，controls 仍未验证且 workflow/live acceptance 后接
 
 ## P2：双轨视觉与原生输入
 

@@ -80,6 +80,7 @@ Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一�
 - 规范真值统一落在 `prompts/specs/`。
 - 当前成熟主链仍然是 `answer.md -> PDF/review`。
 - `原题 -> answer.md` 是新增主链，应作为独立工程能力建设。
+- GEN-003 只用 provider-neutral 合同和明确标记的 deterministic `synthetic_fixture` 验证生成到飞轮的仓内闭环；它不是 live 模型能力或 WPF workflow。
 - 高风险视觉题的新增主链必须先经过视觉证据编译器，形成 `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`，不得从整页图直接跳到可信答案。
 - Typst 主渲染属于终局迁移目标；未通过 parity gate 前，不得把当前运行时描述为 Typst 已上线。
 - 自动验收与优化候选只能在门禁通过、数据边界允许、真值可靠时推进。
