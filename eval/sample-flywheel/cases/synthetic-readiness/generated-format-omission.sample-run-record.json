@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "kind": "sample-run-record",
   "sampleId": "synthetic-linear-equation",
   "subjectPack": "math-answer",
@@ -15,6 +15,14 @@
   "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-format-omission.md",
   "candidateDescriptorRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-format-omission.negative-candidate.json",
   "candidateDescriptorSha256": "9b3e0feda8e077373a3323ed60d794b566b45fbf5ace62525b8291eb0b6acf66",
+  "releaseQualification": {
+    "status": "diagnostic_only",
+    "reason": "synthetic_fixture_provenance",
+    "evidenceRef": "样例交付/structured/math-answer/synthetic-linear-equation/candidate.generated-format-omission.answer-generation-result.json",
+    "evidenceSha256": "c2b6662f5ba72c538cb162fa78c76c05a1e85a37c6240233ec8fe2f42dbfde91",
+    "providerKind": "synthetic_fixture",
+    "liveProvider": false
+  },
   "diffSummary": {
     "method": "sha256_exact",
     "exactMatch": false,

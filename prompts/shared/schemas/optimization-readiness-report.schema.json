@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://classroom-toolkit.dev/schemas/optimization-readiness-report/v1.json",
+  "$id": "https://classroom-toolkit.dev/schemas/optimization-readiness-report/v2.json",
   "compatibility": {
-    "forward": "additive",
-    "backward": "additive"
+    "forward": "breaking_v2_requires_qualified_metrics",
+    "backward": "breaking_v2_requires_qualified_metrics"
   },
   "title": "OptimizationReadinessReport",
   "type": "object",
@@ -22,7 +22,7 @@
     "optimizationCandidateRefs"
   ],
   "properties": {
-    "schemaVersion": { "type": "string" },
+    "schemaVersion": { "type": "string", "enum": ["2.0"] },
     "kind": {
       "type": "string",
       "enum": ["optimization-readiness-report"]
@@ -85,6 +85,7 @@
           "sampleId",
           "candidateSourceType",
           "candidateDescriptorSha256",
+          "releaseQualification",
           "expectedError",
           "detected"
         ],
@@ -113,6 +114,9 @@
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
           },
+          "releaseQualification": {
+            "$ref": "release-qualification.schema.json"
+          },
           "expectedError": { "type": "boolean" },
           "detected": { "type": "boolean" }
         },
@@ -128,7 +132,11 @@
           "n",
           "expectedErrorCount",
           "detectedErrorCount",
-          "recallStatus"
+          "recallStatus",
+          "qualifiedN",
+          "qualifiedExpectedErrorCount",
+          "qualifiedDetectedErrorCount",
+          "qualifiedRecallStatus"
         ],
         "properties": {
           "candidateSourceType": {
@@ -142,7 +150,15 @@
             "type": "string",
             "enum": ["available", "unavailable"]
           },
-          "recall": { "type": "number", "minimum": 0, "maximum": 1 }
+          "recall": { "type": "number", "minimum": 0, "maximum": 1 },
+          "qualifiedN": { "type": "integer", "minimum": 0 },
+          "qualifiedExpectedErrorCount": { "type": "integer", "minimum": 0 },
+          "qualifiedDetectedErrorCount": { "type": "integer", "minimum": 0 },
+          "qualifiedRecallStatus": {
+            "type": "string",
+            "enum": ["available", "unavailable"]
+          },
+          "qualifiedRecall": { "type": "number", "minimum": 0, "maximum": 1 }
         },
         "additionalProperties": false
       }

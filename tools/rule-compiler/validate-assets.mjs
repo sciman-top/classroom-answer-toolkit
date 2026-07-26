@@ -24,6 +24,7 @@ function collectValidationTargets() {
   const samplePackageSchema = resolveRepoPath("prompts/shared/schemas/sample-package.schema.json");
   const sampleIndexSchema = resolveRepoPath("prompts/shared/schemas/sample-index.schema.json");
   const negativeCandidateSchema = resolveRepoPath("prompts/shared/schemas/negative-candidate.schema.json");
+  const releaseQualificationSchema = resolveRepoPath("prompts/shared/schemas/release-qualification.schema.json");
   const sampleRunRecordSchema = resolveRepoPath("prompts/shared/schemas/sample-run-record.schema.json");
   const optimizationReadinessCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-case-inventory.schema.json");
   const optimizationReadinessInputSchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-input.schema.json");
@@ -164,6 +165,7 @@ function collectValidationTargets() {
       samplePackageSchema,
       sampleIndexSchema,
       negativeCandidateSchema,
+      releaseQualificationSchema,
       sampleRunRecordSchema,
       optimizationReadinessCaseInventorySchema,
       optimizationReadinessInputSchema,

@@ -91,3 +91,9 @@
 - 决定：吸收 `qq-codex-bot` 的 `visual_input_bundle / grounding_snapshot / solution_snapshot / consistency_checks` 思路，但在本仓落为 `VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 阶段产物，并通过 `TrackResult.stageArtifactRefs` 引用
 - 原因：不安全捷径和 grounding 不足是视觉误放行的核心风险；阶段化 trace 能把读图事实、解题候选和一致性校验拆开，且不破坏本仓既有 `ProblemEvidenceBundle / TrackResult / DecisionRecord` canonical contract
 - 边界：不移植 NapCat、AstrBot、OneBot 或 QQ live 验收语义；本仓验收分层使用 `repo_supported / gateway_verified / workstation_accepted`
+
+## D-019 原始诊断指标与 release qualification 分离
+
+- 决定：`SampleRunRecord` 从 current canonical provenance 派生 `ReleaseQualification`，readiness 同时报告 raw 与 qualified 指标，非扰动放行门槛只读取 qualified 指标
+- 原因：raw recall 证明当前 fixture 的诊断链路有效，但 deterministic `synthetic_fixture`、未认证历史样本或本地 unattested receipt 都不具 release authority；若复用 raw `n/recall`，未来 controls 转正会产生错误放行
+- 边界：当前编译器只产生 `not_applicable / diagnostic_only / unverified`，不自行产生 `qualified`，不生成 `OptimizationCandidate`

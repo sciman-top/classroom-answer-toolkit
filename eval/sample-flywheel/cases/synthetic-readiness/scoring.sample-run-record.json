@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "kind": "sample-run-record",
   "sampleId": "synthetic-linear-equation",
   "subjectPack": "math-answer",
@@ -15,6 +15,10 @@
   "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.md",
   "candidateDescriptorRef": "structured/math-answer/synthetic-linear-equation/candidate.negative-candidate.json",
   "candidateDescriptorSha256": "0c74f4c7a6e25777e36f6191691cf0c52834794415552112f11a7b264d0131fb",
+  "releaseQualification": {
+    "status": "not_applicable",
+    "reason": "perturbed_negative_baseline"
+  },
   "diffSummary": {
     "method": "sha256_exact",
     "exactMatch": false,

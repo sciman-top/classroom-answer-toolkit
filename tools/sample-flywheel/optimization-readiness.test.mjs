@@ -37,6 +37,10 @@ test("readiness report exposes all buckets and fails closed on current fixture",
       runSha256: report.caseBindings[0].runSha256,
       feedbackSha256: report.caseBindings[0].feedbackSha256,
       candidateDescriptorSha256: report.caseBindings[0].candidateDescriptorSha256,
+      releaseQualification: {
+        status: "not_applicable",
+        reason: "perturbed_negative_baseline"
+      },
       expectedError: true,
       detected: true
     }]);
@@ -52,17 +56,25 @@ test("readiness report exposes all buckets and fails closed on current fixture",
       expectedErrorCount: 1,
       detectedErrorCount: 1,
       recallStatus: "available",
-      recall: 1
+      recall: 1,
+      qualifiedN: 0,
+      qualifiedExpectedErrorCount: 0,
+      qualifiedDetectedErrorCount: 0,
+      qualifiedRecallStatus: "unavailable"
     });
     assert.deepEqual(report.buckets[1], {
       candidateSourceType: "historical_candidate",
       n: 0,
       expectedErrorCount: 0,
       detectedErrorCount: 0,
-      recallStatus: "unavailable"
+      recallStatus: "unavailable",
+      qualifiedN: 0,
+      qualifiedExpectedErrorCount: 0,
+      qualifiedDetectedErrorCount: 0,
+      qualifiedRecallStatus: "unavailable"
     });
     assert.deepEqual(report.reasonCodes, [
-      "non_perturbed_bucket_sample_count_insufficient",
+      "non_perturbed_qualified_sample_count_insufficient",
       "toolchain_not_verified",
       "restricted_egress_not_verified"
     ]);
@@ -89,10 +101,15 @@ test("committed readiness fixture reports generated candidates independently", (
     expectedErrorCount: 3,
     detectedErrorCount: 3,
     recallStatus: "available",
-    recall: 1
+    recall: 1,
+    qualifiedN: 0,
+    qualifiedExpectedErrorCount: 0,
+    qualifiedDetectedErrorCount: 0,
+    qualifiedRecallStatus: "unavailable"
   });
   assert.equal(report.eligible, false);
   assert.deepEqual(report.reasonCodes, [
+    "non_perturbed_qualified_sample_count_insufficient",
     "toolchain_not_verified",
     "restricted_egress_not_verified"
   ]);
@@ -250,7 +267,7 @@ test("hash-bound local receipt remains unattested and cannot authorize controls"
       sourceRevision: "0".repeat(40)
     });
     assert.deepEqual(report.reasonCodes, [
-      "non_perturbed_bucket_sample_count_insufficient",
+      "non_perturbed_qualified_sample_count_insufficient",
       "toolchain_not_verified",
       "restricted_egress_not_verified",
       "control_receipt_unattested"
@@ -318,6 +335,19 @@ test("compiler rejects run, feedback, and current-authority drift", () => {
       () => compileOptimizationReadinessReport({ manifestPath }),
       /current canonical authority/);
   });
+
+  usingFixture(({ inventoryPath, manifestPath, inventory, manifest }) => {
+    inventory.cases[0].releaseQualification = {
+      status: "unverified",
+      reason: "qualification_evidence_missing"
+    };
+    writeJson(inventoryPath, inventory);
+    manifest.caseInventorySha256 = sha256File(inventoryPath);
+    writeJson(manifestPath, manifest);
+    assert.throws(
+      () => compileOptimizationReadinessReport({ manifestPath }),
+      /releaseQualification does not match current canonical authority/);
+  });
 });
 
 test("report validator rejects computed-field and optimization-ref drift", () => {
@@ -336,6 +366,14 @@ test("report validator rejects computed-field and optimization-ref drift", () =>
         optimizationCandidateRefs: ["optimization-candidate.json"]
       }, manifestPath),
       /does not match|must remain empty/);
+    assert.throws(
+      () => validateOptimizationReadinessReport({
+        ...report,
+        buckets: report.buckets.map((bucket, index) => index === 2
+          ? { ...bucket, qualifiedN: 3 }
+          : bucket)
+      }, manifestPath),
+      /does not match/);
   });
 });
 
@@ -424,7 +462,7 @@ function usingFixture(action) {
       createdAt: "2026-07-26T12:00:00.000Z"
     }));
     const inventory = {
-      schemaVersion: "1.0",
+      schemaVersion: "2.0",
       kind: "optimization-readiness-case-inventory",
       evaluationId: "synthetic-readiness",
       cases: [{
@@ -433,6 +471,7 @@ function usingFixture(action) {
         candidateSourceType: run.candidateSourceType,
         candidateDescriptorRef: run.candidateDescriptorRef,
         candidateDescriptorSha256: run.candidateDescriptorSha256,
+        releaseQualification: run.releaseQualification,
         expectedError: true,
         truthExtractionStatus: run.truthExtractionStatus,
         inputAnswerLeakage: run.inputAnswerLeakage

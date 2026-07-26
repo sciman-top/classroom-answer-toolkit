@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
+import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import {
   compileSampleRun,
   resolveContainedRef,
   validateCanonicalSampleAuthorities,
+  validateReleaseQualification,
   validateSampleRunRecord
 } from "./sample-run.mjs";
 
@@ -22,6 +25,38 @@ const fixtureRoot = path.join(
   "synthetic-linear-equation");
 const packagePath = path.join(fixtureRoot, "sample.json");
 const candidatePath = path.join(fixtureRoot, "candidate.negative-candidate.json");
+const releaseQualificationSchemaPath = path.join(
+  repoRoot,
+  "prompts",
+  "shared",
+  "schemas",
+  "release-qualification.schema.json");
+
+test("release qualification schema rejects contradictory authority combinations", () => {
+  for (const qualification of [
+    { status: "qualified", reason: "synthetic_fixture_provenance" },
+    { status: "diagnostic_only", reason: "trusted_release_authority" },
+    { status: "diagnostic_only", reason: "synthetic_fixture_provenance" }
+  ]) {
+    assert.notDeepEqual(
+      validateValueAgainstSchema(qualification, releaseQualificationSchemaPath),
+      []);
+  }
+  const futureQualified = {
+    status: "qualified",
+    reason: "trusted_release_authority",
+    evidenceRef: "future/trusted-attestation.json",
+    evidenceSha256: "0".repeat(64),
+    providerKind: "attested_provider",
+    liveProvider: true
+  };
+  assert.deepEqual(
+    validateValueAgainstSchema(futureQualified, releaseQualificationSchemaPath),
+    []);
+  assert.throws(
+    () => validateReleaseQualification(futureQualified),
+    /not supported by the current compiler/);
+});
 
 test("plumbing records authority hashes without scoring or unsupported truth tier", () => {
   const record = compileSampleRun({
@@ -41,6 +76,7 @@ test("plumbing records authority hashes without scoring or unsupported truth tie
   assert.equal(record.referenceTruthSource, undefined);
   assert.deepEqual(record.optimizationCandidateRefs, []);
   assert.equal(record.diffSummary, undefined);
+  assert.equal(record.releaseQualification, undefined);
   assert.equal(record.stopReason, "plumbing_only_no_scoring_or_optimization");
 });
 
@@ -61,6 +97,10 @@ test("scoring records exact hash diff and fixture-labelled root cause", () => {
   assert.equal(record.rootCauseSummary.expectedSeverity, "medium");
   assert.equal(record.rootCauseSummary.labelConfidence, 1);
   assert.equal(record.rootCauseSummary.labelSource, "negative_candidate_fixture");
+  assert.deepEqual(record.releaseQualification, {
+    status: "not_applicable",
+    reason: "perturbed_negative_baseline"
+  });
   assert.deepEqual(record.optimizationCandidateRefs, []);
   assert.equal(record.stopReason, "scoring_recorded_no_optimizer");
 });
@@ -75,6 +115,18 @@ test("generated scoring binds deterministic synthetic generation provenance", ()
   assert.equal(record.candidateSourceType, "generated");
   assert.equal(record.diffSummary.exactMatch, false);
   assert.equal(record.rootCauseSummary.labelSource, "negative_candidate_fixture");
+  const resultPath = path.join(
+    fixtureRoot,
+    "candidate.generated-arithmetic-slip.answer-generation-result.json");
+  assert.deepEqual(record.releaseQualification, {
+    status: "diagnostic_only",
+    reason: "synthetic_fixture_provenance",
+    evidenceRef: "样例交付/structured/math-answer/synthetic-linear-equation/"
+      + "candidate.generated-arithmetic-slip.answer-generation-result.json",
+    evidenceSha256: crypto.createHash("sha256").update(fs.readFileSync(resultPath)).digest("hex"),
+    providerKind: "synthetic_fixture",
+    liveProvider: false
+  });
   assert.deepEqual(record.optimizationCandidateRefs, []);
 });
 
@@ -203,6 +255,15 @@ test("semantic validator rejects malformed authority and run invariants", () => 
     () => validateSampleRunRecord({ ...plumbing, diffSummary: {} }),
     /must not contain diff/);
   assert.throws(
+    () => validateSampleRunRecord({
+      ...plumbing,
+      releaseQualification: {
+        status: "unverified",
+        reason: "qualification_evidence_missing"
+      }
+    }),
+    /must not contain diff, root-cause, or release qualification/);
+  assert.throws(
     () => validateSampleRunRecord({ ...plumbing, optimizationCandidateRefs: ["future.json"] }),
     /must remain empty/);
   assert.throws(
@@ -216,6 +277,15 @@ test("semantic validator rejects malformed authority and run invariants", () => 
     /unsupported stopReason/);
 
   const scoring = compileSampleRun(scoringOptions());
+  assert.throws(
+    () => validateSampleRunRecord({
+      ...scoring,
+      releaseQualification: {
+        status: "unverified",
+        reason: "qualification_evidence_missing"
+      }
+    }),
+    /does not match current canonical provenance/);
   assert.throws(
     () => validateSampleRunRecord({ ...scoring, rootCauseSummary: {} }),
     /root-cause summary/);
@@ -244,6 +314,21 @@ test("semantic validator rejects malformed authority and run invariants", () => 
   assert.throws(
     () => validateSampleRunRecord({ ...scoring, stopReason: "approved_for_optimization" }),
     /unsupported stopReason/);
+
+  const generated = compileSampleRun(scoringOptions({
+    candidatePath: path.join(
+      fixtureRoot,
+      "candidate.generated-arithmetic-slip.negative-candidate.json")
+  }));
+  assert.throws(
+    () => validateSampleRunRecord({
+      ...generated,
+      releaseQualification: {
+        ...generated.releaseQualification,
+        evidenceSha256: "0".repeat(64)
+      }
+    }),
+    /does not match current canonical provenance/);
 });
 
 test("CLI atomically writes a shape-and-semantics-valid scoring record", () => {

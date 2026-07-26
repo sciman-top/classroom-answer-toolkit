@@ -1,8 +1,8 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "kind": "optimization-readiness-report",
   "evaluationId": "synthetic-readiness",
-  "sourceManifestSha256": "7631fc89b58b4ca95cd21fb42d944007c8285767d4bd2d3fe084437e32792f99",
+  "sourceManifestSha256": "88b7b596f0c405b260f1d319fd7816cfb376ad3b60dce56867b117d7754a51ec",
   "thresholds": {
     "perturbedNegativeRecall": 0.8,
     "nonPerturbedMinimumSampleCount": 3,
@@ -18,40 +18,68 @@
       "sampleId": "synthetic-linear-equation",
       "candidateSourceType": "perturbed_negative",
       "candidateDescriptorSha256": "0c74f4c7a6e25777e36f6191691cf0c52834794415552112f11a7b264d0131fb",
+      "releaseQualification": {
+        "status": "not_applicable",
+        "reason": "perturbed_negative_baseline"
+      },
       "expectedError": true,
       "detected": true,
-      "runSha256": "9bea3f7f33d827754cf9c65fe353016a650d664359caa19487b46e1ebe812bdc",
-      "feedbackSha256": "75f457ab7daed87537e3504fb1e80a93cad59240c773554e707d5b2edb8aee87"
+      "runSha256": "8e8049455ca2f2e9cd0bd4bf0dc16c042b8f97e8d8acd653c020b2a2bda7b793",
+      "feedbackSha256": "bd7ec382adc038fca54ea59d59bf2473b8503bf2ebd02e9c25aafb1ab2d73012"
     },
     {
       "caseId": "synthetic-linear-equation-generated-arithmetic-slip",
       "sampleId": "synthetic-linear-equation",
       "candidateSourceType": "generated",
       "candidateDescriptorSha256": "28dd5925812c136b78f81dd6f3698c4fe7c998a5ddb2517e6a555bbf5ef03081",
+      "releaseQualification": {
+        "status": "diagnostic_only",
+        "reason": "synthetic_fixture_provenance",
+        "evidenceRef": "样例交付/structured/math-answer/synthetic-linear-equation/candidate.generated-arithmetic-slip.answer-generation-result.json",
+        "evidenceSha256": "5c2745cf1500f2c3bc635a5a958e77f31248a2abc70e360892858d4571e34300",
+        "providerKind": "synthetic_fixture",
+        "liveProvider": false
+      },
       "expectedError": true,
       "detected": true,
-      "runSha256": "25dc407634c793ed9e682d995b418c18ede053112e885667b4bbe2eef606081a",
-      "feedbackSha256": "1f6b2aeef32b50867352ca1a5c95bbfd1cd149d630dfb4faae6ca9bb645d877d"
+      "runSha256": "ba5b6fe543624d8c40fe8ac7fa3788a2c73dfbb39bbf1bb75e04e5811140f9ec",
+      "feedbackSha256": "a4de08a191a49ae93c3e4aa5ffbf37ad58b3fbb5d335f1d08097f60f86d5dffe"
     },
     {
       "caseId": "synthetic-linear-equation-generated-transposition-slip",
       "sampleId": "synthetic-linear-equation",
       "candidateSourceType": "generated",
       "candidateDescriptorSha256": "f4d93f4415787d27d1c2e120268aafa462b201f4a095a4437a16a0d24258b817",
+      "releaseQualification": {
+        "status": "diagnostic_only",
+        "reason": "synthetic_fixture_provenance",
+        "evidenceRef": "样例交付/structured/math-answer/synthetic-linear-equation/candidate.generated-transposition-slip.answer-generation-result.json",
+        "evidenceSha256": "6a32f7d284e290640ca3b0f8bcb6dcbae3e533bc399eeb3302d30059cfd89ea4",
+        "providerKind": "synthetic_fixture",
+        "liveProvider": false
+      },
       "expectedError": true,
       "detected": true,
-      "runSha256": "0c33b39e41dd7fef4bf1fffeead5e991a05b1e899ac7ad596e35c7c44637c57e",
-      "feedbackSha256": "02efbbe107b14509b981938668fa6158a7d1e87bf78470266b5c7ec99ab98536"
+      "runSha256": "358587ad029abdfe3964cdd4a69cce3d9885da5581bd382d887716a04044824c",
+      "feedbackSha256": "b49860b28e3b1452dc72e0b6ad11b2325db8db2d513e0d457489d32e8c0ccf66"
     },
     {
       "caseId": "synthetic-linear-equation-generated-format-omission",
       "sampleId": "synthetic-linear-equation",
       "candidateSourceType": "generated",
       "candidateDescriptorSha256": "9b3e0feda8e077373a3323ed60d794b566b45fbf5ace62525b8291eb0b6acf66",
+      "releaseQualification": {
+        "status": "diagnostic_only",
+        "reason": "synthetic_fixture_provenance",
+        "evidenceRef": "样例交付/structured/math-answer/synthetic-linear-equation/candidate.generated-format-omission.answer-generation-result.json",
+        "evidenceSha256": "c2b6662f5ba72c538cb162fa78c76c05a1e85a37c6240233ec8fe2f42dbfde91",
+        "providerKind": "synthetic_fixture",
+        "liveProvider": false
+      },
       "expectedError": true,
       "detected": true,
-      "runSha256": "5d685865fc08c1c7c2dbd1d9c5e3d6dcd3428a6686a5058defce941319693ac9",
-      "feedbackSha256": "3d1d4ddd6115ea6da4ff9fc3f44b1eafabec8bedfbcec8fa1c22179265b21cdf"
+      "runSha256": "d19f8766895cdeaa13408756156edba723c6dd4b28aaaa27dbe9dc0c4a62a1b9",
+      "feedbackSha256": "0ee0748621bfa29ac2d751a3f4c722447b733c0cb135afb650f51f699646dc27"
     }
   ],
   "buckets": [
@@ -60,28 +88,41 @@
       "n": 1,
       "expectedErrorCount": 1,
       "detectedErrorCount": 1,
+      "qualifiedN": 0,
+      "qualifiedExpectedErrorCount": 0,
+      "qualifiedDetectedErrorCount": 0,
       "recallStatus": "available",
-      "recall": 1
+      "recall": 1,
+      "qualifiedRecallStatus": "unavailable"
     },
     {
       "candidateSourceType": "historical_candidate",
       "n": 0,
       "expectedErrorCount": 0,
       "detectedErrorCount": 0,
-      "recallStatus": "unavailable"
+      "qualifiedN": 0,
+      "qualifiedExpectedErrorCount": 0,
+      "qualifiedDetectedErrorCount": 0,
+      "recallStatus": "unavailable",
+      "qualifiedRecallStatus": "unavailable"
     },
     {
       "candidateSourceType": "generated",
       "n": 3,
       "expectedErrorCount": 3,
       "detectedErrorCount": 3,
+      "qualifiedN": 0,
+      "qualifiedExpectedErrorCount": 0,
+      "qualifiedDetectedErrorCount": 0,
       "recallStatus": "available",
-      "recall": 1
+      "recall": 1,
+      "qualifiedRecallStatus": "unavailable"
     }
   ],
   "unresolvedLeakageCount": 0,
   "eligible": false,
   "reasonCodes": [
+    "non_perturbed_qualified_sample_count_insufficient",
     "toolchain_not_verified",
     "restricted_egress_not_verified"
   ],

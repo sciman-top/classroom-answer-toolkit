@@ -138,6 +138,16 @@
 - blocks: FLYWHEEL-005
 - done_definition: readiness 能消费一次本地、hash-bound、当前 clean revision 的诊断 receipt，但 toolchain/egress controls 仍为 not_verified 且 eligibility 保持 fail-closed；该 receipt 不具 runner provenance，不证明宿主或子进程无网络活动，不运行 live probes，不生成 OptimizationCandidate，不授权灰度/WPF/live acceptance
 
+### task_id: FLYWHEEL-007
+
+- goal: 将候选的原始诊断统计与 release qualification 分离，阻止 deterministic `synthetic_fixture` 在未来 controls 获得正向 authority 后被误计为非扰动放行样本
+- inputs: FLYWHEEL-006 fail-closed readiness、GEN-003 generated provenance、D-010 分桶门槛、current canonical candidate authority
+- changes: 新增共享 `ReleaseQualification` 合同；scoring `SampleRunRecord` 从 current canonical descriptor 与 generation result 派生 qualification，perturbed negative 固定为 `not_applicable`，generated synthetic 固定为 hash-bound `diagnostic_only`，未认证非扰动来源固定为 `unverified`；inventory、run、report 逐层绑定并重验 qualification；readiness 同时保留 raw 与 qualified 指标，非扰动 eligibility 只读取 qualified count/recall
+- verification: 三个 generated synthetic fixture 仍独立报告 raw `n=3/recall=1`，但 qualified `n=0/recall=unavailable`；qualification、generation evidence、inventory、run 或 report computed field 漂移均 fail closed；reason code 固定为 `non_perturbed_qualified_sample_count_insufficient`；controls 仍 `not_verified`、`eligible=false`、所有 optimization refs 为空；完整固定顺序项目门禁与 gateway config validation
+- rollback: 回滚 FLYWHEEL-007 实现提交，恢复本切片前 schema、run/feedback/inventory/input/report raw-byte hash 链；不得修改 `.env`、仓外 receipt、live provider 或 cloud-egress 配置
+- blocks: FLYWHEEL-006, GEN-003
+- done_definition: 仓内 generated 诊断样本可继续证明 plumbing/recall，但不能贡献 release-qualified 非扰动门槛；本切片不生成 `qualified` authority 或 `OptimizationCandidate`，不接 WPF，不开启 cloud egress，不运行 live provider，不宣称 gateway live verified、workflow integrated 或 live accepted
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001

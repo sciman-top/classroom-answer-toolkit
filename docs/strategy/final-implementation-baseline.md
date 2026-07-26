@@ -240,8 +240,11 @@ negative-candidate fixture 标注；`createdAt` 由调用者显式提供 canonic
 `SampleRunRecord` 与同一 run 的 `FeedbackParseResult` 原始 bytes SHA-256。缺少 run 或
 feedback 的 expected-error case 仍保留在分母，不能通过改 `caseId/iteration` 重复计数。
 
-报告固定输出 `perturbed_negative / historical_candidate / generated` 三桶及各桶 `n`、
-expected/detected error count、recall availability 和可用时的 recall。报告同时投影
+报告固定输出 `perturbed_negative / historical_candidate / generated` 三桶及各桶原始 `n`、
+expected/detected error count、recall availability 和可用时的 recall；同时输出由 canonical
+`ReleaseQualification` 过滤后的 `qualifiedN`、qualified expected/detected error count、
+qualified recall availability 和可用时的 qualified recall。原始指标用于诊断，非扰动
+eligibility 只能读取 qualified 指标。报告同时投影
 `toolchainStatus / restrictedEgressStatus / unresolvedLeakageCount`，并从 inventory 独立
 投影 truth/leakage 未决和 missing run，按第 11 节门槛计算稳定 reason codes；任一条件
 不足时 `eligible=false`。两项 control 当前只能是 `not_verified`。仓外运行目录中的
@@ -319,6 +322,9 @@ attestation 或等价 authority。
 - 首个 generator 只允许仓内三个完全合成的 `synthetic_fixture`，输出必须固定 `liveProvider=false`，不得把确定性模板描述为真实模型输出或 historical sample。
 - generation request、result、candidate 原始 UTF-8 bytes、generated descriptor、sample package 与 flat index 逐层以 SHA-256 绑定；路径 containment、schema、deterministic recompile 或任一 hash 漂移都 fail closed。
 - generated 候选仍需满足 scoring 的 truth/leakage 条件，并沿既有 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 进入独立桶。
+- scoring run 必须携带从 current canonical authority 派生的 `ReleaseQualification`：perturbed negative 为 `not_applicable`；当前 deterministic `synthetic_fixture` 为绑定 generation result raw-byte SHA-256 与 provider provenance 的 `diagnostic_only`；缺少可信 qualification evidence 的 historical/future provider 输出为 `unverified`。
+- inventory、run 与 readiness report 必须逐层携带并重验同一 qualification；caller 自报、静态 report 字段或 unattested local receipt 都不能产生 `qualified`。当前仓内编译器不产生 `qualified` 状态。
+- `SampleRunRecord`、readiness case inventory 与 readiness report 因新增 required qualification/qualified 指标升级为 `2.0`；v1 artifact 不做静默兼容，必须从 current canonical authority 重新编译。`qualified` 虽由共享 schema 为未来受权 writer 保留，当前 runtime validator 仍 fail closed 拒绝该状态。
 - GEN-003 即使 generated 桶 `n >= 3` 且 recall 达标，也必须保持 `toolchainStatus=not_verified`、`restrictedEgressStatus=not_verified`、`eligible=false` 和所有 `optimizationCandidateRefs=[]`。
 - 本切片不接 WPF，不开启 cloud egress，不消费真实试卷，不运行 live provider，不宣称 workflow integrated、live gateway verified 或 live accepted。
 
@@ -432,12 +438,13 @@ P1 样例集默认人工拆分题面/答案：
 任一 `OptimizationCandidate` 进入灰度前，必须同时满足：
 
 1. `perturbed_negative` 桶判错召回率 `>= 0.80`
-2. `historical_candidate` 或 `generated` 至少一桶 `n >= 3` 且判错召回率 `>= 0.70`
+2. `historical_candidate` 或 `generated` 至少一桶 release-qualified `n >= 3` 且 qualified 判错召回率 `>= 0.70`
 3. `check-toolchain` 全链为绿
 4. 无 restricted 出网违规
 5. 无 leakage 未决样例
 
 `perturbed_negative` 单独达标绝不构成优化放行依据。
+`diagnostic_only` 或 `unverified` 的非扰动样本只贡献 raw 诊断指标，绝不贡献上述 release-qualified 门槛。
 
 ## 12. P0-P3 sequence
 

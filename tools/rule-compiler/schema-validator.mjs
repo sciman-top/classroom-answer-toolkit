@@ -106,6 +106,11 @@ function validatePrimitive(value, schema, currentPath, state) {
     state.errors.push(`${formatPath(currentPath)} should be one of ${schema.enum.join(", ")}, got ${JSON.stringify(value)}.`);
   }
 
+  if (Object.hasOwn(schema, "const") && value !== schema.const) {
+    state.errors.push(
+      `${formatPath(currentPath)} should equal ${JSON.stringify(schema.const)}, got ${JSON.stringify(value)}.`);
+  }
+
   if (actualType === "string" && Number.isInteger(schema.minLength) && value.length < schema.minLength) {
     state.errors.push(`${formatPath(currentPath)} should have length >= ${schema.minLength}.`);
   }
@@ -138,6 +143,19 @@ function validateValue(value, schema, currentPath, state) {
 
   if (!effectiveSchema || typeof effectiveSchema !== "object") {
     return;
+  }
+
+  if (Array.isArray(effectiveSchema.oneOf)) {
+    const matchingBranches = effectiveSchema.oneOf.filter((branch) => {
+      const branchState = { ...nextState, errors: [] };
+      validateValue(value, branch, currentPath, branchState);
+      return branchState.errors.length === 0;
+    }).length;
+    if (matchingBranches !== 1) {
+      state.errors.push(
+        `${formatPath(currentPath)} should match exactly one oneOf branch, matched ${matchingBranches}.`);
+      return;
+    }
   }
 
   if (effectiveSchema.type === "object" || effectiveSchema.properties || effectiveSchema.required) {

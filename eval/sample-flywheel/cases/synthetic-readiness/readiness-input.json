@@ -3,37 +3,37 @@
   "kind": "optimization-readiness-input",
   "evaluationId": "synthetic-readiness",
   "caseInventoryRef": "readiness-case-inventory.json",
-  "caseInventorySha256": "a9af2c42530cfcc57f80ecae60402aa928672c3a6da54160c8c9c5508c2b04ed",
+  "caseInventorySha256": "a677696144427265fb8e3ab3632c204502a50725c947bc40efe2706b439e185b",
   "toolchainStatus": "not_verified",
   "restrictedEgressStatus": "not_verified",
   "cases": [
     {
       "caseId": "synthetic-linear-equation-perturbed",
       "runRef": "scoring.sample-run-record.json",
-      "runSha256": "9bea3f7f33d827754cf9c65fe353016a650d664359caa19487b46e1ebe812bdc",
+      "runSha256": "8e8049455ca2f2e9cd0bd4bf0dc16c042b8f97e8d8acd653c020b2a2bda7b793",
       "feedbackRef": "feedback-parse-result.json",
-      "feedbackSha256": "75f457ab7daed87537e3504fb1e80a93cad59240c773554e707d5b2edb8aee87"
+      "feedbackSha256": "bd7ec382adc038fca54ea59d59bf2473b8503bf2ebd02e9c25aafb1ab2d73012"
     },
     {
       "caseId": "synthetic-linear-equation-generated-arithmetic-slip",
       "runRef": "generated-arithmetic-slip.sample-run-record.json",
-      "runSha256": "25dc407634c793ed9e682d995b418c18ede053112e885667b4bbe2eef606081a",
+      "runSha256": "ba5b6fe543624d8c40fe8ac7fa3788a2c73dfbb39bbf1bb75e04e5811140f9ec",
       "feedbackRef": "generated-arithmetic-slip.feedback-parse-result.json",
-      "feedbackSha256": "1f6b2aeef32b50867352ca1a5c95bbfd1cd149d630dfb4faae6ca9bb645d877d"
+      "feedbackSha256": "a4de08a191a49ae93c3e4aa5ffbf37ad58b3fbb5d335f1d08097f60f86d5dffe"
     },
     {
       "caseId": "synthetic-linear-equation-generated-transposition-slip",
       "runRef": "generated-transposition-slip.sample-run-record.json",
-      "runSha256": "0c33b39e41dd7fef4bf1fffeead5e991a05b1e899ac7ad596e35c7c44637c57e",
+      "runSha256": "358587ad029abdfe3964cdd4a69cce3d9885da5581bd382d887716a04044824c",
       "feedbackRef": "generated-transposition-slip.feedback-parse-result.json",
-      "feedbackSha256": "02efbbe107b14509b981938668fa6158a7d1e87bf78470266b5c7ec99ab98536"
+      "feedbackSha256": "b49860b28e3b1452dc72e0b6ad11b2325db8db2d513e0d457489d32e8c0ccf66"
     },
     {
       "caseId": "synthetic-linear-equation-generated-format-omission",
       "runRef": "generated-format-omission.sample-run-record.json",
-      "runSha256": "5d685865fc08c1c7c2dbd1d9c5e3d6dcd3428a6686a5058defce941319693ac9",
+      "runSha256": "d19f8766895cdeaa13408756156edba723c6dd4b28aaaa27dbe9dc0c4a62a1b9",
       "feedbackRef": "generated-format-omission.feedback-parse-result.json",
-      "feedbackSha256": "3d1d4ddd6115ea6da4ff9fc3f44b1eafabec8bedfbcec8fa1c22179265b21cdf"
+      "feedbackSha256": "0ee0748621bfa29ac2d751a3f4c722447b733c0cb135afb650f51f699646dc27"
     }
   ]
 }

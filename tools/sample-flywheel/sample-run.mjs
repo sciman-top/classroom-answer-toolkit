@@ -16,6 +16,7 @@ const schemas = {
   index: path.join(schemaRoot, "sample-index.schema.json"),
   package: path.join(schemaRoot, "sample-package.schema.json"),
   candidate: path.join(schemaRoot, "negative-candidate.schema.json"),
+  releaseQualification: path.join(schemaRoot, "release-qualification.schema.json"),
   run: path.join(schemaRoot, "sample-run-record.schema.json")
 };
 const scoringCandidateTypes = new Set([
@@ -55,7 +56,7 @@ export function compileSampleRun(options = {}) {
   }
 
   const baseRecord = {
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     kind: "sample-run-record",
     sampleId,
     subjectPack,
@@ -155,12 +156,17 @@ function compileScoringRecord(context) {
   }
 
   const exactMatch = candidateContent.sha256 === truthContent.sha256;
+  const releaseQualification = deriveCanonicalReleaseQualification(
+    candidateArtifact.value,
+    candidateArtifact.path,
+    candidateContent.path);
   return {
     ...baseRecord,
     candidateSourceType: candidateArtifact.value.candidateSourceType,
     candidateArtifactRef: toPortableRelative(indexArtifact.path, candidateContent.path),
     candidateDescriptorRef: toPortableRelative(indexArtifact.path, candidateArtifact.path),
     candidateDescriptorSha256: candidateArtifact.sha256,
+    releaseQualification,
     diffSummary: {
       method: "sha256_exact",
       exactMatch,
@@ -280,6 +286,9 @@ function assertPackageMatchesIndex(packageArtifact, indexArtifact, indexEntry, p
 
 export function validateSampleRunRecord(record) {
   assertSchema("SampleRunRecord", record, schemas.run);
+  if (record.schemaVersion !== "2.0") {
+    throw new Error("SampleRunRecord schemaVersion is unsupported.");
+  }
   requireKebabId(record.sampleId, "SampleRunRecord sampleId");
   requireKebabId(record.subjectPack, "SampleRunRecord subjectPack");
   if (!Number.isInteger(record.iteration) || record.iteration < 1) {
@@ -296,8 +305,11 @@ export function validateSampleRunRecord(record) {
   }
 
   if (record.runMode === "plumbing") {
-    if (record.diffSummary !== undefined || record.rootCauseSummary !== undefined) {
-      throw new Error("plumbing SampleRunRecord must not contain diff or root-cause signals.");
+    if (record.diffSummary !== undefined
+      || record.rootCauseSummary !== undefined
+      || record.releaseQualification !== undefined) {
+      throw new Error(
+        "plumbing SampleRunRecord must not contain diff, root-cause, or release qualification signals.");
     }
     if (record.stopReason !== "plumbing_only_no_scoring_or_optimization") {
       throw new Error("plumbing SampleRunRecord has an unsupported stopReason.");
@@ -321,6 +333,7 @@ export function validateSampleRunRecord(record) {
   requireText(record.candidateArtifactRef, "scoring SampleRunRecord candidateArtifactRef");
   requireText(record.candidateDescriptorRef, "scoring SampleRunRecord candidateDescriptorRef");
   assertSha256(record.candidateDescriptorSha256, "scoring SampleRunRecord candidateDescriptorSha256");
+  validateReleaseQualification(record.releaseQualification);
   if (record.diffSummary?.method !== "sha256_exact"
     || typeof record.diffSummary.exactMatch !== "boolean") {
     throw new Error("scoring SampleRunRecord requires a sha256_exact diff summary.");
@@ -400,6 +413,14 @@ export function verifySampleRunRecordAuthority(record) {
       authority.packageRoot,
       "artifactRef"),
     "current canonical candidate artifact");
+  const expectedQualification = deriveCanonicalReleaseQualification(
+    candidateArtifact.value,
+    candidateArtifact.path,
+    candidateContent.path);
+  if (!isDeepStrictEqual(record.releaseQualification, expectedQualification)) {
+    throw new Error(
+      "SampleRunRecord releaseQualification does not match current canonical provenance.");
+  }
   if (record.candidateArtifactRef
     !== toPortableRelative(authority.indexArtifact.path, candidateContent.path)) {
     throw new Error("SampleRunRecord candidateArtifactRef does not match its bound descriptor.");
@@ -498,11 +519,88 @@ export function getCanonicalSampleCandidateAuthority(sampleId, candidateDescript
   if (descriptor.sha256 !== binding.sha256) {
     throw new Error("current canonical negative candidate does not match its index binding.");
   }
+  const candidatePath = resolveContainedRef(
+    descriptor.value.artifactRef,
+    descriptor.path,
+    authority.packageRoot,
+    "artifactRef");
   return {
     candidateDescriptorRef,
     candidateDescriptorSha256: descriptor.sha256,
     candidateSourceType: descriptor.value.candidateSourceType,
-    expectedPrimaryErrorType: descriptor.value.expectedPrimaryErrorType
+    expectedPrimaryErrorType: descriptor.value.expectedPrimaryErrorType,
+    releaseQualification: deriveCanonicalReleaseQualification(
+      descriptor.value,
+      descriptor.path,
+      candidatePath)
+  };
+}
+
+export function validateReleaseQualification(qualification) {
+  assertSchema("ReleaseQualification", qualification, schemas.releaseQualification);
+  const keys = Object.keys(qualification).sort();
+  const minimalKeys = ["reason", "status"];
+  if (qualification.status === "not_applicable") {
+    if (qualification.reason !== "perturbed_negative_baseline"
+      || !isDeepStrictEqual(keys, minimalKeys)) {
+      throw new Error("not_applicable qualification must identify the perturbed baseline only.");
+    }
+    return qualification;
+  }
+  if (qualification.status === "unverified") {
+    if (qualification.reason !== "qualification_evidence_missing"
+      || !isDeepStrictEqual(keys, minimalKeys)) {
+      throw new Error("unverified qualification must declare missing qualification evidence only.");
+    }
+    return qualification;
+  }
+  if (qualification.status === "diagnostic_only") {
+    const diagnosticKeys = [
+      "evidenceRef",
+      "evidenceSha256",
+      "liveProvider",
+      "providerKind",
+      "reason",
+      "status"
+    ];
+    if (qualification.reason !== "synthetic_fixture_provenance"
+      || qualification.providerKind !== "synthetic_fixture"
+      || qualification.liveProvider !== false
+      || !isDeepStrictEqual(keys, diagnosticKeys)) {
+      throw new Error(
+        "diagnostic_only qualification must bind deterministic synthetic fixture provenance.");
+    }
+    requireText(qualification.evidenceRef, "release qualification evidenceRef");
+    assertSha256(qualification.evidenceSha256, "release qualification evidenceSha256");
+    return qualification;
+  }
+  throw new Error("qualified release authority is not supported by the current compiler.");
+}
+
+function deriveCanonicalReleaseQualification(descriptor, descriptorPath, candidatePath) {
+  if (descriptor.candidateSourceType === "perturbed_negative") {
+    return {
+      status: "not_applicable",
+      reason: "perturbed_negative_baseline"
+    };
+  }
+  if (descriptor.candidateSourceType === "generated") {
+    const generation = validateSyntheticGenerationBinding(
+      descriptor,
+      descriptorPath,
+      candidatePath);
+    return {
+      status: "diagnostic_only",
+      reason: "synthetic_fixture_provenance",
+      evidenceRef: toPortableRelative(path.join(repoRoot, "authority.json"), generation.resultPath),
+      evidenceSha256: generation.resultSha256,
+      providerKind: generation.provenance.providerKind,
+      liveProvider: generation.provenance.liveProvider
+    };
+  }
+  return {
+    status: "unverified",
+    reason: "qualification_evidence_missing"
   };
 }
 

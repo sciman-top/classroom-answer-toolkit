@@ -43,7 +43,7 @@ export function compileOptimizationReadinessReport(options = {}) {
     requireCurrentSource: options.requireCurrentControlSource !== false
   });
   const report = {
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     kind: "optimization-readiness-report",
     evaluationId: manifestArtifact.value.evaluationId,
     sourceManifestSha256: manifestArtifact.sha256,
@@ -172,7 +172,7 @@ export function validateOptimizationReadinessInput(manifest, manifestPath) {
 
 export function validateOptimizationReadinessCaseInventory(inventory) {
   assertSchema("OptimizationReadinessCaseInventory", inventory, caseInventorySchema);
-  if (inventory.schemaVersion !== "1.0"
+  if (inventory.schemaVersion !== "2.0"
     || !Array.isArray(inventory.cases)
     || inventory.cases.length === 0) {
     throw new Error("OptimizationReadinessCaseInventory requires a supported non-empty inventory.");
@@ -197,6 +197,10 @@ export function validateOptimizationReadinessCaseInventory(inventory) {
         throw new Error(`${entry.caseId} ${field} does not match current canonical authority.`);
       }
     }
+    if (!isDeepStrictEqual(entry.releaseQualification, authority.releaseQualification)) {
+      throw new Error(
+        `${entry.caseId} releaseQualification does not match current canonical authority.`);
+    }
     evaluationUnits.push(`${entry.sampleId}:${entry.candidateDescriptorSha256}`);
   }
   if (new Set(evaluationUnits).size !== evaluationUnits.length) {
@@ -209,7 +213,7 @@ export function validateOptimizationReadinessCaseInventory(inventory) {
 function compileExpectedReport(manifestArtifact, options) {
   const evaluation = evaluateManifest(manifestArtifact, options);
   return {
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     kind: "optimization-readiness-report",
     evaluationId: manifestArtifact.value.evaluationId,
     sourceManifestSha256: manifestArtifact.sha256,
@@ -242,7 +246,15 @@ function evaluateManifest(manifestArtifact, options) {
   const inputByCaseId = new Map(manifest.cases.map((entry) => [entry.caseId, entry]));
   const counters = new Map(bucketOrder.map((sourceType) => [
     sourceType,
-    { candidateSourceType: sourceType, n: 0, expectedErrorCount: 0, detectedErrorCount: 0 }
+    {
+      candidateSourceType: sourceType,
+      n: 0,
+      expectedErrorCount: 0,
+      detectedErrorCount: 0,
+      qualifiedN: 0,
+      qualifiedExpectedErrorCount: 0,
+      qualifiedDetectedErrorCount: 0
+    }
   ]));
   const caseBindings = [];
   let unresolvedLeakageCount = 0;
@@ -254,11 +266,17 @@ function evaluateManifest(manifestArtifact, options) {
     const bucket = counters.get(inventoryCase.candidateSourceType);
     bucket.n += 1;
     bucket.expectedErrorCount += 1;
+    const isReleaseQualified = inventoryCase.releaseQualification.status === "qualified";
+    if (isReleaseQualified) {
+      bucket.qualifiedN += 1;
+      bucket.qualifiedExpectedErrorCount += 1;
+    }
     const caseBinding = {
       caseId: inventoryCase.caseId,
       sampleId: inventoryCase.sampleId,
       candidateSourceType: inventoryCase.candidateSourceType,
       candidateDescriptorSha256: inventoryCase.candidateDescriptorSha256,
+      releaseQualification: inventoryCase.releaseQualification,
       expectedError: true,
       detected: false
     };
@@ -290,6 +308,7 @@ function evaluateManifest(manifestArtifact, options) {
       || run.candidateSourceType !== inventoryCase.candidateSourceType
       || run.candidateDescriptorRef !== inventoryCase.candidateDescriptorRef
       || run.candidateDescriptorSha256 !== inventoryCase.candidateDescriptorSha256
+      || !isDeepStrictEqual(run.releaseQualification, inventoryCase.releaseQualification)
       || run.truthExtractionStatus !== inventoryCase.truthExtractionStatus
       || run.inputAnswerLeakage !== inventoryCase.inputAnswerLeakage) {
       throw new Error(`${entry.caseId} SampleRunRecord does not match its inventory case.`);
@@ -310,6 +329,9 @@ function evaluateManifest(manifestArtifact, options) {
       }
       validateFeedbackParseResult(feedbackArtifact.value, runArtifact.path);
       bucket.detectedErrorCount += 1;
+      if (isReleaseQualified) {
+        bucket.qualifiedDetectedErrorCount += 1;
+      }
       caseBinding.feedbackSha256 = feedbackArtifact.sha256;
       caseBinding.detected = true;
     }
@@ -318,13 +340,21 @@ function evaluateManifest(manifestArtifact, options) {
 
   const buckets = bucketOrder.map((sourceType) => {
     const counter = counters.get(sourceType);
-    if (counter.expectedErrorCount === 0) {
-      return { ...counter, recallStatus: "unavailable" };
+    const bucket = counter.expectedErrorCount === 0
+      ? { ...counter, recallStatus: "unavailable" }
+      : {
+          ...counter,
+          recallStatus: "available",
+          recall: counter.detectedErrorCount / counter.expectedErrorCount
+        };
+    if (counter.qualifiedExpectedErrorCount === 0) {
+      return { ...bucket, qualifiedRecallStatus: "unavailable" };
     }
     return {
-      ...counter,
-      recallStatus: "available",
-      recall: counter.detectedErrorCount / counter.expectedErrorCount
+      ...bucket,
+      qualifiedRecallStatus: "available",
+      qualifiedRecall:
+        counter.qualifiedDetectedErrorCount / counter.qualifiedExpectedErrorCount
     };
   });
   const reasonCodes = computeReasonCodes(
@@ -381,15 +411,15 @@ function computeReasonCodes(
   }
 
   const eligibleNonPerturbed = buckets.slice(1).some((bucket) =>
-    bucket.n >= thresholds.nonPerturbedMinimumSampleCount
-    && bucket.recallStatus === "available"
-    && bucket.recall >= thresholds.nonPerturbedRecall);
+    bucket.qualifiedN >= thresholds.nonPerturbedMinimumSampleCount
+    && bucket.qualifiedRecallStatus === "available"
+    && bucket.qualifiedRecall >= thresholds.nonPerturbedRecall);
   if (!eligibleNonPerturbed) {
     const hasEnoughSamples = buckets.slice(1).some((bucket) =>
-      bucket.n >= thresholds.nonPerturbedMinimumSampleCount);
+      bucket.qualifiedN >= thresholds.nonPerturbedMinimumSampleCount);
     reasons.push(hasEnoughSamples
-      ? "non_perturbed_bucket_recall_below_threshold"
-      : "non_perturbed_bucket_sample_count_insufficient");
+      ? "non_perturbed_qualified_recall_below_threshold"
+      : "non_perturbed_qualified_sample_count_insufficient");
   }
   if (toolchainStatus !== "passed") {
     reasons.push(toolchainStatus === "failed" ? "toolchain_failed" : "toolchain_not_verified");

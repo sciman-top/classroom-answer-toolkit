@@ -122,12 +122,14 @@
 - 与现有 `AnswerDeliveryRequest` 明确分离
 - 生成物结构、provenance、request/result/candidate 原始字节和 canonical authority 漂移均 fail closed
 - `generated n=3` 可独立统计，但 `toolchain/restricted-egress=not_verified`、`eligible=false`、`optimizationCandidateRefs=[]`
+- raw generated 指标与 release-qualified 指标分离；synthetic fixture 固定为 `diagnostic_only`，因此当前 generated `qualifiedN=0` 且 qualified recall unavailable
 
 ### 验证方式
 
 - 生成候选进入 scoring
 - `candidateSourceType=generated` 的分桶结果可被单独查看
 - generation 与 sample-flywheel focused tests、assets semantic recompile、完整固定顺序门禁
+- qualification provenance、inventory/run/report 漂移回归，以及“raw 门槛达标仍不能放行”的 eligibility 回归
 
 ### 禁止扩张点
 

@@ -20,6 +20,7 @@
 - 接入 hash-bound、用户显式触发的 WPF aggregate 附着后立即重验投影
 - 接入样例真值面、负样本、反馈链与 Track A
 - 以 GEN-003 provider-neutral schema、明确标记的 deterministic `synthetic_fixture`、三个 hash-bound generated candidates 接入飞轮；当前只证明 repo-side contract plumbing，controls 仍未验证且 workflow/live acceptance 后接
+- 以 FLYWHEEL-007 将 raw diagnostic bucket 与 release-qualified bucket 分离；synthetic fixture 只保留 `diagnostic_only` provenance，不得贡献非扰动放行门槛
 
 ## P2：双轨视觉与原生输入
 

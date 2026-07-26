@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "kind": "sample-run-record",
   "sampleId": "synthetic-linear-equation",
   "subjectPack": "math-answer",
@@ -15,6 +15,14 @@
   "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-transposition-slip.md",
   "candidateDescriptorRef": "structured/math-answer/synthetic-linear-equation/candidate.generated-transposition-slip.negative-candidate.json",
   "candidateDescriptorSha256": "f4d93f4415787d27d1c2e120268aafa462b201f4a095a4437a16a0d24258b817",
+  "releaseQualification": {
+    "status": "diagnostic_only",
+    "reason": "synthetic_fixture_provenance",
+    "evidenceRef": "样例交付/structured/math-answer/synthetic-linear-equation/candidate.generated-transposition-slip.answer-generation-result.json",
+    "evidenceSha256": "6a32f7d284e290640ca3b0f8bcb6dcbae3e533bc399eeb3302d30059cfd89ea4",
+    "providerKind": "synthetic_fixture",
+    "liveProvider": false
+  },
   "diffSummary": {
     "method": "sha256_exact",
     "exactMatch": false,

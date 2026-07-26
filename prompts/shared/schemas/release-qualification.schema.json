@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/release-qualification/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "ReleaseQualification",
+  "type": "object",
+  "required": ["status", "reason"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["not_applicable", "diagnostic_only", "unverified", "qualified"]
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "perturbed_negative_baseline",
+        "synthetic_fixture_provenance",
+        "qualification_evidence_missing",
+        "trusted_release_authority"
+      ]
+    },
+    "evidenceRef": { "type": "string", "minLength": 1 },
+    "evidenceSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "providerKind": { "type": "string", "minLength": 1 },
+    "liveProvider": { "type": "boolean" }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["status", "reason"],
+      "properties": {
+        "status": { "const": "not_applicable" },
+        "reason": { "const": "perturbed_negative_baseline" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "status",
+        "reason",
+        "evidenceRef",
+        "evidenceSha256",
+        "providerKind",
+        "liveProvider"
+      ],
+      "properties": {
+        "status": { "const": "diagnostic_only" },
+        "reason": { "const": "synthetic_fixture_provenance" },
+        "evidenceRef": { "type": "string", "minLength": 1 },
+        "evidenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "providerKind": { "const": "synthetic_fixture" },
+        "liveProvider": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["status", "reason"],
+      "properties": {
+        "status": { "const": "unverified" },
+        "reason": { "const": "qualification_evidence_missing" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "status",
+        "reason",
+        "evidenceRef",
+        "evidenceSha256",
+        "providerKind",
+        "liveProvider"
+      ],
+      "properties": {
+        "status": { "const": "qualified" },
+        "reason": { "const": "trusted_release_authority" },
+        "evidenceRef": { "type": "string", "minLength": 1 },
+        "evidenceSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "providerKind": { "type": "string", "minLength": 1 },
+        "liveProvider": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "additionalProperties": false
+}

@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://classroom-toolkit.dev/schemas/optimization-readiness-case-inventory/v1.json",
+  "$id": "https://classroom-toolkit.dev/schemas/optimization-readiness-case-inventory/v2.json",
   "compatibility": {
-    "forward": "additive",
-    "backward": "additive"
+    "forward": "breaking_v2_requires_release_qualification",
+    "backward": "breaking_v2_requires_release_qualification"
   },
   "title": "OptimizationReadinessCaseInventory",
   "type": "object",
@@ -14,7 +14,7 @@
     "cases"
   ],
   "properties": {
-    "schemaVersion": { "type": "string" },
+    "schemaVersion": { "type": "string", "enum": ["2.0"] },
     "kind": {
       "type": "string",
       "enum": ["optimization-readiness-case-inventory"]
@@ -33,6 +33,7 @@
           "candidateSourceType",
           "candidateDescriptorRef",
           "candidateDescriptorSha256",
+          "releaseQualification",
           "expectedError",
           "truthExtractionStatus",
           "inputAnswerLeakage"
@@ -54,6 +55,9 @@
           "candidateDescriptorSha256": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
+          },
+          "releaseQualification": {
+            "$ref": "release-qualification.schema.json"
           },
           "expectedError": { "type": "boolean" },
           "truthExtractionStatus": {

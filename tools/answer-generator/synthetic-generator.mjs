@@ -203,7 +203,9 @@ export function validateSyntheticGenerationBinding(
   }
   return {
     requestPath: requestArtifact.path,
-    resultPath: resultArtifact.path
+    resultPath: resultArtifact.path,
+    resultSha256: resultArtifact.sha256,
+    provenance: resultArtifact.value.provenance
   };
 }
 
