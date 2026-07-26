@@ -53,7 +53,7 @@
 
 ### 输出
 
-- `SampleRunRecord`
+- canonical index/package/candidate-descriptor hash authority 约束下、通过仓内有限 shape validator、compiler semantic invariants 与 current canonical authority bytes 重验的 `SampleRunRecord`
 - `FeedbackParseResult`
 - `OptimizationCandidate`
 - `DecisionRecord`
@@ -72,6 +72,7 @@
 ### 完成定义
 
 - 能跑通至少一个 `plumbing` 轮和一个 `scoring` 轮
+- 首个 scoring 增量允许只做完全合成 fixture 的 byte/hash exact-diff 与预标注根因记账，但必须明确不等于语义评分或优化放行
 - 候选答案与真值分离明确
 - 三类人工队列可区分
 - Word 在 P1 明确只作为 `degraded-supported`

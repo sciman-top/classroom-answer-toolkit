@@ -4,6 +4,7 @@ import { buildMergedAssets, compileResolvedSnapshot } from "./merge-rules.mjs";
 import { listJsonFiles, readJsonFile, resolveRepoPath } from "./shared.mjs";
 import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./schema-validator.mjs";
 import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs";
+import { validateCanonicalSampleAuthorities } from "../sample-flywheel/sample-run.mjs";
 
 function collectValidationTargets() {
   const dataClassificationSchema = resolveRepoPath("prompts/shared/schemas/data-classification.schema.json");
@@ -60,6 +61,8 @@ function collectValidationTargets() {
   const sampleIndexFiles = fs.existsSync(path.join(sampleRoot, "index.json"))
     ? [{ filePath: path.join(sampleRoot, "index.json"), schemaPath: sampleIndexSchema }]
     : [];
+  const sampleNegativeCandidateFiles = listFilesBySuffixRecursive(sampleRoot, ".negative-candidate.json")
+    .map((filePath) => ({ filePath, schemaPath: negativeCandidateSchema }));
   const visualEvidenceFiles = [
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".problem-evidence-bundle.json")
       .map((filePath) => ({ filePath, schemaPath: problemEvidenceBundleSchema })),
@@ -105,6 +108,7 @@ function collectValidationTargets() {
     ].map((filePath) => ({ filePath, schemaPath: profileSchema })),
     samplePackages: samplePackageFiles,
     sampleIndices: sampleIndexFiles,
+    sampleNegativeCandidates: sampleNegativeCandidateFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -189,7 +193,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -352,6 +356,12 @@ function main() {
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
   }));
+  let sampleAuthorityError;
+  try {
+    validateCanonicalSampleAuthorities();
+  } catch (error) {
+    sampleAuthorityError = error instanceof Error ? error.message : String(error);
+  }
 
   const errors = [
     ...fileValidation.errors,
@@ -359,7 +369,8 @@ function main() {
       validation.errors.map((error) => `ResolvedSnapshot(${validation.subjectPack}): ${error}`)
     ),
     ...assemblyErrors,
-    ...schemaFileErrors
+    ...schemaFileErrors,
+    ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : [])
   ];
 
   for (const validation of mergedAssetValidations) {

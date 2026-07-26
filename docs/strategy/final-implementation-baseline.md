@@ -180,6 +180,10 @@ P1 的 flat scoring 只能通过该索引入场。
 
 固定字段：
 
+- `sampleIndexSha256`
+- `samplePackageSha256`
+- `candidateDescriptorRef`
+- `candidateDescriptorSha256`
 - `runMode(plumbing|scoring)`
 - `candidateSourceType`
 - `truthExtractionStatus(ok|low_confidence|failed)`
@@ -189,6 +193,16 @@ P1 的 flat scoring 只能通过该索引入场。
 - `rootCauseSummary`
 - `optimizationCandidateRefs[]`
 - `stopReason`
+
+当前首个合成飞轮切片以 `样例交付/index.json` 为不可覆盖的 canonical authority，通过
+`subjectPack / packageRef / packageSha256` 唯一绑定
+`structured/<subjectPack>/<sampleId>/sample.json`。index、package 与 candidate 内部引用经
+realpath 后必须留在对应 root；`candidateBindings` 另外绑定 descriptor path/hash，
+`.gitattributes` 固定 hash-bound 样例资产为 LF；所有 run 必须显式提供 truth extraction
+与 leakage 状态。仓内通用 validator 只提供有限 shape 检查，compiler semantic invariants
+另外负责正整数、SHA-256、diff/hash/root-cause/stopReason 一致性、plumbing 无评分信号、
+scoring admission 与当前无 optimization refs 等语义约束，并重验 current canonical
+authority bytes。任意归档 authority 验真不属于当前能力。
 
 ## 7. feedback-record 归因模型
 
@@ -243,6 +257,13 @@ P1 的 flat scoring 只能通过该索引入场。
 1. `candidateSourceType in {historical_candidate, generated, perturbed_negative}`
 2. `truthExtractionStatus = ok`
 3. `inputAnswerLeakage != suspected_unresolved`
+
+### 首个可执行飞轮增量
+
+- flat scoring 只能通过 `样例交付/index.json` 选择候选；index 与 structured package 的 classification、question inventory、problem/truth/annotation 引用必须一致。
+- `plumbing` 可在 truth/leakage 尚未满足 scoring 时验证流程，但不得生成 diff、根因或 optimization refs。
+- 首个合成 scoring 只比较 candidate/reference 原始 bytes 的 SHA-256，并使用 `negative-candidate` 的预标注根因记账；它不代表语义答案评分。
+- 在 `FeedbackParseResult / OptimizationCandidate` 运行时与分桶指标落地前，`optimizationCandidateRefs` 必须为空，不能据此进入灰度。
 
 ## 9. 输入归一化与答案泄漏策略
 

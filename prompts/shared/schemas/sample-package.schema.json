@@ -24,8 +24,14 @@
         "sample-package"
       ]
     },
-    "sampleId": { "type": "string" },
-    "subjectPack": { "type": "string" },
+    "sampleId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "subjectPack": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
     "dataClassification": {
       "$ref": "./data-classification.schema.json"
     },

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "sample-index",
+  "samples": [
+    {
+      "sampleId": "synthetic-linear-equation",
+      "subjectPack": "math-answer",
+      "packageRef": "structured/math-answer/synthetic-linear-equation/sample.json",
+      "packageSha256": "32e6cea0a2f68712e1316bd7f80b2d1e816a7ca98be580517a0eecab32a8c1b5",
+      "dataClassification": {
+        "level": "public",
+        "notes": "Fully synthetic regression fixture."
+      },
+      "expectedQuestionRefs": [
+        "math-answer:synthetic-linear-equation:Q1"
+      ],
+      "problemSource": [
+        "structured/math-answer/synthetic-linear-equation/problem.md"
+      ],
+      "referenceTruth": [
+        "structured/math-answer/synthetic-linear-equation/reference.md"
+      ],
+      "teacherAnnotation": [],
+      "candidateRefs": [
+        "structured/math-answer/synthetic-linear-equation/candidate.negative-candidate.json"
+      ],
+      "candidateBindings": [
+        {
+          "ref": "structured/math-answer/synthetic-linear-equation/candidate.negative-candidate.json",
+          "sha256": "cf885afb42c59f0472ad78863fb847d1d3c96507a05f7dfc2908915266021882"
+        }
+      ]
+    }
+  ]
+}

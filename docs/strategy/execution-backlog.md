@@ -98,6 +98,16 @@
 - blocks: FLYWHEEL-001
 - done_definition: 根因不再被压扁成单点错误
 
+### task_id: FLYWHEEL-003
+
+- goal: 建立首个可执行 `sample-index -> admission -> SampleRunRecord` 合成飞轮闭环
+- inputs: `sample-index / sample-package / negative-candidate / sample-run-record` schema、scoring 三条准入条件、完全合成 math fixture
+- changes: 新增 `tools/sample-flywheel` 编译器与合同测试；`样例交付/index.json` 是不可覆盖的 canonical authority，并以 `subjectPack / packageRef / packageSha256` 唯一绑定 structured package、以 `candidateBindings` 绑定 negative-candidate descriptor path/hash；sample/subject ID 必须是单一 kebab-case 路径段；hash-bound 样例资产固定 LF；index/package/artifact 引用经 realpath 后必须留在各自 root；所有 run 显式提供 truth/leakage 状态；plumbing 不产 diff/优化信号；scoring 只允许已索引的 `historical_candidate / generated / perturbed_negative`，要求 truth extraction 为 ok 且 leakage 非 unresolved，并记录 authority hashes、descriptor hash、SHA-256 exact-diff 与 fixture 标注根因；输出通过仓内有限 shape validator、compiler semantic invariants 与 current canonical authority bytes 重验；assets gate 遍历全部 canonical index entries，并校验每个 descriptor 到 package negative artifact 与 indexed truth 的关系；纳入 hotspot
+- verification: 一轮 plumbing、一轮 perturbed-negative scoring；missing/low-confidence truth、missing/unresolved leakage、placeholder/unlisted candidate、authority override、path escape、malformed semantics 与 output alias 拒绝；CLI sibling-temp 输出；完整项目门禁
+- rollback: 删除 `tools/sample-flywheel`、完全合成 `样例交付` fixture、assets/hotspot 接入和本任务 strategy/evidence 修改
+- blocks: FLYWHEEL-002, SAMPLE-001
+- done_definition: 仓内可执行并验证一轮不产优化信号的 plumbing 和一轮受门禁的合成 scoring；当前只证明 current canonical authority、exact-diff 与预标注记账，不宣称任意归档 authority 验真、语义判题、OptimizationCandidate、灰度放行、真实样例或 live acceptance
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001

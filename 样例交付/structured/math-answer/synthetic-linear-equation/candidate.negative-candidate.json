@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "negative-candidate",
+  "candidateId": "synthetic-linear-equation-wrong-result",
+  "candidateSourceType": "perturbed_negative",
+  "artifactRef": "candidate.md",
+  "expectedPrimaryErrorType": "reasoning_error",
+  "expectedContributingErrorTypes": [],
+  "expectedDiffLayer": "answer",
+  "originRef": "reference.md",
+  "mutationRef": "synthetic-wrong-final-value"
+}

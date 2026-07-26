@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "sample-package",
+  "sampleId": "synthetic-linear-equation",
+  "subjectPack": "math-answer",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic regression fixture."
+  },
+  "expectedQuestionRefs": [
+    "math-answer:synthetic-linear-equation:Q1"
+  ],
+  "artifacts": [
+    {
+      "artifactId": "synthetic-linear-equation-problem",
+      "role": "problem_source",
+      "path": "problem.md",
+      "mediaType": "text/markdown",
+      "sourceType": "markdown",
+      "parseMode": "native"
+    },
+    {
+      "artifactId": "synthetic-linear-equation-reference",
+      "role": "reference_truth",
+      "path": "reference.md",
+      "mediaType": "text/markdown",
+      "sourceType": "markdown",
+      "parseMode": "native"
+    },
+    {
+      "artifactId": "synthetic-linear-equation-negative",
+      "role": "negative_candidate",
+      "path": "candidate.md",
+      "mediaType": "text/markdown",
+      "sourceType": "markdown",
+      "parseMode": "native"
+    }
+  ]
+}

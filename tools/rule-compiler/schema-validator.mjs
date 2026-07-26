@@ -98,6 +98,20 @@ function validatePrimitive(value, schema, currentPath, state) {
   if (schema.enum && !schema.enum.includes(value)) {
     state.errors.push(`${formatPath(currentPath)} should be one of ${schema.enum.join(", ")}, got ${JSON.stringify(value)}.`);
   }
+
+  if (actualType === "string" && Number.isInteger(schema.minLength) && value.length < schema.minLength) {
+    state.errors.push(`${formatPath(currentPath)} should have length >= ${schema.minLength}.`);
+  }
+
+  if (actualType === "string" && typeof schema.pattern === "string" && !new RegExp(schema.pattern).test(value)) {
+    state.errors.push(`${formatPath(currentPath)} should match pattern ${schema.pattern}.`);
+  }
+
+  if ((actualType === "number" || Number.isInteger(value))
+    && typeof schema.minimum === "number"
+    && value < schema.minimum) {
+    state.errors.push(`${formatPath(currentPath)} should be >= ${schema.minimum}.`);
+  }
 }
 
 function validateValue(value, schema, currentPath, state) {

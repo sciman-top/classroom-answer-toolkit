@@ -68,6 +68,11 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:aggregate
 } "Visual evidence delivery aggregate contract tests failed."
 
+Write-Host "sample flywheel admission and run-record contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/sample-flywheel test
+} "Sample flywheel contract tests failed."
+
 $subjectPacks = Get-SubjectPackMetadata -RepositoryRoot $repoRoot
 if ($subjectPacks.Count -eq 0) {
     throw "No subject pack manifests were found under prompts/."

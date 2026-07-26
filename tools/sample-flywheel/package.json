@@ -1,0 +1,10 @@
+{
+  "name": "classroom-toolkit-sample-flywheel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile:run": "node sample-run.mjs",
+    "test": "node --test sample-run.test.mjs"
+  }
+}
