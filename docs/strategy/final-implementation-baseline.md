@@ -231,6 +231,27 @@ negative-candidate fixture 标注；`createdAt` 由调用者显式提供 canonic
 该切片不解析教师自由文本，不做语义答案评分，不验证任意归档 authority，不生成
 `OptimizationCandidate`，也不构成灰度放行。
 
+### optimization-readiness-input / optimization-readiness-report
+
+首个分桶准入评估切片由独立、hash-bound canonical case inventory 提供召回率分母，
+不能从已产生的 `SampleRunRecord` 或 `FeedbackParseResult` 反推分母。inventory case
+绑定 current canonical candidate descriptor path/hash，并按 `sampleId + descriptor hash`
+去重；runtime manifest 必须一一覆盖 inventory，可选绑定 current-authority-valid scoring
+`SampleRunRecord` 与同一 run 的 `FeedbackParseResult` 原始 bytes SHA-256。缺少 run 或
+feedback 的 expected-error case 仍保留在分母，不能通过改 `caseId/iteration` 重复计数。
+
+报告固定输出 `perturbed_negative / historical_candidate / generated` 三桶及各桶 `n`、
+expected/detected error count、recall availability 和可用时的 recall。报告同时投影
+`toolchainStatus / restrictedEgressStatus / unresolvedLeakageCount`，并从 inventory 独立
+投影 truth/leakage 未决和 missing run，按第 11 节门槛计算稳定 reason codes；任一条件
+不足时 `eligible=false`。在 verifiable gate/egress receipt 能力落地前，两项 control
+只能是 `not_verified`，因此当前编译器不能产生 `eligible=true`，也不把一次后续门禁结果
+固化成持续有效许可。
+
+该报告的 `optimizationCandidateRefs` 必须为空；它只证明 fail-closed readiness 计算与
+证据绑定，不生成 `OptimizationCandidate`，不授权灰度，不构成 WPF workflow integration
+或 live acceptance。
+
 9 类权威值域固定为：
 
 - `spec_gap`
@@ -280,7 +301,7 @@ negative-candidate fixture 标注；`createdAt` 由调用者显式提供 canonic
 - flat scoring 只能通过 `样例交付/index.json` 选择候选；index 与 structured package 的 classification、question inventory、problem/truth/annotation 引用必须一致。
 - `plumbing` 可在 truth/leakage 尚未满足 scoring 时验证流程，但不得生成 diff、根因或 optimization refs。
 - 首个合成 scoring 只比较 candidate/reference 原始 bytes 的 SHA-256，并使用 `negative-candidate` 的预标注根因记账；它不代表语义答案评分。
-- 在 `OptimizationCandidate` 运行时与分桶指标落地前，`SampleRunRecord` 和 `FeedbackParseResult` 的 `optimizationCandidateRefs` 必须为空，不能据此进入灰度。
+- 在 `OptimizationCandidate` 运行时落地前，`SampleRunRecord`、`FeedbackParseResult` 和 `OptimizationReadinessReport` 的 `optimizationCandidateRefs` 必须为空；readiness report 即使指标可用也不能据此直接进入灰度。
 
 ## 9. 输入归一化与答案泄漏策略
 

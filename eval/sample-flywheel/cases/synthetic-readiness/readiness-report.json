@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "optimization-readiness-report",
+  "evaluationId": "synthetic-readiness",
+  "sourceManifestSha256": "2b4f88ac706f22bc009efa2ba6a44b6534fff0486e23dd2f1329f13254b21e81",
+  "thresholds": {
+    "perturbedNegativeRecall": 0.8,
+    "nonPerturbedMinimumSampleCount": 3,
+    "nonPerturbedRecall": 0.7
+  },
+  "controls": {
+    "toolchainStatus": "not_verified",
+    "restrictedEgressStatus": "not_verified"
+  },
+  "caseBindings": [
+    {
+      "caseId": "synthetic-linear-equation-perturbed",
+      "sampleId": "synthetic-linear-equation",
+      "candidateSourceType": "perturbed_negative",
+      "candidateDescriptorSha256": "0c74f4c7a6e25777e36f6191691cf0c52834794415552112f11a7b264d0131fb",
+      "expectedError": true,
+      "detected": true,
+      "runSha256": "05f9d1d8d88c62c1465afb03614076459010627ec5f5211ba1c86839069f45ca",
+      "feedbackSha256": "98e8f9e04e4d38a743c849351c57d06cf213b9d0e51cacad90f1fb489ea4ad56"
+    }
+  ],
+  "buckets": [
+    {
+      "candidateSourceType": "perturbed_negative",
+      "n": 1,
+      "expectedErrorCount": 1,
+      "detectedErrorCount": 1,
+      "recallStatus": "available",
+      "recall": 1
+    },
+    {
+      "candidateSourceType": "historical_candidate",
+      "n": 0,
+      "expectedErrorCount": 0,
+      "detectedErrorCount": 0,
+      "recallStatus": "unavailable"
+    },
+    {
+      "candidateSourceType": "generated",
+      "n": 0,
+      "expectedErrorCount": 0,
+      "detectedErrorCount": 0,
+      "recallStatus": "unavailable"
+    }
+  ],
+  "unresolvedLeakageCount": 0,
+  "eligible": false,
+  "reasonCodes": [
+    "non_perturbed_bucket_sample_count_insufficient",
+    "toolchain_not_verified",
+    "restricted_egress_not_verified"
+  ],
+  "optimizationCandidateRefs": []
+}

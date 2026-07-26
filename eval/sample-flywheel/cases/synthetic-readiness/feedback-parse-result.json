@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "feedback-parse-result",
+  "sampleId": "synthetic-linear-equation",
+  "subjectPack": "math-answer",
+  "parseMode": "synthetic_fixture_label",
+  "sourceRunSha256": "05f9d1d8d88c62c1465afb03614076459010627ec5f5211ba1c86839069f45ca",
+  "sampleIndexSha256": "8e612921d52e82c80b70933783b5be056956f0b44360ba0e6a97bd5065940d7e",
+  "samplePackageSha256": "32e6cea0a2f68712e1316bd7f80b2d1e816a7ca98be580517a0eecab32a8c1b5",
+  "candidateDescriptorSha256": "0c74f4c7a6e25777e36f6191691cf0c52834794415552112f11a7b264d0131fb",
+  "feedbackRecords": [
+    {
+      "schemaVersion": "1.0",
+      "kind": "feedback-record",
+      "feedbackId": "feedback-05f9d1d8d88c62c1",
+      "subjectPack": "math-answer",
+      "source": "auto_collected",
+      "primaryErrorType": "reasoning_error",
+      "contributingErrorTypes": [],
+      "confidence": 1,
+      "severity": "medium",
+      "evidence": {
+        "method": "sha256_exact",
+        "candidateSha256": "557585fdebe7cf2e00731dfeb3de6e6e7595f445ce691cbc78186b1721db0aee",
+        "referenceSha256": "b039b350fc2fbeccfd152a036fecffc9948f7e613bf213b4ee52a79498536ce5",
+        "candidateDescriptorSha256": "0c74f4c7a6e25777e36f6191691cf0c52834794415552112f11a7b264d0131fb",
+        "labelSource": "negative_candidate_fixture",
+        "expectedDiffLayer": "answer"
+      },
+      "reproInput": {
+        "sampleId": "synthetic-linear-equation",
+        "iteration": 1,
+        "candidateArtifactRef": "structured/math-answer/synthetic-linear-equation/candidate.md"
+      },
+      "firstObservedIteration": 1,
+      "createdAt": "2026-07-26T12:00:00.000Z"
+    }
+  ],
+  "optimizationCandidateRefs": [],
+  "stopReason": "feedback_recorded_no_optimizer"
+}

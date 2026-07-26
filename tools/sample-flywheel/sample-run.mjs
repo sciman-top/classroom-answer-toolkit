@@ -456,6 +456,30 @@ export function getCanonicalSampleAuthorityPaths(sampleId) {
   return [...new Map(paths.map((filePath) => [normalizePath(filePath), filePath])).values()];
 }
 
+export function getCanonicalSampleCandidateAuthority(sampleId, candidateDescriptorRef) {
+  const authority = readCanonicalSampleAuthority(sampleId);
+  const binding = resolveCandidateBindings(
+    authority.indexEntry,
+    authority.indexArtifact,
+    authority.packageRoot)
+    .find((candidateBinding) =>
+      toPortableRelative(authority.indexArtifact.path, candidateBinding.path)
+        === candidateDescriptorRef);
+  if (!binding) {
+    throw new Error("candidate descriptor does not match current canonical authority.");
+  }
+  const descriptor = readJsonArtifact(binding.path, "current canonical negative candidate");
+  if (descriptor.sha256 !== binding.sha256) {
+    throw new Error("current canonical negative candidate does not match its index binding.");
+  }
+  return {
+    candidateDescriptorRef,
+    candidateDescriptorSha256: descriptor.sha256,
+    candidateSourceType: descriptor.value.candidateSourceType,
+    expectedPrimaryErrorType: descriptor.value.expectedPrimaryErrorType
+  };
+}
+
 function readCanonicalSampleAuthority(sampleId) {
   const indexArtifact = readJsonArtifact(canonicalIndexPath, "canonical sample index");
   assertSchema("sample index", indexArtifact.value, schemas.index);

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "optimization-readiness-input",
+  "evaluationId": "synthetic-readiness",
+  "caseInventoryRef": "readiness-case-inventory.json",
+  "caseInventorySha256": "1775b0c565d20220b5acf2ad1223cc57b091ad363c6fb45b33962adecc41883a",
+  "toolchainStatus": "not_verified",
+  "restrictedEgressStatus": "not_verified",
+  "cases": [
+    {
+      "caseId": "synthetic-linear-equation-perturbed",
+      "runRef": "scoring.sample-run-record.json",
+      "runSha256": "05f9d1d8d88c62c1465afb03614076459010627ec5f5211ba1c86839069f45ca",
+      "feedbackRef": "feedback-parse-result.json",
+      "feedbackSha256": "98e8f9e04e4d38a743c849351c57d06cf213b9d0e51cacad90f1fb489ea4ad56"
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/optimization-readiness-report/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "OptimizationReadinessReport",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "evaluationId",
+    "sourceManifestSha256",
+    "thresholds",
+    "controls",
+    "caseBindings",
+    "buckets",
+    "unresolvedLeakageCount",
+    "eligible",
+    "reasonCodes",
+    "optimizationCandidateRefs"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": ["optimization-readiness-report"]
+    },
+    "evaluationId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "sourceManifestSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "thresholds": {
+      "type": "object",
+      "required": [
+        "perturbedNegativeRecall",
+        "nonPerturbedMinimumSampleCount",
+        "nonPerturbedRecall"
+      ],
+      "properties": {
+        "perturbedNegativeRecall": { "type": "number", "minimum": 0, "maximum": 1 },
+        "nonPerturbedMinimumSampleCount": { "type": "integer", "minimum": 1 },
+        "nonPerturbedRecall": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "controls": {
+      "type": "object",
+      "required": ["toolchainStatus", "restrictedEgressStatus"],
+      "properties": {
+        "toolchainStatus": {
+          "type": "string",
+          "enum": ["not_verified", "passed", "failed"]
+        },
+        "restrictedEgressStatus": {
+          "type": "string",
+          "enum": ["not_verified", "no_violation_observed", "violation"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "caseBindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId",
+          "sampleId",
+          "candidateSourceType",
+          "candidateDescriptorSha256",
+          "expectedError",
+          "detected"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "sampleId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "candidateSourceType": {
+            "type": "string",
+            "enum": ["perturbed_negative", "historical_candidate", "generated"]
+          },
+          "runSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "feedbackSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "candidateDescriptorSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "expectedError": { "type": "boolean" },
+          "detected": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "buckets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "candidateSourceType",
+          "n",
+          "expectedErrorCount",
+          "detectedErrorCount",
+          "recallStatus"
+        ],
+        "properties": {
+          "candidateSourceType": {
+            "type": "string",
+            "enum": ["perturbed_negative", "historical_candidate", "generated"]
+          },
+          "n": { "type": "integer", "minimum": 0 },
+          "expectedErrorCount": { "type": "integer", "minimum": 0 },
+          "detectedErrorCount": { "type": "integer", "minimum": 0 },
+          "recallStatus": {
+            "type": "string",
+            "enum": ["available", "unavailable"]
+          },
+          "recall": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unresolvedLeakageCount": { "type": "integer", "minimum": 0 },
+    "eligible": { "type": "boolean" },
+    "reasonCodes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "optimizationCandidateRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

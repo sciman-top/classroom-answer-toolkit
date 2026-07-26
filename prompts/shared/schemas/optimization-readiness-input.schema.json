@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/optimization-readiness-input/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "OptimizationReadinessInput",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "evaluationId",
+    "caseInventoryRef",
+    "caseInventorySha256",
+    "toolchainStatus",
+    "restrictedEgressStatus",
+    "cases"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": ["optimization-readiness-input"]
+    },
+    "evaluationId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "caseInventoryRef": {
+      "type": "string",
+      "enum": ["readiness-case-inventory.json"]
+    },
+    "caseInventorySha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "toolchainStatus": {
+      "type": "string",
+      "enum": ["not_verified"]
+    },
+    "restrictedEgressStatus": {
+      "type": "string",
+      "enum": ["not_verified"]
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "runRef": { "type": "string", "minLength": 1 },
+          "runSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "feedbackRef": { "type": "string", "minLength": 1 },
+          "feedbackSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

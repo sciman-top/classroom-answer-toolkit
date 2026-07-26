@@ -5,6 +5,7 @@ import { listJsonFiles, readJsonFile, resolveRepoPath } from "./shared.mjs";
 import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./schema-validator.mjs";
 import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs";
 import { validateCanonicalSampleAuthorities } from "../sample-flywheel/sample-run.mjs";
+import { validateOptimizationReadinessReport } from "../sample-flywheel/optimization-readiness.mjs";
 
 function collectValidationTargets() {
   const dataClassificationSchema = resolveRepoPath("prompts/shared/schemas/data-classification.schema.json");
@@ -21,6 +22,9 @@ function collectValidationTargets() {
   const sampleIndexSchema = resolveRepoPath("prompts/shared/schemas/sample-index.schema.json");
   const negativeCandidateSchema = resolveRepoPath("prompts/shared/schemas/negative-candidate.schema.json");
   const sampleRunRecordSchema = resolveRepoPath("prompts/shared/schemas/sample-run-record.schema.json");
+  const optimizationReadinessCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-case-inventory.schema.json");
+  const optimizationReadinessInputSchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-input.schema.json");
+  const optimizationReadinessReportSchema = resolveRepoPath("prompts/shared/schemas/optimization-readiness-report.schema.json");
   const problemEvidenceBundleSchema = resolveRepoPath("prompts/shared/schemas/problem-evidence-bundle.schema.json");
   const trackResultSchema = resolveRepoPath("prompts/shared/schemas/track-result.schema.json");
   const decisionRecordSchema = resolveRepoPath("prompts/shared/schemas/decision-record.schema.json");
@@ -50,6 +54,7 @@ function collectValidationTargets() {
   const sampleRoot = resolveRepoPath("样例交付");
   const visualEvidenceRoot = resolveRepoPath("eval/visual-evidence/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
+  const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const figureSchemas = [
     resolveRepoPath("prompts/shared/schemas/problem-figure-asset.schema.json"),
     resolveRepoPath("prompts/shared/schemas/figure-understanding-result.schema.json"),
@@ -92,6 +97,18 @@ function collectValidationTargets() {
   ];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
+  const optimizationReadinessInputFiles = listFilesByNameRecursive(
+    sampleFlywheelEvalRoot,
+    "readiness-input.json")
+    .map((filePath) => ({ filePath, schemaPath: optimizationReadinessInputSchema }));
+  const optimizationReadinessCaseInventoryFiles = listFilesByNameRecursive(
+    sampleFlywheelEvalRoot,
+    "readiness-case-inventory.json")
+    .map((filePath) => ({ filePath, schemaPath: optimizationReadinessCaseInventorySchema }));
+  const optimizationReadinessReportFiles = listFilesByNameRecursive(
+    sampleFlywheelEvalRoot,
+    "readiness-report.json")
+    .map((filePath) => ({ filePath, schemaPath: optimizationReadinessReportSchema }));
 
   return {
     manifests: [
@@ -110,6 +127,9 @@ function collectValidationTargets() {
     samplePackages: samplePackageFiles,
     sampleIndices: sampleIndexFiles,
     sampleNegativeCandidates: sampleNegativeCandidateFiles,
+    optimizationReadinessCaseInventories: optimizationReadinessCaseInventoryFiles,
+    optimizationReadinessInputs: optimizationReadinessInputFiles,
+    optimizationReadinessReports: optimizationReadinessReportFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -128,6 +148,9 @@ function collectValidationTargets() {
       sampleIndexSchema,
       negativeCandidateSchema,
       sampleRunRecordSchema,
+      optimizationReadinessCaseInventorySchema,
+      optimizationReadinessInputSchema,
+      optimizationReadinessReportSchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -195,7 +218,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -348,12 +371,56 @@ function validateAssemblyGeneratedArtifacts(subjectPackDirectories) {
   return errors;
 }
 
+function validateOptimizationReadinessFixtures(inventories, inputs, reports) {
+  const errors = [];
+  const inventoryByDirectory = new Map(
+    inventories.map((target) => [path.dirname(target.filePath), target.filePath]));
+  const inputByDirectory = new Map(
+    inputs.map((target) => [path.dirname(target.filePath), target.filePath]));
+  const reportByDirectory = new Map(
+    reports.map((target) => [path.dirname(target.filePath), target.filePath]));
+  const directories = new Set([
+    ...inventoryByDirectory.keys(),
+    ...inputByDirectory.keys(),
+    ...reportByDirectory.keys()
+  ]);
+  for (const directory of directories) {
+    const inventoryPath = inventoryByDirectory.get(directory);
+    const inputPath = inputByDirectory.get(directory);
+    const reportPath = reportByDirectory.get(directory);
+    const relativeDirectory = path.relative(resolveRepoPath("."), directory);
+    if (!inventoryPath || !inputPath || !reportPath) {
+      errors.push(
+        `Optimization readiness fixture ${relativeDirectory} must contain exactly readiness-case-inventory.json, readiness-input.json, and readiness-report.json.`
+      );
+      continue;
+    }
+    try {
+      const input = readJsonFile(inputPath);
+      if (input.caseInventoryRef !== path.basename(inventoryPath)) {
+        throw new Error(
+          "readiness-input.json must reference its canonical sibling readiness-case-inventory.json.");
+      }
+      validateOptimizationReadinessReport(readJsonFile(reportPath), inputPath);
+    } catch (error) {
+      errors.push(
+        `Optimization readiness fixture ${relativeDirectory}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+  return errors;
+}
+
 function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
   const snapshotValidations = validateSnapshots(targets.snapshotSchema, targets.subjectPacks);
   const assemblyErrors = validateAssemblyGeneratedArtifacts(targets.subjectPacks.map((subjectPack) => resolveRepoPath(`prompts/${subjectPack}`)));
   const schemaFileErrors = validateSchemaFiles(targets.schemaFiles);
+  const optimizationReadinessErrors = validateOptimizationReadinessFixtures(
+    targets.optimizationReadinessCaseInventories,
+    targets.optimizationReadinessInputs,
+    targets.optimizationReadinessReports);
   const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
@@ -372,6 +439,7 @@ function main() {
     ),
     ...assemblyErrors,
     ...schemaFileErrors,
+    ...optimizationReadinessErrors,
     ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : [])
   ];
 

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/optimization-readiness-case-inventory/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "OptimizationReadinessCaseInventory",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "evaluationId",
+    "cases"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "kind": {
+      "type": "string",
+      "enum": ["optimization-readiness-case-inventory"]
+    },
+    "evaluationId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId",
+          "sampleId",
+          "candidateSourceType",
+          "candidateDescriptorRef",
+          "candidateDescriptorSha256",
+          "expectedError",
+          "truthExtractionStatus",
+          "inputAnswerLeakage"
+        ],
+        "properties": {
+          "caseId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "sampleId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "candidateSourceType": {
+            "type": "string",
+            "enum": ["perturbed_negative", "historical_candidate", "generated"]
+          },
+          "candidateDescriptorRef": { "type": "string", "minLength": 1 },
+          "candidateDescriptorSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "expectedError": { "type": "boolean" },
+          "truthExtractionStatus": {
+            "type": "string",
+            "enum": ["ok", "low_confidence", "failed"]
+          },
+          "inputAnswerLeakage": {
+            "type": "string",
+            "enum": ["none", "detected_and_stripped", "suspected_unresolved"]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

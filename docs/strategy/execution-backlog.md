@@ -118,6 +118,16 @@
 - blocks: FLYWHEEL-003
 - done_definition: 仓内可从一个受控合成 scoring run 生成 source-byte-bound feedback parse result；不宣称教师自由文本解析、语义评分、OptimizationCandidate、灰度、WPF、云或 live acceptance
 
+### task_id: FLYWHEEL-005
+
+- goal: 建立首个 fail-closed 分桶优化准入评估闭环
+- inputs: FLYWHEEL-003 scoring runs、FLYWHEEL-004 feedback results、D-010 分桶门槛、canonical expected-case inventory
+- changes: 新增 hash-bound canonical case inventory、readiness input/report schema 与离线 compiler；inventory 绑定 current descriptor path/hash 并按 sample+descriptor 去重，runtime input 必须完整覆盖且不得复用 run；缺 run/feedback 的 expected-error case 仍进入召回分母；固定输出 perturbed/historical/generated 三桶；无 receipt 时 toolchain/restricted egress 只能 not_verified；从 inventory 投影 truth/leakage/missing-run 阻断；optimization refs 强制为空；纳入 assets 与 hotspot
+- verification: 当前完全合成 fixture 输出 perturbed recall=1、historical/generated n=0 且 unavailable、eligible=false；missing run/feedback 降低召回；重复 evaluation unit、input omission、自报正向 control、hash/current-authority/computed-field/path/alias 漂移拒绝；完整项目门禁
+- rollback: 回滚 FLYWHEEL-005 commit；手工 CLI 输出需独立盘点清理
+- blocks: FLYWHEEL-004
+- done_definition: 仓内可从完整 case 清单诚实计算分桶 readiness 并在样本或控制条件不足时拒绝准入；不生成 OptimizationCandidate，不宣称灰度、WPF workflow integration、云网关验证或 live acceptance
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001
