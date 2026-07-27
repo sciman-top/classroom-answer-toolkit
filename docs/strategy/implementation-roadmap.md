@@ -38,6 +38,7 @@
 - 先以 VISION-007 的显式 integer `page_pixel` bbox 和 `[1,2]` scales 跑通三个 subject-pack 的公开 synthetic 本地 crop；raw-byte/decoded-pixel hash、path/alias 和 computed fields 全链重验，OCR/layout 语义与自动 region 检测后接
 - 再以 VISION-008 从 canonical 2x crop 确定性抽取非语义 line/connected/text-region candidates；固定 OCR 未执行、语义未推断、Track 未集成，真实 OCR/layout/学科图元分类继续后接
 - 再以 VISION-009 在同一 canonical 2x crop 上记录 hash-bound RapidOCR observation；允许空结果和错误文本，固定 ground truth 不可用、未验收、需人工复核、语义未推断、Track 未集成，不计算 OCR 准确率
+- 再以 VISION-010 对 committed text-region candidates 与 OCR observations 做穷举 axis-aligned geometry measurement；不选择匹配、不复制 OCR 文本，固定 association 未决定、layout/semantic 未推断、Track 未集成
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 

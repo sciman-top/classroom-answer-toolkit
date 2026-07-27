@@ -145,3 +145,9 @@
 - 决定：VISION-009 对 committed synthetic 2x crop 运行 hash/version/parameter-bound local RapidOCR，原样记录空结果或错误文本，并固定 ground truth unavailable、not evaluated、requires human review、语义未推断、Track 未集成
 - 原因：当前 fixture 可证明 OCR runtime plumbing 和 replay，但没有独立人工 truth authority；把 confidence、可见字符或 synthetic fixture knowledge 写成 expected correctness 会伪造 OCR acceptance
 - 边界：不计算准确率/召回率，不生成 OCR/image conflict、layout relation、FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult、DecisionRecord 或 OptimizationCandidate；不接 WPF/gateway/readiness/trust，不启 cloud egress，不使用真实数据，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
+
+## D-028 首个跨结构/OCR runtime 只建立穷举空间测量，不建立匹配 authority
+
+- 决定：VISION-010 对 committed VISION-008 text-region bboxes 与 same-case VISION-009 OCR quads 做 exhaustive axis-aligned geometry measurement，固定 association 未决定、layout/semantic 未推断、Track 未集成
+- 原因：现有 structure candidates 是 heuristic-only，OCR observations 没有 ground truth 且可为空或错误；选择“最佳匹配”或贴 layout 标签会把两个未验收 diagnostic surfaces 组合成虚假正向 authority
+- 边界：measurement 只记录 refs、bounds、intersection/coverage/distance 与 geometry-only relation，不复制 OCR 文本、不使用阈值选 match、不生成 FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult、DecisionRecord 或 OptimizationCandidate；不接 WPF/gateway/readiness/trust，不启 cloud egress，不使用真实数据，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted

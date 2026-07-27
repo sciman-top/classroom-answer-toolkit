@@ -302,6 +302,16 @@
 - blocks: VISION-007, VISION-008
 - done_definition: 仓内能诚实记录并重验三个 canonical synthetic crop 的 RapidOCR observation，包括空结果和错误文本；只证明 repo-side OCR observation plumbing，不构成 OCR correctness/acceptance、layout semantics、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-010
+
+- goal: 建立 provider-neutral、明确不作匹配或 layout 推断的首个本地空间 observation 闭环
+- inputs: VISION-008 committed `TextRegionCandidate` results、same-case VISION-009 committed OCR observation results、两者共同绑定的 VISION-007 scale=2 crop
+- changes: 新增 `VisualSpatialObservationRequest / Result / CaseInventory` schema 和 deterministic local observer；穷举 text-region bbox 与 OCR quad 的 axis-aligned geometry，输出规范化 intersection area、双方覆盖率、中心距平方和 geometry-only relation；固定 association 未决定、layout/semantic 未推断、Track 未集成、需人工复核；三个 subject-pack 各一个 canonical case；纳入 assets 与 hotspot
+- verification: 三 case expected result byte-exact replay；Cartesian coverage、排序/舍入、structure/OCR/crop/request/result raw-byte hash、path/alias、bounds、relation/computed fields、positive association/layout/semantic/Track/cloud/live state 和仓内输出漂移均 fail closed；完整固定顺序项目门禁
+- rollback: 回滚 VISION-010 实现提交并删除本切片 schema/tool/request/result/inventory、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
+- blocks: VISION-008, VISION-009
+- done_definition: 仓内能诚实记录并重验三个 canonical synthetic case 的 exhaustive spatial measurements，包括零测量和 disjoint；只证明 repo-side geometry plumbing，不构成 OCR-region matching、layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

@@ -498,6 +498,14 @@ P1 样例集默认人工拆分题面/答案：
 - result 固定 `groundTruthAvailable=false / acceptanceDisposition=not_evaluated / requiresHumanReview=true / semanticDisposition=not_inferred / trackDisposition=not_integrated`，local-only provenance 不得升级为 cloud/live。
 - 本切片不生成 layout relation、FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult 或 DecisionRecord，不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
 
+### VISION-010 本地空间 observation 边界
+
+- `VisualSpatialObservationRequest / Result` 与 structure extraction、OCR、答案生成、delivery 和 TrackResult 合同分离，只接受 committed VISION-008 result 与 same-case VISION-009 result，并要求两者的 2x crop authority 完全一致。
+- runtime 只穷举 `TextRegionCandidate bbox x OCR observation quad`，把 quad 转成 axis-aligned bounds 后记录交面积、双方覆盖率、中心距平方和 geometry-only relation；固定排序、舍入和 stable JSON bytes。
+- runtime 不选择最佳匹配、不复制 observed text、不使用 fixture knowledge 或距离阈值，不把 pairwise measurement 命名为字符、标签、题号、axis/tick/wire/component 或 subject semantics。
+- result 固定 `associationDisposition=not_decided / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated / requiresHumanReview=true`；零测量和 `disjoint` 都是合法诊断输出，不代表图中无文本或已拒绝关联。
+- 本切片不生成 FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult 或 DecisionRecord，不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

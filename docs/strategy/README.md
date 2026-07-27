@@ -16,10 +16,11 @@
 10. [visual-preprocessing-runtime-plan.md](./visual-preprocessing-runtime-plan.md)
 11. [visual-structure-extraction-runtime-plan.md](./visual-structure-extraction-runtime-plan.md)
 12. [visual-ocr-observation-runtime-plan.md](./visual-ocr-observation-runtime-plan.md)
-13. [implementation-roadmap.md](./implementation-roadmap.md)
-14. [implementation-plan.md](./implementation-plan.md)
-15. [execution-backlog.md](./execution-backlog.md)
-16. [decision-log.md](./decision-log.md)
+13. [visual-spatial-observation-runtime-plan.md](./visual-spatial-observation-runtime-plan.md)
+14. [implementation-roadmap.md](./implementation-roadmap.md)
+15. [implementation-plan.md](./implementation-plan.md)
+16. [execution-backlog.md](./execution-backlog.md)
+17. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 
