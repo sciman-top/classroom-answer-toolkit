@@ -89,6 +89,17 @@ class VisualPreprocessorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "raw bytes do not match"):
                 validate_canonical_fixtures(root)
 
+    def test_unlisted_nested_authority_fails_closed(self) -> None:
+        with self.fixture_copy() as root:
+            nested = root / "unlisted"
+            nested.mkdir()
+            shutil.copyfile(
+                root / "math-function-graph.source.png",
+                nested / "unknown-authority.png",
+            )
+            with self.assertRaisesRegex(ValueError, "exactly cover canonical authority"):
+                validate_canonical_fixtures(root)
+
     def test_result_computed_field_drift_fails_closed(self) -> None:
         with self.fixture_copy() as root:
             result_path = root / "math-function-graph.visual-preprocessing-result.json"

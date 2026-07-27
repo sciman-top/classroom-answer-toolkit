@@ -496,16 +496,12 @@ def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
             if {"width": image.width, "height": image.height} != crop["pixelSize"]:
                 raise ValueError(f"{definition.case_id} crop-{crop['scale']}x dimensions drifted.")
 
-    authority_paths = {
-        path.resolve()
-        for path in fixture_root.iterdir()
-        if path.is_file() and (
-            path.name == INVENTORY_NAME
-            or path.name.endswith(".png")
-            or path.name.endswith(".visual-preprocessing-request.json")
-            or path.name.endswith(".visual-preprocessing-result.json")
-        )
-    }
+    authority_paths = set()
+    for candidate in fixture_root.rglob("*"):
+        if candidate.is_symlink():
+            raise ValueError("Visual preprocessing authority must not use symlink or junction aliases.")
+        if candidate.is_file():
+            authority_paths.add(candidate.resolve())
     if authority_paths != referenced_paths:
         raise ValueError("Visual preprocessing inventory must exactly cover canonical authority files.")
     return len(entries)
