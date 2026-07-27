@@ -3,6 +3,7 @@ using System.Text;
 using System.Security.Cryptography;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
@@ -485,6 +486,343 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             new DeliveryDecisionAggregateAttachmentVerificationRequest(manifestPath),
             cancellationToken);
         return new DeliveryDecisionAggregateAttachmentResult(execution, verification);
+    }
+
+    public async Task<ReviewQueueProjectionResult> ProjectReviewQueueAsync(
+        ReviewQueueProjectionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var repositoryRoot = GetWorkspaceInfo().RepositoryRoot;
+        var toolPath = Path.Combine(repositoryRoot, "tools", "review-queue", "review-queue-projector.mjs");
+        var startedAt = DateTimeOffset.Now;
+        if (request.ArtifactPaths.Count == 0)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.ProjectReviewQueue,
+                toolPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                "At least one review artifact is required.");
+            return new ReviewQueueProjectionResult(failed, null);
+        }
+
+        var artifactPaths = new List<string>(request.ArtifactPaths.Count);
+        foreach (var artifactPath in request.ArtifactPaths)
+        {
+            string fullPath;
+            try
+            {
+                fullPath = Path.GetFullPath(artifactPath);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                var failed = ToolchainExecutionResult.Failure(
+                    ToolchainScriptKind.ProjectReviewQueue,
+                    toolPath,
+                    -1,
+                    startedAt,
+                    DateTimeOffset.Now,
+                    $"Review artifact path is invalid: {ex.Message}");
+                return new ReviewQueueProjectionResult(failed, null);
+            }
+
+            var validationError = ValidateJsonInput(fullPath, "Review artifact");
+            if (validationError is not null)
+            {
+                var failed = ToolchainExecutionResult.Failure(
+                    ToolchainScriptKind.ProjectReviewQueue,
+                    toolPath,
+                    -1,
+                    startedAt,
+                    DateTimeOffset.Now,
+                    validationError);
+                return new ReviewQueueProjectionResult(failed, null);
+            }
+            artifactPaths.Add(fullPath);
+        }
+
+        var arguments = new List<string> { toolPath };
+        foreach (var artifactPath in artifactPaths)
+        {
+            arguments.Add("--artifact");
+            arguments.Add(artifactPath);
+        }
+
+        ProcessRunResult processResult;
+        try
+        {
+            processResult = await _processRunner.RunAsync(
+                "node",
+                arguments,
+                repositoryRoot,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.ProjectReviewQueue,
+                toolPath,
+                -3,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Review queue projector process failed: {ex.Message}");
+            return new ReviewQueueProjectionResult(failed, null);
+        }
+
+        var finishedAt = DateTimeOffset.Now;
+        var output = BuildOutput(processResult.StandardOutput, processResult.StandardError);
+        if (processResult.ExitCode != 0)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.ProjectReviewQueue,
+                toolPath,
+                processResult.ExitCode,
+                startedAt,
+                finishedAt,
+                output);
+            return new ReviewQueueProjectionResult(failed, null);
+        }
+
+        try
+        {
+            var projection = ParseReviewQueueProjection(processResult.StandardOutput, artifactPaths);
+            var succeeded = ToolchainExecutionResult.Success(
+                ToolchainScriptKind.ProjectReviewQueue,
+                toolPath,
+                startedAt,
+                finishedAt,
+                output);
+            return new ReviewQueueProjectionResult(succeeded, projection);
+        }
+        catch (Exception ex)
+        {
+            var parseError = $"Review queue projection output was rejected: {ex.Message}";
+            var failedOutput = string.IsNullOrWhiteSpace(output)
+                ? parseError
+                : $"{output}{Environment.NewLine}{Environment.NewLine}[postcondition]{Environment.NewLine}{parseError}";
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.ProjectReviewQueue,
+                toolPath,
+                -2,
+                startedAt,
+                finishedAt,
+                failedOutput);
+            return new ReviewQueueProjectionResult(failed, null);
+        }
+    }
+
+    private static ReviewQueueProjection ParseReviewQueueProjection(
+        string standardOutput,
+        IReadOnlyList<string> requestedPaths)
+    {
+        using var document = JsonDocument.Parse(standardOutput);
+        var root = document.RootElement;
+        RequireExactProperties(root, [
+            "schemaVersion",
+            "kind",
+            "succeeded",
+            "authority",
+            "sourceCount",
+            "counts",
+            "items",
+            "rejectedSources"
+        ]);
+        if (ReadRequiredString(root, "schemaVersion") != "1.0"
+            || ReadRequiredString(root, "kind") != "review-queue-projection-result")
+        {
+            throw new InvalidDataException("Unexpected review queue projection contract version or kind.");
+        }
+        var authority = ReadRequiredString(root, "authority");
+        if (authority != "local_verified_projection")
+        {
+            throw new InvalidDataException("Unexpected review queue projection authority.");
+        }
+        var succeeded = ReadRequiredBoolean(root, "succeeded");
+        var sourceCount = ReadRequiredNonNegativeInteger(root, "sourceCount");
+        if (sourceCount != requestedPaths.Count)
+        {
+            throw new InvalidDataException("Review queue projection sourceCount does not match the request.");
+        }
+
+        var countsElement = ReadRequiredObject(root, "counts");
+        RequireExactProperties(countsElement, [
+            "needsHumanLabel",
+            "highRiskApproval",
+            "truthNeedsReview"
+        ]);
+        var needsHumanLabelCount = ReadRequiredNonNegativeInteger(countsElement, "needsHumanLabel");
+        var highRiskApprovalCount = ReadRequiredNonNegativeInteger(countsElement, "highRiskApproval");
+        var truthNeedsReviewCount = ReadRequiredNonNegativeInteger(countsElement, "truthNeedsReview");
+        var items = ParseReviewQueueItems(root, requestedPaths);
+        var rejectedSources = ParseRejectedSources(root);
+        if (succeeded && rejectedSources.Count != 0)
+        {
+            throw new InvalidDataException("Successful review queue projection cannot contain rejected sources.");
+        }
+        if (!succeeded && (items.Count != 0
+            || rejectedSources.Count == 0
+            || needsHumanLabelCount != 0
+            || highRiskApprovalCount != 0
+            || truthNeedsReviewCount != 0))
+        {
+            throw new InvalidDataException("Failed review queue projection must remain fail closed.");
+        }
+        if (items.Count(item => item.Queue == "needs_human_label") != needsHumanLabelCount
+            || items.Count(item => item.Queue == "high_risk_approval") != highRiskApprovalCount
+            || items.Count(item => item.Queue == "truth_needs_review") != truthNeedsReviewCount)
+        {
+            throw new InvalidDataException("Review queue counts do not match projected items.");
+        }
+
+        return new ReviewQueueProjection(
+            succeeded,
+            authority,
+            sourceCount,
+            needsHumanLabelCount,
+            highRiskApprovalCount,
+            truthNeedsReviewCount,
+            items,
+            rejectedSources);
+    }
+
+    private static IReadOnlyList<ReviewQueueItem> ParseReviewQueueItems(
+        JsonElement root,
+        IReadOnlyList<string> requestedPaths)
+    {
+        var array = ReadRequiredArray(root, "items");
+        var requestedCanonicalPaths = requestedPaths
+            .Select(path => Path.GetFullPath(path))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var projectedSourcePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var items = new List<ReviewQueueItem>();
+        foreach (var element in array.EnumerateArray())
+        {
+            RequireExactProperties(element, [
+                "queue",
+                "artifactKind",
+                "artifactId",
+                "subjectPack",
+                "sourcePath",
+                "sourceSha256",
+                "reason"
+            ]);
+            var queue = ReadRequiredString(element, "queue");
+            if (queue is not ("needs_human_label" or "high_risk_approval" or "truth_needs_review"))
+            {
+                throw new InvalidDataException("Review queue item contains an unsupported queue.");
+            }
+            var artifactKind = ReadRequiredString(element, "artifactKind");
+            if (artifactKind is not ("feedback-parse-result" or "decision-record" or "delivery-decision-aggregate"))
+            {
+                throw new InvalidDataException("Review queue item contains an unsupported artifact kind.");
+            }
+            var sourcePath = ReadRequiredAbsolutePath(element, "sourcePath");
+            if (!requestedCanonicalPaths.Contains(sourcePath))
+            {
+                throw new InvalidDataException("Review queue item sourcePath was not requested.");
+            }
+            if (!projectedSourcePaths.Add(sourcePath))
+            {
+                throw new InvalidDataException("Review queue output contains duplicate sourcePath items.");
+            }
+            var sourceSha256 = ReadRequiredSha256(element, "sourceSha256");
+            var currentSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(sourcePath)))
+                .ToLowerInvariant();
+            if (currentSha256 != sourceSha256)
+            {
+                throw new InvalidDataException("Review queue item source bytes changed after verification.");
+            }
+            items.Add(new ReviewQueueItem(
+                queue,
+                artifactKind,
+                ReadRequiredString(element, "artifactId"),
+                ReadRequiredString(element, "subjectPack"),
+                sourcePath,
+                sourceSha256,
+                ReadRequiredString(element, "reason")));
+        }
+        return items;
+    }
+
+    private static IReadOnlyList<ReviewQueueRejectedSource> ParseRejectedSources(JsonElement root)
+    {
+        var array = ReadRequiredArray(root, "rejectedSources");
+        var rejectedSources = new List<ReviewQueueRejectedSource>();
+        foreach (var element in array.EnumerateArray())
+        {
+            RequireExactProperties(element, ["sourcePath", "reason"]);
+            rejectedSources.Add(new ReviewQueueRejectedSource(
+                ReadRequiredAbsolutePath(element, "sourcePath"),
+                ReadRequiredString(element, "reason")));
+        }
+        return rejectedSources;
+    }
+
+    private static void RequireExactProperties(JsonElement element, IReadOnlyCollection<string> allowed)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException("Expected a JSON object.");
+        }
+        var observed = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in element.EnumerateObject())
+        {
+            if (!allowed.Contains(property.Name, StringComparer.Ordinal)
+                || !observed.Add(property.Name))
+            {
+                throw new InvalidDataException($"Unexpected or duplicate JSON property {property.Name}.");
+            }
+        }
+        if (observed.Count != allowed.Count)
+        {
+            throw new InvalidDataException("JSON object is missing required properties.");
+        }
+    }
+
+    private static JsonElement ReadRequiredObject(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var value)
+            || value.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException($"{propertyName} must be an object.");
+        }
+        return value;
+    }
+
+    private static JsonElement ReadRequiredArray(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var value)
+            || value.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidDataException($"{propertyName} must be an array.");
+        }
+        return value;
+    }
+
+    private static bool ReadRequiredBoolean(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var value)
+            || value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        {
+            throw new InvalidDataException($"{propertyName} must be a boolean.");
+        }
+        return value.GetBoolean();
+    }
+
+    private static int ReadRequiredNonNegativeInteger(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var value)
+            || !value.TryGetInt32(out var number)
+            || number < 0)
+        {
+            throw new InvalidDataException($"{propertyName} must be a non-negative integer.");
+        }
+        return number;
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(

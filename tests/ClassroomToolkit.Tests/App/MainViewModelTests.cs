@@ -2,6 +2,7 @@ using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;
 
@@ -385,6 +386,53 @@ public sealed class MainViewModelTests
         }
     }
 
+    [Fact]
+    public async Task ProjectReviewQueueAsync_ProjectsCounts_AndOpensSelectedSource()
+    {
+        var orchestrator = new FakeToolchainOrchestrator();
+        var pathOpener = new FakePathOpener();
+        var viewModel = new MainViewModel(
+            orchestrator,
+            pathOpener,
+            new FakeDiagnosticsExporter());
+        var paths = new[] { @"D:\repo\feedback.json", @"D:\repo\decision.json" };
+
+        await viewModel.ProjectReviewQueueCommand.ExecuteAsync(paths);
+
+        orchestrator.LastReviewQueueRequest.Should().BeEquivalentTo(
+            new ReviewQueueProjectionRequest(paths));
+        viewModel.ReviewQueueProjectionStatus.Should().Be("本地已验证投影");
+        viewModel.NeedsHumanLabelCount.Should().Be(1);
+        viewModel.HighRiskApprovalCount.Should().Be(1);
+        viewModel.TruthNeedsReviewCount.Should().Be(0);
+        viewModel.ReviewQueueItems.Should().HaveCount(2);
+
+        viewModel.SelectedReviewQueueItem = viewModel.ReviewQueueItems[0];
+        viewModel.OpenSelectedReviewQueueSourceCommand.Execute(null);
+        pathOpener.LastOpenedPath.Should().Be(viewModel.ReviewQueueItems[0].SourcePath);
+    }
+
+    [Fact]
+    public async Task ProjectReviewQueueAsync_ClearsStaleItems_WhenSourceIsRejected()
+    {
+        var orchestrator = new FakeToolchainOrchestrator();
+        var viewModel = new MainViewModel(
+            orchestrator,
+            new FakePathOpener(),
+            new FakeDiagnosticsExporter());
+        await viewModel.ProjectReviewQueueCommand.ExecuteAsync(
+            new[] { @"D:\repo\feedback.json", @"D:\repo\decision.json" });
+        orchestrator.RejectReviewQueueProjection = true;
+
+        await viewModel.ProjectReviewQueueCommand.ExecuteAsync(new[] { @"D:\repo\bad.json" });
+
+        viewModel.ReviewQueueProjectionStatus.Should().Be("来源被拒绝");
+        viewModel.ReviewQueueItems.Should().BeEmpty();
+        viewModel.NeedsHumanLabelCount.Should().Be(0);
+        viewModel.HighRiskApprovalCount.Should().Be(0);
+        viewModel.TruthNeedsReviewCount.Should().Be(0);
+    }
+
     private sealed class FakeToolchainOrchestrator : IToolchainOrchestrator
     {
         public AnswerDeliveryRequest? LastRequest { get; private set; }
@@ -394,6 +442,10 @@ public sealed class MainViewModelTests
         public DeliveryDecisionAggregateAttachmentVerificationRequest? LastVerificationRequest { get; private set; }
 
         public DeliveryDecisionAggregateAttachmentRequest? LastAggregateAttachmentRequest { get; private set; }
+
+        public ReviewQueueProjectionRequest? LastReviewQueueRequest { get; private set; }
+
+        public bool RejectReviewQueueProjection { get; set; }
 
         public bool FailAggregateAttachment { get; init; }
 
@@ -589,6 +641,60 @@ public sealed class MainViewModelTests
                     request.DeliveryManifestPath),
                 cancellationToken);
             return new DeliveryDecisionAggregateAttachmentResult(execution, verification);
+        }
+
+        public Task<ReviewQueueProjectionResult> ProjectReviewQueueAsync(
+            ReviewQueueProjectionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            LastReviewQueueRequest = request;
+            var execution = Success(
+                ToolchainScriptKind.ProjectReviewQueue,
+                @"D:\repo\tools\review-queue\review-queue-projector.mjs");
+            if (RejectReviewQueueProjection)
+            {
+                return Task.FromResult(new ReviewQueueProjectionResult(
+                    execution,
+                    new ReviewQueueProjection(
+                        false,
+                        "local_verified_projection",
+                        request.ArtifactPaths.Count,
+                        0,
+                        0,
+                        0,
+                        [],
+                        [new ReviewQueueRejectedSource(request.ArtifactPaths[0], "synthetic rejection")])));
+            }
+            var items = new[]
+            {
+                new ReviewQueueItem(
+                    "needs_human_label",
+                    "feedback-parse-result",
+                    "feedback-001",
+                    "math-answer",
+                    request.ArtifactPaths[0],
+                    new string('a', 64),
+                    "ambiguous_error_signal"),
+                new ReviewQueueItem(
+                    "high_risk_approval",
+                    "decision-record",
+                    "decision-001",
+                    "math-answer",
+                    request.ArtifactPaths[1],
+                    new string('b', 64),
+                    "high_risk_visual")
+            };
+            return Task.FromResult(new ReviewQueueProjectionResult(
+                execution,
+                new ReviewQueueProjection(
+                    true,
+                    "local_verified_projection",
+                    request.ArtifactPaths.Count,
+                    1,
+                    1,
+                    0,
+                    items,
+                    [])));
         }
 
         private static ToolchainExecutionResult Success(ToolchainScriptKind kind, string scriptPath)

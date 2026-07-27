@@ -73,6 +73,11 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:aggregate
 } "Visual evidence delivery aggregate contract tests failed."
 
+Write-Host "review queue projection contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/review-queue test
+} "Review queue projection contract tests failed."
+
 Write-Host "sample flywheel admission and run-record contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/sample-flywheel test

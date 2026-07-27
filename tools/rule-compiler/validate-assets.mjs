@@ -48,6 +48,7 @@ function collectValidationTargets() {
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
+  const reviewQueueProjectionSchema = resolveRepoPath("prompts/shared/schemas/review-queue-projection.schema.json");
   const visualInputBundleSchema = resolveRepoPath("prompts/shared/schemas/visual-input-bundle.schema.json");
   const groundingSnapshotSchema = resolveRepoPath("prompts/shared/schemas/grounding-snapshot.schema.json");
   const solutionSnapshotSchema = resolveRepoPath("prompts/shared/schemas/solution-snapshot.schema.json");
@@ -238,6 +239,7 @@ function collectValidationTargets() {
       optimizationReadinessInputSchema,
       optimizationReadinessReportSchema,
       readinessControlReceiptSchema,
+      reviewQueueProjectionSchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas

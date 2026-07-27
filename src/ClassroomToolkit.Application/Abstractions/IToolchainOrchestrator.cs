@@ -1,4 +1,5 @@
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 
 namespace ClassroomToolkit.Application.Abstractions;
@@ -27,5 +28,9 @@ public interface IToolchainOrchestrator
 
     Task<DeliveryDecisionAggregateAttachmentResult> AttachDeliveryDecisionAggregateAsync(
         DeliveryDecisionAggregateAttachmentRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ReviewQueueProjectionResult> ProjectReviewQueueAsync(
+        ReviewQueueProjectionRequest request,
         CancellationToken cancellationToken = default);
 }

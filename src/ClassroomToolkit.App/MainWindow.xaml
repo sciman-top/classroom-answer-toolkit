@@ -189,7 +189,54 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBox Grid.Row="3"
+                        <Grid Grid.Row="3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="220" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="复核队列" FontSize="18" FontWeight="SemiBold" />
+                                    <TextBlock Margin="0,4,0,0" Foreground="#94A3B8" FontSize="12">
+                                        <Run Text="{Binding ReviewQueueProjectionStatus}" />
+                                        <Run Text="  ·  人工标注 " />
+                                        <Run Text="{Binding NeedsHumanLabelCount}" />
+                                        <Run Text="  ·  高风险审批 " />
+                                        <Run Text="{Binding HighRiskApprovalCount}" />
+                                        <Run Text="  ·  真值复核 " />
+                                        <Run Text="{Binding TruthNeedsReviewCount}" />
+                                    </TextBlock>
+                                </StackPanel>
+                                <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <Button Content="投影来源" Command="{Binding ProjectReviewQueueCommand}" />
+                                    <Button Content="打开来源" Command="{Binding OpenSelectedReviewQueueSourceCommand}" />
+                                </WrapPanel>
+                            </Grid>
+
+                            <ListView Grid.Row="1"
+                                      Margin="0,0,0,12"
+                                      ItemsSource="{Binding ReviewQueueItems}"
+                                      SelectedItem="{Binding SelectedReviewQueueItem}"
+                                      Background="#050B14"
+                                      BorderBrush="#1E293B">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="队列" Width="130" DisplayMemberBinding="{Binding Queue}" />
+                                        <GridViewColumn Header="学科" Width="130" DisplayMemberBinding="{Binding SubjectPack}" />
+                                        <GridViewColumn Header="Artifact ID" Width="170" DisplayMemberBinding="{Binding ArtifactId}" />
+                                        <GridViewColumn Header="来源路径" Width="280" DisplayMemberBinding="{Binding SourcePath}" />
+                                        <GridViewColumn Header="Raw-byte SHA-256" Width="220" DisplayMemberBinding="{Binding SourceSha256}" />
+                                        <GridViewColumn Header="原因" Width="260" DisplayMemberBinding="{Binding Reason}" />
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+
+                            <TextBox Grid.Row="2"
                                  Text="{Binding ActivityLog}"
                                  IsReadOnly="True"
                                  VerticalScrollBarVisibility="Auto"
@@ -198,6 +245,7 @@
                                  Background="#050B14"
                                  BorderBrush="#1E293B"
                                  FontFamily="Cascadia Mono" />
+                        </Grid>
                     </Grid>
                 </Border>
             </Grid>

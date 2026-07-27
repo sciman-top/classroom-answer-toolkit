@@ -1,6 +1,7 @@
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;
 using System.Text.Json;
@@ -320,6 +321,13 @@ public sealed class HeadlessSmokeRunnerTests
 
         public Task<DeliveryDecisionAggregateAttachmentResult> AttachDeliveryDecisionAggregateAsync(
             DeliveryDecisionAggregateAttachmentRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<ReviewQueueProjectionResult> ProjectReviewQueueAsync(
+            ReviewQueueProjectionRequest request,
             CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException();

@@ -4,6 +4,7 @@ using System.Text;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -30,6 +31,7 @@ public partial class MainViewModel : ObservableObject
         StatusCards = new ObservableCollection<StatusCardViewModel>();
         Issues = new ObservableCollection<string>();
         AvailableSubjectPacks = new ObservableCollection<string>();
+        ReviewQueueItems = new ObservableCollection<ReviewQueueItem>();
 
         var workspaceInfo = _toolchainOrchestrator.GetWorkspaceInfo();
         RepositoryRoot = workspaceInfo.RepositoryRoot;
@@ -147,11 +149,29 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string lastDiagnosticsManifestPath = string.Empty;
 
+    [ObservableProperty]
+    private string reviewQueueProjectionStatus = "未投影";
+
+    [ObservableProperty]
+    private int needsHumanLabelCount;
+
+    [ObservableProperty]
+    private int highRiskApprovalCount;
+
+    [ObservableProperty]
+    private int truthNeedsReviewCount;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(OpenSelectedReviewQueueSourceCommand))]
+    private ReviewQueueItem? selectedReviewQueueItem;
+
     public ObservableCollection<StatusCardViewModel> StatusCards { get; }
 
     public ObservableCollection<string> Issues { get; }
 
     public ObservableCollection<string> AvailableSubjectPacks { get; }
+
+    public ObservableCollection<ReviewQueueItem> ReviewQueueItems { get; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
@@ -161,6 +181,8 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
     [NotifyCanExecuteChangedFor(nameof(AttachDeliveryDecisionAggregateCommand))]
     [NotifyCanExecuteChangedFor(nameof(VerifyDeliveryDecisionAggregateAttachmentCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ProjectReviewQueueCommand))]
+    [NotifyCanExecuteChangedFor(nameof(OpenSelectedReviewQueueSourceCommand))]
     private bool isBusy;
 
     private bool CanRunActions() => !IsBusy;
@@ -180,6 +202,11 @@ public partial class MainViewModel : ObservableObject
     private bool CanAttachDeliveryDecisionAggregate()
     {
         return !IsBusy && File.Exists(LastDeliveryManifestPath);
+    }
+
+    private bool CanOpenSelectedReviewQueueSource()
+    {
+        return !IsBusy && SelectedReviewQueueItem is not null;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunActions))]
@@ -449,6 +476,86 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private async Task ProjectReviewQueueAsync(string[]? artifactPaths)
+    {
+        if (artifactPaths is null || artifactPaths.Length == 0)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "选择复核来源 JSON",
+                Filter = "JSON 文件 (*.json)|*.json",
+                Multiselect = true,
+                InitialDirectory = Directory.Exists(LastReviewDirectoryPath)
+                    ? LastReviewDirectoryPath
+                    : RepositoryRoot
+            };
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+            artifactPaths = dialog.FileNames;
+        }
+
+        IsBusy = true;
+        ClearReviewQueueProjection("投影中");
+        StatusMessage = "投影复核队列中...";
+        AppendSectionTitle("投影复核队列");
+        try
+        {
+            var result = await _toolchainOrchestrator.ProjectReviewQueueAsync(
+                new ReviewQueueProjectionRequest(artifactPaths));
+            AppendExecution("投影复核队列", result.Execution);
+            if (!result.Execution.Succeeded || result.Projection is null)
+            {
+                ReviewQueueProjectionStatus = "投影失败";
+                StatusMessage = "复核队列投影失败";
+                return;
+            }
+
+            var projection = result.Projection;
+            if (!projection.Succeeded)
+            {
+                ReviewQueueProjectionStatus = "来源被拒绝";
+                StatusMessage = "复核队列来源未通过验证";
+                foreach (var rejected in projection.RejectedSources)
+                {
+                    AppendLine($"- rejected: {rejected.SourcePath} | {rejected.Reason}");
+                }
+                return;
+            }
+
+            foreach (var item in projection.Items)
+            {
+                ReviewQueueItems.Add(item);
+            }
+            NeedsHumanLabelCount = projection.NeedsHumanLabelCount;
+            HighRiskApprovalCount = projection.HighRiskApprovalCount;
+            TruthNeedsReviewCount = projection.TruthNeedsReviewCount;
+            ReviewQueueProjectionStatus = "本地已验证投影";
+            StatusMessage = "复核队列投影完成";
+            LastResultSummary =
+                $"复核队列 | 人工标注 {NeedsHumanLabelCount} | 高风险审批 {HighRiskApprovalCount} | 真值复核 {TruthNeedsReviewCount}";
+        }
+        catch (Exception ex)
+        {
+            AppendLine(ex.Message);
+            ReviewQueueProjectionStatus = "投影异常";
+            StatusMessage = "复核队列投影异常";
+            LastResultSummary = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOpenSelectedReviewQueueSource))]
+    private void OpenSelectedReviewQueueSource()
+    {
+        OpenPath(SelectedReviewQueueItem?.SourcePath ?? string.Empty);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
     private void OpenLastOutputPdf()
     {
         OpenPath(LastOutputPdfPath);
@@ -632,6 +739,16 @@ public partial class MainViewModel : ObservableObject
         LastVisualDecisionPath = delivery.VisualDecisionPath ?? string.Empty;
         LastAggregateVerificationStatus = "未验证";
         LastAggregateManifestResultSha256 = string.Empty;
+    }
+
+    private void ClearReviewQueueProjection(string status)
+    {
+        ReviewQueueItems.Clear();
+        SelectedReviewQueueItem = null;
+        NeedsHumanLabelCount = 0;
+        HighRiskApprovalCount = 0;
+        TruthNeedsReviewCount = 0;
+        ReviewQueueProjectionStatus = status;
     }
 
     private void AppendExecution(string title, ToolchainExecutionResult result)

@@ -25,7 +25,7 @@ This project provides a local Windows workflow for generating, validating, and r
 - 已落地离线 `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` 编译器、受控 aggregate manifest 附着和 preimage/result receipt；WPF 可由用户显式选择本地 aggregate，附着成功后立即 source-aware 重验，并只投影与 `manifestResultSha256` 绑定的时间点状态。
 - 已把 QQ 重链路经验移植为阶段化视觉证据产物：`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 通过 `TrackResult.stageArtifactRefs` 接入，并新增 `unsafe_shortcut_fail` fail-closed 样例。
 - 已落地可选 AI 网关配置校验入口、文本请求主备切换和显式视觉 TrackResult 探针；云外发默认关闭，真实密钥只保留在本地 `.env`。
-- WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；完整 review 队列、审批生成和原题生成主链仍未接入。
+- WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；还可对用户显式选择且通过 source-aware 重验的本地 review artifact 做三类只读队列投影。审批生成、lifecycle 回写和原题生成主链仍未接入。
 - 已落地自动解题工作站终局计划与 Typst 主渲染迁移计划；当前运行时仍保持 Playwright / Chromium。
 - 支持实验性的受控插图插入链路，可把用户提供或人工复核后的答案图块插入 PDF。
 - WPF 桌面应用提供本地工具链入口和工作区诊断。
@@ -40,7 +40,7 @@ English summary:
 - An offline `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` compiler verifies byte hashes, snapshot binding, sample-package question inventory, and per-question decisions. A controlled CLI can attach that aggregate with a preimage/result receipt; WPF can explicitly attach a local aggregate, immediately reverify it, and project only a hash-bound point-in-time result, while ordinary WPF reads, diagnostics, and headless consumers remain fail-closed.
 - QQ heavy-chain lessons are now mapped into staged visual artifacts: `VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` are referenced through `TrackResult.stageArtifactRefs`, with an `unsafe_shortcut_fail` fail-closed fixture.
 - Optional AI gateway config validation, text failover, and explicit vision TrackResult probes are available; cloud egress is disabled by default and real keys stay in local `.env`.
-- After a delivery, WPF can project the latest manifest's review lifecycle, visual-review, and trust state and use a fail-closed tool to attach, refresh, and open a local JSON `DecisionRecord`; the full review queue, approval generation, and source-question generation workflow remain open.
+- After a delivery, WPF can project the latest manifest's review lifecycle, visual-review, and trust state and use a fail-closed tool to attach, refresh, and open a local JSON `DecisionRecord`. It can also build a read-only three-lane queue from explicitly selected, source-reverified local review artifacts. Approval generation, lifecycle write-back, and source-question generation remain open.
 - The final auto-solving workstation and Typst primary-renderer migration plans are documented; the current runtime remains Playwright / Chromium.
 - Experimental controlled-graphic helpers can place reviewed answer graphics into PDFs.
 - The WPF app provides a local toolchain entry point and workspace diagnostics.
@@ -173,8 +173,8 @@ dotnet build ClassroomToolkit.sln -c Debug
 当前最完整的链路是初中物理参考答案生成与渲染。多学段/多学科支持已经在资产层、规范层和契约层展开，但产品层仍在演进中。
 当前最成熟的交付主链仍是 `answer.md -> PDF/review`。项目正在按“飞轮先行、生成主链后接、视觉双轨后落地”的路线推进。
 样例飞轮现已具备完全合成 fixture 的可执行准入、记账与反馈归因闭环：`样例交付/index.json` 是不可覆盖的 canonical authority，并通过 `subjectPack / packageRef / packageSha256` 绑定唯一 structured package，通过 `candidateBindings` 绑定 negative-candidate descriptor bytes；hash-bound 样例资产由 `.gitattributes` 固定 LF。package 与内部引用必须留在对应 canonical root。`plumbing` 不产优化信号，`scoring` 要求显式 candidate/truth/leakage 状态并受 fail-closed 门禁约束；current-authority-valid、non-exact fixture-labelled scoring run 可编译 auto feedback，canonical public synthetic teacher text 可经有限显式词典投影为 parsed 或 `needs_human_label`。独立 ingestion diagnostic 统计结构化率与分流分布，独立 replay diagnostic 统计当前 parser 对冻结 expected result raw bytes 的回放兼容率。输出通过仓内有限 shape validator、compiler semantic invariants 和当前 canonical authority bytes 重验，不代表完整 Draft 2020-12、真实教师自由文本理解、任意归档 authority 或语义答案评分；teacher diagnostics 不进入 candidate readiness，`optimizationCandidateRefs` 仍为空，不构成优化候选或灰度放行。
-视觉降错本轮已进入契约层并具备最小离线决策编译：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` 已纳入 schema 与资产校验，`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 已作为阶段产物落盘，双轨一致但证据缺失和直接跳答案缺 grounding 的样例都可由运行时代码推导为 `trusted=false`；真正的双轨/三轨运行时、局部高清 crop 和 review 队列产品化仍是后续工程。
-WPF 当前完成最新交付的 review/trust 投影、本地题目级 `DecisionRecord` 的受控附着，以及本地 aggregate 的显式附着后立即重验；只有 source-aware verifier 与同批 manifest bytes 的 `manifestResultSha256` 一致时才显示正向时间点状态。该入口不生成 aggregate、不生成审批、不推进 lifecycle；这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
+视觉降错本轮已进入契约层并具备最小离线决策编译：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` 已纳入 schema 与资产校验，`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 已作为阶段产物落盘，双轨一致但证据缺失和直接跳答案缺 grounding 的样例都可由运行时代码推导为 `trusted=false`；真正的双轨/三轨运行时和局部高清 crop 仍是后续工程。
+WPF 当前完成最新交付的 review/trust 投影、本地题目级 `DecisionRecord` 的受控附着、本地 aggregate 的显式附着后立即重验，以及 `needs_human_label / high_risk_approval / truth_needs_review` 三类本地只读队列投影。队列只消费用户显式选择且通过 canonical path、raw-byte SHA-256 与既有 source-aware verifier 重验的 artifact；任一 rejected source 会清空本次投影。该入口不生成 aggregate/审批、不推进 lifecycle、不修改 trust；这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
 离线 delivery aggregate 已能对合成 `sample-package` inventory、snapshot/input/manifest bytes 和逐题决策做完整覆盖证明，并记录 aggregate attach 的可重验 hash chain；它仍不代表真实试卷全题识别、WPF workflow integration 或 live acceptance。
 自动解题工作站和 Typst 主渲染已作为终局计划落盘；Typst 未通过 parity gate 前，默认交付链仍是 Playwright / Chromium。
 自动基于题图生成作图题答案图不再作为本项目的主需求；当前只保留“受控插图插入 PDF”的实验性底座。
