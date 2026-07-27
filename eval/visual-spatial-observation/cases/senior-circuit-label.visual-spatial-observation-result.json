@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-spatial-observation-result",
+  "requestId": "senior-circuit-label",
+  "subjectPack": "senior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "sourceRequestSha256": "91ea1d45592a77ed38860a5bb64279c7680c62b075e5b5ac00a7cb9ed3eaa9f7",
+  "structureExtractionResult": {
+    "artifactRef": "eval/visual-structure-extraction/cases/senior-circuit-label.visual-structure-extraction-result.json",
+    "rawByteSha256": "9b638be6a7ea0274ebe6fb0fbe36c0cec8222b4193d94fabbd498d31ffdea15c",
+    "requestId": "senior-circuit-label"
+  },
+  "ocrObservationResult": {
+    "artifactRef": "eval/visual-ocr-observation/cases/senior-circuit-label.visual-ocr-observation-result.json",
+    "rawByteSha256": "ea3458311113a609f831fbba66c85c5fa358728aafd51cb25957b9cf01aef674",
+    "requestId": "senior-circuit-label"
+  },
+  "crop": {
+    "artifactRef": "senior-circuit-label.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "60854d32152030d5867875669073b73f320c1f67bd21c5fefc82b7f6114a316e",
+    "decodedRgbPixelSha256": "b1c7bfb96999bda5f8ca36997a32a4feb578da168001d1bd503b39a04b0ac8c4",
+    "pixelSize": {
+      "width": 560,
+      "height": 280
+    }
+  },
+  "coordinateSpace": "crop_pixel",
+  "measurements": [],
+  "summary": {
+    "textRegionCandidateCount": 23,
+    "ocrObservationCount": 0,
+    "expectedPairCount": 0,
+    "measurementCount": 0,
+    "relationCounts": {
+      "equal_bounds": 0,
+      "observation_contains_region": 0,
+      "region_contains_observation": 0,
+      "overlap": 0,
+      "disjoint": 0
+    }
+  },
+  "dispositions": {
+    "measurementStatus": "completed",
+    "associationDisposition": "not_decided",
+    "layoutDisposition": "not_inferred",
+    "semanticDisposition": "not_inferred",
+    "trackDisposition": "not_integrated",
+    "requiresHumanReview": true
+  },
+  "geometryPolicySha256": "55987a1eb90ed764f526f5fc17d1ab9fadd29532c09dd43c7c0c03dca2534f1a",
+  "engineProvenance": {
+    "engineKind": "deterministic_geometry",
+    "engineId": "visual-spatial-observer",
+    "engineVersion": "1.0.0",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-28T01:02:01Z"
+}

@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-spatial-observation-request/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualSpatialObservationRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind",
+    "dataClassification", "structureExtractionResult", "ocrObservationResult",
+    "crop", "geometryPolicy", "egressPolicy", "requestedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-spatial-observation-request" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "subjectPack": {
+      "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+    },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "dataClassification": {
+      "type": "object",
+      "required": ["level", "notes"],
+      "properties": {
+        "level": { "const": "public" },
+        "notes": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "structureExtractionResult": { "$ref": "#/$defs/upstreamResult" },
+    "ocrObservationResult": { "$ref": "#/$defs/upstreamResult" },
+    "crop": { "$ref": "#/$defs/crop" },
+    "geometryPolicy": { "$ref": "#/$defs/geometryPolicy" },
+    "egressPolicy": {
+      "type": "object",
+      "required": ["allowCloud"],
+      "properties": { "allowCloud": { "const": false } },
+      "additionalProperties": false
+    },
+    "requestedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "upstreamResult": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "requestId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "crop": {
+      "type": "object",
+      "required": ["artifactRef", "scale", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "scale": { "const": 2 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "decodedRgbPixelSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "pixelSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometryPolicy": {
+      "type": "object",
+      "required": [
+        "quadBoundsMode", "rectangleEdgeMode", "touchingRelation",
+        "enumerationOrder", "coordinatePrecision", "ratioPrecision"
+      ],
+      "properties": {
+        "quadBoundsMode": { "const": "axis_aligned_min_max" },
+        "rectangleEdgeMode": { "const": "half_open" },
+        "touchingRelation": { "const": "disjoint" },
+        "enumerationOrder": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "text_region_candidate_id" },
+            { "const": "ocr_observation_id" }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "coordinatePrecision": { "const": 6 },
+        "ratioPrecision": { "const": 8 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

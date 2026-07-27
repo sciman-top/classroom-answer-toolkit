@@ -54,6 +54,9 @@ function collectValidationTargets() {
   const visualOcrObservationRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-observation-request.schema.json");
   const visualOcrObservationResultSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-observation-result.schema.json");
   const visualOcrObservationCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-observation-case-inventory.schema.json");
+  const visualSpatialObservationRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-spatial-observation-request.schema.json");
+  const visualSpatialObservationResultSchema = resolveRepoPath("prompts/shared/schemas/visual-spatial-observation-result.schema.json");
+  const visualSpatialObservationCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-spatial-observation-case-inventory.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -86,6 +89,7 @@ function collectValidationTargets() {
   const visualPreprocessingFixtureRoot = resolveRepoPath("eval/visual-preprocessing/cases");
   const visualStructureExtractionFixtureRoot = resolveRepoPath("eval/visual-structure-extraction/cases");
   const visualOcrObservationFixtureRoot = resolveRepoPath("eval/visual-ocr-observation/cases");
+  const visualSpatialObservationFixtureRoot = resolveRepoPath("eval/visual-spatial-observation/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -182,6 +186,20 @@ function collectValidationTargets() {
       "visual-ocr-observation-case-inventory.json"),
     schemaPath: visualOcrObservationCaseInventorySchema
   }];
+  const visualSpatialObservationRequestFiles = listFilesBySuffixRecursive(
+    visualSpatialObservationFixtureRoot,
+    ".visual-spatial-observation-request.json")
+    .map((filePath) => ({ filePath, schemaPath: visualSpatialObservationRequestSchema }));
+  const visualSpatialObservationResultFiles = listFilesBySuffixRecursive(
+    visualSpatialObservationFixtureRoot,
+    ".visual-spatial-observation-result.json")
+    .map((filePath) => ({ filePath, schemaPath: visualSpatialObservationResultSchema }));
+  const visualSpatialObservationCaseInventoryFiles = [{
+    filePath: path.join(
+      visualSpatialObservationFixtureRoot,
+      "visual-spatial-observation-case-inventory.json"),
+    schemaPath: visualSpatialObservationCaseInventorySchema
+  }];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
   const optimizationReadinessInputFiles = listFilesByNameRecursive(
@@ -273,6 +291,9 @@ function collectValidationTargets() {
     visualOcrObservationRequests: visualOcrObservationRequestFiles,
     visualOcrObservationResults: visualOcrObservationResultFiles,
     visualOcrObservationCaseInventories: visualOcrObservationCaseInventoryFiles,
+    visualSpatialObservationRequests: visualSpatialObservationRequestFiles,
+    visualSpatialObservationResults: visualSpatialObservationResultFiles,
+    visualSpatialObservationCaseInventories: visualSpatialObservationCaseInventoryFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -312,6 +333,9 @@ function collectValidationTargets() {
       visualOcrObservationRequestSchema,
       visualOcrObservationResultSchema,
       visualOcrObservationCaseInventorySchema,
+      visualSpatialObservationRequestSchema,
+      visualSpatialObservationResultSchema,
+      visualSpatialObservationCaseInventorySchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -379,7 +403,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -622,6 +646,33 @@ function validateVisualOcrObservationBoundary(resultTargets) {
   return errors;
 }
 
+function validateVisualSpatialObservationBoundary(resultTargets) {
+  const errors = [];
+  const canonicalTarget = resultTargets[0];
+  if (!canonicalTarget) {
+    return ["Visual spatial observation boundary requires a canonical result fixture."];
+  }
+
+  const canonical = readJsonFile(canonicalTarget.filePath);
+  const mutations = [
+    ["positive association", (value) => { value.dispositions.associationDisposition = "decided"; }],
+    ["layout inference", (value) => { value.dispositions.layoutDisposition = "inferred"; }],
+    ["semantic inference", (value) => { value.dispositions.semanticDisposition = "inferred"; }],
+    ["Track integration", (value) => { value.dispositions.trackDisposition = "integrated"; }],
+    ["remote provider", (value) => { value.engineProvenance.engineKind = "remote_provider"; }],
+    ["live provider", (value) => { value.engineProvenance.liveProvider = true; }],
+    ["cloud egress", (value) => { value.engineProvenance.cloudEgress = true; }]
+  ];
+  for (const [label, mutate] of mutations) {
+    const candidate = structuredClone(canonical);
+    mutate(candidate);
+    if (validateValueAgainstSchema(candidate, canonicalTarget.schemaPath).length === 0) {
+      errors.push(`Visual spatial observation schema must reject ${label}.`);
+    }
+  }
+  return errors;
+}
+
 function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
@@ -636,6 +687,8 @@ function main() {
     validateVisualStructureExtractionBoundary(targets.visualStructureExtractionResults);
   const visualOcrObservationBoundaryErrors =
     validateVisualOcrObservationBoundary(targets.visualOcrObservationResults);
+  const visualSpatialObservationBoundaryErrors =
+    validateVisualSpatialObservationBoundary(targets.visualSpatialObservationResults);
   const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
@@ -709,6 +762,7 @@ function main() {
     ...optimizationReadinessErrors,
     ...visualStructureExtractionBoundaryErrors,
     ...visualOcrObservationBoundaryErrors,
+    ...visualSpatialObservationBoundaryErrors,
     ...(teacherFeedbackFixtureError
       ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
       : []),
