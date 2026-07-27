@@ -115,3 +115,9 @@
 - 决定：canonical synthetic teacher feedback 的自动回放通过率由独立 `TeacherFeedbackReplayDiagnosticReport` 统计，不扩展 ingestion diagnostic，也不以测试日志代替可版本化指标资产
 - 原因：ingestion structured rate 衡量分流结果，replay pass rate 衡量当前 parser 对冻结 expected result 的兼容性；混在同一报告会把两个失败面耦合，仅保留测试又无法形成稳定、可绑定、可重算的产品指标
 - 边界：replay 前必须先证明 expected authority 的 schema/hash/path/coverage 完整；合法 replay mismatch 只记为 diagnostic failure，不升级或改写 expected authority，不贡献 readiness、qualification、controls、eligibility 或 `OptimizationCandidate`
+
+## D-023 高风险视觉指标使用按学科独立 synthetic 诊断报告
+
+- 决定：VISION-004 使用 6 个 raw-byte-bound `synthetic_fixture` cases 和独立 `VisualRiskDiagnosticReport`，由当前 DecisionRecord compiler 重放 expected decision，并按三个 subject-pack 分别统计误放行、正确标疑、绑定准确率和 replay 通过率
+- 原因：现有两个 math-only fail-closed fixture 只能证明局部 reason 投影，无法证明跨学科 coverage，也不能形成稳定、可重算的产品指标；把指标塞进 candidate readiness 又会混淆视觉合同诊断与优化放行 authority
+- 边界：fixture 不冒充真实试卷或 live VLM 输出；报告不接 WPF/gateway/readiness candidate path，`optimizationCandidateRefs=[]`、controls=`not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted

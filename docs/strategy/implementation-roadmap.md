@@ -17,6 +17,7 @@
 - 固定视觉证据编译器 schema：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`
 - 固定 renderer contract schema 和 Typst 主渲染迁移计划
 - 补高风险视觉题标疑与 `trusted=false` 回归样例
+- 以 VISION-004 的 6 个 raw-byte-bound `synthetic_fixture` 难例按三个 subject-pack 独立统计高风险误放行率、正确标疑召回率、图号/小问绑定准确率和 DecisionRecord replay 通过率；只证明 repo-side contract diagnostics，不升级 gateway/workflow/live authority
 - 接入 hash-bound、用户显式触发的 WPF aggregate 附着后立即重验投影
 - 接入样例真值面、负样本、反馈链与 Track A
 - 以 GEN-003 provider-neutral schema、明确标记的 deterministic `synthetic_fixture`、三个 hash-bound generated candidates 接入飞轮；当前只证明 repo-side contract plumbing，controls 仍未验证且 workflow/live acceptance 后接

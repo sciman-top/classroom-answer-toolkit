@@ -63,6 +63,7 @@
 - `OptimizationCandidate`
 - `DecisionRecord`
 - `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` schema 契约
+- raw-byte-bound、按 subject-pack 分桶且与 readiness 分离的 `VisualRiskCaseInventory / VisualRiskDiagnosticReport`
 - `renderer-contract` schema 契约与 Typst 主渲染迁移计划
 - hash-bound、用户显式触发的 WPF aggregate 附着后立即重验投影
 - 第一版自动验收飞轮
@@ -82,6 +83,7 @@
 - 三类人工队列可区分
 - Word 在 P1 明确只作为 `degraded-supported`
 - 高风险视觉题即使双轨一致，只要证据链缺失也保持 `trusted=false`
+- 三个 subject-pack 的 synthetic visual-risk fixture 可独立报告误放行、正确标疑、绑定准确率和 byte-exact replay，不把诊断指标升级为 live authority
 - 当前 renderer truth 和 Typst target renderer 不再混写
 - WPF 可显式选择已有本地 aggregate 交给受控工具附着；正向 trust 只来自附着后立即执行且匹配 `manifestResultSha256` 的本次重验，普通读取仍 fail-closed
 
@@ -93,12 +95,14 @@
 - teacher feedback 唯一信号、歧义信号与缺失信号的 fail-closed 分流验证
 - teacher feedback structured/human-label rate 与 error/severity/reason 完整分布的确定性重算验证
 - teacher feedback parser 对 canonical expected result 的逐 fixture raw-byte 回放通过率验证
+- visual-risk inventory/evidence/tracks/expected decision 的 raw-byte authority 与逐 subject-pack 指标重算验证
 
 ### 禁止扩张点
 
 - 不把 `reference_truth` 当 `candidate`
 - 不让 P1 因 Word 原生解析或图片高级预处理而膨胀
 - 不允许优化信号绕过 `runMode` 与数据边界
+- 不把 synthetic visual-risk diagnostics 解释为真实图像/VLM 质量、gateway live verified、workflow integrated 或 live accepted
 
 ## P1 后段：答案生成主链接入
 

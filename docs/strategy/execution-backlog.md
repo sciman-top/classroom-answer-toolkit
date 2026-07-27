@@ -245,12 +245,12 @@
 ### task_id: VISION-004
 
 - goal: 建立高风险看图错误难例库
-- inputs: 仪表读数、坐标图、函数图、几何图、表格统计、电路/实验装置、多图多问与低质量图像样例
-- changes: 在各 subject-pack eval 中增加高风险误放行、正确标疑、图号绑定、OCR/原图冲突和 review 回放样例
-- verification: 每个 subject-pack 单独报告高风险误放行率、正确标疑召回率和图号/小问绑定准确率
-- rollback: 移除新增 eval 样例并恢复 dataset
+- inputs: VISION-003/005 的 `ProblemEvidenceBundle / TrackResult / DecisionRecord` 合同与离线编译器、三个 subject-pack 的仪表读数/函数图/多图绑定/电路实验规则、完全合成且脱敏的 visual-risk fixture
+- changes: 新增 provider-neutral `VisualRiskCaseInventory / VisualRiskDiagnosticReport` schema 与确定性离线 compiler；建立 6 个明确标记 `synthetic_fixture` 的 canonical cases，每个 subject-pack 各 2 个，覆盖高风险 expected review、稳定或歧义图号/小问绑定、OCR/原图冲突或 validator block；inventory 逐项绑定 evidence/track/expected-decision raw-byte SHA-256，compiler 重放当前 DecisionRecord 并与 expected bytes 比较，再按 subject-pack 独立统计高风险误放行率、正确标疑召回率、图号/小问绑定准确率和 replay 通过率；纳入 `validate:assets` 与 visual-evidence hotspot
+- verification: canonical inventory 的 schema/hash/path/exact coverage 完整且 6/6 replay byte-exact；三个 subject-pack 各自 `falseReleaseRate=0`、`correctFlagRecall=1`、`bindingAccuracy=1`、`replayPassRate=1`；binding unstable 与 OCR/image conflict 产生显式 fail-closed reason；任一 authority hash/path/coverage/report computed field 漂移均阻断；完整固定顺序项目门禁
+- rollback: 回滚 VISION-004 实现提交；删除 visual-risk inventory/report schema、compiler/test/fixtures/report，恢复 DecisionRecord reason 投影、`validate-assets.mjs`、`package.json`、`check-toolchain.ps1`、eval README 与策略/证据增量；不得回滚 VISION-003/005/006、修改 `.env`、WPF、gateway、readiness receipt 或 cloud-egress 配置
 - blocks: VISION-003
-- done_definition: 指标不再只报总正确率，而能看到高风险视觉误放行
+- done_definition: 仓内可从 raw-byte-bound canonical synthetic authority 确定性重放并按 subject-pack 报告高风险视觉误放行、正确标疑和绑定准确率；该诊断只证明 repo-side fixture 合同行为，`optimizationCandidateRefs=[]`、readiness controls 保持 `not_verified`、`eligible=false`，不宣称真实图像/VLM 质量、gateway live verified、workflow integrated 或 live accepted
 
 ### task_id: VISION-005
 

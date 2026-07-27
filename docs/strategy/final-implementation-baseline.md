@@ -204,6 +204,30 @@ realpath 后必须留在对应 root；`candidateBindings` 另外绑定 descripto
 scoring admission 与当前无 optimization refs 等语义约束，并重验 current canonical
 authority bytes。任意归档 authority 验真不属于当前能力。
 
+### VISION-004 synthetic visual-risk diagnostics
+
+VISION-004 在既有 `ProblemEvidenceBundle -> TrackResult[] -> DecisionRecord` spine 上新增独立
+`VisualRiskCaseInventory / VisualRiskDiagnosticReport`。canonical authority 固定为 6 个完全合成、
+脱敏且禁云的 cases，`math-answer / junior-physics-answer / senior-physics-answer` 各 2 个；每个
+subject-pack 至少覆盖一个 stable binding 和一个 ambiguous binding 或 OCR/image conflict/validator
+block。inventory 必须逐项绑定 evidence bundle、全部 track results 和 expected decision 原始 bytes
+SHA-256，引用经 realpath 后不得逃逸 canonical fixture root，且目录内 authority 必须被精确覆盖。
+
+diagnostic compiler 先验证 inventory 与全部输入 schema/hash/path/coverage，再用当前
+DecisionRecord compiler 逐项重放，以 two-space JSON + trailing LF 与 expected decision raw bytes
+比较。合法但不一致的 replay 计为失败；authority 损坏则整体 fail closed。报告按 subject-pack
+分别统计 `falseReleaseRate = falseReleaseCount / expectedReviewCount`、
+`correctFlagRecall = correctlyFlaggedCount / expectedReviewCount`、
+`bindingAccuracy = bindingCorrectCount / totalCases` 和
+`replayPassRate = replayPassedCount / totalCases`，不得只报告跨学科总值。
+
+该指标只证明冻结 synthetic fixture 上的 repo-side contract diagnostics，不代表真实图像质量、
+OCR/VLM 准确率、gateway live verified、workflow integrated 或 live accepted。报告必须保持
+`optimizationCandidateRefs=[]`、readiness controls 的 `toolchain/restrictedEgress=not_verified` 与
+`eligible=false`；不消费真实试卷，不接 WPF，不开启 cloud egress，不生成
+`OptimizationCandidate`。CLI 重编译输出必须位于仓库根目录之外，不能覆盖或 alias 任一
+canonical authority。
+
 ## 7. feedback-record 归因模型
 
 `feedback-record` 的权威归因字段为：
