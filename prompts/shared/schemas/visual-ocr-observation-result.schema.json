@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-ocr-observation-result/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualOcrObservationResult",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind",
+    "sourceRequestSha256", "preprocessingResult", "crop",
+    "structureExtractionResult", "coordinateSpace", "observations", "summary",
+    "dispositions", "runtimePolicySha256", "engineProvenance", "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-ocr-observation-result" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "subjectPack": {
+      "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+    },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "sourceRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "preprocessingResult": { "$ref": "#/$defs/upstreamResult" },
+    "crop": { "$ref": "#/$defs/crop" },
+    "structureExtractionResult": { "$ref": "#/$defs/upstreamResult" },
+    "coordinateSpace": { "const": "crop_pixel" },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["observationId", "quad", "observedText", "confidence"],
+        "properties": {
+          "observationId": { "type": "string", "pattern": "^ocr-observation-[0-9]{3}$" },
+          "quad": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": ["x", "y"],
+              "properties": {
+                "x": { "type": "number", "minimum": 0 },
+                "y": { "type": "number", "minimum": 0 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "observedText": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["observationCount", "observedTextSha256"],
+      "properties": {
+        "observationCount": { "type": "integer", "minimum": 0 },
+        "observedTextSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "dispositions": {
+      "type": "object",
+      "required": ["observationStatus", "groundTruthAvailable", "acceptanceDisposition", "requiresHumanReview", "semanticDisposition", "trackDisposition"],
+      "properties": {
+        "observationStatus": { "const": "completed" },
+        "groundTruthAvailable": { "const": false },
+        "acceptanceDisposition": { "const": "not_evaluated" },
+        "requiresHumanReview": { "const": true },
+        "semanticDisposition": { "const": "not_inferred" },
+        "trackDisposition": { "const": "not_integrated" }
+      },
+      "additionalProperties": false
+    },
+    "runtimePolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "engineProvenance": {
+      "type": "object",
+      "required": ["engineKind", "engineId", "engineVersion", "executionProvider", "components", "artifacts", "liveProvider", "cloudEgress"],
+      "properties": {
+        "engineKind": { "const": "local_runtime" },
+        "engineId": { "const": "rapidocr-onnxruntime" },
+        "engineVersion": { "const": "1.2.3" },
+        "executionProvider": { "const": "CPUExecutionProvider" },
+        "components": { "$ref": "#/$defs/components" },
+        "artifacts": { "$ref": "#/$defs/artifacts" },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "upstreamResult": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "requestId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "crop": {
+      "type": "object",
+      "required": ["artifactRef", "scale", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "scale": { "const": 2 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "decodedRgbPixelSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "pixelSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "object",
+      "required": ["onnxruntime", "opencv", "pillow", "numpy"],
+      "properties": {
+        "onnxruntime": { "const": "1.27.0" },
+        "opencv": { "const": "5.0.0" },
+        "pillow": { "const": "12.3.0" },
+        "numpy": { "const": "2.5.0" }
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["configSha256", "detectionModelSha256", "classificationModelSha256", "recognitionModelSha256"],
+      "properties": {
+        "configSha256": { "const": "a61ac7c6f753b9840ae77306f31a4845788c530d8ebe950f0c5476e30b984917" },
+        "detectionModelSha256": { "const": "3439588c030faea393a54515f51e983d8e155b19a2e8aba7891934c1cf0de526" },
+        "classificationModelSha256": { "const": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c" },
+        "recognitionModelSha256": { "const": "897a3ededb38fee0dae2c1ccee38241f37df202c9509e3abca02e9217c5ee615" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
