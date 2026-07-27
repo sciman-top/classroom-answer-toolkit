@@ -548,6 +548,29 @@ function validateOptimizationReadinessFixtures(inventories, inputs, reports) {
   return errors;
 }
 
+function validateVisualStructureExtractionBoundary(resultTargets) {
+  const errors = [];
+  const canonicalTarget = resultTargets[0];
+  if (!canonicalTarget) {
+    return ["Visual structure extraction boundary requires a canonical result fixture."];
+  }
+
+  const canonical = readJsonFile(canonicalTarget.filePath);
+  const mutations = [
+    ["remote provider", (value) => { value.engineProvenance.engineKind = "remote_provider"; }],
+    ["live provider", (value) => { value.engineProvenance.liveProvider = true; }],
+    ["cloud egress", (value) => { value.engineProvenance.cloudEgress = true; }]
+  ];
+  for (const [label, mutate] of mutations) {
+    const candidate = structuredClone(canonical);
+    mutate(candidate);
+    if (validateValueAgainstSchema(candidate, canonicalTarget.schemaPath).length === 0) {
+      errors.push(`Visual structure extraction schema must reject ${label} provenance.`);
+    }
+  }
+  return errors;
+}
+
 function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
@@ -558,6 +581,8 @@ function main() {
     targets.optimizationReadinessCaseInventories,
     targets.optimizationReadinessInputs,
     targets.optimizationReadinessReports);
+  const visualStructureExtractionBoundaryErrors =
+    validateVisualStructureExtractionBoundary(targets.visualStructureExtractionResults);
   const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
@@ -629,6 +654,7 @@ function main() {
     ...assemblyErrors,
     ...schemaFileErrors,
     ...optimizationReadinessErrors,
+    ...visualStructureExtractionBoundaryErrors,
     ...(teacherFeedbackFixtureError
       ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
       : []),
