@@ -278,6 +278,15 @@ def assert_within(path: Path, root: Path, label: str) -> None:
         raise ValueError(f"{label} escapes its allowed root.") from error
 
 
+def resolve_canonical_input(path: Path, root: Path, label: str) -> Path:
+    absolute = Path(os.path.abspath(os.fspath(path)))
+    resolved = absolute.resolve(strict=True)
+    if os.path.normcase(str(absolute)) != os.path.normcase(str(resolved)):
+        raise ValueError(f"{label} must use its canonical path, not a symlink or junction alias.")
+    assert_within(resolved, root, label)
+    return resolved
+
+
 def read_json_bytes(path: Path, label: str) -> tuple[bytes, dict[str, Any]]:
     data = path.read_bytes()
     try:
@@ -583,14 +592,11 @@ def materialize_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
     return validate_canonical_fixtures(fixture_root)
 
 
-def run_admitted_request(request_path: Path, inventory_path: Path, output_dir: Path) -> Path:
-    inventory_path = inventory_path.resolve(strict=True)
-    fixture_root = inventory_path.parent
-    if inventory_path.name != INVENTORY_NAME:
-        raise ValueError("Inventory filename is not admitted.")
+def run_admitted_request(request_path: Path, output_dir: Path) -> Path:
+    inventory_path = (CANONICAL_ROOT / INVENTORY_NAME).resolve(strict=True)
+    fixture_root = CANONICAL_ROOT.resolve(strict=True)
     validate_canonical_fixtures(fixture_root)
-    request_path = request_path.resolve(strict=True)
-    assert_within(request_path, fixture_root, "request")
+    request_path = resolve_canonical_input(request_path, fixture_root, "request")
     inventory = json.loads(inventory_path.read_text(encoding="utf-8-sig"))
     entry = next(
         (item for item in inventory["entries"] if item["requestRef"] == request_path.name),
@@ -630,7 +636,6 @@ def parse_args() -> argparse.Namespace:
     mode.add_argument("--materialize-fixtures", action="store_true")
     mode.add_argument("--validate-fixtures", action="store_true")
     mode.add_argument("--request", type=Path)
-    parser.add_argument("--inventory", type=Path, default=CANONICAL_ROOT / INVENTORY_NAME)
     parser.add_argument("--out", type=Path)
     return parser.parse_args()
 
@@ -647,7 +652,7 @@ def main() -> int:
         return 0
     if args.out is None:
         raise ValueError("--out is required with --request.")
-    result_path = run_admitted_request(args.request, args.inventory, args.out)
+    result_path = run_admitted_request(args.request, args.out)
     print(json.dumps({"status": "ok", "resultPath": str(result_path)}, ensure_ascii=False))
     return 0
 

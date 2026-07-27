@@ -10,6 +10,9 @@ egress disabled.
 - Source, request, result, and crop raw bytes are SHA-256 bound.
 - Source and crop decoded RGB pixels are independently SHA-256 bound.
 - Runtime output must be a new directory outside the repository.
+- Runtime admission is fixed to the committed inventory under
+  `eval/visual-preprocessing/cases`; callers cannot supply an alternate
+  inventory or re-sign a copied fixture set as new authority.
 - The tool performs no OCR, layout inference, region detection, network call,
   answer generation, trust update, or optimization.
 

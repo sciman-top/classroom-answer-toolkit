@@ -144,7 +144,6 @@ class VisualPreprocessorTests(unittest.TestCase):
             output = Path(temp) / "bundle"
             result_path = run_admitted_request(
                 request_path,
-                CANONICAL_ROOT / INVENTORY_NAME,
                 output,
             )
             self.assertTrue(result_path.is_file())
@@ -162,9 +161,27 @@ class VisualPreprocessorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outside the repository"):
             run_admitted_request(
                 request_path,
-                CANONICAL_ROOT / INVENTORY_NAME,
                 rejected,
             )
+
+    def test_runtime_rejects_a_self_consistent_noncanonical_authority_copy(self) -> None:
+        with self.fixture_copy() as root, tempfile.TemporaryDirectory(
+            prefix="visual-preprocessor-output-"
+        ) as temp:
+            copied_request = root / "math-function-graph.visual-preprocessing-request.json"
+            with self.assertRaisesRegex(ValueError, "escapes its allowed root"):
+                run_admitted_request(copied_request, Path(temp) / "bundle")
+
+    def test_runtime_rejects_request_path_alias(self) -> None:
+        request_path = CANONICAL_ROOT / "math-function-graph.visual-preprocessing-request.json"
+        with tempfile.TemporaryDirectory(prefix="visual-preprocessor-alias-") as temp:
+            alias = Path(temp) / request_path.name
+            try:
+                alias.symlink_to(request_path)
+            except OSError as error:
+                self.skipTest(f"symlink capability unavailable: {error}")
+            with self.assertRaisesRegex(ValueError, "canonical path"):
+                run_admitted_request(alias, Path(temp) / "bundle")
 
     class fixture_copy:
         def __enter__(self) -> Path:
