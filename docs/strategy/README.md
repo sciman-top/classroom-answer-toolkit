@@ -14,10 +14,11 @@
 8. [typst-primary-renderer-plan.md](./typst-primary-renderer-plan.md)
 9. [spec-evolution-adaptation-plan.md](./spec-evolution-adaptation-plan.md)
 10. [visual-preprocessing-runtime-plan.md](./visual-preprocessing-runtime-plan.md)
-11. [implementation-roadmap.md](./implementation-roadmap.md)
-12. [implementation-plan.md](./implementation-plan.md)
-13. [execution-backlog.md](./execution-backlog.md)
-14. [decision-log.md](./decision-log.md)
+11. [visual-structure-extraction-runtime-plan.md](./visual-structure-extraction-runtime-plan.md)
+12. [implementation-roadmap.md](./implementation-roadmap.md)
+13. [implementation-plan.md](./implementation-plan.md)
+14. [execution-backlog.md](./execution-backlog.md)
+15. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 

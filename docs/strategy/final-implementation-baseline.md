@@ -481,6 +481,15 @@ P1 样例集默认人工拆分题面/答案：
 - 三个 subject-pack 各一份公开、脱敏 synthetic bitmap，只证明 repo-side preprocessing contract。当前不做 OCR/layout 语义、自动 region 检测、deskew/denoise 推断、Track A/B/C 求解、WPF/gateway/trust/readiness/optimizer 集成。
 - 不消费真实试卷/教师/学生数据，不开启 cloud egress，不生成 `OptimizationCandidate`；`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false`，workflow 未集成且 live 未验收。
 
+### VISION-008 本地结构抽取边界
+
+- `VisualStructureExtractionRequest / Result` 与 preprocessing、OCR、答案生成和 TrackResult 合同分离，只接受 committed VISION-007 inventory/result 准入的 2x crop。
+- `LineSegmentCandidate / ConnectedRegionCandidate / TextRegionCandidate` 只表达固定像素算法输出；不得命名为 axis、tick、wire、component、character 或题目/图号绑定。
+- result 必须绑定 preprocessing result/request/crop raw bytes 与 crop decoded RGB pixel hash，记录冻结 algorithm parameters、candidate ordering/counts 与 OpenCV/Pillow provenance。
+- `TextRegionCandidate` 只表示固定 bbox/area heuristic，必须保留 `heuristicOnly=true`，不允许 `recognizedText`。
+- disposition 固定为 `ocr=not_attempted / semantic=not_inferred / track=not_integrated`。本切片不生成 `FigureUnderstandingResult / ProblemEvidenceBundle / TrackResult / DecisionRecord`。
+- 只消费三个公开 synthetic 2x crops；不接 WPF/gateway/readiness/trust/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

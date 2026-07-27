@@ -133,3 +133,9 @@
 - 决定：VISION-007 只接受 canonical inventory 准入的公开 synthetic bitmap、显式 integer `page_pixel` bbox 和固定 `[1,2]` scales；本地 OpenCV/Pillow runtime 输出 raw-byte/decoded-pixel hash-bound crops 与 engine provenance
 - 原因：局部高清 crop 是 Track A/B 的共同输入底座，但当前没有已验收的 OCR/layout 或自动 region detection authority；先固定像素、坐标、hash、路径和重放合同，可验证预处理 plumbing 而不伪装视觉理解
 - 边界：不做 OCR/layout 语义、自动检测、真实试卷、WPF/gateway/trust/readiness/optimizer 集成；不开 cloud egress，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
+
+## D-026 首个结构抽取 runtime 只产生非语义候选图元
+
+- 决定：VISION-008 从 VISION-007 canonical 2x crop 运行冻结的 threshold/connected-components/Canny/Hough 算法，只输出规范化 line/connected/text-region candidates，并固定 OCR 未执行、语义未推断、Track 未集成
+- 原因：像素结构抽取是 OCR/layout/Track B 的前置底座，但直接给 synthetic 图元贴 axis/tick/component 或文本标签会把 fixture knowledge 写进 extractor，形成虚假语义 authority
+- 边界：candidate 不能升级为 `FigureUnderstandingResult / ProblemEvidenceBundle / TrackResult`，不做真实 OCR、学科分类、WPF/gateway/readiness/trust/optimizer 或 cloud egress；controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`，不宣称 workflow integrated 或 live accepted

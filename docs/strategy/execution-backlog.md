@@ -282,6 +282,16 @@
 - blocks: VISION-003
 - done_definition: 仓内可从显式 bbox 对三个公开 synthetic bitmap 确定性生成并重验 1x/2x crop；只证明 repo-side preprocessing contract，不做 OCR/layout 语义、自动 region 检测、Track A/B/C 求解、WPF/gateway/trust/readiness/optimizer 集成，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
 
+### task_id: VISION-008
+
+- goal: 建立 provider-neutral、只产生非语义候选图元的首个本地结构抽取闭环
+- inputs: VISION-007 committed preprocessing inventory/result 与 2x crop、现有 `VisualRegion / FigureUnderstandingResult / TrackResult` 边界、OpenCV/Pillow runtime
+- changes: 新增 `VisualStructureExtractionRequest / Result / CaseInventory` schema 和 deterministic local extractor；固定 threshold/connected-components/Canny/Hough 参数，输出规范化 `LineSegmentCandidate / ConnectedRegionCandidate / TextRegionCandidate` 与 engine provenance；三学科各一个 canonical case，逐层绑定 preprocessing result、crop、request/result raw bytes 与 decoded pixel hash；固定 `ocrDisposition=not_attempted / semanticDisposition=not_inferred / trackDisposition=not_integrated`；纳入 assets 与 hotspot
+- verification: 三 case 非空且 expected result byte-exact replay；1x/未知 crop、caller inventory、path/alias、source/request/result/pixel hash、algorithm parameter、排序/id/count/computed-field、OCR/semantic/track disposition 漂移 fail closed；完整固定顺序项目门禁
+- rollback: 回滚 VISION-008 实现提交并删除本切片 schema/tool/request/result/inventory、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007 PNG/preprocessing authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
+- blocks: VISION-007
+- done_definition: 仓内能从三个 canonical 2x synthetic crops 确定性生成并重验非语义 line/region/text candidates；只证明 repo-side structural extraction plumbing，不构成 OCR、layout semantics、FigureUnderstandingResult、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001
