@@ -18,6 +18,7 @@ from visual_spatial_observer import (
     sha256_bytes,
     stable_json_bytes,
     validate_canonical_fixtures,
+    validate_admitted_request_snapshot,
     validate_interpreter,
     validate_upstream_authorities,
 )
@@ -218,6 +219,25 @@ class VisualSpatialObserverTests(unittest.TestCase):
             copied_request = root / "math-function-graph.visual-spatial-observation-request.json"
             with self.assertRaisesRegex(ValueError, "escapes its allowed root"):
                 run_admitted_request(copied_request, Path(temp) / "bundle")
+
+    def test_runtime_rejects_request_bytes_drift_during_compilation(self) -> None:
+        request_path = CANONICAL_ROOT / "math-function-graph.visual-spatial-observation-request.json"
+        expected_sha256 = sha256_bytes(request_path.read_bytes())
+        with self.assertRaisesRegex(ValueError, "drifted during runtime compilation"):
+            validate_admitted_request_snapshot(
+                request_path,
+                expected_sha256,
+                {"sourceRequestSha256": "0" * 64},
+            )
+        with tempfile.TemporaryDirectory(prefix="visual-spatial-request-drift-") as temp:
+            copied = Path(temp) / request_path.name
+            copied.write_bytes(request_path.read_bytes() + b"\n")
+            with self.assertRaisesRegex(ValueError, "drifted during runtime compilation"):
+                validate_admitted_request_snapshot(
+                    copied,
+                    expected_sha256,
+                    {"sourceRequestSha256": expected_sha256},
+                )
 
     def test_runtime_writes_external_bundle_and_rejects_repo_output(self) -> None:
         request_path = CANONICAL_ROOT / "junior-instrument-scale.visual-spatial-observation-request.json"

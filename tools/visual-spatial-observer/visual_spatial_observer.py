@@ -632,6 +632,18 @@ def materialize_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
     return validate_canonical_fixtures(fixture_root)
 
 
+def validate_admitted_request_snapshot(
+    request_path: Path,
+    expected_sha256: str,
+    compiled_result: dict[str, Any],
+) -> None:
+    if (
+        compiled_result.get("sourceRequestSha256") != expected_sha256
+        or sha256_bytes(request_path.read_bytes()) != expected_sha256
+    ):
+        raise ValueError("Spatial observation request bytes drifted during runtime compilation.")
+
+
 def run_admitted_request(request_path: Path, output_dir: Path) -> Path:
     fixture_root = CANONICAL_ROOT.resolve(strict=True)
     inventory_path = (fixture_root / INVENTORY_NAME).resolve(strict=True)
@@ -648,6 +660,7 @@ def run_admitted_request(request_path: Path, output_dir: Path) -> Path:
     if not output_dir.parent.is_dir():
         raise ValueError("Runtime output parent directory must already exist.")
     result = compile_request(request_path, fixture_root)
+    validate_admitted_request_snapshot(request_path, entry["requestSha256"], result)
     stage = Path(tempfile.mkdtemp(prefix=f".{output_dir.name}.", dir=output_dir.parent))
     try:
         result_name = DEFINITION_BY_ID[result["requestId"]].result_name
