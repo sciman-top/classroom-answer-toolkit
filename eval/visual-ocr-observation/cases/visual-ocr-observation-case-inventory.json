@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-ocr-observation-case-inventory",
+  "fixtureSetId": "synthetic-visual-ocr-observation-v1",
+  "fixtureKind": "synthetic_fixture",
+  "entries": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "preprocessingResultRef": "eval/visual-preprocessing/cases/math-function-graph.visual-preprocessing-result.json",
+      "preprocessingResultSha256": "9dc94ae6d5eee7142e9acf779bff39859914d57acbaf1cc9bcab2112e9c4627b",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/math-function-graph.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "9b8cf6317ba97678fe64eedf50fbf3ddaa40b8b45bb535b5945ce4d9f8f795c0",
+      "requestRef": "math-function-graph.visual-ocr-observation-request.json",
+      "requestSha256": "233adef90af9ccda9109cdd49987853037aacae49d69f49e280a46d7579b8804",
+      "expectedResultRef": "math-function-graph.visual-ocr-observation-result.json",
+      "expectedResultSha256": "8fbe70a6704a4cd0465e7c4878e44576d1fa6301f7c4e971c297cc28eb95bc17"
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "preprocessingResultRef": "eval/visual-preprocessing/cases/junior-instrument-scale.visual-preprocessing-result.json",
+      "preprocessingResultSha256": "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027",
+      "requestRef": "junior-instrument-scale.visual-ocr-observation-request.json",
+      "requestSha256": "282ae4a7971bdb6453a4cfbd94923364e95ad2c257153aac602800e73fdb351e",
+      "expectedResultRef": "junior-instrument-scale.visual-ocr-observation-result.json",
+      "expectedResultSha256": "5e142d840e18c2c1683c923805316ab31d82418c4bbd29daa224bfebe105441b"
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "preprocessingResultRef": "eval/visual-preprocessing/cases/senior-circuit-label.visual-preprocessing-result.json",
+      "preprocessingResultSha256": "aa29231239edf9e7ec7142e52abfa07062bdbd7f42955768b060bd8fa20cf1fa",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/senior-circuit-label.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "9b638be6a7ea0274ebe6fb0fbe36c0cec8222b4193d94fabbd498d31ffdea15c",
+      "requestRef": "senior-circuit-label.visual-ocr-observation-request.json",
+      "requestSha256": "efdc9b969748c2e2e80f292002d91b398c0bb0a5eba407bf9bd5da2fb4d778ac",
+      "expectedResultRef": "senior-circuit-label.visual-ocr-observation-result.json",
+      "expectedResultSha256": "c3752542d3e363129fb51a751587b4ed41c8a2eb9cb51cce592129ea53954f47"
+    }
+  ]
+}
