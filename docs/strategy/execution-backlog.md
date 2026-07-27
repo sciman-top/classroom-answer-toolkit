@@ -272,6 +272,16 @@
 - blocks: VISION-005, SAMPLE-001
 - done_definition: 对 schema-valid sample-package inventory，仓内可证明 snapshot/input/manifest bytes 与逐题 DecisionRecord 的完整覆盖并生成离线 aggregate；不修改 delivery manifest，不开放 WPF 正向 trust，不宣称真实试卷 inventory 或 live acceptance 已完成
 
+### task_id: VISION-007
+
+- goal: 建立 provider-neutral、显式坐标驱动的首个本地图像预处理与多尺度 crop 闭环
+- inputs: `NormalizedPage / VisualRegion` 合同、三个 subject-pack、现有 `tools/ocr/.venv` OpenCV/Pillow runtime、完全合成且公开的 bitmap fixtures
+- changes: 新增 `VisualPreprocessingRequest / VisualPreprocessingResult / VisualPreprocessingCaseInventory` schema 和确定性本地 runtime；canonical inventory 逐项绑定 source/request/expected result raw-byte SHA-256 与 decoded RGB pixel SHA-256；只接受 integer `page_pixel` bbox、scales `[1,2]`、`synthetic_fixture/public` 和 `allowCloud=false`，原子输出 1x 像素保持 crop、固定插值 2x crop 与 engine provenance；三个 subject-pack 各一份脱敏 synthetic fixture；纳入 assets 与 hotspot
+- verification: 三 case 可 byte/hash-bound 确定性重放；schema/inventory coverage、path containment/physical alias、source/request/output raw-byte hash、decoded-pixel hash、bbox/scale/dimension/interpolation/provenance/computed-field 漂移和仓内输出均 fail closed；完整固定顺序项目门禁
+- rollback: 回滚 VISION-007 实现提交并删除本切片 schema/tool/fixture/expected artifact、validator/hotspot、strategy/evidence 增量；不得修改 `.env`、`tools/ocr/.venv`、gateway、既有 visual authority、readiness receipt 或 canonical sample
+- blocks: VISION-003
+- done_definition: 仓内可从显式 bbox 对三个公开 synthetic bitmap 确定性生成并重验 1x/2x crop；只证明 repo-side preprocessing contract，不做 OCR/layout 语义、自动 region 检测、Track A/B/C 求解、WPF/gateway/trust/readiness/optimizer 集成，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

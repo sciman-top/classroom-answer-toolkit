@@ -165,17 +165,22 @@
 - 视觉证据编译运行时
 - 双轨比对器
 - 图片副链与 Word 原生解析
+- VISION-007 provider-neutral 显式 bbox 本地预处理 runtime；三个 subject-pack 各一个公开 synthetic bitmap，固定输出 1x/2x crop 并记录 raw-byte/pixel hash 与 engine provenance
 
 ### 涉及文件面
 
 - `tools/visual/`
 - `tools/ocr/`
+- `tools/visual-preprocessor/`
+- `eval/visual-preprocessing/`
+- `prompts/shared/schemas/visual-preprocessing-*.schema.json`
 - evidence / review 文档与运行产物
 
 ### 完成定义
 
 - 高风险图题可以被 evidence 化、分流、复核和回写
 - `generated` 桶进入正式放行矩阵
+- 显式 `page_pixel` bbox 可确定性生成且重验 1x/2x synthetic crop；它只证明 preprocessing plumbing，不等于 OCR/layout/Track runtime
 
 ### 验证方式
 
@@ -184,10 +189,13 @@
 - VLM 错但 OCR/layout 对、OCR 错但 VLM 对、两者都错但规则校验拦截样例
 - review 回写
 - 分桶灰度验证
+- preprocessing schema、canonical inventory、path/hash/alias/bbox/computed-field 漂移与 deterministic replay 验证
 
 ### 禁止扩张点
 
 - 不提前承诺“视觉题全自动可信放行”
+- 不把显式 synthetic crop 冒充自动 region 检测、OCR/layout 语义、真实试卷效果或 Track A/B/C 集成
+- 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项
 

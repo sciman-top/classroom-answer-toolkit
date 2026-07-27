@@ -472,6 +472,15 @@ P1 样例集默认人工拆分题面/答案：
 - `VisualRegion` 记录题区、图区、表格区、公式区、坐标轴区、刻度区、图例区和局部 crop 坐标。
 - `ProblemEvidenceBundle` 聚合题目、小问、图号、局部 crop、OCR、layout、图元和风险分类。
 
+### VISION-007 本地预处理边界
+
+- `VisualPreprocessingRequest / VisualPreprocessingResult` 是 provider-neutral 预处理合同，不复用 OCR、答案生成或交付请求。
+- 首个 runtime 只接受 canonical inventory 准入的 `synthetic_fixture/public` bitmap、显式 integer `page_pixel` bbox、固定 scales `[1,2]` 和 `allowCloud=false`。
+- source/request/result/output 必须绑定 raw-byte SHA-256；source 与 crop 另外绑定 decoded RGB pixel SHA-256，输出记录 dimensions、scale、interpolation 与 OpenCV/Pillow engine provenance。
+- 1x crop 保持源像素，2x 使用固定插值；输出仅允许写入仓外新目录并原子替换。path containment、physical alias、hash、bbox、scale 或 computed-field 漂移均 fail closed。
+- 三个 subject-pack 各一份公开、脱敏 synthetic bitmap，只证明 repo-side preprocessing contract。当前不做 OCR/layout 语义、自动 region 检测、deskew/denoise 推断、Track A/B/C 求解、WPF/gateway/trust/readiness/optimizer 集成。
+- 不消费真实试卷/教师/学生数据，不开启 cloud egress，不生成 `OptimizationCandidate`；`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false`，workflow 未集成且 live 未验收。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

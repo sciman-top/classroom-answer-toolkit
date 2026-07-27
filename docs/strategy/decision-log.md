@@ -127,3 +127,9 @@
 - 决定：首个 WPF review queue 只消费用户显式选择且通过 canonical path、raw-byte SHA-256、schema/semantic 与既有 source-aware verifier 重验的 `FeedbackParseResult / DecisionRecord / DeliveryDecisionAggregate`；按来源合同原值映射三类队列
 - 原因：现有 authority 已能表达 `humanQueue / reviewQueue`，无需发明新的审批或 trust 真源；显式输入清单也避免目录扫描把未知 JSON 静默纳入队列
 - 边界：投影 authority 固定为 `local_verified_projection`；任何 rejected source 使整次投影 fail closed，不生成审批、不推进 lifecycle、不修改 manifest/trust，不生成 `OptimizationCandidate`，不宣称 workflow integrated 或 live accepted
+
+## D-025 首个视觉预处理 runtime 采用显式 bbox 与确定性多尺度输出
+
+- 决定：VISION-007 只接受 canonical inventory 准入的公开 synthetic bitmap、显式 integer `page_pixel` bbox 和固定 `[1,2]` scales；本地 OpenCV/Pillow runtime 输出 raw-byte/decoded-pixel hash-bound crops 与 engine provenance
+- 原因：局部高清 crop 是 Track A/B 的共同输入底座，但当前没有已验收的 OCR/layout 或自动 region detection authority；先固定像素、坐标、hash、路径和重放合同，可验证预处理 plumbing 而不伪装视觉理解
+- 边界：不做 OCR/layout 语义、自动检测、真实试卷、WPF/gateway/trust/readiness/optimizer 集成；不开 cloud egress，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted

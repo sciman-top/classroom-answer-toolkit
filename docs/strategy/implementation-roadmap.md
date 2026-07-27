@@ -35,6 +35,7 @@
 - review 回写
 - 图片预处理副链
 - 局部高清 crop、多尺度裁剪、坐标轴/表格/刻度/图例抽取
+- 先以 VISION-007 的显式 integer `page_pixel` bbox 和 `[1,2]` scales 跑通三个 subject-pack 的公开 synthetic 本地 crop；raw-byte/decoded-pixel hash、path/alias 和 computed fields 全链重验，OCR/layout 语义与自动 region 检测后接
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 
