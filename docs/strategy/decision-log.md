@@ -121,3 +121,9 @@
 - 决定：VISION-004 使用 6 个 raw-byte-bound `synthetic_fixture` cases 和独立 `VisualRiskDiagnosticReport`，由当前 DecisionRecord compiler 重放 expected decision，并按三个 subject-pack 分别统计误放行、正确标疑、绑定准确率和 replay 通过率
 - 原因：现有两个 math-only fail-closed fixture 只能证明局部 reason 投影，无法证明跨学科 coverage，也不能形成稳定、可重算的产品指标；把指标塞进 candidate readiness 又会混淆视觉合同诊断与优化放行 authority
 - 边界：fixture 不冒充真实试卷或 live VLM 输出；报告不接 WPF/gateway/readiness candidate path，`optimizationCandidateRefs=[]`、controls=`not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
+
+## D-024 首个 review queue 采用显式只读 artifact 投影
+
+- 决定：首个 WPF review queue 只消费用户显式选择且通过 canonical path、raw-byte SHA-256、schema/semantic 与既有 source-aware verifier 重验的 `FeedbackParseResult / DecisionRecord / DeliveryDecisionAggregate`；按来源合同原值映射三类队列
+- 原因：现有 authority 已能表达 `humanQueue / reviewQueue`，无需发明新的审批或 trust 真源；显式输入清单也避免目录扫描把未知 JSON 静默纳入队列
+- 边界：投影 authority 固定为 `local_verified_projection`；任何 rejected source 使整次投影 fail closed，不生成审批、不推进 lifecycle、不修改 manifest/trust，不生成 `OptimizationCandidate`，不宣称 workflow integrated 或 live accepted

@@ -388,6 +388,16 @@
 - blocks: REVIEW-007
 - done_definition: WPF 能把已有本地 aggregate 交给既有受控工具附着，并在同一显式动作中立即 source-aware 重验；正向状态绑定当前 `manifestResultSha256`。不生成 aggregate、不生成审批、不推进 lifecycle、不自动验证、不接入原题生成或云网关主流程，不宣称完整 workflow integrated 或 live acceptance
 
+### task_id: REVIEW-009
+
+- goal: 将已有本地 review artifact 以显式、只读、可追踪方式投影为三类 WPF review queue
+- inputs: 用户显式选择的 `FeedbackParseResult / DecisionRecord / DeliveryDecisionAggregate` JSON，既有 schema 与 source-aware verifier，REVIEW-008 的 fail-closed WPF 边界
+- changes: 新增 provider-neutral `ReviewQueueProjectionRequest / ReviewQueueProjectionResult / ReviewQueueItem` 领域合同和本地 projector；逐项绑定 canonical path 与 raw-byte SHA-256，复用既有 verifier 后才按 `humanQueue / reviewQueue` 投影 `needs_human_label / high_risk_approval / truth_needs_review`；未知、损坏、路径别名、hash/source 重验失败进入 rejected sources 并使整次投影 fail closed；WPF 只允许显式多选 JSON、查看计数/来源并打开本地证据
+- verification: 三类队列确定性映射、输入顺序无关、重复/未知/损坏/路径别名/source 漂移 fail closed、空选择不产生结果；orchestrator 与 MainViewModel 聚焦测试、原生 WPF UI Automation 观察、完整固定顺序项目门禁
+- rollback: 回滚 REVIEW-009 对 Domain / Application / Services / ViewModel / XAML / tests / strategy / evidence 的修改；本切片不写来源 artifact、manifest、receipt 或审批，因此无需数据恢复
+- blocks: REVIEW-002, REVIEW-008, FLYWHEEL-008, VISION-006
+- done_definition: WPF 能从用户显式选择且通过本地重验的既有 artifact 只读投影三类队列，并显示 raw-byte hash 与来源路径；投影仅为 `local_verified_projection`，不生成审批、不推进 lifecycle、不修改 trust、不生成 `OptimizationCandidate`，不宣称默认主流程、完整 workflow integrated 或 live accepted
+
 ## Epic EVAL：分桶指标与 gate
 
 ### task_id: EVAL-001

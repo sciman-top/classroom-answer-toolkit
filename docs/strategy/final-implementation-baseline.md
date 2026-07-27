@@ -554,6 +554,13 @@ P1 样例集默认人工拆分题面/答案：
 
 三类队列必须分开，不能把真值问题误投到模型优化队列。
 
+首个运行时投影采用显式、只读的 artifact selection：用户提供本地
+`FeedbackParseResult / DecisionRecord / DeliveryDecisionAggregate` JSON 列表，projector 对每个来源执行
+canonical path、raw-byte SHA-256、schema/semantic 与既有 source-aware 重验，再按合同中的
+`humanQueue / reviewQueue` 原值投影。输入顺序不影响结果；重复、未知、损坏、路径别名或无法重验的
+来源必须进入 rejected sources，并使整次投影 fail closed。该投影的 authority 固定为
+`local_verified_projection`，不得生成审批、推进 lifecycle、修改 trust 或形成 `OptimizationCandidate`。
+
 ## 14. 默认假设与不做项
 
 ### 默认假设
