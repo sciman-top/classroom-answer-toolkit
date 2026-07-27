@@ -51,6 +51,9 @@ function collectValidationTargets() {
   const visualStructureExtractionRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-structure-extraction-request.schema.json");
   const visualStructureExtractionResultSchema = resolveRepoPath("prompts/shared/schemas/visual-structure-extraction-result.schema.json");
   const visualStructureExtractionCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-structure-extraction-case-inventory.schema.json");
+  const visualOcrObservationRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-observation-request.schema.json");
+  const visualOcrObservationResultSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-observation-result.schema.json");
+  const visualOcrObservationCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-observation-case-inventory.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -82,6 +85,7 @@ function collectValidationTargets() {
   const visualRiskFixtureRoot = path.join(visualEvidenceRoot, "visual-risk");
   const visualPreprocessingFixtureRoot = resolveRepoPath("eval/visual-preprocessing/cases");
   const visualStructureExtractionFixtureRoot = resolveRepoPath("eval/visual-structure-extraction/cases");
+  const visualOcrObservationFixtureRoot = resolveRepoPath("eval/visual-ocr-observation/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -163,6 +167,20 @@ function collectValidationTargets() {
       visualStructureExtractionFixtureRoot,
       "visual-structure-extraction-case-inventory.json"),
     schemaPath: visualStructureExtractionCaseInventorySchema
+  }];
+  const visualOcrObservationRequestFiles = listFilesBySuffixRecursive(
+    visualOcrObservationFixtureRoot,
+    ".visual-ocr-observation-request.json")
+    .map((filePath) => ({ filePath, schemaPath: visualOcrObservationRequestSchema }));
+  const visualOcrObservationResultFiles = listFilesBySuffixRecursive(
+    visualOcrObservationFixtureRoot,
+    ".visual-ocr-observation-result.json")
+    .map((filePath) => ({ filePath, schemaPath: visualOcrObservationResultSchema }));
+  const visualOcrObservationCaseInventoryFiles = [{
+    filePath: path.join(
+      visualOcrObservationFixtureRoot,
+      "visual-ocr-observation-case-inventory.json"),
+    schemaPath: visualOcrObservationCaseInventorySchema
   }];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
@@ -252,6 +270,9 @@ function collectValidationTargets() {
     visualStructureExtractionRequests: visualStructureExtractionRequestFiles,
     visualStructureExtractionResults: visualStructureExtractionResultFiles,
     visualStructureExtractionCaseInventories: visualStructureExtractionCaseInventoryFiles,
+    visualOcrObservationRequests: visualOcrObservationRequestFiles,
+    visualOcrObservationResults: visualOcrObservationResultFiles,
+    visualOcrObservationCaseInventories: visualOcrObservationCaseInventoryFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -288,6 +309,9 @@ function collectValidationTargets() {
       visualStructureExtractionRequestSchema,
       visualStructureExtractionResultSchema,
       visualStructureExtractionCaseInventorySchema,
+      visualOcrObservationRequestSchema,
+      visualOcrObservationResultSchema,
+      visualOcrObservationCaseInventorySchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -355,7 +379,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -571,6 +595,33 @@ function validateVisualStructureExtractionBoundary(resultTargets) {
   return errors;
 }
 
+function validateVisualOcrObservationBoundary(resultTargets) {
+  const errors = [];
+  const canonicalTarget = resultTargets[0];
+  if (!canonicalTarget) {
+    return ["Visual OCR observation boundary requires a canonical result fixture."];
+  }
+
+  const canonical = readJsonFile(canonicalTarget.filePath);
+  const mutations = [
+    ["ground-truth authority", (value) => { value.dispositions.groundTruthAvailable = true; }],
+    ["positive acceptance", (value) => { value.dispositions.acceptanceDisposition = "accepted"; }],
+    ["semantic inference", (value) => { value.dispositions.semanticDisposition = "inferred"; }],
+    ["Track integration", (value) => { value.dispositions.trackDisposition = "integrated"; }],
+    ["remote provider", (value) => { value.engineProvenance.engineKind = "remote_provider"; }],
+    ["live provider", (value) => { value.engineProvenance.liveProvider = true; }],
+    ["cloud egress", (value) => { value.engineProvenance.cloudEgress = true; }]
+  ];
+  for (const [label, mutate] of mutations) {
+    const candidate = structuredClone(canonical);
+    mutate(candidate);
+    if (validateValueAgainstSchema(candidate, canonicalTarget.schemaPath).length === 0) {
+      errors.push(`Visual OCR observation schema must reject ${label}.`);
+    }
+  }
+  return errors;
+}
+
 function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
@@ -583,6 +634,8 @@ function main() {
     targets.optimizationReadinessReports);
   const visualStructureExtractionBoundaryErrors =
     validateVisualStructureExtractionBoundary(targets.visualStructureExtractionResults);
+  const visualOcrObservationBoundaryErrors =
+    validateVisualOcrObservationBoundary(targets.visualOcrObservationResults);
   const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
@@ -655,6 +708,7 @@ function main() {
     ...schemaFileErrors,
     ...optimizationReadinessErrors,
     ...visualStructureExtractionBoundaryErrors,
+    ...visualOcrObservationBoundaryErrors,
     ...(teacherFeedbackFixtureError
       ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
       : []),
