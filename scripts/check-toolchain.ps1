@@ -68,6 +68,16 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:visual-risk
 } "Visual risk diagnostic contract tests failed."
 
+Write-Host "visual preprocessing contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-preprocessor test
+} "Visual preprocessing contract tests failed."
+
+Write-Host "visual preprocessing canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-preprocessor run validate:fixtures
+} "Visual preprocessing canonical fixture validation failed."
+
 Write-Host "visual evidence delivery aggregate contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:aggregate
