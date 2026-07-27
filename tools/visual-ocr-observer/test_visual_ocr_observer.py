@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from visual_ocr_observer import (
     CANONICAL_ROOT,
@@ -21,6 +22,21 @@ from visual_ocr_observer import (
 
 
 class VisualOcrObserverTests(unittest.TestCase):
+    def test_inference_uses_the_already_verified_crop_bytes(self) -> None:
+        captured = []
+
+        class FakeEngine:
+            def __call__(self, source, **_kwargs):
+                captured.append(source)
+                return None, None
+
+        request_path = CANONICAL_ROOT / "math-function-graph.visual-ocr-observation-request.json"
+        with patch("visual_ocr_observer.validate_runtime_identity", return_value=FakeEngine()):
+            compile_request(request_path, CANONICAL_ROOT)
+        self.assertEqual(len(captured), 1)
+        self.assertIsInstance(captured[0], bytes)
+        self.assertEqual(sha256_bytes(captured[0]), self.read_json(request_path)["crop"]["rawByteSha256"])
+
     def test_three_canonical_fixtures_replay_deterministically(self) -> None:
         self.assertEqual(validate_canonical_fixtures(), 3)
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import importlib.metadata
+import platform
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -16,11 +18,19 @@ from rapidocr_onnxruntime import RapidOCR
 ENGINE_ID = "rapidocr-onnxruntime"
 ENGINE_VERSION = "1.2.3"
 EXECUTION_PROVIDER = "CPUExecutionProvider"
+INTERPRETER = {
+    "implementation": "CPython",
+    "version": "3.13.7",
+}
 COMPONENT_VERSIONS = {
     "onnxruntime": "1.27.0",
     "opencv": "5.0.0",
     "pillow": "12.3.0",
     "numpy": "2.5.0",
+    "pyyaml": "6.0.3",
+    "pyclipper": "1.4.0",
+    "shapely": "2.1.2",
+    "six": "1.17.0",
 }
 ARTIFACTS = {
     "configSha256": (
@@ -56,6 +66,7 @@ def runtime_policy() -> dict[str, Any]:
         "engineId": ENGINE_ID,
         "engineVersion": ENGINE_VERSION,
         "executionProvider": EXECUTION_PROVIDER,
+        "interpreter": dict(INTERPRETER),
         "components": dict(COMPONENT_VERSIONS),
         "artifacts": {
             field: expected_hash
@@ -79,6 +90,17 @@ def installed_component_versions() -> dict[str, str]:
         "opencv": cv2.__version__,
         "pillow": pillow_version,
         "numpy": np.__version__,
+        "pyyaml": importlib.metadata.version("PyYAML"),
+        "pyclipper": importlib.metadata.version("pyclipper"),
+        "shapely": importlib.metadata.version("Shapely"),
+        "six": importlib.metadata.version("six"),
+    }
+
+
+def interpreter_identity() -> dict[str, str]:
+    return {
+        "implementation": platform.python_implementation(),
+        "version": ".".join(str(part) for part in sys.version_info[:3]),
     }
 
 
@@ -90,16 +112,7 @@ def session_providers(engine: RapidOCR) -> dict[str, list[str]]:
     }
 
 
-def validate_runtime_identity(engine: RapidOCR | None = None) -> RapidOCR:
-    installed_engine = importlib.metadata.version("rapidocr-onnxruntime")
-    if installed_engine != ENGINE_VERSION:
-        raise ValueError(
-            f"RapidOCR version drifted: expected {ENGINE_VERSION}, got {installed_engine}."
-        )
-    installed_components = installed_component_versions()
-    if installed_components != COMPONENT_VERSIONS:
-        raise ValueError("OCR runtime component versions drifted from admitted policy.")
-
+def validate_runtime_artifacts() -> None:
     package_root = Path(rapidocr_onnxruntime.__file__).resolve().parent
     for label, (relative_path, expected_hash) in ARTIFACTS.items():
         artifact = (package_root / relative_path).resolve(strict=True)
@@ -110,7 +123,22 @@ def validate_runtime_identity(engine: RapidOCR | None = None) -> RapidOCR:
         if not artifact.is_file() or sha256_file(artifact) != expected_hash:
             raise ValueError(f"OCR runtime {label} raw-byte SHA-256 drifted.")
 
+
+def validate_runtime_identity(engine: RapidOCR | None = None) -> RapidOCR:
+    installed_engine = importlib.metadata.version("rapidocr-onnxruntime")
+    if installed_engine != ENGINE_VERSION:
+        raise ValueError(
+            f"RapidOCR version drifted: expected {ENGINE_VERSION}, got {installed_engine}."
+        )
+    if interpreter_identity() != INTERPRETER:
+        raise ValueError("OCR runtime Python interpreter drifted from admitted policy.")
+    installed_components = installed_component_versions()
+    if installed_components != COMPONENT_VERSIONS:
+        raise ValueError("OCR runtime component versions drifted from admitted policy.")
+
+    validate_runtime_artifacts()
     admitted_engine = engine or RapidOCR()
+    validate_runtime_artifacts()
     if admitted_engine.use_text_det is not True or admitted_engine.use_angle_cls is not True:
         raise ValueError("OCR runtime detection/classification configuration drifted.")
     providers = session_providers(admitted_engine)
@@ -126,6 +154,7 @@ def engine_provenance() -> dict[str, Any]:
         "engineId": policy["engineId"],
         "engineVersion": policy["engineVersion"],
         "executionProvider": policy["executionProvider"],
+        "interpreter": policy["interpreter"],
         "components": policy["components"],
         "artifacts": policy["artifacts"],
         "liveProvider": False,

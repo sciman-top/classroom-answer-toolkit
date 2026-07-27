@@ -3,3 +3,7 @@ onnxruntime==1.27.0
 opencv-python==5.0.0.93
 pillow==12.3.0
 numpy==2.5.0
+PyYAML==6.0.3
+pyclipper==1.4.0
+Shapely==2.1.2
+six==1.17.0

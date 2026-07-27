@@ -14,9 +14,9 @@
 
 ## Frozen local runtime
 
-- engine: `rapidocr-onnxruntime 1.2.3` on CPU with ONNX Runtime `1.27.0`, OpenCV `5.0.0`, Pillow `12.3.0`, and NumPy `2.5.0`; detector, classifier, and recognizer sessions must each report only `CPUExecutionProvider`.
+- engine: `rapidocr-onnxruntime 1.2.3` on CPython `3.13.7` and CPU with ONNX Runtime `1.27.0`, OpenCV `5.0.0`, Pillow `12.3.0`, NumPy `2.5.0`, PyYAML `6.0.3`, pyclipper `1.4.0`, Shapely `2.1.2`, and six `1.17.0`; detector, classifier, and recognizer sessions must each report only `CPUExecutionProvider`.
 - invocation policy: whole canonical 2x crop; `box_thresh=0.5`, `unclip_ratio=1.6`, `text_score=0.5`; no extra cleanup, deskew, synthetic label injection, expected-text hint, network call, or cloud fallback.
-- the three bundled detection/classification/recognition ONNX files are admitted only at their reviewed raw-byte SHA-256 values. Package/config/model/version drift fails closed before inference.
+- the bundled config and three detection/classification/recognition ONNX files are admitted only at their reviewed raw-byte SHA-256 values. Their hashes are verified both before and after engine construction; package/config/model/version drift fails closed before inference.
 - elapsed timing is excluded from canonical results. Quadrilateral coordinates and confidence values are normalized and sorted before stable JSON encoding.
 
 ## Result semantics
@@ -44,7 +44,7 @@
 
 ### Task 2: admitted local observer
 
-- add a focused tool that reuses canonical path/hash/atomic helpers, validates VISION-007/008 authorities, verifies package/component/config/model identity, runs frozen whole-crop RapidOCR, and normalizes observations.
+- add a focused tool that reuses canonical path/hash/atomic helpers, validates VISION-007/008 authorities, verifies interpreter/package/direct-and-transitive-component/config/model identity, runs frozen whole-crop RapidOCR from the already verified crop bytes, and normalizes observations.
 - acceptance: no caller-selected inventory; no elapsed data; empty output is valid; output remains local-only and not evaluated.
 - verification: focused Python tests for authority, environment/model drift, normalization, aliases, computed fields, and external atomic output.
 - dependencies: Task 1. Likely files: `tools/visual-ocr-observer/`.

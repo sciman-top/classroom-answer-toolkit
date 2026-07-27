@@ -115,13 +115,14 @@ function Compile-RuleSnapshots {
 }
 
 function Install-PythonOcrEnv {
+    $requiredPythonVersion = "3.13.7"
     $pythonExe = Get-Command python -ErrorAction SilentlyContinue
     if (-not $pythonExe) {
         $pythonExe = Get-Command py -ErrorAction SilentlyContinue
     }
 
     if (-not $pythonExe) {
-        throw "Python 3.12+ was not found."
+        throw "Python $requiredPythonVersion was not found."
     }
 
     $venvDir = Join-Path $repoRoot "tools\ocr\.venv"
@@ -129,14 +130,19 @@ function Install-PythonOcrEnv {
 
     if (-not (Test-Path -LiteralPath $venvPython)) {
         Write-Host "Creating Python virtual environment for tools/ocr..."
-        if ($pythonExe.Source -eq "py") {
-            & py -3.12 -m venv tools/ocr/.venv
+        if ($pythonExe.Name -eq "py.exe") {
+            & $pythonExe.Source -3.13 -m venv tools/ocr/.venv
         } else {
-            & python -m venv tools/ocr/.venv
+            & $pythonExe.Source -m venv tools/ocr/.venv
         }
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to create tools/ocr/.venv."
         }
+    }
+
+    $actualPythonVersion = & $venvPython -c "import platform; print(platform.python_version())"
+    if ($LASTEXITCODE -ne 0 -or $actualPythonVersion.Trim() -ne $requiredPythonVersion) {
+        throw "tools/ocr/.venv must use CPython $requiredPythonVersion; found $actualPythonVersion."
     }
 
     Write-Host "Upgrading Python packaging tools..."

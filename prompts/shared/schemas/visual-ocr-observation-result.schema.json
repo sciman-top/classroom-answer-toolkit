@@ -75,12 +75,13 @@
     "runtimePolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "engineProvenance": {
       "type": "object",
-      "required": ["engineKind", "engineId", "engineVersion", "executionProvider", "components", "artifacts", "liveProvider", "cloudEgress"],
+      "required": ["engineKind", "engineId", "engineVersion", "executionProvider", "interpreter", "components", "artifacts", "liveProvider", "cloudEgress"],
       "properties": {
         "engineKind": { "const": "local_runtime" },
         "engineId": { "const": "rapidocr-onnxruntime" },
         "engineVersion": { "const": "1.2.3" },
         "executionProvider": { "const": "CPUExecutionProvider" },
+        "interpreter": { "$ref": "#/$defs/interpreter" },
         "components": { "$ref": "#/$defs/components" },
         "artifacts": { "$ref": "#/$defs/artifacts" },
         "liveProvider": { "const": false },
@@ -123,12 +124,25 @@
     },
     "components": {
       "type": "object",
-      "required": ["onnxruntime", "opencv", "pillow", "numpy"],
+      "required": ["onnxruntime", "opencv", "pillow", "numpy", "pyyaml", "pyclipper", "shapely", "six"],
       "properties": {
         "onnxruntime": { "const": "1.27.0" },
         "opencv": { "const": "5.0.0" },
         "pillow": { "const": "12.3.0" },
-        "numpy": { "const": "2.5.0" }
+        "numpy": { "const": "2.5.0" },
+        "pyyaml": { "const": "6.0.3" },
+        "pyclipper": { "const": "1.4.0" },
+        "shapely": { "const": "2.1.2" },
+        "six": { "const": "1.17.0" }
+      },
+      "additionalProperties": false
+    },
+    "interpreter": {
+      "type": "object",
+      "required": ["implementation", "version"],
+      "properties": {
+        "implementation": { "const": "CPython" },
+        "version": { "const": "3.13.7" }
       },
       "additionalProperties": false
     },

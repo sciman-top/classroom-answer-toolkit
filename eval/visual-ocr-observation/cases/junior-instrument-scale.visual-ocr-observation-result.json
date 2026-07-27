@@ -4,7 +4,7 @@
   "requestId": "junior-instrument-scale",
   "subjectPack": "junior-physics-answer",
   "fixtureKind": "synthetic_fixture",
-  "sourceRequestSha256": "282ae4a7971bdb6453a4cfbd94923364e95ad2c257153aac602800e73fdb351e",
+  "sourceRequestSha256": "27f309e730bbe4f76453f983d3e594823233d7871f62aac2784dee68c03903cf",
   "preprocessingResult": {
     "artifactRef": "eval/visual-preprocessing/cases/junior-instrument-scale.visual-preprocessing-result.json",
     "rawByteSha256": "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b",
@@ -63,17 +63,25 @@
     "semanticDisposition": "not_inferred",
     "trackDisposition": "not_integrated"
   },
-  "runtimePolicySha256": "530b5c7d81e50b62db108bacdcb9379938c473b60c2f4100557a61f7ab49eadd",
+  "runtimePolicySha256": "7f0bb7056f46287d3241dfd0f425041409317411102835bfe897ebb96a14cf7c",
   "engineProvenance": {
     "engineKind": "local_runtime",
     "engineId": "rapidocr-onnxruntime",
     "engineVersion": "1.2.3",
     "executionProvider": "CPUExecutionProvider",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
     "components": {
       "onnxruntime": "1.27.0",
       "opencv": "5.0.0",
       "pillow": "12.3.0",
-      "numpy": "2.5.0"
+      "numpy": "2.5.0",
+      "pyyaml": "6.0.3",
+      "pyclipper": "1.4.0",
+      "shapely": "2.1.2",
+      "six": "1.17.0"
     },
     "artifacts": {
       "configSha256": "a61ac7c6f753b9840ae77306f31a4845788c530d8ebe950f0c5476e30b984917",

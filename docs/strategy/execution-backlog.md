@@ -296,7 +296,7 @@
 
 - goal: 建立 provider-neutral、明确不作正确性验收的首个本地 OCR observation 闭环
 - inputs: VISION-007 committed preprocessing result 与 scale=2 crop、同 case VISION-008 committed structure result、现有 `tools/ocr/.venv` RapidOCR/ONNX Runtime/OpenCV/Pillow runtime
-- changes: 新增 `VisualOcrObservationRequest / Result / CaseInventory` schema 和 deterministic local observer；冻结 whole-crop RapidOCR parameters、package/component versions、NumPy 版本、三个 CPU execution sessions 与三份 bundled ONNX model raw-byte SHA-256；规范化 raw observed text/confidence/quad/order/count，允许零 observation；三学科各一个 canonical case，固定 ground truth unavailable、not evaluated、requires human review、semantic/Track not integrated；纳入 assets 与 hotspot
+- changes: 新增 `VisualOcrObservationRequest / Result / CaseInventory` schema 和 deterministic local observer；冻结 CPython、whole-crop RapidOCR parameters、direct/transitive component versions、三个 CPU execution sessions 与三份 bundled ONNX model raw-byte SHA-256；对已校验 crop bytes 直接 inference，规范化 raw observed text/confidence/quad/order/count，允许零 observation；三学科各一个 canonical case，固定 ground truth unavailable、not evaluated、requires human review、semantic/Track not integrated；纳入 assets 与 hotspot
 - verification: 三 case 在 admitted runtime/model hashes 上 expected result byte-exact replay；caller inventory、非 canonical request、path/alias、preprocessing/crop/structure/request/result/model/config/version hash、positive acceptance/ground-truth/semantic/Track/cloud/live state、ordering/count/computed-field 和仓内输出漂移均 fail closed；完整固定顺序项目门禁
 - rollback: 回滚 VISION-009 实现提交并删除本切片 schema/tool/request/result/inventory、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
 - blocks: VISION-007, VISION-008

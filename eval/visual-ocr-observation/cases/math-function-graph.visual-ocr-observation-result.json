@@ -4,7 +4,7 @@
   "requestId": "math-function-graph",
   "subjectPack": "math-answer",
   "fixtureKind": "synthetic_fixture",
-  "sourceRequestSha256": "233adef90af9ccda9109cdd49987853037aacae49d69f49e280a46d7579b8804",
+  "sourceRequestSha256": "598e50050dce8ef376c5dc5295a4dbcc0289371e523023d733833ecae7ef348e",
   "preprocessingResult": {
     "artifactRef": "eval/visual-preprocessing/cases/math-function-graph.visual-preprocessing-result.json",
     "rawByteSha256": "9dc94ae6d5eee7142e9acf779bff39859914d57acbaf1cc9bcab2112e9c4627b",
@@ -39,17 +39,25 @@
     "semanticDisposition": "not_inferred",
     "trackDisposition": "not_integrated"
   },
-  "runtimePolicySha256": "530b5c7d81e50b62db108bacdcb9379938c473b60c2f4100557a61f7ab49eadd",
+  "runtimePolicySha256": "7f0bb7056f46287d3241dfd0f425041409317411102835bfe897ebb96a14cf7c",
   "engineProvenance": {
     "engineKind": "local_runtime",
     "engineId": "rapidocr-onnxruntime",
     "engineVersion": "1.2.3",
     "executionProvider": "CPUExecutionProvider",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
     "components": {
       "onnxruntime": "1.27.0",
       "opencv": "5.0.0",
       "pillow": "12.3.0",
-      "numpy": "2.5.0"
+      "numpy": "2.5.0",
+      "pyyaml": "6.0.3",
+      "pyclipper": "1.4.0",
+      "shapely": "2.1.2",
+      "six": "1.17.0"
     },
     "artifacts": {
       "configSha256": "a61ac7c6f753b9840ae77306f31a4845788c530d8ebe950f0c5476e30b984917",

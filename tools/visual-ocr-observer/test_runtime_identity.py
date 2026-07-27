@@ -47,8 +47,38 @@ class RuntimeIdentityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "RapidOCR version drifted"):
                 runtime_identity.validate_runtime_identity(_Engine())
 
+    def test_python_interpreter_drift_fails_closed(self) -> None:
+        with patch(
+            "runtime_identity.interpreter_identity",
+            return_value={"implementation": "CPython", "version": "3.12.10"},
+        ):
+            with self.assertRaisesRegex(ValueError, "Python interpreter drifted"):
+                runtime_identity.validate_runtime_identity(_Engine())
+
+    def test_transitive_component_drift_fails_closed(self) -> None:
+        installed = dict(runtime_identity.COMPONENT_VERSIONS)
+        for component in ("pyyaml", "pyclipper", "shapely", "six"):
+            with self.subTest(component=component):
+                drifted = dict(installed)
+                drifted[component] = "9.9.9"
+                with patch(
+                    "runtime_identity.installed_component_versions",
+                    return_value=drifted,
+                ):
+                    with self.assertRaisesRegex(ValueError, "component versions drifted"):
+                        runtime_identity.validate_runtime_identity(_Engine())
+
     def test_model_hash_drift_fails_closed(self) -> None:
         with patch("runtime_identity.sha256_file", return_value="0" * 64):
+            with self.assertRaisesRegex(ValueError, "raw-byte SHA-256 drifted"):
+                runtime_identity.validate_runtime_identity(_Engine())
+
+    def test_artifact_drift_during_engine_construction_fails_closed(self) -> None:
+        admitted_hashes = [expected for _, expected in runtime_identity.ARTIFACTS.values()]
+        with patch(
+            "runtime_identity.sha256_file",
+            side_effect=[*admitted_hashes, "0" * 64],
+        ):
             with self.assertRaisesRegex(ValueError, "raw-byte SHA-256 drifted"):
                 runtime_identity.validate_runtime_identity(_Engine())
 

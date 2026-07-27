@@ -366,7 +366,7 @@ def compile_request(request_path: Path, fixture_root: Path) -> dict[str, Any]:
 
     engine = validate_runtime_identity()
     raw_result, _ = engine(
-        str(crop_path),
+        crop_bytes,
         box_thresh=PARAMETERS["boxThreshold"],
         unclip_ratio=PARAMETERS["unclipRatio"],
         text_score=PARAMETERS["textScore"],

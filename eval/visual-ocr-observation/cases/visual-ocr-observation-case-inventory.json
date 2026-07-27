@@ -12,9 +12,9 @@
       "structureExtractionResultRef": "eval/visual-structure-extraction/cases/math-function-graph.visual-structure-extraction-result.json",
       "structureExtractionResultSha256": "9b8cf6317ba97678fe64eedf50fbf3ddaa40b8b45bb535b5945ce4d9f8f795c0",
       "requestRef": "math-function-graph.visual-ocr-observation-request.json",
-      "requestSha256": "233adef90af9ccda9109cdd49987853037aacae49d69f49e280a46d7579b8804",
+      "requestSha256": "598e50050dce8ef376c5dc5295a4dbcc0289371e523023d733833ecae7ef348e",
       "expectedResultRef": "math-function-graph.visual-ocr-observation-result.json",
-      "expectedResultSha256": "8fbe70a6704a4cd0465e7c4878e44576d1fa6301f7c4e971c297cc28eb95bc17"
+      "expectedResultSha256": "1d392af4c6080bb5222931bd714a14b610d455ab93946cc73d824b08aba7ab8e"
     },
     {
       "caseId": "junior-instrument-scale",
@@ -24,9 +24,9 @@
       "structureExtractionResultRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
       "structureExtractionResultSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027",
       "requestRef": "junior-instrument-scale.visual-ocr-observation-request.json",
-      "requestSha256": "282ae4a7971bdb6453a4cfbd94923364e95ad2c257153aac602800e73fdb351e",
+      "requestSha256": "27f309e730bbe4f76453f983d3e594823233d7871f62aac2784dee68c03903cf",
       "expectedResultRef": "junior-instrument-scale.visual-ocr-observation-result.json",
-      "expectedResultSha256": "5e142d840e18c2c1683c923805316ab31d82418c4bbd29daa224bfebe105441b"
+      "expectedResultSha256": "e3244936d0350cea21d9b96618ea975dd7ba7eba507fb0493336c29f7ec20839"
     },
     {
       "caseId": "senior-circuit-label",
@@ -36,9 +36,9 @@
       "structureExtractionResultRef": "eval/visual-structure-extraction/cases/senior-circuit-label.visual-structure-extraction-result.json",
       "structureExtractionResultSha256": "9b638be6a7ea0274ebe6fb0fbe36c0cec8222b4193d94fabbd498d31ffdea15c",
       "requestRef": "senior-circuit-label.visual-ocr-observation-request.json",
-      "requestSha256": "efdc9b969748c2e2e80f292002d91b398c0bb0a5eba407bf9bd5da2fb4d778ac",
+      "requestSha256": "86f472964a8ee0fbad61e56bfdebb22375344b36411fe1aae3722e499c1add6e",
       "expectedResultRef": "senior-circuit-label.visual-ocr-observation-result.json",
-      "expectedResultSha256": "c3752542d3e363129fb51a751587b4ed41c8a2eb9cb51cce592129ea53954f47"
+      "expectedResultSha256": "ea3458311113a609f831fbba66c85c5fa358728aafd51cb25957b9cf01aef674"
     }
   ]
 }
