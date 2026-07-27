@@ -33,6 +33,44 @@
 - runtime output is staged outside the repository and atomically renamed into a new destination.
 - full fixed-order repository gates remain required.
 
+## Implementation task breakdown
+
+### Task 1: contract foundation
+
+- add request, result, and case-inventory schemas with local-only provenance and fixed negative acceptance/semantic/Track state.
+- acceptance: canonical shapes validate; ground-truth, accepted, semantic, Track, remote, live, and cloud mutations fail schema validation.
+- verification: `npm --prefix tools/rule-compiler run validate:assets` after schema/fixture wiring.
+- dependencies: none. Likely files: `prompts/shared/schemas/visual-ocr-observation-*.schema.json`.
+
+### Task 2: admitted local observer
+
+- add a focused tool that reuses canonical path/hash/atomic helpers, validates VISION-007/008 authorities, verifies package/component/config/model identity, runs frozen whole-crop RapidOCR, and normalizes observations.
+- acceptance: no caller-selected inventory; no elapsed data; empty output is valid; output remains local-only and not evaluated.
+- verification: focused Python tests for authority, environment/model drift, normalization, aliases, computed fields, and external atomic output.
+- dependencies: Task 1. Likely files: `tools/visual-ocr-observer/`.
+
+### Task 3: canonical diagnostic fixtures
+
+- materialize three public `synthetic_fixture` request/result pairs and one exact-coverage inventory from committed upstream authorities.
+- acceptance: math and senior cases preserve empty observations; junior preserves the raw `+++++++++` observation without claiming it is correct; all results replay byte-exact.
+- verification: observer fixture validation in multiple fresh processes.
+- dependencies: Task 2. Likely files: `eval/visual-ocr-observation/` and `.gitattributes`.
+
+### Task 4: repository gates
+
+- register schemas/fixtures and negative boundary mutations in asset validation; add focused tests and canonical replay to the hotspot.
+- acceptance: all three contract families are counted; positive authority mutations fail; existing gates remain unchanged in meaning.
+- verification: `validate:assets`, `validate:cross-subject`, and the focused observer suite.
+- dependencies: Tasks 1-3. Likely files: `tools/rule-compiler/validate-assets.mjs`, `scripts/check-toolchain.ps1`.
+
+### Task 5: closeout
+
+- obtain independent five-axis review, resolve all Critical/Required findings, record N/A fields and truth boundaries, run full fixed-order gates, commit, push, and verify remote parity.
+- acceptance: clean worktree; `HEAD == origin/main == remote/main`; ahead/behind `0/0`; evidence distinguishes repo-side completion from OCR acceptance, workflow integration, and live acceptance.
+- dependencies: Tasks 1-4. Likely files: `docs/change-evidence/20260727-vision009-visual-ocr-observation.md`.
+
+Checkpoint after Tasks 1-2: schema boundaries and environment/model admission are covered by focused negative tests. Checkpoint after Tasks 3-4: all canonical fixtures replay and repository contract gates pass. No implementation task may advance authority beyond the fixed result dispositions.
+
 ## Rollback and boundary
 
 Rollback only the VISION-009 schemas, tool, fixtures, validator/hotspot wiring, strategy increments, and evidence. Do not modify VISION-007/008 authority, `.env`, the OCR venv, gateway, readiness receipt, or sample flywheel authorities.
