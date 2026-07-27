@@ -1,0 +1,533 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-structure-extraction-result",
+  "requestId": "junior-instrument-scale",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "sourceRequestSha256": "7e38e7d85f46253ffc8c61727d2497bd03312100bf22236fca3692abc7d6ac42",
+  "preprocessingResult": {
+    "artifactRef": "eval/visual-preprocessing/cases/junior-instrument-scale.visual-preprocessing-result.json",
+    "rawByteSha256": "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b",
+    "requestId": "junior-instrument-scale"
+  },
+  "crop": {
+    "artifactRef": "junior-instrument-scale.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "70577ca429dbc6afd5b2ecf536fe4712001bfddd961f9a041b103dca5fb8bb40",
+    "decodedRgbPixelSha256": "4efe1386d15ea467781942982c77f2c6a38968509c79e72878eacf53fc711e30",
+    "pixelSize": {
+      "width": 580,
+      "height": 210
+    }
+  },
+  "coordinateSpace": "crop_pixel",
+  "lineSegmentCandidates": [
+    {
+      "candidateId": "line-001",
+      "x1": 21,
+      "y1": 29,
+      "x2": 560,
+      "y2": 29,
+      "lengthSquared": 290521
+    },
+    {
+      "candidateId": "line-002",
+      "x1": 561,
+      "y1": 30,
+      "x2": 561,
+      "y2": 180,
+      "lengthSquared": 22500
+    },
+    {
+      "candidateId": "line-003",
+      "x1": 19,
+      "y1": 31,
+      "x2": 19,
+      "y2": 180,
+      "lengthSquared": 22201
+    },
+    {
+      "candidateId": "line-004",
+      "x1": 27,
+      "y1": 35,
+      "x2": 554,
+      "y2": 35,
+      "lengthSquared": 277729
+    },
+    {
+      "candidateId": "line-005",
+      "x1": 555,
+      "y1": 36,
+      "x2": 555,
+      "y2": 174,
+      "lengthSquared": 19044
+    },
+    {
+      "candidateId": "line-006",
+      "x1": 25,
+      "y1": 37,
+      "x2": 25,
+      "y2": 174,
+      "lengthSquared": 18769
+    },
+    {
+      "candidateId": "line-007",
+      "x1": 307,
+      "y1": 60,
+      "x2": 307,
+      "y2": 174,
+      "lengthSquared": 12996
+    },
+    {
+      "candidateId": "line-008",
+      "x1": 299,
+      "y1": 61,
+      "x2": 299,
+      "y2": 174,
+      "lengthSquared": 12769
+    },
+    {
+      "candidateId": "line-009",
+      "x1": 41,
+      "y1": 98,
+      "x2": 41,
+      "y2": 154,
+      "lengthSquared": 3136
+    },
+    {
+      "candidateId": "line-010",
+      "x1": 161,
+      "y1": 98,
+      "x2": 161,
+      "y2": 155,
+      "lengthSquared": 3249
+    },
+    {
+      "candidateId": "line-011",
+      "x1": 281,
+      "y1": 98,
+      "x2": 281,
+      "y2": 155,
+      "lengthSquared": 3249
+    },
+    {
+      "candidateId": "line-012",
+      "x1": 401,
+      "y1": 98,
+      "x2": 401,
+      "y2": 155,
+      "lengthSquared": 3249
+    },
+    {
+      "candidateId": "line-013",
+      "x1": 521,
+      "y1": 98,
+      "x2": 521,
+      "y2": 154,
+      "lengthSquared": 3136
+    },
+    {
+      "candidateId": "line-014",
+      "x1": 37,
+      "y1": 99,
+      "x2": 37,
+      "y2": 154,
+      "lengthSquared": 3025
+    },
+    {
+      "candidateId": "line-015",
+      "x1": 157,
+      "y1": 99,
+      "x2": 157,
+      "y2": 154,
+      "lengthSquared": 3025
+    },
+    {
+      "candidateId": "line-016",
+      "x1": 277,
+      "y1": 99,
+      "x2": 277,
+      "y2": 154,
+      "lengthSquared": 3025
+    },
+    {
+      "candidateId": "line-017",
+      "x1": 397,
+      "y1": 99,
+      "x2": 397,
+      "y2": 154,
+      "lengthSquared": 3025
+    },
+    {
+      "candidateId": "line-018",
+      "x1": 517,
+      "y1": 99,
+      "x2": 517,
+      "y2": 154,
+      "lengthSquared": 3025
+    },
+    {
+      "candidateId": "line-019",
+      "x1": 65,
+      "y1": 122,
+      "x2": 65,
+      "y2": 155,
+      "lengthSquared": 1089
+    },
+    {
+      "candidateId": "line-020",
+      "x1": 89,
+      "y1": 122,
+      "x2": 89,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-021",
+      "x1": 113,
+      "y1": 122,
+      "x2": 113,
+      "y2": 155,
+      "lengthSquared": 1089
+    },
+    {
+      "candidateId": "line-022",
+      "x1": 233,
+      "y1": 122,
+      "x2": 233,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-023",
+      "x1": 257,
+      "y1": 122,
+      "x2": 257,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-024",
+      "x1": 353,
+      "y1": 122,
+      "x2": 353,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-025",
+      "x1": 377,
+      "y1": 122,
+      "x2": 377,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-026",
+      "x1": 449,
+      "y1": 122,
+      "x2": 449,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-027",
+      "x1": 473,
+      "y1": 122,
+      "x2": 473,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-028",
+      "x1": 497,
+      "y1": 122,
+      "x2": 497,
+      "y2": 154,
+      "lengthSquared": 1024
+    },
+    {
+      "candidateId": "line-029",
+      "x1": 26,
+      "y1": 175,
+      "x2": 555,
+      "y2": 175,
+      "lengthSquared": 279841
+    },
+    {
+      "candidateId": "line-030",
+      "x1": 20,
+      "y1": 181,
+      "x2": 561,
+      "y2": 181,
+      "lengthSquared": 292681
+    }
+  ],
+  "connectedRegionCandidates": [
+    {
+      "candidateId": "region-001",
+      "bbox": {
+        "x": 38,
+        "y": 0,
+        "width": 6,
+        "height": 4
+      },
+      "foregroundArea": 12
+    },
+    {
+      "candidateId": "region-002",
+      "bbox": {
+        "x": 20,
+        "y": 30,
+        "width": 542,
+        "height": 152
+      },
+      "foregroundArea": 9112
+    },
+    {
+      "candidateId": "region-003",
+      "bbox": {
+        "x": 38,
+        "y": 98,
+        "width": 4,
+        "height": 58
+      },
+      "foregroundArea": 232
+    },
+    {
+      "candidateId": "region-004",
+      "bbox": {
+        "x": 158,
+        "y": 98,
+        "width": 4,
+        "height": 58
+      },
+      "foregroundArea": 232
+    },
+    {
+      "candidateId": "region-005",
+      "bbox": {
+        "x": 278,
+        "y": 98,
+        "width": 4,
+        "height": 58
+      },
+      "foregroundArea": 232
+    },
+    {
+      "candidateId": "region-006",
+      "bbox": {
+        "x": 398,
+        "y": 98,
+        "width": 4,
+        "height": 58
+      },
+      "foregroundArea": 232
+    },
+    {
+      "candidateId": "region-007",
+      "bbox": {
+        "x": 518,
+        "y": 98,
+        "width": 4,
+        "height": 58
+      },
+      "foregroundArea": 232
+    },
+    {
+      "candidateId": "region-008",
+      "bbox": {
+        "x": 62,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-009",
+      "bbox": {
+        "x": 86,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-010",
+      "bbox": {
+        "x": 110,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-011",
+      "bbox": {
+        "x": 134,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-012",
+      "bbox": {
+        "x": 182,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-013",
+      "bbox": {
+        "x": 206,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-014",
+      "bbox": {
+        "x": 230,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-015",
+      "bbox": {
+        "x": 254,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-016",
+      "bbox": {
+        "x": 326,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-017",
+      "bbox": {
+        "x": 350,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-018",
+      "bbox": {
+        "x": 374,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-019",
+      "bbox": {
+        "x": 422,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-020",
+      "bbox": {
+        "x": 446,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-021",
+      "bbox": {
+        "x": 470,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    },
+    {
+      "candidateId": "region-022",
+      "bbox": {
+        "x": 494,
+        "y": 122,
+        "width": 4,
+        "height": 34
+      },
+      "foregroundArea": 136
+    }
+  ],
+  "textRegionCandidates": [
+    {
+      "candidateId": "text-region-001",
+      "sourceRegionRef": "region-001",
+      "bbox": {
+        "x": 38,
+        "y": 0,
+        "width": 6,
+        "height": 4
+      },
+      "foregroundArea": 12,
+      "heuristicOnly": true
+    }
+  ],
+  "summary": {
+    "lineSegmentCount": 30,
+    "connectedRegionCount": 22,
+    "textRegionCandidateCount": 1
+  },
+  "dispositions": {
+    "ocrDisposition": "not_attempted",
+    "semanticDisposition": "not_inferred",
+    "trackDisposition": "not_integrated"
+  },
+  "algorithmParameters": {
+    "policySha256": "247968d3525b1ecf5d36c0bb16f768232a2c04fd04db31175c400e2cbe2f6693"
+  },
+  "engineProvenance": {
+    "engineKind": "local_runtime",
+    "engineId": "deterministic-local-visual-structure-extractor",
+    "engineVersion": "1.0.0",
+    "components": [
+      {
+        "name": "opencv",
+        "version": "5.0.0"
+      },
+      {
+        "name": "pillow",
+        "version": "12.3.0"
+      }
+    ],
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-27T02:01:00Z"
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-structure-extraction-request",
+  "requestId": "senior-circuit-label",
+  "subjectPack": "senior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic public fixture; no teacher, student, or exam data."
+  },
+  "preprocessingResult": {
+    "artifactRef": "eval/visual-preprocessing/cases/senior-circuit-label.visual-preprocessing-result.json",
+    "rawByteSha256": "aa29231239edf9e7ec7142e52abfa07062bdbd7f42955768b060bd8fa20cf1fa",
+    "requestId": "senior-circuit-label"
+  },
+  "crop": {
+    "artifactRef": "senior-circuit-label.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "60854d32152030d5867875669073b73f320c1f67bd21c5fefc82b7f6114a316e",
+    "decodedRgbPixelSha256": "b1c7bfb96999bda5f8ca36997a32a4feb578da168001d1bd503b39a04b0ac8c4",
+    "pixelSize": {
+      "width": 560,
+      "height": 280
+    }
+  },
+  "extractionPolicy": {
+    "binaryThreshold": {
+      "value": 200,
+      "mode": "binary_inverted"
+    },
+    "connectedComponents": {
+      "connectivity": 8,
+      "minimumArea": 8
+    },
+    "canny": {
+      "threshold1": 50,
+      "threshold2": 150,
+      "apertureSize": 3,
+      "l2Gradient": false
+    },
+    "houghLinesP": {
+      "rho": 1,
+      "thetaDegrees": 1,
+      "threshold": 30,
+      "minimumLineLength": 20,
+      "maximumLineGap": 4
+    },
+    "textCandidateHeuristic": {
+      "minimumArea": 8,
+      "maximumArea": 200,
+      "maximumWidth": 20,
+      "maximumHeight": 20
+    }
+  },
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-27T02:02:00Z"
+}

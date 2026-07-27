@@ -48,6 +48,9 @@ function collectValidationTargets() {
   const visualPreprocessingRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-preprocessing-request.schema.json");
   const visualPreprocessingResultSchema = resolveRepoPath("prompts/shared/schemas/visual-preprocessing-result.schema.json");
   const visualPreprocessingCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-preprocessing-case-inventory.schema.json");
+  const visualStructureExtractionRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-structure-extraction-request.schema.json");
+  const visualStructureExtractionResultSchema = resolveRepoPath("prompts/shared/schemas/visual-structure-extraction-result.schema.json");
+  const visualStructureExtractionCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-structure-extraction-case-inventory.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -78,6 +81,7 @@ function collectValidationTargets() {
   const visualEvidenceRoot = resolveRepoPath("eval/visual-evidence/cases");
   const visualRiskFixtureRoot = path.join(visualEvidenceRoot, "visual-risk");
   const visualPreprocessingFixtureRoot = resolveRepoPath("eval/visual-preprocessing/cases");
+  const visualStructureExtractionFixtureRoot = resolveRepoPath("eval/visual-structure-extraction/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -145,6 +149,20 @@ function collectValidationTargets() {
       visualPreprocessingFixtureRoot,
       "visual-preprocessing-case-inventory.json"),
     schemaPath: visualPreprocessingCaseInventorySchema
+  }];
+  const visualStructureExtractionRequestFiles = listFilesBySuffixRecursive(
+    visualStructureExtractionFixtureRoot,
+    ".visual-structure-extraction-request.json")
+    .map((filePath) => ({ filePath, schemaPath: visualStructureExtractionRequestSchema }));
+  const visualStructureExtractionResultFiles = listFilesBySuffixRecursive(
+    visualStructureExtractionFixtureRoot,
+    ".visual-structure-extraction-result.json")
+    .map((filePath) => ({ filePath, schemaPath: visualStructureExtractionResultSchema }));
+  const visualStructureExtractionCaseInventoryFiles = [{
+    filePath: path.join(
+      visualStructureExtractionFixtureRoot,
+      "visual-structure-extraction-case-inventory.json"),
+    schemaPath: visualStructureExtractionCaseInventorySchema
   }];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
@@ -231,6 +249,9 @@ function collectValidationTargets() {
     visualPreprocessingRequests: visualPreprocessingRequestFiles,
     visualPreprocessingResults: visualPreprocessingResultFiles,
     visualPreprocessingCaseInventories: visualPreprocessingCaseInventoryFiles,
+    visualStructureExtractionRequests: visualStructureExtractionRequestFiles,
+    visualStructureExtractionResults: visualStructureExtractionResultFiles,
+    visualStructureExtractionCaseInventories: visualStructureExtractionCaseInventoryFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -264,6 +285,9 @@ function collectValidationTargets() {
       visualPreprocessingRequestSchema,
       visualPreprocessingResultSchema,
       visualPreprocessingCaseInventorySchema,
+      visualStructureExtractionRequestSchema,
+      visualStructureExtractionResultSchema,
+      visualStructureExtractionCaseInventorySchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -331,7 +355,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
