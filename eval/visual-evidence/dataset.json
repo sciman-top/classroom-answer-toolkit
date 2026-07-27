@@ -63,6 +63,22 @@
       "expectedReviewRequired": false,
       "expectedVisualReviewPassed": true,
       "boundary": "contract_fixture_only_not_manifest_attached"
+    },
+    {
+      "id": "visual-risk-diagnostic-synthetic",
+      "subjectPacks": [
+        "math-answer",
+        "junior-physics-answer",
+        "senior-physics-answer"
+      ],
+      "riskCategory": "cross_subject_visual_risk_diagnostic",
+      "caseInventory": "cases/visual-risk/visual-risk-case-inventory.json",
+      "diagnosticReport": "cases/visual-risk/visual-risk-diagnostic-report.json",
+      "expectedFalseReleaseRate": 0,
+      "expectedCorrectFlagRecall": 1,
+      "expectedBindingAccuracy": 1,
+      "expectedReplayPassRate": 1,
+      "boundary": "synthetic_fixture_repo_side_diagnostic_only"
     }
   ]
 }

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "problem-evidence-bundle",
+  "evidenceBundleId": "veb-visual-risk-senior-circuit-validator-block",
+  "subjectPack": "senior-physics-answer",
+  "questionRef": "SYN-SP-01(1)",
+  "normalizedQuestionRef": "senior-physics-answer:synthetic-visual-risk:01:1",
+  "figureRefs": ["synthetic-figure-senior-circuit-01"],
+  "cropRefs": ["synthetic-crop-senior-circuit-01"],
+  "ocrRefs": ["synthetic-ocr-senior-circuit-01"],
+  "evidenceRefs": ["synthetic-crop-senior-circuit-01", "synthetic-ocr-senior-circuit-01"],
+  "binding": {
+    "status": "stable",
+    "confidence": 0.98,
+    "reasons": ["synthetic circuit figure is uniquely bound"]
+  },
+  "risk": {
+    "level": "critical",
+    "categories": ["circuit_diagram"],
+    "reviewRequired": true,
+    "reasons": ["circuit topology requires validator approval"]
+  },
+  "provenance": {
+    "compilerVersion": "visual-risk-fixture-v1",
+    "sourceType": "synthetic_fixture",
+    "sourceArtifactRefs": ["synthetic-visual-risk-authority"],
+    "egressPolicy": { "allowCloud": false }
+  },
+  "generatedAt": "2026-07-27T00:00:00Z"
+}

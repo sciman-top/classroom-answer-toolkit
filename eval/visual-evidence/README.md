@@ -9,7 +9,9 @@
 - `visualReviewPassed=null` 表示未裁定、自动降级或待复核。
 - Track C validator 可以在 VLM 与 OCR/layout 一致时继续拦截证据缺口。
 
-后续运行时落地后，本目录应扩展为可执行评测集，按 subject-pack、题型、图像质量和 `candidateSourceType` 分桶统计高风险误放行率。
+`cases/visual-risk/` 是 VISION-004 的可执行、完全合成、脱敏且禁云的高风险难例集。它以 6 个 raw-byte-bound cases 覆盖三个 subject-pack，并分别统计高风险误放行率、正确标疑召回率、图号/小问绑定准确率和 DecisionRecord replay 通过率。canonical report 必须保持 `optimizationCandidateRefs=[]`、readiness controls=`not_verified`、`eligible=false`。
+
+这些指标只证明冻结 synthetic fixture 上的 repo-side contract diagnostics，不代表真实图像/OCR/VLM 质量、gateway live verified、workflow integrated 或 live accepted。后续真实运行时落地后，才可在合法 authority 下继续按题型、图像质量和 `candidateSourceType` 分桶扩展。
 
 `cases/delivery-aggregate/` 是合成、脱敏、禁云的交付级覆盖 fixture，用于验证：
 

@@ -29,6 +29,8 @@ export function compileDecisionRecord(options) {
   const humanApproved = options.humanApproved === true;
 
   const evidenceMissing = hasMissingEvidence(evidenceBundle, trackResults);
+  const bindingUnstable = evidenceBundle.binding?.status !== "stable";
+  const ocrImageConflict = hasOcrImageConflict(evidenceBundle, trackResults);
   const dualTrackMatch = hasDualTrackMatch(trackResults);
   const dualTrackConflict = hasDualTrackConflict(trackResults);
   const lowConfidence = hasLowConfidence(trackResults);
@@ -43,6 +45,7 @@ export function compileDecisionRecord(options) {
     || lowConfidence
     || ruleValidatorFailed
     || highRiskVisual
+    || ocrImageConflict
     || unsafeShortcutFail
     || groundingInsufficient
     || acceptanceTierUnverified
@@ -59,6 +62,12 @@ export function compileDecisionRecord(options) {
     decisionReasons.push("dual_track_conflict");
   }
   decisionReasons.push(evidenceMissing ? "evidence_chain_missing" : "evidence_chain_complete");
+  if (bindingUnstable) {
+    decisionReasons.push("binding_unstable");
+  }
+  if (ocrImageConflict) {
+    decisionReasons.push("ocr_image_conflict");
+  }
   if (lowConfidence) {
     decisionReasons.push("low_confidence");
   }
@@ -179,6 +188,22 @@ function hasBlockingValidatorFinding(trackResults) {
   return trackResults.some((trackResult) =>
     (trackResult.validatorFindings ?? []).some((finding) => finding.severity === "blocking")
   );
+}
+
+function hasOcrImageConflict(evidenceBundle, trackResults) {
+  if ((evidenceBundle.risk?.categories ?? []).includes("ocr_image_conflict")) {
+    return true;
+  }
+  const explicitMarkers = [
+    ...(evidenceBundle.risk?.reasons ?? []),
+    ...trackResults.flatMap((trackResult) => trackResult.risk?.reasons ?? []),
+    ...trackResults.flatMap((trackResult) =>
+      (trackResult.validatorFindings ?? []).map((finding) => finding.findingId))
+  ];
+  return explicitMarkers.some((value) => {
+    const marker = String(value).trim().toLowerCase().replace(/[ -]+/g, "_");
+    return marker === "ocr_image_conflict" || marker.endsWith(".ocr_image_conflict");
+  });
 }
 
 function hasUnsafeShortcutFail(trackResults) {

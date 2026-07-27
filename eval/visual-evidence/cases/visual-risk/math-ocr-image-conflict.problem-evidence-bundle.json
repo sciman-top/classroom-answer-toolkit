@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "problem-evidence-bundle",
+  "evidenceBundleId": "veb-visual-risk-math-ocr-image-conflict",
+  "subjectPack": "math-answer",
+  "questionRef": "SYN-MATH-02(2)",
+  "normalizedQuestionRef": "math-answer:synthetic-visual-risk:02:2",
+  "figureRefs": ["synthetic-figure-math-coordinate-02"],
+  "cropRefs": ["synthetic-crop-math-coordinate-02"],
+  "ocrRefs": ["synthetic-ocr-math-coordinate-02"],
+  "evidenceRefs": ["synthetic-crop-math-coordinate-02", "synthetic-ocr-math-coordinate-02"],
+  "binding": {
+    "status": "stable",
+    "confidence": 0.97,
+    "reasons": ["synthetic coordinate graph is bound to the exact sub-question"]
+  },
+  "risk": {
+    "level": "critical",
+    "categories": ["coordinate_graph", "ocr_image_conflict"],
+    "reviewRequired": true,
+    "reasons": ["synthetic OCR tick value conflicts with the original-image fixture"]
+  },
+  "provenance": {
+    "compilerVersion": "visual-risk-fixture-v1",
+    "sourceType": "synthetic_fixture",
+    "sourceArtifactRefs": ["synthetic-visual-risk-authority"],
+    "egressPolicy": { "allowCloud": false }
+  },
+  "generatedAt": "2026-07-27T00:00:00Z"
+}

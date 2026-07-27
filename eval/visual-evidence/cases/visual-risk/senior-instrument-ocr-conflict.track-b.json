@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-b-visual-risk-senior-instrument-ocr-conflict",
+  "evidenceBundleRef": "veb-visual-risk-senior-instrument-ocr-conflict",
+  "trackType": "ocr_layout_solver",
+  "candidateSourceType": "reference_placeholder",
+  "answerCandidate": "synthetic candidate: 0.6 A",
+  "confidence": 0.51,
+  "visualDetailMode": "original",
+  "visibleEvidenceSummary": "Synthetic OCR uses a 3 A range while the original-image fixture uses 0.6 A; ocr_image_conflict.",
+  "evidenceRefs": ["synthetic-crop-senior-meter-02", "synthetic-ocr-senior-meter-02"],
+  "conflictRefs": ["synthetic-conflict-senior-meter-02"],
+  "missingEvidenceRefs": [],
+  "risk": {
+    "level": "critical",
+    "reviewRequired": true,
+    "reasons": ["ocr_image_conflict"]
+  },
+  "generatedAt": "2026-07-27T00:00:00Z"
+}

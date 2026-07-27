@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-a-visual-risk-math-function-graph-stable",
+  "evidenceBundleRef": "veb-visual-risk-math-function-graph-stable",
+  "trackType": "vlm_direct",
+  "candidateSourceType": "reference_placeholder",
+  "answerCandidate": "synthetic candidate: increasing function",
+  "confidence": 0.92,
+  "visualDetailMode": "high",
+  "visibleEvidenceSummary": "Synthetic graph crop shows an increasing curve.",
+  "evidenceRefs": ["synthetic-crop-math-function-01"],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": ["high-risk function graph fixture"]
+  },
+  "generatedAt": "2026-07-27T00:00:00Z"
+}

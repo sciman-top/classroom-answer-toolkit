@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "compile:decision": "node decision-record.mjs",
+    "compile:visual-risk": "node visual-risk-diagnostic.mjs",
     "compile:aggregate": "node delivery-decision-aggregate.mjs",
     "attach:decision": "node attach-decision.mjs",
     "attach:aggregate": "node attach-delivery-decision-aggregate.mjs",
     "verify:aggregate-attachment": "node verify-delivery-decision-aggregate-attachment.mjs",
     "test:decision": "node --test decision-record.test.mjs attach-decision.test.mjs",
+    "test:visual-risk": "node --test visual-risk-diagnostic.test.mjs",
     "test:aggregate": "node --test delivery-decision-aggregate.test.mjs attach-delivery-decision-aggregate.test.mjs",
     "test": "node --test *.test.mjs"
   }

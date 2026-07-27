@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-b-visual-risk-math-ocr-image-conflict",
+  "evidenceBundleRef": "veb-visual-risk-math-ocr-image-conflict",
+  "trackType": "ocr_layout_solver",
+  "candidateSourceType": "reference_placeholder",
+  "answerCandidate": "synthetic candidate: x = 3",
+  "confidence": 0.78,
+  "visualDetailMode": "original",
+  "visibleEvidenceSummary": "Synthetic OCR reads 8 while the original-image tick reads 3; ocr_image_conflict.",
+  "evidenceRefs": ["synthetic-crop-math-coordinate-02", "synthetic-ocr-math-coordinate-02"],
+  "conflictRefs": ["synthetic-conflict-math-coordinate-02"],
+  "missingEvidenceRefs": [],
+  "risk": {
+    "level": "critical",
+    "reviewRequired": true,
+    "reasons": ["ocr_image_conflict"]
+  },
+  "generatedAt": "2026-07-27T00:00:00Z"
+}

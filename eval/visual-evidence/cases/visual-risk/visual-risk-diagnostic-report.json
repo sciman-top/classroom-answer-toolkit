@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-risk-diagnostic-report",
+  "reportId": "visual-risk-diagnostic-7bc0473323f5ac80",
+  "fixtureSetId": "synthetic-visual-risk-v1",
+  "sourceInventoryRef": "visual-risk-case-inventory.json",
+  "sourceInventorySha256": "7bc0473323f5ac805accfd71c12925f7690e96000588053860eb7a7f97e8b227",
+  "caseBindings": [
+    {
+      "caseId": "math-function-graph-stable",
+      "subjectPack": "math-answer",
+      "evidenceBundleSha256": "d1001cd64c953abd35245b9cd29e5b97e6072b19d8e2f7d6b1f553d6f7a95e3d",
+      "trackResultSha256s": ["83796d96ca9500ba54598c0760b3b18568b80726fba04686dba049384058275d"],
+      "expectedDecisionSha256": "5aa2c17dacbeddffd7ddd8916f5e6a572ae8bbc75c6c7ead36a065862e929e8e",
+      "replayedDecisionSha256": "5aa2c17dacbeddffd7ddd8916f5e6a572ae8bbc75c6c7ead36a065862e929e8e",
+      "replayDisposition": "passed",
+      "falseReleased": false,
+      "correctlyFlagged": true,
+      "bindingCorrect": true,
+      "ocrImageConflictDetected": false
+    },
+    {
+      "caseId": "math-ocr-image-conflict",
+      "subjectPack": "math-answer",
+      "evidenceBundleSha256": "a382b53f41a2b97c574fc1d83df3739ca3a8c758fba83bbb58d8e1cb28a330be",
+      "trackResultSha256s": ["482b5a7e09a87237985b011b07343ef2290dde0bcf5811a656d1f6e22aeb0211"],
+      "expectedDecisionSha256": "1f8ab934e56b151b964fa5398ca3eb556a8770d1cefd973a47a4f05c0b3c9c29",
+      "replayedDecisionSha256": "1f8ab934e56b151b964fa5398ca3eb556a8770d1cefd973a47a4f05c0b3c9c29",
+      "replayDisposition": "passed",
+      "falseReleased": false,
+      "correctlyFlagged": true,
+      "bindingCorrect": true,
+      "ocrImageConflictDetected": true
+    },
+    {
+      "caseId": "junior-instrument-stable",
+      "subjectPack": "junior-physics-answer",
+      "evidenceBundleSha256": "c8225b6474671bd4f6e8ffdb38064dab0f55c742bef4ef473455d8bc6f7c68c0",
+      "trackResultSha256s": ["5407a5c8af720156652b8db2d0a8c759cb99935a903d47ee949df33c3f7bbd03"],
+      "expectedDecisionSha256": "b838ec6f51992f7ce57aead5a3463e17507e2df38719434eb4a7c370649bc7ac",
+      "replayedDecisionSha256": "b838ec6f51992f7ce57aead5a3463e17507e2df38719434eb4a7c370649bc7ac",
+      "replayDisposition": "passed",
+      "falseReleased": false,
+      "correctlyFlagged": true,
+      "bindingCorrect": true,
+      "ocrImageConflictDetected": false
+    },
+    {
+      "caseId": "junior-multi-figure-ambiguous",
+      "subjectPack": "junior-physics-answer",
+      "evidenceBundleSha256": "a9d3efbfdb7be12a0c55b72c1de539f67751c1234594a9d8c0e612af86c8265b",
+      "trackResultSha256s": ["e5779872b9d7a5b36864d479d30f6e72aebf7e76930bcf43db8a77464b22645b"],
+      "expectedDecisionSha256": "27a242babf3cbdab4d762d8c1df6e5742ab5c2418179ec85273397fd918fe239",
+      "replayedDecisionSha256": "27a242babf3cbdab4d762d8c1df6e5742ab5c2418179ec85273397fd918fe239",
+      "replayDisposition": "passed",
+      "falseReleased": false,
+      "correctlyFlagged": true,
+      "bindingCorrect": true,
+      "ocrImageConflictDetected": false
+    },
+    {
+      "caseId": "senior-circuit-validator-block",
+      "subjectPack": "senior-physics-answer",
+      "evidenceBundleSha256": "a68747540ca631ef62be28d215e95d43d35d34fdb53ee192e5ab3dd699c9d0af",
+      "trackResultSha256s": ["db43d086dbd9114da870941a1f700436e07e42291b2d4812ce7aa0fc4a1b1836"],
+      "expectedDecisionSha256": "aa153f035a7833c2501766ff94710efbbe03ff8af38060340bdbca35052b61a0",
+      "replayedDecisionSha256": "aa153f035a7833c2501766ff94710efbbe03ff8af38060340bdbca35052b61a0",
+      "replayDisposition": "passed",
+      "falseReleased": false,
+      "correctlyFlagged": true,
+      "bindingCorrect": true,
+      "ocrImageConflictDetected": false
+    },
+    {
+      "caseId": "senior-instrument-ocr-conflict",
+      "subjectPack": "senior-physics-answer",
+      "evidenceBundleSha256": "4d4b5493ea409d5df807d36c05a3934abb8c132d42f15dfab7b575d3b70cc454",
+      "trackResultSha256s": ["236a75b5452858a6c0fa00c4be98e87a923b54d288389e35f740bcbe0e581796"],
+      "expectedDecisionSha256": "5e3046d7822f63adf4d16f95c12b42b3527fc28017f630232f8a6985150f65c8",
+      "replayedDecisionSha256": "5e3046d7822f63adf4d16f95c12b42b3527fc28017f630232f8a6985150f65c8",
+      "replayDisposition": "passed",
+      "falseReleased": false,
+      "correctlyFlagged": true,
+      "bindingCorrect": true,
+      "ocrImageConflictDetected": true
+    }
+  ],
+  "subjectReports": [
+    {
+      "subjectPack": "math-answer",
+      "totalCases": 2,
+      "expectedReviewCount": 2,
+      "falseReleaseCount": 0,
+      "falseReleaseRate": 0,
+      "correctlyFlaggedCount": 2,
+      "correctFlagRecall": 1,
+      "bindingCorrectCount": 2,
+      "bindingAccuracy": 1,
+      "replayPassedCount": 2,
+      "replayPassRate": 1
+    },
+    {
+      "subjectPack": "junior-physics-answer",
+      "totalCases": 2,
+      "expectedReviewCount": 2,
+      "falseReleaseCount": 0,
+      "falseReleaseRate": 0,
+      "correctlyFlaggedCount": 2,
+      "correctFlagRecall": 1,
+      "bindingCorrectCount": 2,
+      "bindingAccuracy": 1,
+      "replayPassedCount": 2,
+      "replayPassRate": 1
+    },
+    {
+      "subjectPack": "senior-physics-answer",
+      "totalCases": 2,
+      "expectedReviewCount": 2,
+      "falseReleaseCount": 0,
+      "falseReleaseRate": 0,
+      "correctlyFlaggedCount": 2,
+      "correctFlagRecall": 1,
+      "bindingCorrectCount": 2,
+      "bindingAccuracy": 1,
+      "replayPassedCount": 2,
+      "replayPassRate": 1
+    }
+  ],
+  "totals": {
+    "subjectPack": "all-subject-packs",
+    "totalCases": 6,
+    "expectedReviewCount": 6,
+    "falseReleaseCount": 0,
+    "falseReleaseRate": 0,
+    "correctlyFlaggedCount": 6,
+    "correctFlagRecall": 1,
+    "bindingCorrectCount": 6,
+    "bindingAccuracy": 1,
+    "replayPassedCount": 6,
+    "replayPassRate": 1
+  },
+  "readinessBoundary": {
+    "toolchainControl": "not_verified",
+    "restrictedEgressControl": "not_verified",
+    "eligible": false
+  },
+  "optimizationCandidateRefs": [],
+  "stopReason": "synthetic_visual_risk_diagnostic_only_no_optimizer"
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "decision-record",
+  "decisionId": "decision-visual-risk-math-function-graph-stable",
+  "subjectPack": "math-answer",
+  "questionRef": "SYN-MATH-01(1)",
+  "normalizedQuestionRef": "math-answer:synthetic-visual-risk:01:1",
+  "evidenceBundleRef": "veb-visual-risk-math-function-graph-stable",
+  "trackResultRefs": [
+    "track-a-visual-risk-math-function-graph-stable"
+  ],
+  "decision": "review_required",
+  "answer": "review required: visual evidence chain is not fully approved",
+  "trusted": false,
+  "visualReviewPassed": null,
+  "reviewRequired": true,
+  "reviewQueue": "high_risk_approval",
+  "risk": {
+    "level": "high",
+    "categories": [
+      "function_graph"
+    ]
+  },
+  "decisionReasons": [
+    "evidence_chain_complete",
+    "high_risk_visual",
+    "review_pending"
+  ],
+  "conflictRefs": [],
+  "feedbackRefs": [],
+  "statusProjection": {
+    "visualReviewPassed": null,
+    "trusted": false
+  },
+  "generatedAt": "2026-07-27T00:00:00Z"
+}

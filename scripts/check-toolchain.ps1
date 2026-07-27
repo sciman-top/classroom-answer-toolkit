@@ -63,6 +63,11 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:decision
 } "Visual evidence decision contract tests failed."
 
+Write-Host "visual risk diagnostic contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-evidence run test:visual-risk
+} "Visual risk diagnostic contract tests failed."
+
 Write-Host "visual evidence delivery aggregate contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:aggregate

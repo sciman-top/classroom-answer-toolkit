@@ -12,6 +12,7 @@ import {
   validateTeacherFeedbackReplayDiagnosticReport
 } from "../sample-flywheel/teacher-feedback-diagnostic.mjs";
 import { validateCanonicalSyntheticGenerationFixtures } from "../answer-generator/synthetic-generator.mjs";
+import { validateVisualRiskDiagnosticReport } from "../visual-evidence/visual-risk-diagnostic.mjs";
 
 function collectValidationTargets() {
   const dataClassificationSchema = resolveRepoPath("prompts/shared/schemas/data-classification.schema.json");
@@ -42,6 +43,8 @@ function collectValidationTargets() {
   const problemEvidenceBundleSchema = resolveRepoPath("prompts/shared/schemas/problem-evidence-bundle.schema.json");
   const trackResultSchema = resolveRepoPath("prompts/shared/schemas/track-result.schema.json");
   const decisionRecordSchema = resolveRepoPath("prompts/shared/schemas/decision-record.schema.json");
+  const visualRiskCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-risk-case-inventory.schema.json");
+  const visualRiskDiagnosticReportSchema = resolveRepoPath("prompts/shared/schemas/visual-risk-diagnostic-report.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -56,6 +59,8 @@ function collectValidationTargets() {
     problemEvidenceBundleSchema,
     trackResultSchema,
     decisionRecordSchema,
+    visualRiskCaseInventorySchema,
+    visualRiskDiagnosticReportSchema,
     deliveryQuestionCoverageSchema,
     deliveryDecisionAggregateSchema,
     deliveryDecisionAggregateAttachmentReceiptSchema,
@@ -67,6 +72,7 @@ function collectValidationTargets() {
   const subjectPackDirectories = listSubjectPackDirectories();
   const sampleRoot = resolveRepoPath("样例交付");
   const visualEvidenceRoot = resolveRepoPath("eval/visual-evidence/cases");
+  const visualRiskFixtureRoot = path.join(visualEvidenceRoot, "visual-risk");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -113,6 +119,14 @@ function collectValidationTargets() {
     ...listFilesBySuffixRecursive(visualEvidenceRoot, ".consistency-report.json")
       .map((filePath) => ({ filePath, schemaPath: consistencyReportSchema }))
   ];
+  const visualRiskCaseInventoryFiles = [{
+    filePath: path.join(visualRiskFixtureRoot, "visual-risk-case-inventory.json"),
+    schemaPath: visualRiskCaseInventorySchema
+  }];
+  const visualRiskDiagnosticReportFiles = [{
+    filePath: path.join(visualRiskFixtureRoot, "visual-risk-diagnostic-report.json"),
+    schemaPath: visualRiskDiagnosticReportSchema
+  }];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
   const optimizationReadinessInputFiles = listFilesByNameRecursive(
@@ -193,6 +207,8 @@ function collectValidationTargets() {
     teacherFeedbackFixtureInventories: teacherFeedbackFixtureInventoryFiles,
     teacherFeedbackDiagnosticReports: teacherFeedbackDiagnosticReportFiles,
     teacherFeedbackReplayDiagnosticReports: teacherFeedbackReplayDiagnosticReportFiles,
+    visualRiskCaseInventories: visualRiskCaseInventoryFiles,
+    visualRiskDiagnosticReports: visualRiskDiagnosticReportFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -289,7 +305,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -537,6 +553,23 @@ function main() {
       ? error.message
       : String(error);
   }
+  let visualRiskDiagnosticReportError;
+  try {
+    const reportPath = targets.visualRiskDiagnosticReports[0].filePath;
+    const report = validateVisualRiskDiagnosticReport(readJsonFile(reportPath));
+    if (report.subjectReports.some((subjectReport) =>
+      subjectReport.falseReleaseRate !== 0
+      || subjectReport.correctFlagRecall !== 1
+      || subjectReport.bindingAccuracy !== 1
+      || subjectReport.replayPassRate !== 1)) {
+      throw new Error(
+        "Canonical visual risk report must pass all per-subject diagnostic thresholds.");
+    }
+  } catch (error) {
+    visualRiskDiagnosticReportError = error instanceof Error
+      ? error.message
+      : String(error);
+  }
 
   const errors = [
     ...fileValidation.errors,
@@ -554,6 +587,9 @@ function main() {
       : []),
     ...(teacherFeedbackReplayDiagnosticReportError
       ? [`Canonical teacher feedback replay diagnostic report: ${teacherFeedbackReplayDiagnosticReportError}`]
+      : []),
+    ...(visualRiskDiagnosticReportError
+      ? [`Canonical visual risk diagnostic report: ${visualRiskDiagnosticReportError}`]
       : []),
     ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : []),
     ...(answerGenerationFixtureError

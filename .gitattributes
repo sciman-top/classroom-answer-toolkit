@@ -2,3 +2,4 @@
 样例交付/**/*.md text eol=lf
 eval/answer-generation/**/*.json text eol=lf
 eval/sample-flywheel/**/*.json text eol=lf
+eval/visual-evidence/cases/visual-risk/**/*.json text eol=lf

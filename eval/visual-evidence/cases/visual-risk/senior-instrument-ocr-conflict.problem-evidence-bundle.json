@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "problem-evidence-bundle",
+  "evidenceBundleId": "veb-visual-risk-senior-instrument-ocr-conflict",
+  "subjectPack": "senior-physics-answer",
+  "questionRef": "SYN-SP-02(2)",
+  "normalizedQuestionRef": "senior-physics-answer:synthetic-visual-risk:02:2",
+  "figureRefs": ["synthetic-figure-senior-meter-02"],
+  "cropRefs": ["synthetic-crop-senior-meter-02"],
+  "ocrRefs": ["synthetic-ocr-senior-meter-02"],
+  "evidenceRefs": ["synthetic-crop-senior-meter-02", "synthetic-ocr-senior-meter-02"],
+  "binding": {
+    "status": "ambiguous",
+    "confidence": 0.5,
+    "reasons": ["synthetic range label conflicts with the adjacent meter label"]
+  },
+  "risk": {
+    "level": "critical",
+    "categories": ["instrument_reading", "ocr_image_conflict"],
+    "reviewRequired": true,
+    "reasons": ["synthetic OCR range conflicts with the original-image fixture"]
+  },
+  "provenance": {
+    "compilerVersion": "visual-risk-fixture-v1",
+    "sourceType": "synthetic_fixture",
+    "sourceArtifactRefs": ["synthetic-visual-risk-authority"],
+    "egressPolicy": { "allowCloud": false }
+  },
+  "generatedAt": "2026-07-27T00:00:00Z"
+}

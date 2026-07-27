@@ -112,3 +112,79 @@ test("compileDecisionRecord carries delivery binding from the evidence bundle", 
   assert.deepEqual(decisionRecord.deliveryBinding, evidenceBundle.deliveryBinding);
   assert.deepEqual(validateDecisionRecord(decisionRecord), []);
 });
+
+test("compileDecisionRecord projects unstable binding and OCR image conflict reasons", () => {
+  const evidenceBundle = readCaseJson("dual-track-match-evidence-missing.problem-evidence-bundle.json");
+  evidenceBundle.risk.categories = ["function_graph", "ocr_image_conflict"];
+  evidenceBundle.binding.status = "ambiguous";
+  const trackResults = [
+    readCaseJson("dual-track-match-evidence-missing.track-a.json"),
+    readCaseJson("dual-track-match-evidence-missing.track-b.json")
+  ];
+
+  const decisionRecord = compileDecisionRecord({
+    evidenceBundle,
+    trackResults,
+    generatedAt: "2026-07-27T00:00:00Z"
+  });
+
+  assert.equal(decisionRecord.decision, "review_required");
+  assert.equal(decisionRecord.trusted, false);
+  assert.ok(decisionRecord.decisionReasons.includes("binding_unstable"));
+  assert.ok(decisionRecord.decisionReasons.includes("ocr_image_conflict"));
+  assert.deepEqual(validateDecisionRecord(decisionRecord), []);
+});
+
+test("compileDecisionRecord keeps structured OCR image conflict fail-closed after human approval", () => {
+  const evidenceBundle = readCaseJson("dual-track-match-evidence-missing.problem-evidence-bundle.json");
+  evidenceBundle.cropRefs = ["crop-12"];
+  evidenceBundle.binding = { status: "stable", confidence: 1 };
+  evidenceBundle.risk = {
+    level: "low",
+    categories: ["ocr_image_conflict"],
+    reviewRequired: false
+  };
+  const trackResult = readCaseJson("dual-track-match-evidence-missing.track-a.json");
+  trackResult.confidence = 0.9;
+  trackResult.evidenceRefs = ["crop-12"];
+  trackResult.missingEvidenceRefs = [];
+  trackResult.risk = { level: "low", reviewRequired: false };
+
+  const decisionRecord = compileDecisionRecord({
+    evidenceBundle,
+    trackResults: [trackResult],
+    generatedAt: "2026-07-27T00:00:00Z",
+    humanApproved: true
+  });
+
+  assert.equal(decisionRecord.decision, "review_required");
+  assert.equal(decisionRecord.trusted, false);
+  assert.equal(decisionRecord.visualReviewPassed, null);
+  assert.ok(decisionRecord.decisionReasons.includes("ocr_image_conflict"));
+  assert.deepEqual(validateDecisionRecord(decisionRecord), []);
+});
+
+test("compileDecisionRecord does not infer OCR image conflict from negated free text", () => {
+  const evidenceBundle = readCaseJson("dual-track-match-evidence-missing.problem-evidence-bundle.json");
+  evidenceBundle.cropRefs = ["crop-12"];
+  evidenceBundle.binding = { status: "stable", confidence: 1 };
+  evidenceBundle.risk = { level: "low", categories: [], reviewRequired: false };
+  const trackResult = readCaseJson("dual-track-match-evidence-missing.track-a.json");
+  trackResult.confidence = 0.9;
+  trackResult.visibleEvidenceSummary = "Synthetic fixture confirms no ocr image conflict.";
+  trackResult.evidenceRefs = ["crop-12"];
+  trackResult.missingEvidenceRefs = [];
+  trackResult.risk = { level: "low", reviewRequired: false };
+
+  const decisionRecord = compileDecisionRecord({
+    evidenceBundle,
+    trackResults: [trackResult],
+    generatedAt: "2026-07-27T00:00:00Z",
+    humanApproved: true
+  });
+
+  assert.equal(decisionRecord.decision, "accept");
+  assert.equal(decisionRecord.trusted, true);
+  assert.equal(decisionRecord.decisionReasons.includes("ocr_image_conflict"), false);
+  assert.deepEqual(validateDecisionRecord(decisionRecord), []);
+});
