@@ -259,6 +259,19 @@ synthetic fixture 的 parser 分流覆盖，不代表真实教师语言理解准
 CLI 重编译输出必须位于仓库根目录之外；任何仓内 readiness、generated、teacher 或其他
 canonical asset 都不得作为输出目标，拒绝时必须保持原始 bytes 不变。
 
+FLYWHEEL-010 新增独立 `TeacherFeedbackReplayDiagnosticReport`，对同一 canonical inventory
+逐 fixture 重新执行当前确定性 parser，将 replayed result 以稳定 JSON bytes 序列化，并与
+inventory hash-bound expected `FeedbackParseResult` 原始 bytes 比较。报告逐项绑定 submission、
+expected result 与 replayed result 的 SHA-256，统计 `passed / failed / passRate`；expected
+authority 的 schema、hash、路径或覆盖面损坏仍必须整体 fail closed，只有合法 expected bytes
+与合法 replayed bytes 不一致才记为 replay failure。
+
+replay report 与 ingestion diagnostic、candidate readiness 分离。它只证明当前 parser 对三个
+受控 synthetic fixture 的确定性回放兼容，不代表真实教师语言理解、语义正确性、模型质量或
+生产验收；`optimizationCandidateRefs` 必须为空，CLI 输出必须位于仓库根目录之外。该切片
+不得修改 FLYWHEEL-009 ingestion report、readiness、release qualification、controls 或
+eligibility。
+
 ### optimization-readiness-input / optimization-readiness-report
 
 首个分桶准入评估切片由独立、hash-bound canonical case inventory 提供召回率分母，

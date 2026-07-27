@@ -109,3 +109,9 @@
 - 决定：canonical synthetic teacher feedback 的结构化率、人工分流率和归因分布由独立 `TeacherFeedbackDiagnosticReport` 统计，不扩展 `OptimizationReadinessReport`
 - 原因：同一 candidate run 可同时产生 auto fixture label 和 teacher input feedback；若把 teacher parse result 当作新的 candidate evaluation unit，会重复计算判错 recall 并混淆 parser ingestion quality 与 candidate quality
 - 边界：diagnostic report 必须绑定 inventory/result 原始字节、保留零计数类别且 optimization refs 为空；它不贡献 qualification、controls、eligibility 或真实教师语言理解结论
+
+## D-022 教师反馈自动回放使用独立 byte-exact 诊断报告
+
+- 决定：canonical synthetic teacher feedback 的自动回放通过率由独立 `TeacherFeedbackReplayDiagnosticReport` 统计，不扩展 ingestion diagnostic，也不以测试日志代替可版本化指标资产
+- 原因：ingestion structured rate 衡量分流结果，replay pass rate 衡量当前 parser 对冻结 expected result 的兼容性；混在同一报告会把两个失败面耦合，仅保留测试又无法形成稳定、可绑定、可重算的产品指标
+- 边界：replay 前必须先证明 expected authority 的 schema/hash/path/coverage 完整；合法 replay mismatch 只记为 diagnostic failure，不升级或改写 expected authority，不贡献 readiness、qualification、controls、eligibility 或 `OptimizationCandidate`

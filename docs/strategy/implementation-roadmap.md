@@ -23,6 +23,7 @@
 - 以 FLYWHEEL-007 将 raw diagnostic bucket 与 release-qualified bucket 分离；synthetic fixture 只保留 `diagnostic_only` provenance，不得贡献非扰动放行门槛
 - 以 FLYWHEEL-008 用公开 synthetic teacher text 跑通确定性显式词典解析与 `needs_human_label` 分流；真实教师数据、开放域语义解析和 readiness 判错接入后接
 - 以 FLYWHEEL-009 从 canonical synthetic teacher authority 独立统计结构化率、人工分流率和归因分布；该诊断面不接 candidate readiness、qualification 或 eligibility
+- 以 FLYWHEEL-010 对同一 canonical synthetic teacher authority 逐项重放 parser，并独立统计 expected-result raw bytes 的 replay pass rate；回放指标不升级 fixture authority，也不接 candidate readiness、qualification 或 eligibility
 
 ## P2：双轨视觉与原生输入
 

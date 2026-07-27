@@ -168,6 +168,16 @@
 - blocks: FLYWHEEL-008
 - done_definition: 仓内能从 canonical synthetic teacher feedback authority 确定性生成并重验一个独立诊断报告；该报告只衡量受控 fixture 的解析分流，不贡献 candidate recall、release qualification、controls、eligibility 或 `OptimizationCandidate`，不宣称真实教师反馈效果、workflow integrated 或 live accepted
 
+### task_id: FLYWHEEL-010
+
+- goal: 建立 canonical synthetic teacher feedback 的独立自动回放通过率统计闭环
+- inputs: FLYWHEEL-008 canonical teacher fixture inventory/submission/expected result authority、当前确定性 teacher parser、PRD 自动回放通过率指标
+- changes: 新增 provider-neutral `TeacherFeedbackReplayDiagnosticReport` schema/compiler；在 expected authority 的 schema/hash/path/coverage 完整性通过后逐 fixture 重放 parser，以稳定 JSON raw bytes 比较 expected/replayed result；逐项绑定 submission、expected result 与 replayed result SHA-256，统计 passed/failed/passRate；CLI 只允许写入仓外非 authority 路径；committed replay report 纳入 assets semantic recompile；与 ingestion diagnostic 和 candidate readiness 完全分离
+- verification: 当前三份 fixture 稳定报告 total=3、passed=3、failed=0、passRate=1；submission/expected/replayed/inventory/report/computed field/path/output alias 漂移 fail closed，仓内 canonical assets 不能作为输出且 bytes 不变；合法 expected/replayed bytes 不一致只能投影为 failed，不能升级 authority；optimization refs 为空；完整固定顺序项目门禁
+- rollback: 回滚 FLYWHEEL-010 提交；删除 replay report schema/compiler/fixture 和对应 parser export、assets/README/策略增量；不得回滚 FLYWHEEL-008/009 authority，不得修改 readiness、`.env`、仓外 receipt、WPF、真实数据或 cloud-egress 配置
+- blocks: FLYWHEEL-008, FLYWHEEL-009
+- done_definition: 仓内能从 canonical synthetic teacher feedback authority 确定性重放并重验一个独立 replay diagnostic report；该报告只衡量受控 fixture 的 byte-exact replay compatibility，不贡献 ingestion structured rate、candidate recall、release qualification、controls、eligibility 或 `OptimizationCandidate`，不宣称真实教师反馈效果、workflow integrated 或 live accepted
+
 ## Epic GEN：答案生成主链
 
 ### task_id: GEN-001
