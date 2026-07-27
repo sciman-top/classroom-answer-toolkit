@@ -292,6 +292,16 @@
 - blocks: VISION-007
 - done_definition: 仓内能从三个 canonical 2x synthetic crops 确定性生成并重验非语义 line/region/text candidates；只证明 repo-side structural extraction plumbing，不构成 OCR、layout semantics、FigureUnderstandingResult、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-009
+
+- goal: 建立 provider-neutral、明确不作正确性验收的首个本地 OCR observation 闭环
+- inputs: VISION-007 committed preprocessing result 与 scale=2 crop、同 case VISION-008 committed structure result、现有 `tools/ocr/.venv` RapidOCR/ONNX Runtime/OpenCV/Pillow runtime
+- changes: 新增 `VisualOcrObservationRequest / Result / CaseInventory` schema 和 deterministic local observer；冻结 whole-crop RapidOCR parameters、package/component versions 与三份 bundled ONNX model raw-byte SHA-256；规范化 raw observed text/confidence/quad/order/count，允许零 observation；三学科各一个 canonical case，固定 ground truth unavailable、not evaluated、requires human review、semantic/Track not integrated；纳入 assets 与 hotspot
+- verification: 三 case 在 admitted runtime/model hashes 上 expected result byte-exact replay；caller inventory、非 canonical request、path/alias、preprocessing/crop/structure/request/result/model/config/version hash、positive acceptance/ground-truth/semantic/Track/cloud/live state、ordering/count/computed-field 和仓内输出漂移均 fail closed；完整固定顺序项目门禁
+- rollback: 回滚 VISION-009 实现提交并删除本切片 schema/tool/request/result/inventory、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
+- blocks: VISION-007, VISION-008
+- done_definition: 仓内能诚实记录并重验三个 canonical synthetic crop 的 RapidOCR observation，包括空结果和错误文本；只证明 repo-side OCR observation plumbing，不构成 OCR correctness/acceptance、layout semantics、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

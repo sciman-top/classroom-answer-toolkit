@@ -167,6 +167,7 @@
 - 图片副链与 Word 原生解析
 - VISION-007 provider-neutral 显式 bbox 本地预处理 runtime；三个 subject-pack 各一个公开 synthetic bitmap，固定输出 1x/2x crop 并记录 raw-byte/pixel hash 与 engine provenance
 - VISION-008 provider-neutral 结构抽取 runtime；只从三个 canonical 2x crop 输出非语义 line/connected/text-region candidates，明确不执行 OCR、不分类学科图元、不生成 TrackResult
+- VISION-009 provider-neutral OCR observation runtime；只记录三个 canonical 2x crop 的 frozen local RapidOCR 原始观察，允许空结果和错误文本，明确不构造 ground truth、不计算准确率、不生成 layout/TrackResult
 
 ### 涉及文件面
 
@@ -186,6 +187,7 @@
 - `generated` 桶进入正式放行矩阵
 - 显式 `page_pixel` bbox 可确定性生成且重验 1x/2x synthetic crop；它只证明 preprocessing plumbing，不等于 OCR/layout/Track runtime
 - canonical 2x crop 可确定性生成并重验非语义结构候选；它只证明 primitive extraction plumbing，不等于 OCR、layout semantics、FigureUnderstandingResult 或 Track B
+- canonical 2x crop 可在 admitted package/model hashes 上重放 OCR observation；它只证明 OCR plumbing，不等于识别正确、OCR acceptance、layout semantics 或 Track B
 
 ### 验证方式
 
@@ -196,12 +198,14 @@
 - 分桶灰度验证
 - preprocessing schema、canonical inventory、path/hash/alias/bbox/computed-field 漂移与 deterministic replay 验证
 - structure extraction schema、preprocessing/crop authority、algorithm parameters、candidate ordering/counts 与 deterministic replay 验证
+- OCR observation schema、preprocessing/crop/structure sibling authority、package/model/config hashes、observation ordering/counts 与 deterministic replay 验证
 
 ### 禁止扩张点
 
 - 不提前承诺“视觉题全自动可信放行”
 - 不把显式 synthetic crop 冒充自动 region 检测、OCR/layout 语义、真实试卷效果或 Track A/B/C 集成
 - 不把 line/connected/text-region candidate 冒充 axis/tick/circuit component、recognized text、FigureUnderstandingResult 或 Track B evidence
+- 不把 OCR observation/confidence 冒充 ground truth、正确率、OCR acceptance、layout/semantic evidence 或 Track B result
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项

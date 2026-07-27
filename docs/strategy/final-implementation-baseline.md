@@ -490,6 +490,14 @@ P1 样例集默认人工拆分题面/答案：
 - disposition 固定为 `ocr=not_attempted / semantic=not_inferred / track=not_integrated`。本切片不生成 `FigureUnderstandingResult / ProblemEvidenceBundle / TrackResult / DecisionRecord`。
 - 只消费三个公开 synthetic 2x crops；不接 WPF/gateway/readiness/trust/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
 
+### VISION-009 本地 OCR observation 边界
+
+- `VisualOcrObservationRequest / Result` 与 preprocessing、structure extraction、答案生成、delivery 和 TrackResult 合同分离，只接受 committed VISION-007 scale=2 crop，并绑定 same-case VISION-008 result 作为 sibling evidence。
+- runtime 固定 RapidOCR/ONNX Runtime/OpenCV/Pillow 版本、三份 bundled ONNX model raw-byte SHA-256 和 whole-crop invocation parameters；版本、模型、配置或 input authority 漂移均 fail closed。
+- observation 可为空，也可保留明显错误的模型原始文本与 confidence；confidence 不是 correctness，fixture 没有 ground truth，不计算准确率、召回率或 OCR/image conflict。
+- result 固定 `groundTruthAvailable=false / acceptanceDisposition=not_evaluated / requiresHumanReview=true / semanticDisposition=not_inferred / trackDisposition=not_integrated`，local-only provenance 不得升级为 cloud/live。
+- 本切片不生成 layout relation、FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult 或 DecisionRecord，不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

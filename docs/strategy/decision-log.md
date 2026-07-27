@@ -139,3 +139,9 @@
 - 决定：VISION-008 从 VISION-007 canonical 2x crop 运行冻结的 threshold/connected-components/Canny/Hough 算法，只输出规范化 line/connected/text-region candidates，并固定 OCR 未执行、语义未推断、Track 未集成
 - 原因：像素结构抽取是 OCR/layout/Track B 的前置底座，但直接给 synthetic 图元贴 axis/tick/component 或文本标签会把 fixture knowledge 写进 extractor，形成虚假语义 authority
 - 边界：candidate 不能升级为 `FigureUnderstandingResult / ProblemEvidenceBundle / TrackResult`，不做真实 OCR、学科分类、WPF/gateway/readiness/trust/optimizer 或 cloud egress；controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`，不宣称 workflow integrated 或 live accepted
+
+## D-027 首个 OCR runtime 只建立 observation authority，不建立 correctness authority
+
+- 决定：VISION-009 对 committed synthetic 2x crop 运行 hash/version/parameter-bound local RapidOCR，原样记录空结果或错误文本，并固定 ground truth unavailable、not evaluated、requires human review、语义未推断、Track 未集成
+- 原因：当前 fixture 可证明 OCR runtime plumbing 和 replay，但没有独立人工 truth authority；把 confidence、可见字符或 synthetic fixture knowledge 写成 expected correctness 会伪造 OCR acceptance
+- 边界：不计算准确率/召回率，不生成 OCR/image conflict、layout relation、FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult、DecisionRecord 或 OptimizationCandidate；不接 WPF/gateway/readiness/trust，不启 cloud egress，不使用真实数据，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
