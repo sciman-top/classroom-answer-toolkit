@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-preprocessing-request",
+  "requestId": "senior-circuit-label",
+  "subjectPack": "senior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic public fixture; no teacher, student, or exam data."
+  },
+  "source": {
+    "artifactRef": "senior-circuit-label.source.png",
+    "mediaType": "image/png",
+    "rawByteSha256": "6d478a0734b12b00e185c5334771c2338658fbe2db27328fcf884b1267721aa6",
+    "decodedRgbPixelSha256": "0cf58dd8235e5bdaef307a3c267a35a2fcf3f1642ef0079c0b98371a982b6a40",
+    "pixelSize": {
+      "width": 360,
+      "height": 220
+    }
+  },
+  "bbox": {
+    "x": 40,
+    "y": 40,
+    "width": 280,
+    "height": 140,
+    "coordinateSpace": "page_pixel"
+  },
+  "scales": [
+    1,
+    2
+  ],
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-27T01:02:00Z"
+}

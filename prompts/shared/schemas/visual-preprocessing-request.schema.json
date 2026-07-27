@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-preprocessing-request/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "VisualPreprocessingRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "requestId",
+    "subjectPack",
+    "fixtureKind",
+    "dataClassification",
+    "source",
+    "bbox",
+    "scales",
+    "egressPolicy",
+    "requestedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-preprocessing-request" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "subjectPack": {
+      "enum": [
+        "math-answer",
+        "junior-physics-answer",
+        "senior-physics-answer"
+      ]
+    },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "dataClassification": {
+      "type": "object",
+      "required": ["level", "notes"],
+      "properties": {
+        "level": { "const": "public" },
+        "notes": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "artifactRef",
+        "mediaType",
+        "rawByteSha256",
+        "decodedRgbPixelSha256",
+        "pixelSize"
+      ],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "mediaType": { "const": "image/png" },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "decodedRgbPixelSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "pixelSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "bbox": {
+      "type": "object",
+      "required": ["x", "y", "width", "height", "coordinateSpace"],
+      "properties": {
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "coordinateSpace": { "const": "page_pixel" }
+      },
+      "additionalProperties": false
+    },
+    "scales": {
+      "type": "array",
+      "prefixItems": [
+        { "const": 1 },
+        { "const": 2 }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "egressPolicy": {
+      "type": "object",
+      "required": ["allowCloud"],
+      "properties": {
+        "allowCloud": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "requestedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

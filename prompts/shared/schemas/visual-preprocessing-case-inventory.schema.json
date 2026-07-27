@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-preprocessing-case-inventory/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "VisualPreprocessingCaseInventory",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "fixtureSetId",
+    "fixtureKind",
+    "entries"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-preprocessing-case-inventory" },
+    "fixtureSetId": { "const": "synthetic-visual-preprocessing-v1" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "entries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId",
+          "subjectPack",
+          "sourceRef",
+          "sourceSha256",
+          "sourceDecodedRgbPixelSha256",
+          "requestRef",
+          "requestSha256",
+          "expectedResultRef",
+          "expectedResultSha256"
+        ],
+        "properties": {
+          "caseId": { "type": "string", "minLength": 1 },
+          "subjectPack": {
+            "enum": [
+              "math-answer",
+              "junior-physics-answer",
+              "senior-physics-answer"
+            ]
+          },
+          "sourceRef": { "type": "string", "minLength": 1 },
+          "sourceSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "sourceDecodedRgbPixelSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "requestRef": { "type": "string", "minLength": 1 },
+          "requestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "expectedResultRef": { "type": "string", "minLength": 1 },
+          "expectedResultSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

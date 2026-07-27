@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-preprocessing-request",
+  "requestId": "junior-instrument-scale",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic public fixture; no teacher, student, or exam data."
+  },
+  "source": {
+    "artifactRef": "junior-instrument-scale.source.png",
+    "mediaType": "image/png",
+    "rawByteSha256": "64e186d4b4dd32484844dbbe0966c8ed34ba724d8622cd201ac2f5c1316bf113",
+    "decodedRgbPixelSha256": "c067928b7d7f9de141e744f83ec6b9431f62ee9ed5f0bd41241b3fe35807dc34",
+    "pixelSize": {
+      "width": 360,
+      "height": 180
+    }
+  },
+  "bbox": {
+    "x": 35,
+    "y": 35,
+    "width": 290,
+    "height": 105,
+    "coordinateSpace": "page_pixel"
+  },
+  "scales": [
+    1,
+    2
+  ],
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-27T01:01:00Z"
+}

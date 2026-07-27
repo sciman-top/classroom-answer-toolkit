@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-preprocessing-case-inventory",
+  "fixtureSetId": "synthetic-visual-preprocessing-v1",
+  "fixtureKind": "synthetic_fixture",
+  "entries": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "sourceRef": "math-function-graph.source.png",
+      "sourceSha256": "b9de4845e18bb01f6b129f712b737e4fe0ae16bad9b4f08eeb02b8bb53b1f9b2",
+      "sourceDecodedRgbPixelSha256": "4d54c2b39bd87456e5624c27faef4c270f086bec2d16f797ca97f9bb45f67254",
+      "requestRef": "math-function-graph.visual-preprocessing-request.json",
+      "requestSha256": "e8a8e48522ade84838d26b30c2dc1fb3571016c286729822e330b45b56ba21f0",
+      "expectedResultRef": "math-function-graph.visual-preprocessing-result.json",
+      "expectedResultSha256": "9dc94ae6d5eee7142e9acf779bff39859914d57acbaf1cc9bcab2112e9c4627b"
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "sourceRef": "junior-instrument-scale.source.png",
+      "sourceSha256": "64e186d4b4dd32484844dbbe0966c8ed34ba724d8622cd201ac2f5c1316bf113",
+      "sourceDecodedRgbPixelSha256": "c067928b7d7f9de141e744f83ec6b9431f62ee9ed5f0bd41241b3fe35807dc34",
+      "requestRef": "junior-instrument-scale.visual-preprocessing-request.json",
+      "requestSha256": "f9b766039895fa71fcaf1fa83884cb424bec8c16a4a0d21b26fe2d58d9f1db52",
+      "expectedResultRef": "junior-instrument-scale.visual-preprocessing-result.json",
+      "expectedResultSha256": "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b"
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "sourceRef": "senior-circuit-label.source.png",
+      "sourceSha256": "6d478a0734b12b00e185c5334771c2338658fbe2db27328fcf884b1267721aa6",
+      "sourceDecodedRgbPixelSha256": "0cf58dd8235e5bdaef307a3c267a35a2fcf3f1642ef0079c0b98371a982b6a40",
+      "requestRef": "senior-circuit-label.visual-preprocessing-request.json",
+      "requestSha256": "9d8c2b1ad01bbd53ee7e77f11e0601663ab714fddd9c2f48504e68fcb070d68b",
+      "expectedResultRef": "senior-circuit-label.visual-preprocessing-result.json",
+      "expectedResultSha256": "aa29231239edf9e7ec7142e52abfa07062bdbd7f42955768b060bd8fa20cf1fa"
+    }
+  ]
+}

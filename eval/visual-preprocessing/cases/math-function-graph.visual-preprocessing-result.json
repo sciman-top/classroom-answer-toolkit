@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-preprocessing-result",
+  "requestId": "math-function-graph",
+  "subjectPack": "math-answer",
+  "fixtureKind": "synthetic_fixture",
+  "sourceRequestSha256": "e8a8e48522ade84838d26b30c2dc1fb3571016c286729822e330b45b56ba21f0",
+  "source": {
+    "artifactRef": "math-function-graph.source.png",
+    "rawByteSha256": "b9de4845e18bb01f6b129f712b737e4fe0ae16bad9b4f08eeb02b8bb53b1f9b2",
+    "decodedRgbPixelSha256": "4d54c2b39bd87456e5624c27faef4c270f086bec2d16f797ca97f9bb45f67254",
+    "pixelSize": {
+      "width": 320,
+      "height": 240
+    }
+  },
+  "normalizedPage": {
+    "schemaVersion": "1.0",
+    "kind": "normalized-page",
+    "pageId": "math-function-graph-page-1",
+    "sourceDocument": "math-function-graph.source.png",
+    "sourceKind": "image",
+    "pageNumber": 1,
+    "imagePath": "math-function-graph.source.png",
+    "pixelSize": {
+      "width": 320,
+      "height": 240
+    },
+    "dpi": 96,
+    "renderScales": [
+      1,
+      2
+    ],
+    "preprocessing": {
+      "orientationDegrees": 0,
+      "deskewApplied": false,
+      "denoiseApplied": false,
+      "trimApplied": false,
+      "perspectiveCorrectionApplied": false
+    },
+    "regionRefs": [
+      "math-function-graph-crop"
+    ],
+    "generatedAt": "2026-07-27T01:00:00Z"
+  },
+  "visualRegion": {
+    "schemaVersion": "1.0",
+    "kind": "visual-region",
+    "regionId": "math-function-graph-crop",
+    "pageId": "math-function-graph-page-1",
+    "regionType": "crop",
+    "bbox": {
+      "x": 45,
+      "y": 25,
+      "width": 230,
+      "height": 185,
+      "coordinateSpace": "page_pixel"
+    },
+    "cropRef": "math-function-graph.crop-1x.png",
+    "imagePath": "math-function-graph.crop-1x.png",
+    "pixelSize": {
+      "width": 230,
+      "height": 185
+    },
+    "generatedAt": "2026-07-27T01:00:00Z"
+  },
+  "cropArtifacts": [
+    {
+      "scale": 1,
+      "artifactRef": "math-function-graph.crop-1x.png",
+      "rawByteSha256": "a7b49e9fee9c73c4341d59d58fdac57291f9aa9c8d833be0e77ec3527fc81cb5",
+      "decodedRgbPixelSha256": "19cf33a4cbe9c24f7e3e1eb9d34cce8bdf8570841cf4a91ff047562cafd4bbb8",
+      "pixelSize": {
+        "width": 230,
+        "height": 185
+      },
+      "interpolation": "pixel_preserving"
+    },
+    {
+      "scale": 2,
+      "artifactRef": "math-function-graph.crop-2x.png",
+      "rawByteSha256": "77911d7a23d34a664a907e596a421fd3fea575d53b191ee29c0030e773c66d92",
+      "decodedRgbPixelSha256": "f7384abdf7091caf909056ca3d3698709bcce53ae9997bd13d5132b4e284dc9a",
+      "pixelSize": {
+        "width": 460,
+        "height": 370
+      },
+      "interpolation": "nearest"
+    }
+  ],
+  "engineProvenance": {
+    "engineKind": "local_runtime",
+    "engineId": "deterministic-local-visual-preprocessor",
+    "engineVersion": "1.0.0",
+    "components": [
+      {
+        "name": "opencv",
+        "version": "5.0.0"
+      },
+      {
+        "name": "pillow",
+        "version": "12.3.0"
+      }
+    ],
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-27T01:00:00Z"
+}
