@@ -6,16 +6,28 @@ import { isDeepStrictEqual } from "node:util";
 
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { getCanonicalSampleAuthorityPaths } from "./sample-run.mjs";
-import { validateCanonicalTeacherFeedbackFixtures } from "./teacher-feedback-parse.mjs";
+import {
+  compileTeacherFeedbackParseResult,
+  loadCanonicalTeacherFeedbackReplayAuthority,
+  validateCanonicalTeacherFeedbackFixtures
+} from "./teacher-feedback-parse.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
-const schemaPath = path.join(
+const schemaRoot = path.join(
   repoRoot,
   "prompts",
   "shared",
-  "schemas",
+  "schemas");
+const diagnosticSchemaPath = path.join(
+  schemaRoot,
   "teacher-feedback-diagnostic-report.schema.json");
+const replaySchemaPath = path.join(
+  schemaRoot,
+  "teacher-feedback-replay-diagnostic-report.schema.json");
+const feedbackParseResultSchemaPath = path.join(
+  schemaRoot,
+  "feedback-parse-result.schema.json");
 const fixtureRoot = fs.realpathSync.native(path.join(
   repoRoot,
   "eval",
@@ -53,11 +65,37 @@ export function compileTeacherFeedbackDiagnosticReport() {
 }
 
 export function validateTeacherFeedbackDiagnosticReport(report) {
-  assertSchema("TeacherFeedbackDiagnosticReport", report);
+  assertSchema("TeacherFeedbackDiagnosticReport", report, diagnosticSchemaPath);
   const expected = buildExpectedReport();
   if (!isDeepStrictEqual(report, expected)) {
     throw new Error(
       "TeacherFeedbackDiagnosticReport does not match canonical teacher fixture bytes.");
+  }
+  return report;
+}
+
+export function compileTeacherFeedbackReplayDiagnosticReport(options = {}) {
+  const compileResult = options.compileResult ?? compileTeacherFeedbackParseResult;
+  if (typeof compileResult !== "function") {
+    throw new Error("Teacher feedback replay compileResult must be a function.");
+  }
+  const report = buildExpectedReplayReport(compileResult);
+  assertSchema(
+    "TeacherFeedbackReplayDiagnosticReport",
+    report,
+    replaySchemaPath);
+  return report;
+}
+
+export function validateTeacherFeedbackReplayDiagnosticReport(report) {
+  assertSchema(
+    "TeacherFeedbackReplayDiagnosticReport",
+    report,
+    replaySchemaPath);
+  const expected = buildExpectedReplayReport(compileTeacherFeedbackParseResult);
+  if (!isDeepStrictEqual(report, expected)) {
+    throw new Error(
+      "TeacherFeedbackReplayDiagnosticReport does not match canonical replay bytes.");
   }
   return report;
 }
@@ -124,6 +162,51 @@ function buildExpectedReport() {
   };
 }
 
+function buildExpectedReplayReport(compileResult) {
+  const authority = loadCanonicalTeacherFeedbackReplayAuthority();
+  const replayBindings = authority.entries.map((entry) => {
+    const replayedResult = compileResult({
+      runPath: entry.sourceRunPath,
+      feedbackPath: entry.submissionPath
+    });
+    assertSchema(
+      `${entry.fixtureId} replayed FeedbackParseResult`,
+      replayedResult,
+      feedbackParseResultSchemaPath);
+    const replayedBytes = serializeJson(replayedResult);
+    const expectedBytes = fs.readFileSync(entry.expectedResultPath);
+    return {
+      fixtureId: entry.fixtureId,
+      submissionRef: entry.submissionRef,
+      submissionSha256: entry.submissionSha256,
+      expectedResultRef: entry.expectedResultRef,
+      expectedResultSha256: entry.expectedResultSha256,
+      replayedResultSha256: sha256(replayedBytes),
+      replayDisposition: replayedBytes.equals(expectedBytes) ? "passed" : "failed"
+    };
+  });
+  const passedCount = replayBindings.filter(
+    (binding) => binding.replayDisposition === "passed").length;
+  const totalReplays = replayBindings.length;
+  return {
+    schemaVersion: "1.0",
+    kind: "teacher-feedback-replay-diagnostic-report",
+    reportId: `teacher-feedback-replay-${authority.inventorySha256.slice(0, 16)}`,
+    fixtureSetId: authority.inventory.fixtureSetId,
+    sourceInventoryRef: path.basename(authority.inventoryPath),
+    sourceInventorySha256: authority.inventorySha256,
+    replayBindings,
+    totals: {
+      totalReplays,
+      passedCount,
+      failedCount: totalReplays - passedCount,
+      passRate: roundRate(passedCount, totalReplays)
+    },
+    optimizationCandidateRefs: [],
+    stopReason: "teacher_feedback_replay_diagnostic_only_no_optimizer"
+  };
+}
+
 function emptyCounts(values) {
   return Object.fromEntries(values.map((value) => [value, 0]));
 }
@@ -175,7 +258,7 @@ function requireText(value, label) {
   return value;
 }
 
-function assertSchema(label, value) {
+function assertSchema(label, value, schemaPath) {
   const errors = validateValueAgainstSchema(value, schemaPath);
   if (errors.length > 0) {
     throw new Error(
@@ -184,21 +267,14 @@ function assertSchema(label, value) {
 }
 
 function protectedAuthorityPaths() {
-  const inventory = validateCanonicalTeacherFeedbackFixtures();
-  const paths = [inventoryPath];
-  for (const entry of inventory.entries) {
-    const submissionPath = resolveFixtureRef(
-      entry.submissionRef,
-      `${entry.fixtureId} submissionRef`);
-    paths.push(submissionPath);
-    paths.push(resolveFixtureRef(entry.resultRef, `${entry.fixtureId} resultRef`));
+  const authority = loadCanonicalTeacherFeedbackReplayAuthority();
+  const paths = [authority.inventoryPath];
+  for (const entry of authority.entries) {
+    const submissionPath = entry.submissionPath;
+    paths.push(submissionPath, entry.expectedResultPath, entry.sourceRunPath);
     const submission = readJsonArtifact(
       submissionPath,
       `${entry.fixtureId} TeacherFeedbackSubmission`).value;
-    const sourceRunPath = requireFile(
-      path.resolve(path.dirname(submissionPath), submission.sourceRunRef),
-      `${entry.fixtureId} sourceRunRef`);
-    paths.push(sourceRunPath);
     paths.push(...getCanonicalSampleAuthorityPaths(submission.sampleId));
   }
   return paths;
@@ -217,6 +293,10 @@ function assertOutputDoesNotAliasAuthority(outputPath) {
   }
   if (pathIsWithin(resolvedOutputPath, repoRoot)) {
     throw new Error("--out must remain outside the repository root.");
+  }
+  if (fs.existsSync(resolvedOutputPath)
+    && fs.statSync(resolvedOutputPath, { bigint: true }).nlink > 1n) {
+    throw new Error("--out must not be a hardlink alias.");
   }
   const outputCanonical = canonicalPath(resolvedOutputPath);
   const outputIdentity = fileIdentity(resolvedOutputPath);
@@ -282,12 +362,25 @@ function atomicWriteJson(filePath, value) {
   }
 }
 
+function serializeJson(value) {
+  return Buffer.from(`${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+function sha256(bytes) {
+  return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+
 function parseArgs(argv) {
-  const options = {};
+  const options = { reportKind: "ingestion" };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--out") {
       options.outPath = requireText(argv[++index], arg);
+    } else if (arg === "--report") {
+      options.reportKind = requireText(argv[++index], arg);
+      if (!["ingestion", "replay"].includes(options.reportKind)) {
+        throw new Error("--report must be ingestion or replay.");
+      }
     } else if (arg === "--help" || arg === "-h") {
       return null;
     } else {
@@ -302,7 +395,9 @@ function main() {
   if (!options) {
     return;
   }
-  const report = compileTeacherFeedbackDiagnosticReport();
+  const report = options.reportKind === "replay"
+    ? compileTeacherFeedbackReplayDiagnosticReport()
+    : compileTeacherFeedbackDiagnosticReport();
   assertOutputDoesNotAliasAuthority(options.outPath);
   atomicWriteJson(options.outPath, report);
   process.stdout.write(`${path.resolve(options.outPath)}\n`);

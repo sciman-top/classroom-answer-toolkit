@@ -8,6 +8,7 @@
     "compile:feedback": "node feedback-parse.mjs",
     "compile:teacher-feedback": "node teacher-feedback-parse.mjs",
     "compile:teacher-diagnostics": "node teacher-feedback-diagnostic.mjs",
+    "compile:teacher-replay": "node teacher-feedback-diagnostic.mjs --report replay",
     "compile:readiness": "node optimization-readiness.mjs",
     "run:control-gates": "node readiness-control-receipt.mjs",
     "test": "node --test sample-run.test.mjs feedback-parse.test.mjs teacher-feedback-parse.test.mjs teacher-feedback-diagnostic.test.mjs optimization-readiness.test.mjs readiness-control-receipt.test.mjs"

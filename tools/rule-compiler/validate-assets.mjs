@@ -7,7 +7,10 @@ import { checkAssemblyOutputs } from "../spec-assembler/assemble-human-spec.mjs"
 import { validateCanonicalSampleAuthorities } from "../sample-flywheel/sample-run.mjs";
 import { validateOptimizationReadinessReport } from "../sample-flywheel/optimization-readiness.mjs";
 import { validateCanonicalTeacherFeedbackFixtures } from "../sample-flywheel/teacher-feedback-parse.mjs";
-import { validateTeacherFeedbackDiagnosticReport } from "../sample-flywheel/teacher-feedback-diagnostic.mjs";
+import {
+  validateTeacherFeedbackDiagnosticReport,
+  validateTeacherFeedbackReplayDiagnosticReport
+} from "../sample-flywheel/teacher-feedback-diagnostic.mjs";
 import { validateCanonicalSyntheticGenerationFixtures } from "../answer-generator/synthetic-generator.mjs";
 
 function collectValidationTargets() {
@@ -24,6 +27,7 @@ function collectValidationTargets() {
   const teacherFeedbackSubmissionSchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-submission.schema.json");
   const teacherFeedbackFixtureInventorySchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-fixture-inventory.schema.json");
   const teacherFeedbackDiagnosticReportSchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-diagnostic-report.schema.json");
+  const teacherFeedbackReplayDiagnosticReportSchema = resolveRepoPath("prompts/shared/schemas/teacher-feedback-replay-diagnostic-report.schema.json");
   const answerGenerationRequestSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-request.schema.json");
   const answerGenerationResultSchema = resolveRepoPath("prompts/shared/schemas/answer-generation-result.schema.json");
   const samplePackageSchema = resolveRepoPath("prompts/shared/schemas/sample-package.schema.json");
@@ -147,6 +151,12 @@ function collectValidationTargets() {
       "teacher-feedback-diagnostic-report.json"),
     schemaPath: teacherFeedbackDiagnosticReportSchema
   }];
+  const teacherFeedbackReplayDiagnosticReportFiles = [{
+    filePath: path.join(
+      teacherFeedbackFixtureRoot,
+      "teacher-feedback-replay-diagnostic-report.json"),
+    schemaPath: teacherFeedbackReplayDiagnosticReportSchema
+  }];
   const answerGenerationRequestFiles = listFilesBySuffixRecursive(
     answerGenerationEvalRoot,
     ".answer-generation-request.json")
@@ -182,6 +192,7 @@ function collectValidationTargets() {
     teacherFeedbackParseResults: teacherFeedbackParseResultFiles,
     teacherFeedbackFixtureInventories: teacherFeedbackFixtureInventoryFiles,
     teacherFeedbackDiagnosticReports: teacherFeedbackDiagnosticReportFiles,
+    teacherFeedbackReplayDiagnosticReports: teacherFeedbackReplayDiagnosticReportFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -199,6 +210,7 @@ function collectValidationTargets() {
       teacherFeedbackSubmissionSchema,
       teacherFeedbackFixtureInventorySchema,
       teacherFeedbackDiagnosticReportSchema,
+      teacherFeedbackReplayDiagnosticReportSchema,
       answerGenerationRequestSchema,
       answerGenerationResultSchema,
       samplePackageSchema,
@@ -277,7 +289,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -511,6 +523,20 @@ function main() {
       ? error.message
       : String(error);
   }
+  let teacherFeedbackReplayDiagnosticReportError;
+  try {
+    const reportPath = targets.teacherFeedbackReplayDiagnosticReports[0].filePath;
+    const report = validateTeacherFeedbackReplayDiagnosticReport(
+      readJsonFile(reportPath));
+    if (report.totals.failedCount !== 0 || report.totals.passRate !== 1) {
+      throw new Error(
+        "Canonical teacher feedback replay report must have zero failures and passRate=1.");
+    }
+  } catch (error) {
+    teacherFeedbackReplayDiagnosticReportError = error instanceof Error
+      ? error.message
+      : String(error);
+  }
 
   const errors = [
     ...fileValidation.errors,
@@ -525,6 +551,9 @@ function main() {
       : []),
     ...(teacherFeedbackDiagnosticReportError
       ? [`Canonical teacher feedback diagnostic report: ${teacherFeedbackDiagnosticReportError}`]
+      : []),
+    ...(teacherFeedbackReplayDiagnosticReportError
+      ? [`Canonical teacher feedback replay diagnostic report: ${teacherFeedbackReplayDiagnosticReportError}`]
       : []),
     ...(sampleAuthorityError ? [`Canonical sample authority: ${sampleAuthorityError}`] : []),
     ...(answerGenerationFixtureError

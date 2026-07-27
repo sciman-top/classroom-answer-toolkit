@@ -16,6 +16,7 @@ This tool provides the first executable, fully synthetic sample-run admission an
 - bounded teacher-text parsing accepts hash-inventory-admitted, repository-owned public `synthetic_fixture` submissions only; one explicit non-negated error type and one explicit severity produce `source=teacher_input`, while missing, ambiguous, or explicitly negated signals fail closed to `needs_human_label` with no feedback record. Negation handling is a finite prefix lexicon, not general linguistic interpretation.
 - teacher-text results are diagnostic fixtures and are not admitted into readiness recall or optimization eligibility.
 - the canonical `TeacherFeedbackDiagnosticReport` independently reports fixture ingestion structure/human-label rates and complete error/severity/reason distributions; it does not contribute candidate readiness or eligibility.
+- the canonical `TeacherFeedbackReplayDiagnosticReport` replays the same parser against every hash-bound expected result and reports byte-exact pass/fail compatibility independently from ingestion and candidate readiness.
 - a hash-bound canonical case inventory plus a complete runtime manifest can compile a per-source `OptimizationReadinessReport`; missing runs or feedback remain in the recall denominator and unmet gates fail closed.
 - without a receipt, toolchain and restricted-egress controls remain `not_verified`.
 - `run:control-gates` executes the fixed gate sequence from a clean HEAD, forces cloud egress disabled, writes logs and a hash-bound receipt outside the repository, and rechecks the clean revision after execution.
@@ -42,6 +43,8 @@ CLI output targets):
 ```powershell
 npm --prefix tools/sample-flywheel run compile:teacher-diagnostics -- `
   --out "$env:TEMP/classroom-teacher-feedback-diagnostic-report.json"
+npm --prefix tools/sample-flywheel run compile:teacher-replay -- `
+  --out "$env:TEMP/classroom-teacher-feedback-replay-diagnostic-report.json"
 ```
 
 Run the controlled gates from a clean checkout. The output directory must be

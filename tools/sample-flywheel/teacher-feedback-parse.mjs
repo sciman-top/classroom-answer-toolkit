@@ -97,9 +97,24 @@ export function validateTeacherFeedbackParseResult(result, sourceRunPath, feedba
 }
 
 export function validateCanonicalTeacherFeedbackFixtures() {
-  const inventory = readTeacherFixtureInventory();
+  const authority = loadCanonicalTeacherFeedbackReplayAuthority();
+  for (const entry of authority.entries) {
+    validateTeacherFeedbackParseResult(
+      entry.expectedResult,
+      entry.sourceRunPath,
+      entry.submissionPath);
+  }
+  return authority.inventory;
+}
+
+export function loadCanonicalTeacherFeedbackReplayAuthority() {
+  const inventoryArtifact = readJsonArtifact(
+    teacherFixtureInventoryPath,
+    "teacher feedback fixture inventory");
+  const inventory = validateTeacherFixtureInventory(inventoryArtifact.value);
   const admittedSubmissions = new Set();
   const admittedResults = new Set();
+  const entries = [];
   for (const entry of inventory.entries) {
     const submissionPath = resolveTeacherFixtureRef(
       entry.submissionRef,
@@ -117,16 +132,27 @@ export function validateCanonicalTeacherFeedbackFixtures() {
       || resultArtifact.sha256 !== entry.resultSha256) {
       throw new Error(`${entry.fixtureId} teacher fixture bytes do not match inventory hashes.`);
     }
+    assertSchema(
+      `${entry.fixtureId} expected FeedbackParseResult`,
+      resultArtifact.value,
+      resultSchema);
     const runPath = resolveRelativeFile(
       submissionArtifact.value.sourceRunRef,
       submissionArtifact.path,
       `${entry.fixtureId} sourceRunRef`);
-    validateTeacherFeedbackParseResult(
-      resultArtifact.value,
-      runPath,
-      submissionArtifact.path);
     admittedSubmissions.add(normalizePath(submissionArtifact.path));
     admittedResults.add(normalizePath(resultArtifact.path));
+    entries.push({
+      fixtureId: entry.fixtureId,
+      submissionRef: entry.submissionRef,
+      submissionPath: submissionArtifact.path,
+      submissionSha256: submissionArtifact.sha256,
+      sourceRunPath: runPath,
+      expectedResultRef: entry.resultRef,
+      expectedResultPath: resultArtifact.path,
+      expectedResultSha256: resultArtifact.sha256,
+      expectedResult: resultArtifact.value
+    });
   }
   assertExactFixtureCoverage(
     admittedSubmissions,
@@ -136,7 +162,12 @@ export function validateCanonicalTeacherFeedbackFixtures() {
     admittedResults,
     ".feedback-parse-result.json",
     "result");
-  return inventory;
+  return {
+    inventory,
+    inventoryPath: inventoryArtifact.path,
+    inventorySha256: inventoryArtifact.sha256,
+    entries
+  };
 }
 
 function readTeacherFeedbackContext(runPath, feedbackPath) {
@@ -271,9 +302,12 @@ function matchLexicon(text, lexicon) {
 }
 
 function readTeacherFixtureInventory() {
-  const inventory = readJsonArtifact(
+  return validateTeacherFixtureInventory(readJsonArtifact(
     teacherFixtureInventoryPath,
-    "teacher feedback fixture inventory").value;
+    "teacher feedback fixture inventory").value);
+}
+
+function validateTeacherFixtureInventory(inventory) {
   assertSchema("TeacherFeedbackFixtureInventory", inventory, inventorySchema);
   if (inventory.schemaVersion !== "1.0"
     || inventory.kind !== "teacher-feedback-fixture-inventory") {

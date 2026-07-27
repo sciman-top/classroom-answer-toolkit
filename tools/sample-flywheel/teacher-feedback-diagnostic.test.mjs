@@ -7,8 +7,11 @@ import test from "node:test";
 
 import {
   compileTeacherFeedbackDiagnosticReport,
-  validateTeacherFeedbackDiagnosticReport
+  compileTeacherFeedbackReplayDiagnosticReport,
+  validateTeacherFeedbackDiagnosticReport,
+  validateTeacherFeedbackReplayDiagnosticReport
 } from "./teacher-feedback-diagnostic.mjs";
+import { compileTeacherFeedbackParseResult } from "./teacher-feedback-parse.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "..", "..");
 const fixtureRoot = path.join(
@@ -23,6 +26,9 @@ const inventoryPath = path.join(
 const committedReportPath = path.join(
   fixtureRoot,
   "teacher-feedback-diagnostic-report.json");
+const committedReplayReportPath = path.join(
+  fixtureRoot,
+  "teacher-feedback-replay-diagnostic-report.json");
 const readinessReportPath = path.join(
   repoRoot,
   "eval",
@@ -107,6 +113,108 @@ test("committed teacher feedback diagnostic report recompiles deterministically"
   validateTeacherFeedbackDiagnosticReport(committed);
 });
 
+test("canonical teacher feedback replays expected result bytes", () => {
+  const report = compileTeacherFeedbackReplayDiagnosticReport();
+
+  assert.equal(report.schemaVersion, "1.0");
+  assert.equal(report.kind, "teacher-feedback-replay-diagnostic-report");
+  assert.match(report.reportId, /^teacher-feedback-replay-[a-f0-9]{16}$/);
+  assert.equal(report.fixtureSetId, "synthetic-teacher-feedback-v1");
+  assert.equal(report.sourceInventorySha256, sha256File(inventoryPath));
+  assert.deepEqual(report.totals, {
+    totalReplays: 3,
+    passedCount: 3,
+    failedCount: 0,
+    passRate: 1
+  });
+  assert.equal(report.replayBindings.length, 3);
+  assert.equal(report.replayBindings.every((binding) =>
+    binding.replayDisposition === "passed"
+    && binding.expectedResultSha256 === binding.replayedResultSha256), true);
+  assert.deepEqual(report.optimizationCandidateRefs, []);
+  assert.equal(
+    report.stopReason,
+    "teacher_feedback_replay_diagnostic_only_no_optimizer");
+  assert.equal("eligible" in report, false);
+  assert.equal("controls" in report, false);
+  assert.equal("buckets" in report, false);
+});
+
+test("valid replay byte mismatch is reported without changing authority", () => {
+  const report = compileTeacherFeedbackReplayDiagnosticReport({
+    compileResult: (options) => {
+      const result = compileTeacherFeedbackParseResult(options);
+      if (!options.feedbackPath.endsWith("reasoning-medium.teacher-feedback-submission.json")) {
+        return result;
+      }
+      return {
+        ...result,
+        feedbackRecords: result.feedbackRecords.map((record) => ({
+          ...record,
+          confidence: 0.8
+        }))
+      };
+    }
+  });
+
+  assert.deepEqual(report.totals, {
+    totalReplays: 3,
+    passedCount: 2,
+    failedCount: 1,
+    passRate: 0.666667
+  });
+  assert.equal(report.replayBindings[0].replayDisposition, "failed");
+  assert.notEqual(
+    report.replayBindings[0].expectedResultSha256,
+    report.replayBindings[0].replayedResultSha256);
+  assert.equal(readJson(committedReportPath).totals.totalSubmissions, 3);
+});
+
+test("replay validator rejects computed fields and optimization refs", () => {
+  const report = compileTeacherFeedbackReplayDiagnosticReport();
+  assert.throws(
+    () => validateTeacherFeedbackReplayDiagnosticReport({
+      ...report,
+      totals: { ...report.totals, passedCount: 2 }
+    }),
+    /does not match canonical replay bytes/);
+  assert.throws(
+    () => validateTeacherFeedbackReplayDiagnosticReport({
+      ...report,
+      optimizationCandidateRefs: ["optimization-candidate.json"]
+    }),
+    /schema validation/);
+});
+
+test("committed teacher feedback replay report recompiles deterministically", () => {
+  const committed = readJson(committedReplayReportPath);
+  assert.deepEqual(compileTeacherFeedbackReplayDiagnosticReport(), committed);
+  validateTeacherFeedbackReplayDiagnosticReport(committed);
+});
+
+test("replay CLI writes outside the repository and preserves readiness", () => {
+  usingSameVolumeTemporaryDirectory((directory) => {
+    const readinessBefore = fs.readFileSync(readinessReportPath);
+    const outputPath = path.join(
+      directory,
+      "teacher-feedback-replay-diagnostic-report.json");
+    const result = runCli(outputPath, "replay");
+
+    assert.equal(result.status, 0, result.stderr);
+    validateTeacherFeedbackReplayDiagnosticReport(readJson(outputPath));
+    assert.deepEqual(fs.readFileSync(readinessReportPath), readinessBefore);
+    assert.deepEqual(
+      fs.readdirSync(directory).filter((name) => name.includes(".tmp-")),
+      []);
+  });
+
+  const readinessBefore = fs.readFileSync(readinessReportPath);
+  const rejected = runCli(readinessReportPath, "replay");
+  assert.notEqual(rejected.status, 0);
+  assert.match(rejected.stderr, /outside the repository root/);
+  assert.deepEqual(fs.readFileSync(readinessReportPath), readinessBefore);
+});
+
 test("diagnostic CLI writes atomically without changing readiness", () => {
   usingSameVolumeTemporaryDirectory((directory) => {
     const readinessBefore = fs.readFileSync(readinessReportPath);
@@ -149,7 +257,15 @@ test("diagnostic CLI rejects canonical-root, hardlink, and junction aliases", (c
     }
     const hardlinkResult = runCli(hardlinkPath);
     assert.notEqual(hardlinkResult.status, 0);
-    assert.match(hardlinkResult.stderr, /must not alias/);
+    assert.match(hardlinkResult.stderr, /hardlink alias/);
+
+    const readinessHardlinkPath = path.join(directory, "readiness-hardlink.json");
+    const readinessBefore = fs.readFileSync(readinessReportPath);
+    fs.linkSync(readinessReportPath, readinessHardlinkPath);
+    const readinessHardlinkResult = runCli(readinessHardlinkPath, "replay");
+    assert.notEqual(readinessHardlinkResult.status, 0);
+    assert.match(readinessHardlinkResult.stderr, /hardlink alias/);
+    assert.deepEqual(fs.readFileSync(readinessReportPath), readinessBefore);
 
     const linkedRoot = path.join(directory, "teacher-root-link");
     try {
@@ -168,11 +284,13 @@ test("diagnostic CLI rejects canonical-root, hardlink, and junction aliases", (c
   });
 });
 
-function runCli(outputPath) {
+function runCli(outputPath, reportKind) {
+  const reportArgs = reportKind ? ["--report", reportKind] : [];
   return spawnSync(
     process.execPath,
     [
       path.join(import.meta.dirname, "teacher-feedback-diagnostic.mjs"),
+      ...reportArgs,
       "--out", outputPath
     ],
     { cwd: repoRoot, encoding: "utf8" });
