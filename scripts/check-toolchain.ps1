@@ -78,6 +78,16 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-preprocessor run validate:fixtures
 } "Visual preprocessing canonical fixture validation failed."
 
+Write-Host "visual structure extraction contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-structure-extractor test
+} "Visual structure extraction contract tests failed."
+
+Write-Host "visual structure extraction canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-structure-extractor run validate:fixtures
+} "Visual structure extraction canonical fixture validation failed."
+
 Write-Host "visual evidence delivery aggregate contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:aggregate
