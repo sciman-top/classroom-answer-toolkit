@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from visual_spatial_observer import (
     CANONICAL_ROOT,
+    DEFINITIONS,
     INVENTORY_NAME,
     REPO_ROOT,
     compile_request,
@@ -20,6 +21,8 @@ from visual_spatial_observer import (
     validate_canonical_fixtures,
     validate_admitted_request_snapshot,
     validate_interpreter,
+    validate_file_snapshot,
+    validate_result_inventory_binding,
     validate_upstream_authorities,
 )
 
@@ -159,6 +162,43 @@ class VisualSpatialObserverTests(unittest.TestCase):
             self.write_json(request_path, request)
             with self.assertRaisesRegex(ValueError, "crop binding drifted"):
                 compile_request(request_path, root, self.authorities)
+
+    def test_reloaded_upstream_result_must_match_committed_inventory(self) -> None:
+        definition = next(value for value in DEFINITIONS if value.case_id == "math-function-graph")
+        inventory = {
+            "entries": [
+                {
+                    "caseId": definition.case_id,
+                    "subjectPack": definition.subject_pack,
+                    "expectedResultRef": definition.structure_result_name,
+                    "expectedResultSha256": sha256_bytes(b"admitted"),
+                }
+            ]
+        }
+        validate_result_inventory_binding(
+            inventory,
+            definition,
+            definition.structure_result_name,
+            b"admitted",
+            "Structure extraction",
+        )
+        with self.assertRaisesRegex(ValueError, "drifted from committed inventory"):
+            validate_result_inventory_binding(
+                inventory,
+                definition,
+                definition.structure_result_name,
+                b"replaced",
+                "Structure extraction",
+            )
+
+    def test_upstream_inventory_snapshot_drift_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="visual-spatial-inventory-drift-") as temp:
+            path = Path(temp) / "inventory.json"
+            path.write_bytes(b"before")
+            validate_file_snapshot(path, b"before", "OCR observation inventory")
+            path.write_bytes(b"after")
+            with self.assertRaisesRegex(ValueError, "drifted while loading upstream authority"):
+                validate_file_snapshot(path, b"before", "OCR observation inventory")
 
     def test_result_computed_field_drift_fails_closed(self) -> None:
         with self.fixture_copy() as root:

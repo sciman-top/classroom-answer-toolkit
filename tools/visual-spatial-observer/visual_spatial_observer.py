@@ -36,10 +36,12 @@ from visual_preprocessor import (  # noqa: E402
 )
 from visual_structure_extractor import (  # noqa: E402
     CANONICAL_ROOT as STRUCTURE_ROOT,
+    INVENTORY_NAME as STRUCTURE_INVENTORY_NAME,
     validate_canonical_fixtures as validate_structure_fixtures,
 )
 from visual_ocr_observer import (  # noqa: E402
     CANONICAL_ROOT as OCR_ROOT,
+    INVENTORY_NAME as OCR_INVENTORY_NAME,
     bind_local_file,
     validate_canonical_fixtures as validate_ocr_fixtures,
 )
@@ -150,9 +152,58 @@ def upstream_contract(reference: str, data: bytes, request_id: str) -> dict[str,
     }
 
 
+def validate_result_inventory_binding(
+    inventory: dict[str, Any],
+    definition: FixtureDefinition,
+    expected_result_name: str,
+    result_bytes: bytes,
+    label: str,
+) -> None:
+    entries = inventory.get("entries")
+    if not isinstance(entries, list):
+        raise ValueError(f"{label} inventory entries are invalid.")
+    matches = [
+        entry
+        for entry in entries
+        if isinstance(entry, dict) and entry.get("caseId") == definition.case_id
+    ]
+    if len(matches) != 1:
+        raise ValueError(f"{label} inventory case coverage drifted.")
+    entry = matches[0]
+    if (
+        entry.get("subjectPack") != definition.subject_pack
+        or entry.get("expectedResultRef") != expected_result_name
+        or entry.get("expectedResultSha256") != sha256_bytes(result_bytes)
+    ):
+        raise ValueError(f"{label} result bytes drifted from committed inventory authority.")
+
+
+def validate_file_snapshot(path: Path, expected_bytes: bytes, label: str) -> None:
+    if path.read_bytes() != expected_bytes:
+        raise ValueError(f"{label} bytes drifted while loading upstream authority.")
+
+
 def validate_upstream_authorities() -> dict[str, UpstreamAuthority]:
+    structure_inventory_path = resolve_bound_file(
+        STRUCTURE_ROOT, STRUCTURE_INVENTORY_NAME, "structure extraction inventory"
+    )
+    structure_inventory_bytes, structure_inventory = read_json_bytes(
+        structure_inventory_path, "VisualStructureExtractionCaseInventory"
+    )
+    ocr_inventory_path = resolve_bound_file(
+        OCR_ROOT, OCR_INVENTORY_NAME, "OCR observation inventory"
+    )
+    ocr_inventory_bytes, ocr_inventory = read_json_bytes(
+        ocr_inventory_path, "VisualOcrObservationCaseInventory"
+    )
     validate_structure_fixtures()
     validate_ocr_fixtures()
+    validate_file_snapshot(
+        structure_inventory_path,
+        structure_inventory_bytes,
+        "Structure extraction inventory",
+    )
+    validate_file_snapshot(ocr_inventory_path, ocr_inventory_bytes, "OCR observation inventory")
     authorities = {}
     for definition in DEFINITIONS:
         structure_path = resolve_bound_file(
@@ -169,6 +220,20 @@ def validate_upstream_authorities() -> dict[str, UpstreamAuthority]:
             f"{definition.case_id} OCR result",
         )
         ocr_bytes, ocr_result = read_json_bytes(ocr_path, "VisualOcrObservationResult")
+        validate_result_inventory_binding(
+            structure_inventory,
+            definition,
+            definition.structure_result_name,
+            structure_bytes,
+            "Structure extraction",
+        )
+        validate_result_inventory_binding(
+            ocr_inventory,
+            definition,
+            definition.ocr_result_name,
+            ocr_bytes,
+            "OCR observation",
+        )
         expected_identity = {
             "requestId": definition.case_id,
             "subjectPack": definition.subject_pack,
@@ -201,6 +266,12 @@ def validate_upstream_authorities() -> dict[str, UpstreamAuthority]:
         authorities[definition.case_id] = UpstreamAuthority(
             structure_bytes, structure_result, ocr_bytes, ocr_result
         )
+    validate_file_snapshot(
+        structure_inventory_path,
+        structure_inventory_bytes,
+        "Structure extraction inventory",
+    )
+    validate_file_snapshot(ocr_inventory_path, ocr_inventory_bytes, "OCR observation inventory")
     return authorities
 
 
