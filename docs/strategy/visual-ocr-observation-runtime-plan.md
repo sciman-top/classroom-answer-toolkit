@@ -14,7 +14,7 @@
 
 ## Frozen local runtime
 
-- engine: `rapidocr-onnxruntime 1.2.3` on CPU with ONNX Runtime `1.27.0`, OpenCV `5.0.0`, and Pillow `12.3.0`.
+- engine: `rapidocr-onnxruntime 1.2.3` on CPU with ONNX Runtime `1.27.0`, OpenCV `5.0.0`, Pillow `12.3.0`, and NumPy `2.5.0`; detector, classifier, and recognizer sessions must each report only `CPUExecutionProvider`.
 - invocation policy: whole canonical 2x crop; `box_thresh=0.5`, `unclip_ratio=1.6`, `text_score=0.5`; no extra cleanup, deskew, synthetic label injection, expected-text hint, network call, or cloud fallback.
 - the three bundled detection/classification/recognition ONNX files are admitted only at their reviewed raw-byte SHA-256 values. Package/config/model/version drift fails closed before inference.
 - elapsed timing is excluded from canonical results. Quadrilateral coordinates and confidence values are normalized and sorted before stable JSON encoding.
