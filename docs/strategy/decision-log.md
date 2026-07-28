@@ -157,3 +157,9 @@
 - 决定：VISION-011 将 VISION-007 deterministic renderer 中显式 text/coordinate declarations 固化为 raw-byte-bound `VisualSyntheticTextTruth`，只对 fully-visible label 与 VISION-009 observation 执行 exact case-sensitive text + positive-overlap diagnostic matching，并按 subject-pack 独立报告 precision/recall availability 与漏检/误检
 - 原因：直接从 observation confidence、可见像素猜 truth 或把 heuristic region 当 OCR label 会伪造 correctness；renderer source declaration 是当前唯一可审计、无需真实数据且不依赖 OCR 输出的 synthetic truth 起点，但仍不具人工或生产 acceptance authority
 - 边界：partially-clipped/outside label 不进入召回分母；报告固定 not accepted、需人工复核、layout/semantic/Track 未集成，不构成人工 truth、真实 OCR benchmark、OCR acceptance、OCR-region association、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不启 cloud egress，不使用真实数据，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
+
+## D-030 首个 text-region correctness 诊断只评估 generator truth 的空间覆盖
+
+- 决定：VISION-012 将 VISION-011 generator-declared synthetic truth 与 VISION-008 heuristic text-region candidates 做 positive-area one-to-one diagnostic matching；fully-visible truth 进入召回分母，partial overlap candidate 只记 unscored，outside truth 不保护 candidate，并按 subject-pack 独立报告 precision/recall availability 与漏检/误检
+- 原因：当前三个 fixture 已存在可审计且与 extractor 独立的 source declaration truth；实际几何探针显示三个 fully-visible label 各有唯一 positive-overlap candidate，而 22 个其余 candidate 只命中 partially-clipped header。该诊断能验证 proposal plumbing，但不需要读取文字或依赖未验收 OCR
+- 边界：报告不得复制 truth text、识别 candidate 文本或选择 OCR-region association；ambiguous repeated overlap fail closed；不构成人工 truth、真实 region benchmark、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不启 cloud egress，不使用真实数据，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted

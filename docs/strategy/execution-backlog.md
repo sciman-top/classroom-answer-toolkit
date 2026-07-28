@@ -322,6 +322,16 @@
 - blocks: VISION-007, VISION-009
 - done_definition: 仓内能从 generator-declared synthetic truth 与 canonical OCR observations 确定性报告三个 subject-pack 的 exact-text 漏检/误检诊断；只证明冻结 synthetic fixture diagnostics，不构成人工 truth、真实 OCR benchmark、OCR acceptance、association/layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-012
+
+- goal: 建立 generator-declared synthetic truth 与 heuristic text-region candidate 的首个按 subject-pack 独立统计闭环
+- inputs: VISION-008 committed structure extraction results、VISION-011 committed synthetic text truth 与相同 canonical 2x crop authority
+- changes: 新增 `VisualTextRegionDiagnosticCaseInventory / VisualTextRegionDiagnosticReport` schema 和 deterministic local compiler；只对 fully-visible truth 与 candidate bbox 做 positive-area one-to-one diagnostic matching；partial overlap candidate 记 unscored，outside truth 不保护 candidate，ambiguous repeated overlap fail closed；三个 subject-pack 各一个 canonical case并独立报告 precision/recall availability、false negative/positive 与 unscored candidate；纳入 assets 与 hotspot
+- verification: 三 case report expected bytes deterministic replay；structure/truth/inventory/report/crop raw-byte hash、path/alias、coverage、visibility/bounds、ambiguous matching/order、zero denominator availability、counts/ratios/dispositions、cloud/live/acceptance/OCR/association/layout/semantic/Track positive state、canonical structure 与仓内输出漂移均 fail closed；完整固定顺序项目门禁
+- rollback: 回滚 VISION-012 实现提交并删除本切片 schema/tool/inventory/report、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009/010/011 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
+- blocks: VISION-008, VISION-011
+- done_definition: 仓内能从 generator-declared synthetic truth 与 canonical heuristic text-region candidates 确定性报告三个 subject-pack 的 spatial proposal 漏检/误检诊断；只证明冻结 synthetic fixture diagnostics，不构成人工 truth、真实 region benchmark、recognized text、OCR-region association、layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

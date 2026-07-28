@@ -514,6 +514,14 @@ P1 样例集默认人工拆分题面/答案：
 - result 固定 `diagnosticScope=generator_declared_synthetic_fixture / acceptanceDisposition=not_accepted / requiresHumanReview=true / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`，并保持 local deterministic、禁云 provenance。
 - 本切片只证明三份冻结 synthetic fixture 的 source-declared OCR diagnostics，不构成人工 ground truth、真实 OCR benchmark、OCR acceptance、OCR-region association、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
 
+### VISION-012 generator-declared synthetic text-region diagnostic 边界
+
+- `VisualTextRegionDiagnosticCaseInventory / VisualTextRegionDiagnosticReport` 与 OCR observation、spatial association、layout、FigureUnderstanding、TrackResult 和 acceptance 合同分离，只消费 canonical VISION-008 structure result 与 VISION-011 generator-declared synthetic truth。
+- 只有 `fully_visible` truth label 进入召回分母；candidate bbox 与其 crop intersection bbox 正面积相交才形成 diagnostic match。candidate 只命中 `partially_clipped` truth 时记为 unscored；`outside_crop` truth 不保护 candidate。一个 candidate 命中多个 fully-visible truth，或一个 fully-visible truth 命中多个 candidates，必须 fail closed。
+- report 按 subject-pack 独立记录 scorable/detected truth、candidate/matched/unscored/false-positive candidate，以及带 availability 的 precision/recall；零分母显式 unavailable。报告不得复制 truth text，也不得从 candidate 推断 recognized text。
+- result 固定 `diagnosticScope=generator_declared_synthetic_fixture / candidateKind=text_region_candidate / acceptanceDisposition=not_accepted / requiresHumanReview=true / ocrDisposition=not_inferred / associationDisposition=not_decided / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`，并保持 local deterministic、禁云 provenance。
+- 本切片只证明三份冻结 synthetic fixture 的 heuristic text-region spatial proposal diagnostics，不构成人工 ground truth、真实 region benchmark、文字识别、OCR-region association、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

@@ -170,6 +170,7 @@
 - VISION-009 provider-neutral OCR observation runtime；只记录三个 canonical 2x crop 的 frozen local RapidOCR 原始观察，允许空结果和错误文本，明确不构造 ground truth、不计算准确率、不生成 layout/TrackResult
 - VISION-010 provider-neutral spatial observation runtime；只对 canonical text-region candidates 与 OCR quads 做穷举 geometry measurement，明确不选择匹配、不推断 layout/semantic、不生成 TrackResult
 - VISION-011 provider-neutral OCR diagnostic runtime；只对 generator-declared synthetic text/bbox truth 与 canonical OCR observations 做 exact-text/positive-overlap 诊断，按 subject-pack 报告漏检/误检和 unavailable 分母
+- VISION-012 provider-neutral text-region diagnostic runtime；只对 generator-declared synthetic text/bbox truth 与 canonical heuristic text-region candidates 做 positive-overlap 诊断，按 subject-pack 报告 fully-visible truth recall、candidate precision 与 partial unscored 数量
 
 ### 涉及文件面
 
@@ -179,14 +180,17 @@
 - `tools/visual-structure-extractor/`
 - `tools/visual-spatial-observer/`
 - `tools/visual-ocr-diagnostics/`
+- `tools/visual-text-region-diagnostics/`
 - `eval/visual-preprocessing/`
 - `eval/visual-structure-extraction/`
 - `eval/visual-spatial-observation/`
 - `eval/visual-ocr-diagnostics/`
+- `eval/visual-text-region-diagnostics/`
 - `prompts/shared/schemas/visual-preprocessing-*.schema.json`
 - `prompts/shared/schemas/visual-structure-extraction-*.schema.json`
 - `prompts/shared/schemas/visual-spatial-observation-*.schema.json`
 - `prompts/shared/schemas/visual-ocr-diagnostic-*.schema.json`
+- `prompts/shared/schemas/visual-text-region-diagnostic-*.schema.json`
 - evidence / review 文档与运行产物
 
 ### 完成定义
@@ -198,6 +202,7 @@
 - canonical 2x crop 可在 admitted package/model hashes 上重放 OCR observation；它只证明 OCR plumbing，不等于识别正确、OCR acceptance、layout semantics 或 Track B
 - canonical structure/OCR results 可确定性重放 exhaustive spatial measurements；它只证明 geometry plumbing，不等于匹配正确、layout semantics、FigureUnderstanding 或 Track B
 - renderer source declarations 与 canonical OCR results 可确定性重算 synthetic diagnostic metrics；它只证明三份冻结 fixture 的 exact-text 漏检/误检，不等于人工 truth、真实 OCR benchmark 或 OCR acceptance
+- renderer source declarations 与 canonical structure results 可确定性重算 text-region diagnostic metrics；它只证明三份冻结 fixture 的 spatial proposal coverage，不等于文字识别、OCR-region association、layout semantics 或 Track B acceptance
 
 ### 验证方式
 
@@ -211,6 +216,7 @@
 - OCR observation schema、preprocessing/crop/structure sibling authority、package/model/config hashes、observation ordering/counts 与 deterministic replay 验证
 - spatial observation schema、structure/OCR/crop sibling authority、Cartesian coverage、geometry/ordering/rounding/computed fields 与 deterministic replay 验证
 - synthetic text truth/schema、renderer/source/crop/OCR authority、visibility、exact-text/positive-overlap matching、metric denominator/computed fields 与 deterministic replay 验证
+- synthetic text-region diagnostic schema、truth/structure/crop authority、visibility、positive-overlap matching、ambiguity、metric denominator/computed fields 与 deterministic replay 验证
 
 ### 禁止扩张点
 
@@ -220,6 +226,7 @@
 - 不把 OCR observation/confidence 冒充 ground truth、正确率、OCR acceptance、layout/semantic evidence 或 Track B result
 - 不把 pairwise spatial measurement 冒充 OCR-region association、layout parse、FigureUnderstandingResult 或 Track B evidence
 - 不把 generator-declared synthetic diagnostic 冒充人工标注、真实 OCR 质量、OCR acceptance、layout parse、FigureUnderstandingResult 或 Track B evidence
+- 不把 generator-declared text-region diagnostic 冒充 recognized text、OCR-region association、layout semantics、FigureUnderstandingResult 或 Track B evidence
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项

@@ -18,10 +18,11 @@
 12. [visual-ocr-observation-runtime-plan.md](./visual-ocr-observation-runtime-plan.md)
 13. [visual-spatial-observation-runtime-plan.md](./visual-spatial-observation-runtime-plan.md)
 14. [visual-ocr-diagnostic-runtime-plan.md](./visual-ocr-diagnostic-runtime-plan.md)
-15. [implementation-roadmap.md](./implementation-roadmap.md)
-16. [implementation-plan.md](./implementation-plan.md)
-17. [execution-backlog.md](./execution-backlog.md)
-18. [decision-log.md](./decision-log.md)
+15. [visual-text-region-diagnostic-runtime-plan.md](./visual-text-region-diagnostic-runtime-plan.md)
+16. [implementation-roadmap.md](./implementation-roadmap.md)
+17. [implementation-plan.md](./implementation-plan.md)
+18. [execution-backlog.md](./execution-backlog.md)
+19. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 
