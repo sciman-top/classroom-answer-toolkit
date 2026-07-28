@@ -25,6 +25,7 @@ This project provides a local Windows workflow for generating, validating, and r
 - 已落地离线 `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` 编译器、受控 aggregate manifest 附着和 preimage/result receipt；WPF 可由用户显式选择本地 aggregate，附着成功后立即 source-aware 重验，并只投影与 `manifestResultSha256` 绑定的时间点状态。
 - 已把 QQ 重链路经验移植为阶段化视觉证据产物：`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 通过 `TrackResult.stageArtifactRefs` 接入，并新增 `unsafe_shortcut_fail` fail-closed 样例。
 - 已落地可选 AI 网关配置校验入口、文本请求主备切换和显式视觉 TrackResult 探针；云外发默认关闭，真实密钥只保留在本地 `.env`。
+- 已用 VISION-007 renderer 的显式文字/坐标声明建立三学科 synthetic OCR diagnostic：报告可重算 exact-text 漏检、误检和 unavailable 分母，但不构成人工 truth、真实 OCR benchmark 或 OCR acceptance。
 - WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；还可对用户显式选择且通过 source-aware 重验的本地 review artifact 做三类只读队列投影。审批生成、lifecycle 回写和原题生成主链仍未接入。
 - 已落地自动解题工作站终局计划与 Typst 主渲染迁移计划；当前运行时仍保持 Playwright / Chromium。
 - 支持实验性的受控插图插入链路，可把用户提供或人工复核后的答案图块插入 PDF。
@@ -71,6 +72,7 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `tools/sample-flywheel/`: 合成样例的 index/package 准入、plumbing/scoring 门禁、`SampleRunRecord` 编译、fixture/teacher-text `FeedbackParseResult` 归因，以及独立 teacher ingestion/replay diagnostic report；当前 scoring 只做 SHA-256 exact-diff。
 - `tools/answer-graphics/`: 实验性受控插图工具链，不是默认主交付链。
 - `tools/ocr/`: 面向低质量扫描件和批量处理的本地 OCR 路径。
+- `tools/visual-ocr-diagnostics/`: 对 generator-declared synthetic text truth 与 canonical OCR observations 做本地、确定性、禁云诊断。
 - `eval/`: 固定评测数据集、视觉基线和回归结果。
 - `tests/`: xUnit 与 FluentAssertions 测试。
 
@@ -174,6 +176,7 @@ dotnet build ClassroomToolkit.sln -c Debug
 当前最成熟的交付主链仍是 `answer.md -> PDF/review`。项目正在按“飞轮先行、生成主链后接、视觉双轨后落地”的路线推进。
 样例飞轮现已具备完全合成 fixture 的可执行准入、记账与反馈归因闭环：`样例交付/index.json` 是不可覆盖的 canonical authority，并通过 `subjectPack / packageRef / packageSha256` 绑定唯一 structured package，通过 `candidateBindings` 绑定 negative-candidate descriptor bytes；hash-bound 样例资产由 `.gitattributes` 固定 LF。package 与内部引用必须留在对应 canonical root。`plumbing` 不产优化信号，`scoring` 要求显式 candidate/truth/leakage 状态并受 fail-closed 门禁约束；current-authority-valid、non-exact fixture-labelled scoring run 可编译 auto feedback，canonical public synthetic teacher text 可经有限显式词典投影为 parsed 或 `needs_human_label`。独立 ingestion diagnostic 统计结构化率与分流分布，独立 replay diagnostic 统计当前 parser 对冻结 expected result raw bytes 的回放兼容率。输出通过仓内有限 shape validator、compiler semantic invariants 和当前 canonical authority bytes 重验，不代表完整 Draft 2020-12、真实教师自由文本理解、任意归档 authority 或语义答案评分；teacher diagnostics 不进入 candidate readiness，`optimizationCandidateRefs` 仍为空，不构成优化候选或灰度放行。
 视觉降错本轮已进入契约层并具备最小离线决策编译：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` 已纳入 schema 与资产校验，`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 已作为阶段产物落盘，双轨一致但证据缺失和直接跳答案缺 grounding 的样例都可由运行时代码推导为 `trusted=false`；真正的双轨/三轨运行时和局部高清 crop 仍是后续工程。
+三份公开 synthetic crop 另有 generator-declared text truth 与独立 OCR diagnostic report：当前 math/senior fixture 暴露漏检，junior fixture 暴露误检。该结果只说明冻结 fixture 上的 repo-side diagnostics，不是人工标注、真实 OCR 质量、layout semantics、Track B 或 live acceptance。
 WPF 当前完成最新交付的 review/trust 投影、本地题目级 `DecisionRecord` 的受控附着、本地 aggregate 的显式附着后立即重验，以及 `needs_human_label / high_risk_approval / truth_needs_review` 三类本地只读队列投影。队列只消费用户显式选择且通过 canonical path、raw-byte SHA-256 与既有 source-aware verifier 重验的 artifact；任一 rejected source 会清空本次投影。该入口不生成 aggregate/审批、不推进 lifecycle、不修改 trust；这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
 离线 delivery aggregate 已能对合成 `sample-package` inventory、snapshot/input/manifest bytes 和逐题决策做完整覆盖证明，并记录 aggregate attach 的可重验 hash chain；它仍不代表真实试卷全题识别、WPF workflow integration 或 live acceptance。
 自动解题工作站和 Typst 主渲染已作为终局计划落盘；Typst 未通过 parity gate 前，默认交付链仍是 Playwright / Chromium。

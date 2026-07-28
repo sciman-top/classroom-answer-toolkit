@@ -108,6 +108,16 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-spatial-observer run validate:fixtures
 } "Visual spatial observation canonical fixture validation failed."
 
+Write-Host "visual OCR diagnostic contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-ocr-diagnostics test
+} "Visual OCR diagnostic contract tests failed."
+
+Write-Host "visual OCR diagnostic canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-ocr-diagnostics run validate:fixtures
+} "Visual OCR diagnostic canonical fixture validation failed."
+
 Write-Host "visual evidence delivery aggregate contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:aggregate
