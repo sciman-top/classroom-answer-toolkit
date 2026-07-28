@@ -312,6 +312,16 @@
 - blocks: VISION-008, VISION-009
 - done_definition: 仓内能诚实记录并重验三个 canonical synthetic case 的 exhaustive spatial measurements，包括零测量和 disjoint；只证明 repo-side geometry plumbing，不构成 OCR-region matching、layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-011
+
+- goal: 建立 generator-declared synthetic text truth 与首个按 subject-pack 独立统计的 OCR diagnostic 闭环
+- inputs: VISION-007 deterministic renderer 的显式 text/coordinate declarations 与 committed source/crop authority、VISION-009 committed OCR observation results
+- changes: 新增 `VisualSyntheticTextTruth / VisualOcrDiagnosticCaseInventory / VisualOcrDiagnosticReport` schema 和 deterministic local compiler；truth 逐项绑定 renderer/source/crop raw bytes 与 decoded pixel hash，固定 fully-visible/partially-clipped/outside visibility；仅以 exact case-sensitive text + positive bbox intersection 做一对一 diagnostic matching；三个 subject-pack 各一个 canonical case并独立报告 precision/recall availability、false negative/positive 与 unscored partial observations；纳入 assets 与 hotspot
+- verification: 三 case report expected bytes deterministic replay；renderer/source/crop/OCR/truth/inventory/report raw-byte hash、path/alias、visibility/bounds、duplicate labels、matching/order、zero denominator availability、counts/ratios/dispositions、cloud/live/acceptance/layout/semantic/Track positive state 和仓内输出漂移均 fail closed；完整固定顺序项目门禁
+- rollback: 回滚 VISION-011 实现提交并删除本切片 schema/tool/truth/inventory/report、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009/010 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
+- blocks: VISION-007, VISION-009
+- done_definition: 仓内能从 generator-declared synthetic truth 与 canonical OCR observations 确定性报告三个 subject-pack 的 exact-text 漏检/误检诊断；只证明冻结 synthetic fixture diagnostics，不构成人工 truth、真实 OCR benchmark、OCR acceptance、association/layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

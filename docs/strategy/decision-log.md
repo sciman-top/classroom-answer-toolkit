@@ -151,3 +151,9 @@
 - 决定：VISION-010 对 committed VISION-008 text-region bboxes 与 same-case VISION-009 OCR quads 做 exhaustive axis-aligned geometry measurement，固定 association 未决定、layout/semantic 未推断、Track 未集成
 - 原因：现有 structure candidates 是 heuristic-only，OCR observations 没有 ground truth 且可为空或错误；选择“最佳匹配”或贴 layout 标签会把两个未验收 diagnostic surfaces 组合成虚假正向 authority
 - 边界：measurement 只记录 refs、bounds、intersection/coverage/distance 与 geometry-only relation，不复制 OCR 文本、不使用阈值选 match、不生成 FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult、DecisionRecord 或 OptimizationCandidate；不接 WPF/gateway/readiness/trust，不启 cloud egress，不使用真实数据，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
+
+## D-029 首个 OCR correctness 诊断只使用 generator-declared synthetic truth
+
+- 决定：VISION-011 将 VISION-007 deterministic renderer 中显式 text/coordinate declarations 固化为 raw-byte-bound `VisualSyntheticTextTruth`，只对 fully-visible label 与 VISION-009 observation 执行 exact case-sensitive text + positive-overlap diagnostic matching，并按 subject-pack 独立报告 precision/recall availability 与漏检/误检
+- 原因：直接从 observation confidence、可见像素猜 truth 或把 heuristic region 当 OCR label 会伪造 correctness；renderer source declaration 是当前唯一可审计、无需真实数据且不依赖 OCR 输出的 synthetic truth 起点，但仍不具人工或生产 acceptance authority
+- 边界：partially-clipped/outside label 不进入召回分母；报告固定 not accepted、需人工复核、layout/semantic/Track 未集成，不构成人工 truth、真实 OCR benchmark、OCR acceptance、OCR-region association、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不启 cloud egress，不使用真实数据，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted

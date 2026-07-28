@@ -506,6 +506,14 @@ P1 样例集默认人工拆分题面/答案：
 - result 固定 `associationDisposition=not_decided / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated / requiresHumanReview=true`；零测量和 `disjoint` 都是合法诊断输出，不代表图中无文本或已拒绝关联。
 - 本切片不生成 FigureUnderstandingResult、ProblemEvidenceBundle、TrackResult 或 DecisionRecord，不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
 
+### VISION-011 generator-declared synthetic OCR diagnostic 边界
+
+- `VisualSyntheticTextTruth / VisualOcrDiagnosticCaseInventory / VisualOcrDiagnosticReport` 与 VISION-009 observation、layout、FigureUnderstanding、TrackResult 和 OCR acceptance 合同分离，只接受 VISION-007 renderer 源码显式声明并由 committed source/crop bytes 绑定的公开 synthetic text/bbox truth。
+- truth label 固定区分 `fully_visible / partially_clipped / outside_crop`；只有 `fully_visible` label 进入召回分母。exact case-sensitive text 且 OCR quad axis-aligned bounds 与 truth bbox 正面积相交才形成 diagnostic match；partial label 只允许产生 unscored observation，不贡献召回或正向准确性。
+- report 按 subject-pack 独立记录 scorable truth、detected truth、false negative、observation、matched observation、unscored observation、false positive，以及带 availability 的 precision/recall；零分母必须显式 unavailable，禁止伪造 0 或 1。
+- result 固定 `diagnosticScope=generator_declared_synthetic_fixture / acceptanceDisposition=not_accepted / requiresHumanReview=true / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`，并保持 local deterministic、禁云 provenance。
+- 本切片只证明三份冻结 synthetic fixture 的 source-declared OCR diagnostics，不构成人工 ground truth、真实 OCR benchmark、OCR acceptance、OCR-region association、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

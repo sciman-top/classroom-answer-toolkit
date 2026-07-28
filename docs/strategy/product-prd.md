@@ -82,6 +82,7 @@ Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一�
 - `原题 -> answer.md` 是新增主链，应作为独立工程能力建设。
 - GEN-003 只用 provider-neutral 合同和明确标记的 deterministic `synthetic_fixture` 验证生成到飞轮的仓内闭环；它不是 live 模型能力或 WPF workflow。
 - VISION-010 只对 committed structure/OCR diagnostic authorities 做穷举几何测量；它不选择 OCR-region 匹配，不构成 layout semantics、FigureUnderstanding 或 Track B。
+- VISION-011 只用 renderer 源码显式声明的 synthetic text/bbox 作为 generator-declared truth，诊断三份固定 fixture 的 exact-text OCR 漏检与误检；它不是人工 truth、真实 OCR benchmark 或 OCR acceptance。
 - 高风险视觉题的新增主链必须先经过视觉证据编译器，形成 `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`，不得从整页图直接跳到可信答案。
 - Typst 主渲染属于终局迁移目标；未通过 parity gate 前，不得把当前运行时描述为 Typst 已上线。
 - 自动验收与优化候选只能在门禁通过、数据边界允许、真值可靠时推进。

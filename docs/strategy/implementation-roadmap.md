@@ -39,6 +39,7 @@
 - 再以 VISION-008 从 canonical 2x crop 确定性抽取非语义 line/connected/text-region candidates；固定 OCR 未执行、语义未推断、Track 未集成，真实 OCR/layout/学科图元分类继续后接
 - 再以 VISION-009 在同一 canonical 2x crop 上记录 hash-bound RapidOCR observation；允许空结果和错误文本，固定 ground truth 不可用、未验收、需人工复核、语义未推断、Track 未集成，不计算 OCR 准确率
 - 再以 VISION-010 对 committed text-region candidates 与 OCR observations 做穷举 axis-aligned geometry measurement；不选择匹配、不复制 OCR 文本，固定 association 未决定、layout/semantic 未推断、Track 未集成
+- 再以 VISION-011 从 deterministic renderer 的 source-declared synthetic text/bbox 建立独立 truth authority，按 subject-pack 诊断 exact-text OCR 漏检/误检与 unavailable 分母；不冒充人工 truth、真实 benchmark、OCR acceptance、layout semantics 或 Track B
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 
