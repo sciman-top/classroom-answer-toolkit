@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-machine-review-case-inventory",
+  "fixtureSetId": "synthetic-visual-machine-review-v1",
+  "fixtureKind": "synthetic_fixture",
+  "entries": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "preprocessingResultRef": "eval/visual-preprocessing/cases/math-function-graph.visual-preprocessing-result.json",
+      "preprocessingResultSha256": "9dc94ae6d5eee7142e9acf779bff39859914d57acbaf1cc9bcab2112e9c4627b",
+      "cropRef": "eval/visual-preprocessing/cases/math-function-graph.crop-2x.png",
+      "cropSha256": "77911d7a23d34a664a907e596a421fd3fea575d53b191ee29c0030e773c66d92",
+      "reviewReceiptRef": "eval/visual-machine-review/cases/math-function-graph.visual-machine-review-receipt.json",
+      "reviewReceiptSha256": "52587ab4a455567fb6f0d6051439bf82cb4f34ac87fdd7d3f0590017a9ed8590"
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "preprocessingResultRef": "eval/visual-preprocessing/cases/junior-instrument-scale.visual-preprocessing-result.json",
+      "preprocessingResultSha256": "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b",
+      "cropRef": "eval/visual-preprocessing/cases/junior-instrument-scale.crop-2x.png",
+      "cropSha256": "70577ca429dbc6afd5b2ecf536fe4712001bfddd961f9a041b103dca5fb8bb40",
+      "reviewReceiptRef": "eval/visual-machine-review/cases/junior-instrument-scale.visual-machine-review-receipt.json",
+      "reviewReceiptSha256": "d80773d178317ce2493a1cef0a787f92b5b7233859c86cb8e1899fdf0ac7b058"
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "preprocessingResultRef": "eval/visual-preprocessing/cases/senior-circuit-label.visual-preprocessing-result.json",
+      "preprocessingResultSha256": "aa29231239edf9e7ec7142e52abfa07062bdbd7f42955768b060bd8fa20cf1fa",
+      "cropRef": "eval/visual-preprocessing/cases/senior-circuit-label.crop-2x.png",
+      "cropSha256": "60854d32152030d5867875669073b73f320c1f67bd21c5fefc82b7f6114a316e",
+      "reviewReceiptRef": "eval/visual-machine-review/cases/senior-circuit-label.visual-machine-review-receipt.json",
+      "reviewReceiptSha256": "54175da41aade93bb9200b469c4837dc5cac4927874b00e9a3d13242b55a8151"
+    }
+  ]
+}

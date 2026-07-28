@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-machine-review-receipt",
+  "reviewId": "vision013-math-function-graph-review",
+  "caseId": "math-function-graph",
+  "subjectPack": "math-answer",
+  "fixtureKind": "synthetic_fixture",
+  "preprocessingResult": {
+    "artifactRef": "eval/visual-preprocessing/cases/math-function-graph.visual-preprocessing-result.json",
+    "rawByteSha256": "9dc94ae6d5eee7142e9acf779bff39859914d57acbaf1cc9bcab2112e9c4627b",
+    "requestId": "math-function-graph"
+  },
+  "crop": {
+    "artifactRef": "math-function-graph.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "77911d7a23d34a664a907e596a421fd3fea575d53b191ee29c0030e773c66d92",
+    "decodedRgbPixelSha256": "f7384abdf7091caf909056ca3d3698709bcce53ae9997bd13d5132b4e284dc9a",
+    "pixelSize": {
+      "width": 460,
+      "height": 370
+    }
+  },
+  "reviewer": {
+    "reviewerKind": "ai_agent",
+    "reviewerId": "codex_visual_review",
+    "humanReviewed": false,
+    "attestationClass": "unattested_local_machine_review",
+    "inspectionSurfaces": [
+      "direct_image_render"
+    ],
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "reviewPolicy": {
+    "equivalencePolicy": "synthetic_fixture_equivalent",
+    "acceptanceScope": "synthetic_fixture_diagnostic",
+    "limitationHandling": "disclose_and_preserve"
+  },
+  "checks": [
+    {
+      "checkCode": "primary_content_visibility",
+      "status": "pass",
+      "note": "The plotted line, axes, and tick marks are visibly coherent."
+    },
+    {
+      "checkCode": "required_label_legibility",
+      "status": "pass",
+      "note": "The visible y label is legible at the top of the crop."
+    },
+    {
+      "checkCode": "geometry_integrity",
+      "status": "pass",
+      "note": "Axis and line geometry remain connected and undistorted."
+    },
+    {
+      "checkCode": "crop_boundary_disclosure",
+      "status": "pass_with_limitation",
+      "note": "The source-declared x label is outside this admitted crop and remains disclosed."
+    }
+  ],
+  "knownLimitations": [
+    "outside_crop_axis_label"
+  ],
+  "decision": "accept_for_diagnostic_use",
+  "dispositions": {
+    "reviewStatus": "completed",
+    "deliveryTrustDisposition": "not_projected",
+    "wpfDisposition": "not_integrated",
+    "liveAcceptanceDisposition": "not_accepted",
+    "optimizationCandidateDisposition": "none",
+    "controlsDisposition": "not_verified",
+    "eligible": false
+  },
+  "reviewedAt": "2026-07-28T06:00:00Z"
+}
