@@ -215,12 +215,11 @@ def crop_artifact(crop: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_receipt(
+def validate_reviewed_authority(
     definition: FixtureDefinition,
     preprocessing_bytes: bytes,
-    preprocessing_result: dict[str, Any],
-) -> dict[str, Any]:
-    crop = select_two_x_crop(preprocessing_result)
+    crop: dict[str, Any],
+) -> None:
     if sha256_bytes(preprocessing_bytes) != definition.reviewed_preprocessing_sha256:
         raise ValueError(
             f"{definition.case_id} preprocessing bytes differ from the reviewed authority."
@@ -235,6 +234,15 @@ def build_receipt(
     }
     if any(crop.get(field) != expected for field, expected in reviewed_crop.items()):
         raise ValueError(f"{definition.case_id} crop differs from the reviewed authority.")
+
+
+def build_receipt(
+    definition: FixtureDefinition,
+    preprocessing_bytes: bytes,
+    preprocessing_result: dict[str, Any],
+) -> dict[str, Any]:
+    crop = select_two_x_crop(preprocessing_result)
+    validate_reviewed_authority(definition, preprocessing_bytes, crop)
     checks = [
         {"checkCode": code, "status": status, "note": note}
         for code, status, note in zip(
@@ -527,6 +535,7 @@ def _compile_report_snapshot(fixture_root: Path) -> ReviewCompilation:
             or {"width": image.width, "height": image.height} != crop["pixelSize"]
         ):
             raise ValueError(f"{definition.case_id} crop bytes or pixels drifted.")
+        validate_reviewed_authority(definition, preprocessing_bytes, crop)
         receipt_path = resolve_bound_file(
             fixture_root,
             definition.receipt_name,

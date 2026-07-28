@@ -138,6 +138,61 @@ class VisualMachineReviewTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "reviewed authority"):
                     materialize_fixtures(Path(temp) / "cases")
 
+    def test_canonical_validator_rejects_coherent_unreviewed_authority_rewrite(self) -> None:
+        with self.fixture_copy() as fixture_root, self.preprocessing_copy() as preprocessing_root:
+            definition = review.DEFINITION_BY_ID["math-function-graph"]
+            preprocessing_path = preprocessing_root / definition.preprocessing_result_name
+            preprocessing = self.read_json(preprocessing_path)
+            crop = review.select_two_x_crop(preprocessing)
+            crop_path = preprocessing_root / crop["artifactRef"]
+            image = review.decode_png(crop_path.read_bytes(), "mutated review crop").copy()
+            pixel = image.getpixel((0, 0))
+            mutated = ((pixel[0] + 1) % 256, *pixel[1:])
+            image.putpixel((0, 0), mutated)
+            image.save(crop_path, format="PNG")
+            crop_bytes = crop_path.read_bytes()
+            crop["rawByteSha256"] = sha256_bytes(crop_bytes)
+            crop["decodedRgbPixelSha256"] = review.decoded_pixel_sha256(image)
+            preprocessing_bytes = stable_json_bytes(preprocessing)
+            preprocessing_path.write_bytes(preprocessing_bytes)
+
+            receipt_path = fixture_root / definition.receipt_name
+            receipt = self.read_json(receipt_path)
+            receipt["preprocessingResult"]["rawByteSha256"] = sha256_bytes(
+                preprocessing_bytes
+            )
+            receipt["crop"]["rawByteSha256"] = crop["rawByteSha256"]
+            receipt["crop"]["decodedRgbPixelSha256"] = crop["decodedRgbPixelSha256"]
+            receipt_bytes = stable_json_bytes(receipt)
+            receipt_path.write_bytes(receipt_bytes)
+
+            inventory_path = fixture_root / INVENTORY_NAME
+            inventory = self.read_json(inventory_path)
+            entry = next(item for item in inventory["entries"] if item["caseId"] == definition.case_id)
+            entry["preprocessingResultSha256"] = sha256_bytes(preprocessing_bytes)
+            entry["cropSha256"] = sha256_bytes(crop_bytes)
+            entry["reviewReceiptSha256"] = sha256_bytes(receipt_bytes)
+            inventory_bytes = stable_json_bytes(inventory)
+            inventory_path.write_bytes(inventory_bytes)
+
+            report_path = fixture_root / REPORT_NAME
+            report = self.read_json(report_path)
+            report["sourceInventory"]["rawByteSha256"] = sha256_bytes(inventory_bytes)
+            case_report = next(
+                item for item in report["caseReports"] if item["caseId"] == definition.case_id
+            )
+            case_report["reviewReceipt"]["rawByteSha256"] = sha256_bytes(receipt_bytes)
+            case_report["crop"]["rawByteSha256"] = sha256_bytes(crop_bytes)
+            report_path.write_bytes(stable_json_bytes(report))
+
+            with patch.multiple(
+                "visual_machine_review",
+                PREPROCESSING_ROOT=preprocessing_root,
+                validate_preprocessing_fixtures=lambda: None,
+            ):
+                with self.assertRaisesRegex(ValueError, "reviewed authority"):
+                    validate_canonical_fixtures(fixture_root)
+
     def test_rejected_review_is_reachable_and_requires_failed_check(self) -> None:
         _, definition, preprocessing_contract, crop = self.receipt_inputs(
             "math-function-graph"
