@@ -73,6 +73,7 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `tools/answer-graphics/`: 实验性受控插图工具链，不是默认主交付链。
 - `tools/ocr/`: 面向低质量扫描件和批量处理的本地 OCR 路径。
 - `tools/visual-ocr-diagnostics/`: 对 generator-declared synthetic text truth 与 canonical OCR observations 做本地、确定性、禁云诊断。
+- `tools/visual-text-region-diagnostics/`: 对同一 synthetic truth 与 canonical heuristic text-region candidates 做本地、确定性、禁云空间覆盖诊断。
 - `eval/`: 固定评测数据集、视觉基线和回归结果。
 - `tests/`: xUnit 与 FluentAssertions 测试。
 
