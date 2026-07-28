@@ -9,16 +9,24 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from PIL import Image, ImageDraw
+
 from visual_ocr_diagnostics import (
     CANONICAL_ROOT,
+    DEFINITIONS,
     INVENTORY_NAME,
     REPO_ROOT,
     REPORT_NAME,
+    TEXT_DECLARATIONS,
+    _run_diagnostics,
+    atomic_write,
+    build_truth,
     compile_case_report,
     compile_report,
     run_diagnostics,
     sha256_bytes,
     stable_json_bytes,
+    validate_upstream_authorities,
     validate_canonical_fixtures,
     validate_file_snapshot,
     validate_runtime_identity,
@@ -118,6 +126,31 @@ class VisualOcrDiagnosticTests(unittest.TestCase):
                 stable_json_bytes(truth), truth, "ocr.json", b"{}\n", {"observations": []},
             )
 
+    def test_renderer_text_bounds_must_stay_inside_source_pixels(self) -> None:
+        authorities = validate_upstream_authorities()
+        fixture_definition = next(item for item in DEFINITIONS if item.case_id == "math-function-graph")
+        original = TEXT_DECLARATIONS[fixture_definition.case_id][0]
+        declaration_type = type(original)
+        invalid_positions = ((-100, 10), (fixture_definition.width, 10), (10, fixture_definition.height))
+        for position in invalid_positions:
+            with self.subTest(position=position), patch.dict(
+                TEXT_DECLARATIONS,
+                {fixture_definition.case_id: (declaration_type(original.text, position, original.fill),)},
+            ):
+                with self.assertRaisesRegex(ValueError, "outside source pixel bounds"):
+                    build_truth(fixture_definition, authorities)
+
+        draw = ImageDraw.Draw(Image.new("RGB", (fixture_definition.width, fixture_definition.height)))
+        _, _, glyph_right, _ = draw.textbbox((0, 10), original.text)
+        edge_position = (fixture_definition.width - glyph_right, 10)
+        with patch.dict(
+            TEXT_DECLARATIONS,
+            {fixture_definition.case_id: (declaration_type(original.text, edge_position, original.fill),)},
+        ):
+            truth = build_truth(fixture_definition, authorities)
+        edge_bounds = truth["labels"][0]["sourceBounds"]
+        self.assertEqual(edge_bounds["x"] + edge_bounds["width"], fixture_definition.width)
+
     def test_self_consistent_truth_drift_from_renderer_fails_closed(self) -> None:
         with self.fixture_copy() as root:
             truth_path = root / "math-function-graph.visual-synthetic-text-truth.json"
@@ -181,6 +214,69 @@ class VisualOcrDiagnosticTests(unittest.TestCase):
         rejected = REPO_ROOT / ".eval-work" / "visual-ocr-diagnostic-output"
         with self.assertRaisesRegex(ValueError, "outside the repository"):
             run_diagnostics(rejected)
+
+    def test_runtime_rejects_midrun_diagnostic_authority_drift(self) -> None:
+        authority_names = (
+            INVENTORY_NAME,
+            "math-function-graph.visual-synthetic-text-truth.json",
+            REPORT_NAME,
+        )
+        for authority_name in authority_names:
+            with self.subTest(authority=authority_name), self.fixture_copy() as root:
+                with tempfile.TemporaryDirectory(prefix="visual-ocr-diagnostic-output-") as temp:
+                    output = Path(temp) / "bundle"
+                    target = root / authority_name
+                    mutated = False
+
+                    def write_then_mutate(path: Path, data: bytes) -> None:
+                        nonlocal mutated
+                        atomic_write(path, data)
+                        if not mutated:
+                            target.write_bytes(b"{}\n")
+                            mutated = True
+
+                    with patch("visual_ocr_diagnostics.atomic_write", side_effect=write_then_mutate):
+                        with self.assertRaisesRegex(ValueError, "bytes drifted"):
+                            _run_diagnostics(output, root)
+
+    def test_runtime_public_api_rejects_copied_fixture_root(self) -> None:
+        with self.fixture_copy() as root:
+            with tempfile.TemporaryDirectory(prefix="visual-ocr-diagnostic-output-") as temp:
+                with self.assertRaises(TypeError):
+                    run_diagnostics(Path(temp) / "bundle", root)
+
+    def test_runtime_rejects_midrun_structure_and_staged_report_drift(self) -> None:
+        with self.fixture_copy() as root:
+            with tempfile.TemporaryDirectory(prefix="visual-ocr-diagnostic-output-") as temp:
+                output = Path(temp) / "bundle"
+
+                def write_then_add_authority(path: Path, data: bytes) -> None:
+                    atomic_write(path, data)
+                    extra = root / "extra"
+                    extra.mkdir()
+                    (extra / "unknown.json").write_bytes(b"{}\n")
+
+                with patch("visual_ocr_diagnostics.atomic_write", side_effect=write_then_add_authority):
+                    with self.assertRaisesRegex(ValueError, "nested or symlink"):
+                        _run_diagnostics(output, root)
+
+        with tempfile.TemporaryDirectory(prefix="visual-ocr-diagnostic-output-") as temp:
+            output = Path(temp) / "bundle"
+
+            def write_then_tamper(path: Path, data: bytes) -> None:
+                atomic_write(path, data)
+                path.write_bytes(b"{}\n")
+
+            with patch("visual_ocr_diagnostics.atomic_write", side_effect=write_then_tamper):
+                with self.assertRaisesRegex(ValueError, "Staged visual OCR diagnostic report bytes drifted"):
+                    run_diagnostics(output)
+
+    def test_current_renderer_output_drift_fails_closed(self) -> None:
+        definition = DEFINITIONS[0]
+        blank = Image.new("RGB", (definition.width, definition.height), "white")
+        with patch("visual_ocr_diagnostics.render_synthetic_source", return_value=blank):
+            with self.assertRaisesRegex(ValueError, "current deterministic renderer"):
+                validate_upstream_authorities()
 
     def test_snapshot_and_runtime_identity_drift_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory(prefix="visual-ocr-diagnostic-snapshot-") as temp:

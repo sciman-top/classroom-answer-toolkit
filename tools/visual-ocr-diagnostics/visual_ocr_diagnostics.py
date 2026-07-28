@@ -32,10 +32,12 @@ from visual_preprocessor import (  # noqa: E402
     atomic_write,
     decode_png,
     decoded_pixel_sha256,
+    encode_png,
     file_identity,
     is_sha256,
     read_json_bytes,
     require_exact_keys,
+    render_synthetic_source,
     resolve_bound_file,
     sha256_bytes,
     stable_json_bytes,
@@ -79,6 +81,12 @@ class FixtureAuthority:
 class AuthoritySet:
     renderer_bytes: bytes
     fixtures: dict[str, FixtureAuthority]
+    snapshots: tuple[tuple[Path, bytes, str], ...]
+
+
+@dataclass(frozen=True)
+class DiagnosticCompilation:
+    report: dict[str, Any]
     snapshots: tuple[tuple[Path, bytes, str], ...]
 
 
@@ -145,6 +153,11 @@ def validate_file_snapshot(path: Path, expected_bytes: bytes, label: str) -> Non
 
 def validate_authority_snapshots(authorities: AuthoritySet) -> None:
     for path, expected_bytes, label in authorities.snapshots:
+        validate_file_snapshot(path, expected_bytes, label)
+
+
+def validate_diagnostic_snapshots(compilation: DiagnosticCompilation) -> None:
+    for path, expected_bytes, label in compilation.snapshots:
         validate_file_snapshot(path, expected_bytes, label)
 
 
@@ -317,6 +330,10 @@ def validate_upstream_authorities() -> AuthoritySet:
         source_bytes = validate_image_contract(
             source_path, source_contract, f"{definition.case_id} source image"
         )
+        if source_bytes != encode_png(render_synthetic_source(definition)):
+            raise ValueError(
+                f"{definition.case_id} source image drifted from the current deterministic renderer."
+            )
         crop_path = resolve_bound_file(
             PREPROCESSING_ROOT,
             expected_crop.get("artifactRef"),
@@ -373,6 +390,13 @@ def build_truth(definition: Any, authorities: AuthoritySet) -> dict[str, Any]:
         left, top, right, bottom = draw.textbbox(declaration.position, declaration.text)
         if right <= left or bottom <= top:
             raise ValueError(f"{definition.case_id} renderer declared a degenerate text bbox.")
+        if (
+            left < 0
+            or top < 0
+            or right > source["pixelSize"]["width"]
+            or bottom > source["pixelSize"]["height"]
+        ):
+            raise ValueError(f"{definition.case_id} renderer declared text outside source pixel bounds.")
         intersection = (
             max(left, crop_left), max(top, crop_top),
             min(right, crop_right), min(bottom, crop_bottom),
@@ -694,10 +718,10 @@ def validate_inventory(inventory: dict[str, Any]) -> list[dict[str, Any]]:
     return entries
 
 
-def compile_report(
+def _compile_report_snapshot(
     fixture_root: Path = CANONICAL_ROOT,
     authorities: AuthoritySet | None = None,
-) -> dict[str, Any]:
+) -> DiagnosticCompilation:
     fixture_root = fixture_root.resolve(strict=True)
     current_authorities = authorities or validate_upstream_authorities()
     inventory_path = resolve_bound_file(
@@ -706,6 +730,9 @@ def compile_report(
     inventory_bytes, inventory = read_json_bytes(
         inventory_path, "VisualOcrDiagnosticCaseInventory"
     )
+    diagnostic_snapshots = [
+        (inventory_path, inventory_bytes, "Visual OCR diagnostic inventory")
+    ]
     entries = validate_inventory(inventory)
     referenced_identities = {file_identity(inventory_path)}
     case_reports = []
@@ -727,6 +754,9 @@ def compile_report(
             raise ValueError(f"{definition.case_id} truth aliases another authority by physical identity.")
         referenced_identities.add(identity)
         truth_bytes, truth = read_json_bytes(truth_path, "VisualSyntheticTextTruth")
+        diagnostic_snapshots.append(
+            (truth_path, truth_bytes, f"{definition.case_id} synthetic text truth")
+        )
         if sha256_bytes(truth_bytes) != entry.get("truthSha256"):
             raise ValueError(f"{definition.case_id} truth raw-byte SHA-256 drifted.")
         expected_truth = build_truth(definition, current_authorities)
@@ -784,17 +814,41 @@ def compile_report(
         "generatedAt": REPORT_GENERATED_AT,
     }
     validate_authority_snapshots(current_authorities)
-    return report
+    compilation = DiagnosticCompilation(
+        report=report,
+        snapshots=current_authorities.snapshots + tuple(diagnostic_snapshots),
+    )
+    validate_diagnostic_snapshots(compilation)
+    return compilation
 
 
-def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
+def compile_report(
+    fixture_root: Path = CANONICAL_ROOT,
+    authorities: AuthoritySet | None = None,
+) -> dict[str, Any]:
+    return _compile_report_snapshot(fixture_root, authorities).report
+
+
+def validated_canonical_compilation(
+    fixture_root: Path = CANONICAL_ROOT,
+) -> DiagnosticCompilation:
     fixture_root = fixture_root.resolve(strict=True)
+    validate_fixture_structure(fixture_root)
     authorities = validate_upstream_authorities()
-    report = compile_report(fixture_root, authorities)
+    compilation = _compile_report_snapshot(fixture_root, authorities)
+    report = compilation.report
     report_path = resolve_bound_file(fixture_root, REPORT_NAME, "visual OCR diagnostic report")
     report_bytes, tracked_report = read_json_bytes(report_path, "VisualOcrDiagnosticReport")
     if report_bytes != stable_json_bytes(report) or tracked_report != report:
         raise ValueError("Visual OCR diagnostic report does not deterministically replay.")
+    return DiagnosticCompilation(
+        report=report,
+        snapshots=compilation.snapshots
+        + ((report_path, report_bytes, "Visual OCR diagnostic report"),),
+    )
+
+
+def validate_fixture_structure(fixture_root: Path) -> None:
     expected_names = {INVENTORY_NAME, REPORT_NAME} | {
         truth_name(definition.case_id) for definition in DEFINITIONS
     }
@@ -806,7 +860,13 @@ def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
     identities = [file_identity(path) for path in actual_paths]
     if len(set(identities)) != len(identities):
         raise ValueError("Visual OCR diagnostic authority files must have unique physical identities.")
-    validate_authority_snapshots(authorities)
+
+
+def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
+    fixture_root = fixture_root.resolve(strict=True)
+    compilation = validated_canonical_compilation(fixture_root)
+    validate_fixture_structure(fixture_root)
+    validate_diagnostic_snapshots(compilation)
     return len(DEFINITIONS)
 
 
@@ -860,18 +920,26 @@ def canonical_output_path(output_dir: Path) -> Path:
     return output
 
 
-def run_diagnostics(output_dir: Path) -> Path:
+def _run_diagnostics(output_dir: Path, fixture_root: Path) -> Path:
     output = canonical_output_path(output_dir)
-    report = compile_report(CANONICAL_ROOT)
-    validate_canonical_fixtures(CANONICAL_ROOT)
+    compilation = validated_canonical_compilation(fixture_root)
+    report_bytes = stable_json_bytes(compilation.report)
     stage = Path(tempfile.mkdtemp(prefix=f".{output.name}.", dir=output.parent))
     try:
-        atomic_write(stage / REPORT_NAME, stable_json_bytes(report))
+        stage_report = stage / REPORT_NAME
+        atomic_write(stage_report, report_bytes)
+        validate_file_snapshot(stage_report, report_bytes, "Staged visual OCR diagnostic report")
+        validate_fixture_structure(fixture_root)
+        validate_diagnostic_snapshots(compilation)
         os.replace(stage, output)
     finally:
         if stage.exists():
             shutil.rmtree(stage)
     return output / REPORT_NAME
+
+
+def run_diagnostics(output_dir: Path) -> Path:
+    return _run_diagnostics(output_dir, CANONICAL_ROOT)
 
 
 def parse_args() -> argparse.Namespace:
