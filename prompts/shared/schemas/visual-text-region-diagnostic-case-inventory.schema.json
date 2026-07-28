@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-text-region-diagnostic-case-inventory/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualTextRegionDiagnosticCaseInventory",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "fixtureSetId", "fixtureKind", "entries"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-text-region-diagnostic-case-inventory" },
+    "fixtureSetId": { "const": "synthetic-visual-text-region-diagnostic-v1" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "entries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId", "subjectPack", "truthRef", "truthSha256",
+          "structureExtractionResultRef", "structureExtractionResultSha256"
+        ],
+        "properties": {
+          "caseId": { "type": "string", "minLength": 1 },
+          "subjectPack": {
+            "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+          },
+          "truthRef": { "type": "string", "minLength": 1 },
+          "truthSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "structureExtractionResultRef": { "type": "string", "minLength": 1 },
+          "structureExtractionResultSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

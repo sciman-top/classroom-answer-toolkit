@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-text-region-diagnostic-report/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualTextRegionDiagnosticReport",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "fixtureSetId", "fixtureKind", "sourceInventory",
+    "caseReports", "subjectReports", "totals", "diagnosticPolicySha256",
+    "dispositions", "engineProvenance", "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-text-region-diagnostic-report" },
+    "fixtureSetId": { "const": "synthetic-visual-text-region-diagnostic-v1" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "sourceInventory": { "$ref": "#/$defs/artifact" },
+    "caseReports": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/caseReport" }
+    },
+    "subjectReports": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/subjectReport" }
+    },
+    "totals": { "$ref": "#/$defs/metrics" },
+    "diagnosticPolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "diagnosticStatus", "diagnosticScope", "candidateKind",
+        "acceptanceDisposition", "requiresHumanReview", "ocrDisposition",
+        "associationDisposition", "layoutDisposition", "semanticDisposition",
+        "trackDisposition"
+      ],
+      "properties": {
+        "diagnosticStatus": { "const": "completed" },
+        "diagnosticScope": { "const": "generator_declared_synthetic_fixture" },
+        "candidateKind": { "const": "text_region_candidate" },
+        "acceptanceDisposition": { "const": "not_accepted" },
+        "requiresHumanReview": { "const": true },
+        "ocrDisposition": { "const": "not_inferred" },
+        "associationDisposition": { "const": "not_decided" },
+        "layoutDisposition": { "const": "not_inferred" },
+        "semanticDisposition": { "const": "not_inferred" },
+        "trackDisposition": { "const": "not_integrated" }
+      },
+      "additionalProperties": false
+    },
+    "engineProvenance": {
+      "type": "object",
+      "required": [
+        "engineKind", "engineId", "engineVersion", "interpreter",
+        "liveProvider", "cloudEgress"
+      ],
+      "properties": {
+        "engineKind": { "const": "deterministic_diagnostic" },
+        "engineId": { "const": "visual-text-region-diagnostics" },
+        "engineVersion": { "const": "1.0.0" },
+        "interpreter": {
+          "type": "object",
+          "required": ["implementation", "version"],
+          "properties": {
+            "implementation": { "const": "CPython" },
+            "version": { "const": "3.13.7" }
+          },
+          "additionalProperties": false
+        },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "upstreamResult": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "requestId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "bounds": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0 },
+        "y": { "type": "number", "minimum": 0 },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "match": {
+      "type": "object",
+      "required": [
+        "truthLabelRef", "textRegionCandidateRef", "truthBounds", "candidateBounds",
+        "intersectionArea", "truthCoverage", "candidateCoverage", "diagnosticDisposition"
+      ],
+      "properties": {
+        "truthLabelRef": { "type": "string", "pattern": "^truth-label-[0-9]{3}$" },
+        "textRegionCandidateRef": {
+          "type": "string",
+          "pattern": "^text-region-[0-9]{3}$"
+        },
+        "truthBounds": { "$ref": "#/$defs/bounds" },
+        "candidateBounds": { "$ref": "#/$defs/bounds" },
+        "intersectionArea": { "type": "number", "exclusiveMinimum": 0 },
+        "truthCoverage": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "candidateCoverage": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "diagnosticDisposition": { "const": "positive_overlap" }
+      },
+      "additionalProperties": false
+    },
+    "caseReport": {
+      "type": "object",
+      "required": [
+        "caseId", "subjectPack", "truth", "structureExtractionResult", "matches",
+        "unmatchedTruthRefs", "falsePositiveCandidateRefs", "unscoredCandidateRefs", "metrics"
+      ],
+      "properties": {
+        "caseId": { "type": "string", "minLength": 1 },
+        "subjectPack": {
+          "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+        },
+        "truth": { "$ref": "#/$defs/artifact" },
+        "structureExtractionResult": { "$ref": "#/$defs/upstreamResult" },
+        "matches": { "type": "array", "items": { "$ref": "#/$defs/match" } },
+        "unmatchedTruthRefs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^truth-label-[0-9]{3}$" }
+        },
+        "falsePositiveCandidateRefs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^text-region-[0-9]{3}$" }
+        },
+        "unscoredCandidateRefs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^text-region-[0-9]{3}$" }
+        },
+        "metrics": { "$ref": "#/$defs/metrics" }
+      },
+      "additionalProperties": false
+    },
+    "subjectReport": {
+      "type": "object",
+      "required": ["subjectPack", "caseCount", "metrics"],
+      "properties": {
+        "subjectPack": {
+          "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+        },
+        "caseCount": { "type": "integer", "minimum": 1 },
+        "metrics": { "$ref": "#/$defs/metrics" }
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "scorableTruthCount", "detectedTruthCount", "falseNegativeCount",
+        "candidateCount", "matchedCandidateCount", "unscoredCandidateCount",
+        "falsePositiveCount", "precision", "recall"
+      ],
+      "properties": {
+        "scorableTruthCount": { "type": "integer", "minimum": 0 },
+        "detectedTruthCount": { "type": "integer", "minimum": 0 },
+        "falseNegativeCount": { "type": "integer", "minimum": 0 },
+        "candidateCount": { "type": "integer", "minimum": 0 },
+        "matchedCandidateCount": { "type": "integer", "minimum": 0 },
+        "unscoredCandidateCount": { "type": "integer", "minimum": 0 },
+        "falsePositiveCount": { "type": "integer", "minimum": 0 },
+        "precision": { "$ref": "#/$defs/ratio" },
+        "recall": { "$ref": "#/$defs/ratio" }
+      },
+      "additionalProperties": false
+    },
+    "ratio": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["available", "value"],
+          "properties": {
+            "available": { "const": true },
+            "value": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["available"],
+          "properties": { "available": { "const": false } },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}
