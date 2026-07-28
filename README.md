@@ -27,6 +27,7 @@ This project provides a local Windows workflow for generating, validating, and r
 - 已落地可选 AI 网关配置校验入口、文本请求主备切换和显式视觉 TrackResult 探针；云外发默认关闭，真实密钥只保留在本地 `.env`。
 - 已用 VISION-007 renderer 的显式文字/坐标声明建立三学科 synthetic OCR diagnostic：报告可重算 exact-text 漏检、误检和 unavailable 分母，但不构成人工 truth、真实 OCR benchmark 或 OCR acceptance。
 - 已为三份公开 synthetic 2x crop 建立机器等效视觉复核 receipt：AI 复核只在 `synthetic_fixture_diagnostic` 范围内等效人工检查，身份始终记录为 `reviewerKind=ai_agent`、`humanReviewed=false`，不构成人类身份、delivery trust 或 live acceptance。
+- 已在 VISION-008/009/010 authority 上建立 deterministic OCR-region association policy diagnostic：当前 frozen fixtures 诚实报告两例 unavailable、一例 unmatched、零 canonical match；正向与歧义只作非权威 policy 回归，不构成 OCR correctness、layout semantics 或 Track B。
 - WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；还可对用户显式选择且通过 source-aware 重验的本地 review artifact 做三类只读队列投影。审批生成、lifecycle 回写和原题生成主链仍未接入。
 - 已落地自动解题工作站终局计划与 Typst 主渲染迁移计划；当前运行时仍保持 Playwright / Chromium。
 - 支持实验性的受控插图插入链路，可把用户提供或人工复核后的答案图块插入 PDF。
@@ -76,6 +77,7 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `tools/visual-ocr-diagnostics/`: 对 generator-declared synthetic text truth 与 canonical OCR observations 做本地、确定性、禁云诊断。
 - `tools/visual-text-region-diagnostics/`: 对同一 synthetic truth 与 canonical heuristic text-region candidates 做本地、确定性、禁云空间覆盖诊断。
 - `tools/visual-machine-review/`: 校验 synthetic crop 的机器视觉复核 receipt、上游 raw-byte/pixel/dimension authority、已披露限制和 fail-closed 状态边界。
+- `tools/visual-ocr-region-association/`: 对 canonical text-region/OCR/spatial authority 应用双向唯一 positive-area association policy，并按学科报告 matched/unmatched/ambiguous/unavailable。
 - `eval/`: 固定评测数据集、视觉基线和回归结果。
 - `tests/`: xUnit 与 FluentAssertions 测试。
 
@@ -181,6 +183,7 @@ dotnet build ClassroomToolkit.sln -c Debug
 视觉降错本轮已进入契约层并具备最小离线决策编译：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` 已纳入 schema 与资产校验，`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 已作为阶段产物落盘，双轨一致但证据缺失和直接跳答案缺 grounding 的样例都可由运行时代码推导为 `trusted=false`；真正的双轨/三轨运行时和局部高清 crop 仍是后续工程。
 三份公开 synthetic crop 另有 generator-declared text truth 与独立 OCR diagnostic report：当前 math/senior fixture 暴露漏检，junior fixture 暴露误检。该结果只说明冻结 fixture 上的 repo-side diagnostics，不是人工标注、真实 OCR 质量、layout semantics、Track B 或 live acceptance。
 同三份 synthetic crop 已由 AI 完成可追溯的机器视觉复核，并在该 synthetic diagnostic scope 内作为等效人工检查；canonical receipt 仍明确 `humanReviewed=false`、`humanIdentityDisposition=not_claimed`，不会投影 delivery trust、WPF workflow 或 live acceptance，也不验证 readiness controls 或产生 `OptimizationCandidate`。
+同一 authority 的 OCR-region association diagnostic 当前输出 math/senior unavailable、junior unmatched、零 matched。该结果只证明 fail-closed policy plumbing；policy 单元测试中的正向 geometry 不是 canonical fixture 或样本 truth，不能升级为 OCR/layout/Track B、workflow 或 live acceptance。
 WPF 当前完成最新交付的 review/trust 投影、本地题目级 `DecisionRecord` 的受控附着、本地 aggregate 的显式附着后立即重验，以及 `needs_human_label / high_risk_approval / truth_needs_review` 三类本地只读队列投影。队列只消费用户显式选择且通过 canonical path、raw-byte SHA-256 与既有 source-aware verifier 重验的 artifact；任一 rejected source 会清空本次投影。该入口不生成 aggregate/审批、不推进 lifecycle、不修改 trust；这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
 离线 delivery aggregate 已能对合成 `sample-package` inventory、snapshot/input/manifest bytes 和逐题决策做完整覆盖证明，并记录 aggregate attach 的可重验 hash chain；它仍不代表真实试卷全题识别、WPF workflow integration 或 live acceptance。
 自动解题工作站和 Typst 主渲染已作为终局计划落盘；Typst 未通过 parity gate 前，默认交付链仍是 Playwright / Chromium。

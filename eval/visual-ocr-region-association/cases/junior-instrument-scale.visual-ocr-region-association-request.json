@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-ocr-region-association-request",
+  "requestId": "junior-instrument-scale",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic public fixture; no teacher, student, or exam data."
+  },
+  "structureExtractionResult": {
+    "artifactRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
+    "rawByteSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027",
+    "requestId": "junior-instrument-scale"
+  },
+  "ocrObservationResult": {
+    "artifactRef": "eval/visual-ocr-observation/cases/junior-instrument-scale.visual-ocr-observation-result.json",
+    "rawByteSha256": "e3244936d0350cea21d9b96618ea975dd7ba7eba507fb0493336c29f7ec20839",
+    "requestId": "junior-instrument-scale"
+  },
+  "spatialObservationResult": {
+    "artifactRef": "eval/visual-spatial-observation/cases/junior-instrument-scale.visual-spatial-observation-result.json",
+    "rawByteSha256": "3cd9b6bca2dcd8a4547a30b2b2134640fca60ee2579c023ce4a8fa31082b3c3d",
+    "requestId": "junior-instrument-scale"
+  },
+  "crop": {
+    "artifactRef": "junior-instrument-scale.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "70577ca429dbc6afd5b2ecf536fe4712001bfddd961f9a041b103dca5fb8bb40",
+    "decodedRgbPixelSha256": "4efe1386d15ea467781942982c77f2c6a38968509c79e72878eacf53fc711e30",
+    "pixelSize": {
+      "width": 580,
+      "height": 210
+    }
+  },
+  "associationPolicy": {
+    "eligibleMeasurement": "positive_intersection_non_disjoint",
+    "cardinality": "bidirectional_unique",
+    "ambiguityDisposition": "fail_closed",
+    "zeroEndpointDisposition": "unavailable",
+    "noEligibleEdgeDisposition": "unmatched",
+    "ordering": [
+      "text_region_candidate_id",
+      "ocr_observation_id"
+    ],
+    "ratioPrecision": 8
+  },
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-28T07:01:00Z"
+}

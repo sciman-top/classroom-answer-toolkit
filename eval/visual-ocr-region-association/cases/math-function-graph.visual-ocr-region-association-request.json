@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-ocr-region-association-request",
+  "requestId": "math-function-graph",
+  "subjectPack": "math-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic public fixture; no teacher, student, or exam data."
+  },
+  "structureExtractionResult": {
+    "artifactRef": "eval/visual-structure-extraction/cases/math-function-graph.visual-structure-extraction-result.json",
+    "rawByteSha256": "9b8cf6317ba97678fe64eedf50fbf3ddaa40b8b45bb535b5945ce4d9f8f795c0",
+    "requestId": "math-function-graph"
+  },
+  "ocrObservationResult": {
+    "artifactRef": "eval/visual-ocr-observation/cases/math-function-graph.visual-ocr-observation-result.json",
+    "rawByteSha256": "1d392af4c6080bb5222931bd714a14b610d455ab93946cc73d824b08aba7ab8e",
+    "requestId": "math-function-graph"
+  },
+  "spatialObservationResult": {
+    "artifactRef": "eval/visual-spatial-observation/cases/math-function-graph.visual-spatial-observation-result.json",
+    "rawByteSha256": "35ba057661dc08abd268dedf3da22cbb8cde4f5f612f642cac43389e35bdc260",
+    "requestId": "math-function-graph"
+  },
+  "crop": {
+    "artifactRef": "math-function-graph.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "77911d7a23d34a664a907e596a421fd3fea575d53b191ee29c0030e773c66d92",
+    "decodedRgbPixelSha256": "f7384abdf7091caf909056ca3d3698709bcce53ae9997bd13d5132b4e284dc9a",
+    "pixelSize": {
+      "width": 460,
+      "height": 370
+    }
+  },
+  "associationPolicy": {
+    "eligibleMeasurement": "positive_intersection_non_disjoint",
+    "cardinality": "bidirectional_unique",
+    "ambiguityDisposition": "fail_closed",
+    "zeroEndpointDisposition": "unavailable",
+    "noEligibleEdgeDisposition": "unmatched",
+    "ordering": [
+      "text_region_candidate_id",
+      "ocr_observation_id"
+    ],
+    "ratioPrecision": 8
+  },
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-28T07:00:00Z"
+}

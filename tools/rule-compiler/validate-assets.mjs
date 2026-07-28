@@ -13,6 +13,7 @@ import {
 } from "../sample-flywheel/teacher-feedback-diagnostic.mjs";
 import { validateCanonicalSyntheticGenerationFixtures } from "../answer-generator/synthetic-generator.mjs";
 import { validateVisualRiskDiagnosticReport } from "../visual-evidence/visual-risk-diagnostic.mjs";
+import { validateVisualOcrRegionAssociationBoundary } from "../visual-ocr-region-association/validate_schema_boundary.mjs";
 
 function collectValidationTargets() {
   const dataClassificationSchema = resolveRepoPath("prompts/shared/schemas/data-classification.schema.json");
@@ -65,6 +66,10 @@ function collectValidationTargets() {
   const visualMachineReviewReceiptSchema = resolveRepoPath("prompts/shared/schemas/visual-machine-review-receipt.schema.json");
   const visualMachineReviewCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-machine-review-case-inventory.schema.json");
   const visualMachineReviewReportSchema = resolveRepoPath("prompts/shared/schemas/visual-machine-review-report.schema.json");
+  const visualOcrRegionAssociationRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-region-association-request.schema.json");
+  const visualOcrRegionAssociationResultSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-region-association-result.schema.json");
+  const visualOcrRegionAssociationCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-region-association-case-inventory.schema.json");
+  const visualOcrRegionAssociationReportSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-region-association-report.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -101,6 +106,7 @@ function collectValidationTargets() {
   const visualOcrDiagnosticFixtureRoot = resolveRepoPath("eval/visual-ocr-diagnostics/cases");
   const visualTextRegionDiagnosticFixtureRoot = resolveRepoPath("eval/visual-text-region-diagnostics/cases");
   const visualMachineReviewFixtureRoot = resolveRepoPath("eval/visual-machine-review/cases");
+  const visualOcrRegionAssociationFixtureRoot = resolveRepoPath("eval/visual-ocr-region-association/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -251,6 +257,26 @@ function collectValidationTargets() {
     filePath: path.join(visualMachineReviewFixtureRoot, "visual-machine-review-report.json"),
     schemaPath: visualMachineReviewReportSchema
   }];
+  const visualOcrRegionAssociationRequestFiles = listFilesBySuffixRecursive(
+    visualOcrRegionAssociationFixtureRoot,
+    ".visual-ocr-region-association-request.json")
+    .map((filePath) => ({ filePath, schemaPath: visualOcrRegionAssociationRequestSchema }));
+  const visualOcrRegionAssociationResultFiles = listFilesBySuffixRecursive(
+    visualOcrRegionAssociationFixtureRoot,
+    ".visual-ocr-region-association-result.json")
+    .map((filePath) => ({ filePath, schemaPath: visualOcrRegionAssociationResultSchema }));
+  const visualOcrRegionAssociationCaseInventoryFiles = [{
+    filePath: path.join(
+      visualOcrRegionAssociationFixtureRoot,
+      "visual-ocr-region-association-case-inventory.json"),
+    schemaPath: visualOcrRegionAssociationCaseInventorySchema
+  }];
+  const visualOcrRegionAssociationReportFiles = [{
+    filePath: path.join(
+      visualOcrRegionAssociationFixtureRoot,
+      "visual-ocr-region-association-report.json"),
+    schemaPath: visualOcrRegionAssociationReportSchema
+  }];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
   const optimizationReadinessInputFiles = listFilesByNameRecursive(
@@ -353,6 +379,10 @@ function collectValidationTargets() {
     visualMachineReviewReceipts: visualMachineReviewReceiptFiles,
     visualMachineReviewCaseInventories: visualMachineReviewCaseInventoryFiles,
     visualMachineReviewReports: visualMachineReviewReportFiles,
+    visualOcrRegionAssociationRequests: visualOcrRegionAssociationRequestFiles,
+    visualOcrRegionAssociationResults: visualOcrRegionAssociationResultFiles,
+    visualOcrRegionAssociationCaseInventories: visualOcrRegionAssociationCaseInventoryFiles,
+    visualOcrRegionAssociationReports: visualOcrRegionAssociationReportFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -403,6 +433,10 @@ function collectValidationTargets() {
       visualMachineReviewReceiptSchema,
       visualMachineReviewCaseInventorySchema,
       visualMachineReviewReportSchema,
+      visualOcrRegionAssociationRequestSchema,
+      visualOcrRegionAssociationResultSchema,
+      visualOcrRegionAssociationCaseInventorySchema,
+      visualOcrRegionAssociationReportSchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -470,7 +504,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualMachineReviewReceipts, targets.visualMachineReviewCaseInventories, targets.visualMachineReviewReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualMachineReviewReceipts, targets.visualMachineReviewCaseInventories, targets.visualMachineReviewReports, targets.visualOcrRegionAssociationRequests, targets.visualOcrRegionAssociationResults, targets.visualOcrRegionAssociationCaseInventories, targets.visualOcrRegionAssociationReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -887,6 +921,10 @@ function main() {
   const visualMachineReviewBoundaryErrors = validateVisualMachineReviewBoundary(
     targets.visualMachineReviewReceipts,
     targets.visualMachineReviewReports);
+  const visualOcrRegionAssociationBoundaryErrors =
+    validateVisualOcrRegionAssociationBoundary(
+      targets.visualOcrRegionAssociationResults,
+      targets.visualOcrRegionAssociationReports);
   const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
@@ -964,6 +1002,7 @@ function main() {
     ...visualOcrDiagnosticBoundaryErrors,
     ...visualTextRegionDiagnosticBoundaryErrors,
     ...visualMachineReviewBoundaryErrors,
+    ...visualOcrRegionAssociationBoundaryErrors,
     ...(teacherFeedbackFixtureError
       ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
       : []),

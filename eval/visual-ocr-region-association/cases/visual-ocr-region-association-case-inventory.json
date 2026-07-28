@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-ocr-region-association-case-inventory",
+  "fixtureSetId": "synthetic-visual-ocr-region-association-v1",
+  "fixtureKind": "synthetic_fixture",
+  "entries": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/math-function-graph.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "9b8cf6317ba97678fe64eedf50fbf3ddaa40b8b45bb535b5945ce4d9f8f795c0",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/math-function-graph.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "1d392af4c6080bb5222931bd714a14b610d455ab93946cc73d824b08aba7ab8e",
+      "spatialObservationResultRef": "eval/visual-spatial-observation/cases/math-function-graph.visual-spatial-observation-result.json",
+      "spatialObservationResultSha256": "35ba057661dc08abd268dedf3da22cbb8cde4f5f612f642cac43389e35bdc260",
+      "requestRef": "math-function-graph.visual-ocr-region-association-request.json",
+      "requestSha256": "216830035db6d6fbca14f1f37a829b049f63e7de1ded77e80549b8d3c1f9068e",
+      "expectedResultRef": "math-function-graph.visual-ocr-region-association-result.json",
+      "expectedResultSha256": "0f3f7dc8f0ac12b5ab86f8a37449a307f5369462656a054d86c38d99775454c9"
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/junior-instrument-scale.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "e3244936d0350cea21d9b96618ea975dd7ba7eba507fb0493336c29f7ec20839",
+      "spatialObservationResultRef": "eval/visual-spatial-observation/cases/junior-instrument-scale.visual-spatial-observation-result.json",
+      "spatialObservationResultSha256": "3cd9b6bca2dcd8a4547a30b2b2134640fca60ee2579c023ce4a8fa31082b3c3d",
+      "requestRef": "junior-instrument-scale.visual-ocr-region-association-request.json",
+      "requestSha256": "7d5933143f38ae7ac5ec7f1fed141cbdf742ad66cb32b5f446355f555a65ade7",
+      "expectedResultRef": "junior-instrument-scale.visual-ocr-region-association-result.json",
+      "expectedResultSha256": "50be031bfcf9d53b22979ccfdc2a6a61c0d3f2683a4933165e4d1dde4a9abb9b"
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/senior-circuit-label.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "9b638be6a7ea0274ebe6fb0fbe36c0cec8222b4193d94fabbd498d31ffdea15c",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/senior-circuit-label.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "ea3458311113a609f831fbba66c85c5fa358728aafd51cb25957b9cf01aef674",
+      "spatialObservationResultRef": "eval/visual-spatial-observation/cases/senior-circuit-label.visual-spatial-observation-result.json",
+      "spatialObservationResultSha256": "7f69bcf391243f45081a7d2e93242e9e960ea911f6b262e78569528806c5bb92",
+      "requestRef": "senior-circuit-label.visual-ocr-region-association-request.json",
+      "requestSha256": "89cd5037ecdc55b52cc5c68e2eb79f540280f243c0ee83e88103fc2b6c9f8cdc",
+      "expectedResultRef": "senior-circuit-label.visual-ocr-region-association-result.json",
+      "expectedResultSha256": "f42de43cb9d3848581aefda578f76ae71644cacb9da0540de3f9bbe8725cfb19"
+    }
+  ]
+}

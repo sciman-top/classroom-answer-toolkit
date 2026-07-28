@@ -1,0 +1,193 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-ocr-region-association-report",
+  "fixtureSetId": "synthetic-visual-ocr-region-association-v1",
+  "fixtureKind": "synthetic_fixture",
+  "sourceInventory": {
+    "artifactRef": "eval/visual-ocr-region-association/cases/visual-ocr-region-association-case-inventory.json",
+    "rawByteSha256": "30192916f972cf9dc9adc9efdd761a6f5983305bfda1fa52b9835915fb449154"
+  },
+  "caseReports": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "associationResult": {
+        "artifactRef": "eval/visual-ocr-region-association/cases/math-function-graph.visual-ocr-region-association-result.json",
+        "rawByteSha256": "0f3f7dc8f0ac12b5ab86f8a37449a307f5369462656a054d86c38d99775454c9",
+        "requestId": "math-function-graph"
+      },
+      "associationStatus": "unavailable",
+      "metrics": {
+        "caseCount": 1,
+        "matchedCaseCount": 0,
+        "unmatchedCaseCount": 0,
+        "ambiguousCaseCount": 0,
+        "unavailableCaseCount": 1,
+        "textRegionCandidateCount": 1,
+        "ocrObservationCount": 0,
+        "matchedAssociationCount": 0,
+        "unmatchedTextRegionCandidateCount": 1,
+        "unmatchedOcrObservationCount": 0,
+        "associationRate": {
+          "available": false
+        }
+      }
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "associationResult": {
+        "artifactRef": "eval/visual-ocr-region-association/cases/junior-instrument-scale.visual-ocr-region-association-result.json",
+        "rawByteSha256": "50be031bfcf9d53b22979ccfdc2a6a61c0d3f2683a4933165e4d1dde4a9abb9b",
+        "requestId": "junior-instrument-scale"
+      },
+      "associationStatus": "unmatched",
+      "metrics": {
+        "caseCount": 1,
+        "matchedCaseCount": 0,
+        "unmatchedCaseCount": 1,
+        "ambiguousCaseCount": 0,
+        "unavailableCaseCount": 0,
+        "textRegionCandidateCount": 1,
+        "ocrObservationCount": 1,
+        "matchedAssociationCount": 0,
+        "unmatchedTextRegionCandidateCount": 1,
+        "unmatchedOcrObservationCount": 1,
+        "associationRate": {
+          "available": true,
+          "value": 0.0
+        }
+      }
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "associationResult": {
+        "artifactRef": "eval/visual-ocr-region-association/cases/senior-circuit-label.visual-ocr-region-association-result.json",
+        "rawByteSha256": "f42de43cb9d3848581aefda578f76ae71644cacb9da0540de3f9bbe8725cfb19",
+        "requestId": "senior-circuit-label"
+      },
+      "associationStatus": "unavailable",
+      "metrics": {
+        "caseCount": 1,
+        "matchedCaseCount": 0,
+        "unmatchedCaseCount": 0,
+        "ambiguousCaseCount": 0,
+        "unavailableCaseCount": 1,
+        "textRegionCandidateCount": 23,
+        "ocrObservationCount": 0,
+        "matchedAssociationCount": 0,
+        "unmatchedTextRegionCandidateCount": 23,
+        "unmatchedOcrObservationCount": 0,
+        "associationRate": {
+          "available": false
+        }
+      }
+    }
+  ],
+  "subjectReports": [
+    {
+      "subjectPack": "math-answer",
+      "caseCount": 1,
+      "metrics": {
+        "caseCount": 1,
+        "matchedCaseCount": 0,
+        "unmatchedCaseCount": 0,
+        "ambiguousCaseCount": 0,
+        "unavailableCaseCount": 1,
+        "textRegionCandidateCount": 1,
+        "ocrObservationCount": 0,
+        "matchedAssociationCount": 0,
+        "unmatchedTextRegionCandidateCount": 1,
+        "unmatchedOcrObservationCount": 0,
+        "associationRate": {
+          "available": false
+        }
+      }
+    },
+    {
+      "subjectPack": "junior-physics-answer",
+      "caseCount": 1,
+      "metrics": {
+        "caseCount": 1,
+        "matchedCaseCount": 0,
+        "unmatchedCaseCount": 1,
+        "ambiguousCaseCount": 0,
+        "unavailableCaseCount": 0,
+        "textRegionCandidateCount": 1,
+        "ocrObservationCount": 1,
+        "matchedAssociationCount": 0,
+        "unmatchedTextRegionCandidateCount": 1,
+        "unmatchedOcrObservationCount": 1,
+        "associationRate": {
+          "available": true,
+          "value": 0.0
+        }
+      }
+    },
+    {
+      "subjectPack": "senior-physics-answer",
+      "caseCount": 1,
+      "metrics": {
+        "caseCount": 1,
+        "matchedCaseCount": 0,
+        "unmatchedCaseCount": 0,
+        "ambiguousCaseCount": 0,
+        "unavailableCaseCount": 1,
+        "textRegionCandidateCount": 23,
+        "ocrObservationCount": 0,
+        "matchedAssociationCount": 0,
+        "unmatchedTextRegionCandidateCount": 23,
+        "unmatchedOcrObservationCount": 0,
+        "associationRate": {
+          "available": false
+        }
+      }
+    }
+  ],
+  "totals": {
+    "caseCount": 3,
+    "matchedCaseCount": 0,
+    "unmatchedCaseCount": 1,
+    "ambiguousCaseCount": 0,
+    "unavailableCaseCount": 2,
+    "textRegionCandidateCount": 25,
+    "ocrObservationCount": 1,
+    "matchedAssociationCount": 0,
+    "unmatchedTextRegionCandidateCount": 25,
+    "unmatchedOcrObservationCount": 1,
+    "associationRate": {
+      "available": true,
+      "value": 0.0
+    }
+  },
+  "associationPolicySha256": "043d9eaba59ef947086f40641ad6b262bd03fe1c9e95dda899db5ec72d768c80",
+  "dispositions": {
+    "diagnosticStatus": "completed",
+    "diagnosticScope": "synthetic_fixture_association_policy",
+    "acceptanceDisposition": "not_accepted",
+    "requiresHumanReview": true,
+    "ocrCorrectnessDisposition": "not_inferred",
+    "layoutDisposition": "not_inferred",
+    "semanticDisposition": "not_inferred",
+    "trackDisposition": "not_integrated",
+    "deliveryTrustDisposition": "not_projected",
+    "wpfDisposition": "not_integrated",
+    "liveAcceptanceDisposition": "not_accepted",
+    "controlsDisposition": "not_verified",
+    "eligible": false,
+    "optimizationCandidateRefs": []
+  },
+  "engineProvenance": {
+    "engineKind": "deterministic_association_policy",
+    "engineId": "visual-ocr-region-association",
+    "engineVersion": "1.0.0",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-28T07:10:00Z"
+}

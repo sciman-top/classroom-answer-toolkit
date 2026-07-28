@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-ocr-region-association-report/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualOcrRegionAssociationReport",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "fixtureSetId", "fixtureKind", "sourceInventory",
+    "caseReports", "subjectReports", "totals", "associationPolicySha256",
+    "dispositions", "engineProvenance", "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-ocr-region-association-report" },
+    "fixtureSetId": { "const": "synthetic-visual-ocr-region-association-v1" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "sourceInventory": { "$ref": "#/$defs/artifact" },
+    "caseReports": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/caseReport" }
+    },
+    "subjectReports": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["subjectPack", "caseCount", "metrics"],
+        "properties": {
+          "subjectPack": {
+            "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+          },
+          "caseCount": { "const": 1 },
+          "metrics": { "$ref": "#/$defs/reportMetrics" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "totals": { "$ref": "#/$defs/reportMetrics" },
+    "associationPolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "diagnosticStatus", "diagnosticScope", "acceptanceDisposition",
+        "requiresHumanReview", "ocrCorrectnessDisposition", "layoutDisposition",
+        "semanticDisposition", "trackDisposition", "deliveryTrustDisposition",
+        "wpfDisposition", "liveAcceptanceDisposition", "controlsDisposition",
+        "eligible", "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "diagnosticStatus": { "const": "completed" },
+        "diagnosticScope": { "const": "synthetic_fixture_association_policy" },
+        "acceptanceDisposition": { "const": "not_accepted" },
+        "requiresHumanReview": { "const": true },
+        "ocrCorrectnessDisposition": { "const": "not_inferred" },
+        "layoutDisposition": { "const": "not_inferred" },
+        "semanticDisposition": { "const": "not_inferred" },
+        "trackDisposition": { "const": "not_integrated" },
+        "deliveryTrustDisposition": { "const": "not_projected" },
+        "wpfDisposition": { "const": "not_integrated" },
+        "liveAcceptanceDisposition": { "const": "not_accepted" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false },
+        "optimizationCandidateRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    },
+    "engineProvenance": { "$ref": "#/$defs/engine" },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "resultArtifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "requestId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "availabilityRatio": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["available"],
+          "properties": { "available": { "const": false } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["available", "value"],
+          "properties": {
+            "available": { "const": true },
+            "value": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "reportMetrics": {
+      "type": "object",
+      "required": [
+        "caseCount", "matchedCaseCount", "unmatchedCaseCount", "ambiguousCaseCount",
+        "unavailableCaseCount", "textRegionCandidateCount", "ocrObservationCount",
+        "matchedAssociationCount", "unmatchedTextRegionCandidateCount",
+        "unmatchedOcrObservationCount", "associationRate"
+      ],
+      "properties": {
+        "caseCount": { "type": "integer", "minimum": 0 },
+        "matchedCaseCount": { "type": "integer", "minimum": 0 },
+        "unmatchedCaseCount": { "type": "integer", "minimum": 0 },
+        "ambiguousCaseCount": { "const": 0 },
+        "unavailableCaseCount": { "type": "integer", "minimum": 0 },
+        "textRegionCandidateCount": { "type": "integer", "minimum": 0 },
+        "ocrObservationCount": { "type": "integer", "minimum": 0 },
+        "matchedAssociationCount": { "type": "integer", "minimum": 0 },
+        "unmatchedTextRegionCandidateCount": { "type": "integer", "minimum": 0 },
+        "unmatchedOcrObservationCount": { "type": "integer", "minimum": 0 },
+        "associationRate": { "$ref": "#/$defs/availabilityRatio" }
+      },
+      "additionalProperties": false
+    },
+    "caseReport": {
+      "type": "object",
+      "required": ["caseId", "subjectPack", "associationResult", "associationStatus", "metrics"],
+      "properties": {
+        "caseId": { "type": "string", "minLength": 1 },
+        "subjectPack": {
+          "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+        },
+        "associationResult": { "$ref": "#/$defs/resultArtifact" },
+        "associationStatus": { "enum": ["matched", "unmatched", "unavailable"] },
+        "metrics": { "$ref": "#/$defs/reportMetrics" }
+      },
+      "additionalProperties": false
+    },
+    "engine": {
+      "type": "object",
+      "required": [
+        "engineKind", "engineId", "engineVersion", "interpreter", "liveProvider", "cloudEgress"
+      ],
+      "properties": {
+        "engineKind": { "const": "deterministic_association_policy" },
+        "engineId": { "const": "visual-ocr-region-association" },
+        "engineVersion": { "const": "1.0.0" },
+        "interpreter": {
+          "type": "object",
+          "required": ["implementation", "version"],
+          "properties": {
+            "implementation": { "const": "CPython" },
+            "version": { "const": "3.13.7" }
+          },
+          "additionalProperties": false
+        },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-ocr-region-association-result/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualOcrRegionAssociationResult",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind",
+    "sourceRequestSha256", "structureExtractionResult", "ocrObservationResult",
+    "spatialObservationResult", "crop", "coordinateSpace", "associations",
+    "unmatchedTextRegionCandidateRefs", "unmatchedOcrObservationRefs", "summary",
+    "dispositions", "associationPolicySha256", "engineProvenance", "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-ocr-region-association-result" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "subjectPack": {
+      "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+    },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "sourceRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "structureExtractionResult": { "$ref": "#/$defs/upstreamResult" },
+    "ocrObservationResult": { "$ref": "#/$defs/upstreamResult" },
+    "spatialObservationResult": { "$ref": "#/$defs/upstreamResult" },
+    "crop": { "$ref": "#/$defs/crop" },
+    "coordinateSpace": { "const": "crop_pixel" },
+    "associations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "associationId", "textRegionCandidateRef", "ocrObservationRef",
+          "spatialMeasurementRef", "intersectionArea",
+          "intersectionOverTextRegionAreaRatio", "intersectionOverOcrBoundsAreaRatio",
+          "spatialRelation"
+        ],
+        "properties": {
+          "associationId": { "type": "string", "pattern": "^ocr-region-association-[0-9]{3}$" },
+          "textRegionCandidateRef": { "type": "string", "pattern": "^text-region-[0-9]{3}$" },
+          "ocrObservationRef": { "type": "string", "pattern": "^ocr-observation-[0-9]{3}$" },
+          "spatialMeasurementRef": { "type": "string", "pattern": "^spatial-measurement-[0-9]{3}$" },
+          "intersectionArea": { "type": "number", "exclusiveMinimum": 0 },
+          "intersectionOverTextRegionAreaRatio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+          "intersectionOverOcrBoundsAreaRatio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+          "spatialRelation": {
+            "enum": ["equal_bounds", "observation_contains_region", "region_contains_observation", "overlap"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unmatchedTextRegionCandidateRefs": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^text-region-[0-9]{3}$" },
+      "uniqueItems": true
+    },
+    "unmatchedOcrObservationRefs": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^ocr-observation-[0-9]{3}$" },
+      "uniqueItems": true
+    },
+    "summary": { "$ref": "#/$defs/metrics" },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "associationStatus", "diagnosticScope", "acceptanceDisposition",
+        "requiresHumanReview", "ocrCorrectnessDisposition", "layoutDisposition",
+        "semanticDisposition", "trackDisposition"
+      ],
+      "properties": {
+        "associationStatus": { "enum": ["matched", "unmatched", "unavailable"] },
+        "diagnosticScope": { "const": "synthetic_fixture_association_policy" },
+        "acceptanceDisposition": { "const": "not_accepted" },
+        "requiresHumanReview": { "const": true },
+        "ocrCorrectnessDisposition": { "const": "not_inferred" },
+        "layoutDisposition": { "const": "not_inferred" },
+        "semanticDisposition": { "const": "not_inferred" },
+        "trackDisposition": { "const": "not_integrated" }
+      },
+      "additionalProperties": false
+    },
+    "associationPolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "engineProvenance": { "$ref": "#/$defs/engine" },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "upstreamResult": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "requestId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "crop": {
+      "type": "object",
+      "required": ["artifactRef", "scale", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "scale": { "const": 2 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "decodedRgbPixelSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "pixelSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "availabilityRatio": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["available"],
+          "properties": { "available": { "const": false } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["available", "value"],
+          "properties": {
+            "available": { "const": true },
+            "value": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "textRegionCandidateCount", "ocrObservationCount", "eligibleMeasurementCount",
+        "matchedAssociationCount", "unmatchedTextRegionCandidateCount",
+        "unmatchedOcrObservationCount", "ambiguousEndpointCount", "unavailableCaseCount",
+        "associationRate"
+      ],
+      "properties": {
+        "textRegionCandidateCount": { "type": "integer", "minimum": 0 },
+        "ocrObservationCount": { "type": "integer", "minimum": 0 },
+        "eligibleMeasurementCount": { "type": "integer", "minimum": 0 },
+        "matchedAssociationCount": { "type": "integer", "minimum": 0 },
+        "unmatchedTextRegionCandidateCount": { "type": "integer", "minimum": 0 },
+        "unmatchedOcrObservationCount": { "type": "integer", "minimum": 0 },
+        "ambiguousEndpointCount": { "const": 0 },
+        "unavailableCaseCount": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "associationRate": { "$ref": "#/$defs/availabilityRatio" }
+      },
+      "additionalProperties": false
+    },
+    "engine": {
+      "type": "object",
+      "required": [
+        "engineKind", "engineId", "engineVersion", "interpreter", "liveProvider", "cloudEgress"
+      ],
+      "properties": {
+        "engineKind": { "const": "deterministic_association_policy" },
+        "engineId": { "const": "visual-ocr-region-association" },
+        "engineVersion": { "const": "1.0.0" },
+        "interpreter": {
+          "type": "object",
+          "required": ["implementation", "version"],
+          "properties": {
+            "implementation": { "const": "CPython" },
+            "version": { "const": "3.13.7" }
+          },
+          "additionalProperties": false
+        },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
