@@ -6,6 +6,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -26,6 +27,7 @@ from visual_machine_review import (
     validate_canonical_fixtures,
     validate_fixture_structure,
     validate_receipt,
+    validate_runtime_identity,
 )
 
 
@@ -120,6 +122,57 @@ class VisualMachineReviewTests(unittest.TestCase):
         hidden_limitation["knownLimitations"] = []
         with self.assertRaisesRegex(ValueError, "known limitations drifted"):
             validate_receipt(hidden_limitation, definition, preprocessing_contract, crop)
+
+    def test_materializer_rejects_unreviewed_crop_authority(self) -> None:
+        with self.preprocessing_copy() as preprocessing_root:
+            definition = review.DEFINITION_BY_ID["math-function-graph"]
+            preprocessing_path = preprocessing_root / definition.preprocessing_result_name
+            preprocessing = self.read_json(preprocessing_path)
+            preprocessing["cropArtifacts"][1]["decodedRgbPixelSha256"] = "0" * 64
+            preprocessing_path.write_bytes(stable_json_bytes(preprocessing))
+            with patch.multiple(
+                "visual_machine_review",
+                PREPROCESSING_ROOT=preprocessing_root,
+                validate_preprocessing_fixtures=lambda: None,
+            ), tempfile.TemporaryDirectory(prefix="visual-machine-review-materialize-") as temp:
+                with self.assertRaisesRegex(ValueError, "reviewed authority"):
+                    materialize_fixtures(Path(temp) / "cases")
+
+    def test_rejected_review_is_reachable_and_requires_failed_check(self) -> None:
+        _, definition, preprocessing_contract, crop = self.receipt_inputs(
+            "math-function-graph"
+        )
+        rejected_definition = replace(
+            definition,
+            decision="reject_for_diagnostic_use",
+            check_statuses=("fail", *definition.check_statuses[1:]),
+        )
+        preprocessing_path = review.PREPROCESSING_ROOT / definition.preprocessing_result_name
+        rejected = build_receipt(
+            rejected_definition,
+            preprocessing_path.read_bytes(),
+            self.read_json(preprocessing_path),
+        )
+        self.assertEqual(rejected["decision"], "reject_for_diagnostic_use")
+        validate_receipt(rejected, rejected_definition, preprocessing_contract, crop)
+        no_failed_check = replace(rejected_definition, check_statuses=definition.check_statuses)
+        invalid_rejected = build_receipt(
+            no_failed_check,
+            preprocessing_path.read_bytes(),
+            self.read_json(preprocessing_path),
+        )
+        with self.assertRaisesRegex(ValueError, "rejected review must contain a failed check"):
+            validate_receipt(invalid_rejected, no_failed_check, preprocessing_contract, crop)
+
+    def test_runtime_identity_drift_fails_closed(self) -> None:
+        with patch(
+            "visual_machine_review.interpreter_identity",
+            return_value={"implementation": "PyPy", "version": "3.11.9"},
+        ):
+            with self.assertRaisesRegex(ValueError, "interpreter drifted"):
+                validate_runtime_identity()
+            with self.assertRaisesRegex(ValueError, "interpreter drifted"):
+                compile_report()
 
     def test_inventory_receipt_hash_drift_fails_closed(self) -> None:
         with self.fixture_copy() as root:

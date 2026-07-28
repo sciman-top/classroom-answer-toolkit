@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import shutil
 import sys
 import tempfile
@@ -48,6 +49,7 @@ SUBJECT_PACKS = (
     "junior-physics-answer",
     "senior-physics-answer",
 )
+INTERPRETER = {"implementation": "CPython", "version": "3.13.7"}
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,11 @@ class FixtureDefinition:
     limitations: tuple[str, ...]
     check_statuses: tuple[str, ...]
     check_notes: tuple[str, ...]
+    decision: str
+    reviewed_preprocessing_sha256: str
+    reviewed_crop_raw_byte_sha256: str
+    reviewed_crop_decoded_pixel_sha256: str
+    reviewed_crop_pixel_size: tuple[int, int]
 
     @property
     def preprocessing_result_name(self) -> str:
@@ -83,6 +90,11 @@ DEFINITIONS = (
             "Axis and line geometry remain connected and undistorted.",
             "The source-declared x label is outside this admitted crop and remains disclosed.",
         ),
+        "accept_for_diagnostic_use",
+        "9dc94ae6d5eee7142e9acf779bff39859914d57acbaf1cc9bcab2112e9c4627b",
+        "77911d7a23d34a664a907e596a421fd3fea575d53b191ee29c0030e773c66d92",
+        "f7384abdf7091caf909056ca3d3698709bcce53ae9997bd13d5132b4e284dc9a",
+        (460, 370),
     ),
     FixtureDefinition(
         "junior-instrument-scale",
@@ -97,6 +109,11 @@ DEFINITIONS = (
             "Tick spacing, border geometry, and indicator alignment remain intact.",
             "The partial header clipping is visible and explicitly preserved as a limitation.",
         ),
+        "accept_for_diagnostic_use",
+        "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b",
+        "70577ca429dbc6afd5b2ecf536fe4712001bfddd961f9a041b103dca5fb8bb40",
+        "4efe1386d15ea467781942982c77f2c6a38968509c79e72878eacf53fc711e30",
+        (580, 210),
     ),
     FixtureDefinition(
         "senior-circuit-label",
@@ -111,6 +128,11 @@ DEFINITIONS = (
             "The circuit path and component geometry remain connected and undistorted.",
             "The synthetic-circuit header is partially clipped and remains disclosed.",
         ),
+        "accept_for_diagnostic_use",
+        "aa29231239edf9e7ec7142e52abfa07062bdbd7f42955768b060bd8fa20cf1fa",
+        "60854d32152030d5867875669073b73f320c1f67bd21c5fefc82b7f6114a316e",
+        "b1c7bfb96999bda5f8ca36997a32a4feb578da168001d1bd503b39a04b0ac8c4",
+        (560, 280),
     ),
 )
 DEFINITION_BY_ID = {definition.case_id: definition for definition in DEFINITIONS}
@@ -144,6 +166,18 @@ def review_policy() -> dict[str, Any]:
         "limitationHandling": "disclose_and_preserve",
         "requiredChecks": list(CHECK_CODES),
     }
+
+
+def interpreter_identity() -> dict[str, str]:
+    return {
+        "implementation": platform.python_implementation(),
+        "version": platform.python_version(),
+    }
+
+
+def validate_runtime_identity() -> None:
+    if interpreter_identity() != INTERPRETER:
+        raise ValueError("Visual machine review Python interpreter drifted from admitted policy.")
 
 
 def select_two_x_crop(preprocessing_result: dict[str, Any]) -> dict[str, Any]:
@@ -187,6 +221,20 @@ def build_receipt(
     preprocessing_result: dict[str, Any],
 ) -> dict[str, Any]:
     crop = select_two_x_crop(preprocessing_result)
+    if sha256_bytes(preprocessing_bytes) != definition.reviewed_preprocessing_sha256:
+        raise ValueError(
+            f"{definition.case_id} preprocessing bytes differ from the reviewed authority."
+        )
+    reviewed_crop = {
+        "rawByteSha256": definition.reviewed_crop_raw_byte_sha256,
+        "decodedRgbPixelSha256": definition.reviewed_crop_decoded_pixel_sha256,
+        "pixelSize": {
+            "width": definition.reviewed_crop_pixel_size[0],
+            "height": definition.reviewed_crop_pixel_size[1],
+        },
+    }
+    if any(crop.get(field) != expected for field, expected in reviewed_crop.items()):
+        raise ValueError(f"{definition.case_id} crop differs from the reviewed authority.")
     checks = [
         {"checkCode": code, "status": status, "note": note}
         for code, status, note in zip(
@@ -225,7 +273,7 @@ def build_receipt(
         },
         "checks": checks,
         "knownLimitations": list(definition.limitations),
-        "decision": "accept_for_diagnostic_use",
+        "decision": definition.decision,
         "dispositions": {
             "reviewStatus": "completed",
             "deliveryTrustDisposition": "not_projected",
@@ -282,7 +330,7 @@ def validate_receipt(
         "caseId": definition.case_id,
         "subjectPack": definition.subject_pack,
         "fixtureKind": "synthetic_fixture",
-        "decision": "accept_for_diagnostic_use",
+        "decision": definition.decision,
         "reviewedAt": definition.reviewed_at,
     }
     if any(receipt.get(field) != expected for field, expected in expected_scalars.items()):
@@ -326,8 +374,18 @@ def validate_receipt(
         raise ValueError(f"{definition.case_id} review checks or notes drifted.")
     if receipt.get("knownLimitations") != list(definition.limitations):
         raise ValueError(f"{definition.case_id} known limitations drifted.")
-    if any(check["status"] == "fail" for check in checks):
+    if definition.decision not in {
+        "accept_for_diagnostic_use",
+        "reject_for_diagnostic_use",
+    }:
+        raise ValueError(f"{definition.case_id} review decision is unsupported.")
+    if any(check["status"] not in {"pass", "pass_with_limitation", "fail"} for check in checks):
+        raise ValueError(f"{definition.case_id} review check status is unsupported.")
+    has_failed_check = any(check["status"] == "fail" for check in checks)
+    if definition.decision == "accept_for_diagnostic_use" and has_failed_check:
         raise ValueError(f"{definition.case_id} accepted review cannot contain a failed check.")
+    if definition.decision == "reject_for_diagnostic_use" and not has_failed_check:
+        raise ValueError(f"{definition.case_id} rejected review must contain a failed check.")
     has_limited_check = any(check["status"] == "pass_with_limitation" for check in checks)
     if has_limited_check != bool(receipt["knownLimitations"]):
         raise ValueError(f"{definition.case_id} limitation disclosure is inconsistent.")
@@ -405,6 +463,7 @@ def compile_case_report(
 
 
 def _compile_report_snapshot(fixture_root: Path) -> ReviewCompilation:
+    validate_runtime_identity()
     fixture_root = fixture_root.resolve(strict=True)
     validate_preprocessing_fixtures()
     preprocessing_inventory_path = resolve_bound_file(
@@ -549,7 +608,7 @@ def _compile_report_snapshot(fixture_root: Path) -> ReviewCompilation:
             "engineKind": "deterministic_review_compiler",
             "engineId": "visual-machine-review",
             "engineVersion": "1.0.0",
-            "interpreter": {"implementation": "CPython", "version": "3.13.7"},
+            "interpreter": dict(INTERPRETER),
             "liveProvider": False,
             "cloudEgress": False,
         },
@@ -610,6 +669,7 @@ def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
 
 
 def materialize_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
+    validate_runtime_identity()
     fixture_root.mkdir(parents=True, exist_ok=True)
     validate_preprocessing_fixtures()
     entries = []
