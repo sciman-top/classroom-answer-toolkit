@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-machine-review-receipt/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualMachineReviewReceipt",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "reviewId", "caseId", "subjectPack", "fixtureKind",
+    "preprocessingResult", "crop", "reviewer", "reviewPolicy", "checks",
+    "knownLimitations", "decision", "dispositions", "reviewedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-machine-review-receipt" },
+    "reviewId": { "type": "string", "pattern": "^vision013-[a-z0-9-]+-review$" },
+    "caseId": { "type": "string", "minLength": 1 },
+    "subjectPack": {
+      "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+    },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "preprocessingResult": { "$ref": "#/$defs/upstreamArtifact" },
+    "crop": { "$ref": "#/$defs/cropArtifact" },
+    "reviewer": {
+      "type": "object",
+      "required": [
+        "reviewerKind", "reviewerId", "humanReviewed", "attestationClass",
+        "inspectionSurfaces", "liveProvider", "cloudEgress"
+      ],
+      "properties": {
+        "reviewerKind": { "const": "ai_agent" },
+        "reviewerId": { "const": "codex_visual_review" },
+        "humanReviewed": { "const": false },
+        "attestationClass": { "const": "unattested_local_machine_review" },
+        "inspectionSurfaces": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["direct_image_render", "windows_honeyview"] }
+        },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "reviewPolicy": {
+      "type": "object",
+      "required": ["equivalencePolicy", "acceptanceScope", "limitationHandling"],
+      "properties": {
+        "equivalencePolicy": { "const": "synthetic_fixture_equivalent" },
+        "acceptanceScope": { "const": "synthetic_fixture_diagnostic" },
+        "limitationHandling": { "const": "disclose_and_preserve" }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["checkCode", "status", "note"],
+        "properties": {
+          "checkCode": {
+            "enum": [
+              "primary_content_visibility", "required_label_legibility",
+              "geometry_integrity", "crop_boundary_disclosure"
+            ]
+          },
+          "status": { "enum": ["pass", "pass_with_limitation", "fail"] },
+          "note": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "knownLimitations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": ["outside_crop_axis_label", "partially_clipped_header"]
+      }
+    },
+    "decision": {
+      "enum": ["accept_for_diagnostic_use", "reject_for_diagnostic_use"]
+    },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "reviewStatus", "deliveryTrustDisposition", "wpfDisposition",
+        "liveAcceptanceDisposition", "optimizationCandidateDisposition",
+        "controlsDisposition", "eligible"
+      ],
+      "properties": {
+        "reviewStatus": { "const": "completed" },
+        "deliveryTrustDisposition": { "const": "not_projected" },
+        "wpfDisposition": { "const": "not_integrated" },
+        "liveAcceptanceDisposition": { "const": "not_accepted" },
+        "optimizationCandidateDisposition": { "const": "none" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "reviewedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "upstreamArtifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "requestId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "cropArtifact": {
+      "type": "object",
+      "required": [
+        "artifactRef", "scale", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"
+      ],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "scale": { "const": 2 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "decodedRgbPixelSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "pixelSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

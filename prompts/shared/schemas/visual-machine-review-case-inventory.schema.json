@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-machine-review-case-inventory/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualMachineReviewCaseInventory",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "fixtureSetId", "fixtureKind", "entries"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-machine-review-case-inventory" },
+    "fixtureSetId": { "const": "synthetic-visual-machine-review-v1" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "entries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId", "subjectPack", "preprocessingResultRef",
+          "preprocessingResultSha256", "cropRef", "cropSha256",
+          "reviewReceiptRef", "reviewReceiptSha256"
+        ],
+        "properties": {
+          "caseId": { "type": "string", "minLength": 1 },
+          "subjectPack": {
+            "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+          },
+          "preprocessingResultRef": { "type": "string", "minLength": 1 },
+          "preprocessingResultSha256": {
+            "type": "string", "pattern": "^[a-f0-9]{64}$"
+          },
+          "cropRef": { "type": "string", "minLength": 1 },
+          "cropSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "reviewReceiptRef": { "type": "string", "minLength": 1 },
+          "reviewReceiptSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
