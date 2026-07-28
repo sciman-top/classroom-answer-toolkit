@@ -342,6 +342,16 @@
 - blocks: VISION-007, VISION-011, VISION-012
 - done_definition: 仓内能证明三份公开 synthetic crop 已由透明标记的 AI reviewer 完成 hash-bound visual review，并仅在 `synthetic_fixture_diagnostic` 内等效替代人工检查；`humanReviewed=false`，不写 `humanApproved`，不构成真实数据验收、delivery trust、WPF workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-014
+
+- goal: 建立 provider-neutral、确定性、fail-closed 的 synthetic OCR-region association policy diagnostic
+- inputs: VISION-008 committed text-region candidates、VISION-009 committed OCR observations、VISION-010 exhaustive spatial measurements，以及只用于阻断 truth/correctness 提升的 VISION-011 边界
+- changes: 新增 `VisualOcrRegionAssociationRequest / Result / CaseInventory / Report` schema 和 local deterministic compiler；只选择双向唯一、positive-area、non-disjoint measurement，歧义 fail closed；三个 subject-pack 各一个 canonical case，按学科独立统计 matched/unmatched/ambiguous/unavailable；当前 frozen authority 诚实保留 math/senior unavailable、junior unmatched、零 canonical match；正向/歧义只作为非权威 policy 单元回归；纳入 assets 与 hotspot
+- verification: request/result/inventory/report expected bytes deterministic replay；structure/OCR/spatial/crop raw-byte hash、decoded pixel hash/dimension、path/alias/snapshot/Cartesian coverage/staged promotion/computed field/positive layout-semantic-Track-live-cloud state 漂移 fail closed；至少一个 policy-level unique success、一个 canonical empty observation unavailable、一个 policy-level ambiguity conflict fail closed；零分母显式 unavailable；完整固定顺序项目门禁
+- rollback: 回滚 VISION-014 实现提交并删除本切片 schema/tool/request/result/inventory/report、validator/hotspot、README/strategy/evidence 增量；不得修改 VISION-007/008/009/010/011/012/013 authority、`.env`、OCR venv、gateway、delivery/review authority、readiness receipt 或 canonical samples
+- blocks: VISION-008, VISION-009, VISION-010, VISION-011
+- done_definition: 仓内能从 canonical synthetic authority 确定性重算 provider-neutral association policy outcome，并诚实报告两例 unavailable、一例 unmatched、零 matched；仅证明 repo-side policy plumbing，不构成 OCR truth/correctness、真实 association benchmark、layout semantics、FigureUnderstanding、Track B、delivery trust、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

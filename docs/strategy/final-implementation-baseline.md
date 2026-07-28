@@ -530,6 +530,15 @@ P1 样例集默认人工拆分题面/答案：
 - report compiler 只重验 upstream/receipt raw bytes、decoded RGB pixel hash、dimensions、coverage、policy 和 computed fields，不声称能确定性重演 AI 视觉判断；runtime output 仍需在 promotion 前重验全部快照。
 - 本切片只证明三份公开 synthetic fixture 已由当前 AI 视觉审查并可在该诊断范围内等效替代人工检查；不构成人工身份、真实视觉 benchmark、真实数据验收、OCR/layout/Track B correctness、delivery trust、WPF workflow 或 live acceptance，不生成 `OptimizationCandidate`。receipt/controls/eligibility 保持不变。
 
+### VISION-014 OCR-region association diagnostic 边界
+
+- `VisualOcrRegionAssociationRequest / Result / CaseInventory / Report` 与 OCR correctness、layout、FigureUnderstanding、TrackResult 和 acceptance 合同分离，只消费 same-case canonical VISION-008 structure、VISION-009 OCR 和 VISION-010 spatial result。
+- eligible edge 只能来自正交面积大于零且 relation 非 `disjoint` 的 VISION-010 measurement；只有 observation 与 candidate 双向唯一时才形成 association。任一端出现多个 eligible edge 都是 ambiguity，必须 fail closed，不能以距离或 confidence 猜选。
+- 零 candidate 或零 observation 的 case 固定 `unavailable`；双方非空但没有 eligible edge 固定 `unmatched`。所有零分母比率显式 unavailable，report 按 subject-pack 独立统计 matched/unmatched/ambiguous/unavailable。
+- risk-first probe 证明当前 frozen authority 没有正向 canonical association：math/senior OCR observation 为空，junior 唯一 pair 为 disjoint。因此 canonical report 固定为两例 unavailable、一例 unmatched、零 matched；正向和歧义只作为非权威 policy 单元回归，不写入 canonical fixture 或样本真值。
+- result/report 不复制 OCR text 或 generator truth，不推断 recognized text、layout relation、题号/图号或学科语义，固定 `acceptanceDisposition=not_accepted / requiresHumanReview=true / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`。
+- 本切片只证明冻结 synthetic fixture 上的 association policy plumbing；不构成 OCR correctness、真实 association benchmark、FigureUnderstanding、Track B、delivery trust、WPF workflow 或 live acceptance，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 gateway/workflow/live 边界保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

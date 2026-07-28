@@ -169,3 +169,9 @@
 - 决定：VISION-013 将当前 AI 对三份公开 synthetic crop 的视觉判断记录为 `VisualMachineReviewReceipt`；reviewer 身份固定 `ai_agent / humanReviewed=false`，但在显式 `synthetic_fixture_equivalent / synthetic_fixture_diagnostic` 政策内可替代人工视觉检查
 - 原因：用户授权 AI 视觉审查作为真人替代，但把机器身份写成 `humanApproved` 会破坏审计和未来真实数据治理；独立 receipt 既能让本切片获得可追踪的视觉验收，又保留 reviewer 身份、artifact bytes、观察面和限制真相
 - 边界：machine review 不进入既有 human approval 字段，不推进 review lifecycle，不修改 DecisionRecord/delivery trust/WPF/readiness/live authority；只使用公开 synthetic fixture，不开启 cloud egress，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`
+
+## D-032 OCR-region association 只接受双向唯一的正交面积证据
+
+- 决定：VISION-014 只把 VISION-010 中 positive-area、non-disjoint 且 observation/candidate 双向唯一的 measurement 投影为 diagnostic association；零 observation/candidate 为 unavailable，无 eligible edge 为 unmatched，任一端多 eligible edge 必须 fail closed
+- 原因：risk-first probe 显示当前 frozen authority 只有两个 empty-observation case 和一个 disjoint pair，没有可诚实提升为 canonical success 的正向样例；距离最近、OCR confidence 或 fixture truth 都不能修复这一证据缺口
+- 边界：canonical report 固定保留两例 unavailable、一例 unmatched、零 matched；正向与歧义只用非权威 policy 单元输入验证算法，不进入 canonical fixture、generated/historical/human sample 或 acceptance authority；不复制 OCR/truth text，不生成 layout semantics、FigureUnderstanding、Track B、delivery trust、WPF/live state 或 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`

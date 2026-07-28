@@ -172,6 +172,7 @@
 - VISION-011 provider-neutral OCR diagnostic runtime；只对 generator-declared synthetic text/bbox truth 与 canonical OCR observations 做 exact-text/positive-overlap 诊断，按 subject-pack 报告漏检/误检和 unavailable 分母
 - VISION-012 provider-neutral text-region diagnostic runtime；只对 generator-declared synthetic text/bbox truth 与 canonical heuristic text-region candidates 做 positive-overlap 诊断，按 subject-pack 报告 fully-visible truth recall、candidate precision 与 partial unscored 数量
 - VISION-013 provider-neutral machine visual review compiler；只把当前 `ai_agent` 对 canonical synthetic crop 的显式 verdict/checks/limitations 固化为 hash-bound receipt，并按 subject-pack 重算 diagnostic-scope review coverage
+- VISION-014 provider-neutral OCR-region association diagnostic；只从 canonical VISION-008/009/010 authority 选择双向唯一的 positive-area edge，按 subject-pack 报告 matched/unmatched/ambiguous/unavailable，当前 canonical truth 保持零正向 match
 
 ### 涉及文件面
 
@@ -183,18 +184,21 @@
 - `tools/visual-ocr-diagnostics/`
 - `tools/visual-text-region-diagnostics/`
 - `tools/visual-machine-review/`
+- `tools/visual-ocr-region-association/`
 - `eval/visual-preprocessing/`
 - `eval/visual-structure-extraction/`
 - `eval/visual-spatial-observation/`
 - `eval/visual-ocr-diagnostics/`
 - `eval/visual-text-region-diagnostics/`
 - `eval/visual-machine-review/`
+- `eval/visual-ocr-region-association/`
 - `prompts/shared/schemas/visual-preprocessing-*.schema.json`
 - `prompts/shared/schemas/visual-structure-extraction-*.schema.json`
 - `prompts/shared/schemas/visual-spatial-observation-*.schema.json`
 - `prompts/shared/schemas/visual-ocr-diagnostic-*.schema.json`
 - `prompts/shared/schemas/visual-text-region-diagnostic-*.schema.json`
 - `prompts/shared/schemas/visual-machine-review-*.schema.json`
+- `prompts/shared/schemas/visual-ocr-region-association-*.schema.json`
 - evidence / review 文档与运行产物
 
 ### 完成定义
@@ -208,6 +212,7 @@
 - renderer source declarations 与 canonical OCR results 可确定性重算 synthetic diagnostic metrics；它只证明三份冻结 fixture 的 exact-text 漏检/误检，不等于人工 truth、真实 OCR benchmark 或 OCR acceptance
 - renderer source declarations 与 canonical structure results 可确定性重算 text-region diagnostic metrics；它只证明三份冻结 fixture 的 spatial proposal coverage，不等于文字识别、OCR-region association、layout semantics 或 Track B acceptance
 - current AI visual checks 可由 raw-byte-bound receipts 与 deterministic aggregate report 重验；它只在 `synthetic_fixture_diagnostic` 范围内等效替代人工检查，不能冒充 human identity、delivery trust 或 live acceptance
+- canonical structure/OCR/spatial authority 可确定性重算 association policy outcome；当前只证明两例 unavailable 与一例 unmatched，零 canonical match 不得被测试用正向 geometry 冒充
 
 ### 验证方式
 
@@ -223,6 +228,7 @@
 - synthetic text truth/schema、renderer/source/crop/OCR authority、visibility、exact-text/positive-overlap matching、metric denominator/computed fields 与 deterministic replay 验证
 - synthetic text-region diagnostic schema、truth/structure/crop authority、visibility、positive-overlap matching、ambiguity、metric denominator/computed fields 与 deterministic replay 验证
 - machine visual review schema、preprocessing/crop/receipt raw-byte authority、reviewer identity、synthetic-only equivalence policy、完整 check coverage、known limitations 与 aggregate replay 验证
+- OCR-region association schema、三层 upstream/crop authority、双向唯一 positive-area policy、空 observation、disjoint unmatched、歧义 fail-closed、availability ratio 与 canonical replay 验证
 
 ### 禁止扩张点
 
@@ -234,6 +240,7 @@
 - 不把 generator-declared synthetic diagnostic 冒充人工标注、真实 OCR 质量、OCR acceptance、layout parse、FigureUnderstandingResult 或 Track B evidence
 - 不把 generator-declared text-region diagnostic 冒充 recognized text、OCR-region association、layout semantics、FigureUnderstandingResult 或 Track B evidence
 - 不把 `ai_agent` machine review 冒充真人身份、`humanApproved`、真实数据验收、delivery trust 或 live acceptance
+- 不把 policy 单元测试的正向 geometry 冒充 canonical fixture、OCR truth、真实 association 效果、layout semantics 或 Track B evidence
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项
