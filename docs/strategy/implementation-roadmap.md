@@ -41,6 +41,7 @@
 - 再以 VISION-010 对 committed text-region candidates 与 OCR observations 做穷举 axis-aligned geometry measurement；不选择匹配、不复制 OCR 文本，固定 association 未决定、layout/semantic 未推断、Track 未集成
 - 再以 VISION-011 从 deterministic renderer 的 source-declared synthetic text/bbox 建立独立 truth authority，按 subject-pack 诊断 exact-text OCR 漏检/误检与 unavailable 分母；不冒充人工 truth、真实 benchmark、OCR acceptance、layout semantics 或 Track B
 - 再以 VISION-012 将同一 truth authority 与 VISION-008 heuristic text-region candidates 做 positive-area spatial diagnostic；fully-visible label 一对一 overlap 才计分，partial overlap 只记 unscored，不识别文本、不接 OCR、不推断 layout/association/Track B
+- 再以 VISION-013 对三份公开 synthetic 2x crop 建立 transparent `ai_agent` visual review receipt；只在 `synthetic_fixture_diagnostic` 内视为人工检查等效，保持 `humanReviewed=false`，不接 delivery trust/WPF/live acceptance
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 

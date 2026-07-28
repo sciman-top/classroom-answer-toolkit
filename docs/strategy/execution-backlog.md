@@ -332,6 +332,16 @@
 - blocks: VISION-008, VISION-011
 - done_definition: 仓内能从 generator-declared synthetic truth 与 canonical heuristic text-region candidates 确定性报告三个 subject-pack 的 spatial proposal 漏检/误检诊断；只证明冻结 synthetic fixture diagnostics，不构成人工 truth、真实 region benchmark、recognized text、OCR-region association、layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-013
+
+- goal: 建立三份公开 synthetic crop 的透明 machine-equivalent visual review receipt 与按 subject-pack 独立统计闭环
+- inputs: VISION-007 committed preprocessing result、canonical scale=2 crop、当前 AI 直接图像检查与 Windows image-viewer Computer Use observation
+- changes: 新增 `VisualMachineReviewReceipt / CaseInventory / Report` schema 和 deterministic validator/compiler；receipt 固定 `ai_agent / humanReviewed=false / unattested_local_machine_review / synthetic_fixture_equivalent / synthetic_fixture_diagnostic`，记录完整视觉 checks、verdict 与 known limitations；三个 subject-pack 各一个 current receipt；纳入 assets 与 hotspot
+- verification: 三 case report expected bytes deterministic replay；preprocessing/crop/receipt/inventory/report raw-byte hash、decoded pixel hash、dimensions、reviewer/equivalence policy、check coverage、known limitations、computed counts、path/alias/structure、staged output、delivery/WPF/live/trust positive state drift均 fail closed；AI 直接视觉检查和 Windows image-viewer observation；完整固定顺序项目门禁
+- rollback: 回滚 VISION-013 实现提交并删除本切片 schema/tool/inventory/receipt/report、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009/010/011/012 authority、`.env`、OCR venv、gateway、delivery/review authority、readiness receipt 或 canonical samples
+- blocks: VISION-007, VISION-011, VISION-012
+- done_definition: 仓内能证明三份公开 synthetic crop 已由透明标记的 AI reviewer 完成 hash-bound visual review，并仅在 `synthetic_fixture_diagnostic` 内等效替代人工检查；`humanReviewed=false`，不写 `humanApproved`，不构成真实数据验收、delivery trust、WPF workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

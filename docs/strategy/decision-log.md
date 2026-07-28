@@ -163,3 +163,9 @@
 - 决定：VISION-012 将 VISION-011 generator-declared synthetic truth 与 VISION-008 heuristic text-region candidates 做 positive-area one-to-one diagnostic matching；fully-visible truth 进入召回分母，partial overlap candidate 只记 unscored，outside truth 不保护 candidate，并按 subject-pack 独立报告 precision/recall availability 与漏检/误检
 - 原因：当前三个 fixture 已存在可审计且与 extractor 独立的 source declaration truth；实际几何探针显示三个 fully-visible label 各有唯一 positive-overlap candidate，而 22 个其余 candidate 只命中 partially-clipped header。该诊断能验证 proposal plumbing，但不需要读取文字或依赖未验收 OCR
 - 边界：报告不得复制 truth text、识别 candidate 文本或选择 OCR-region association；ambiguous repeated overlap fail closed；不构成人工 truth、真实 region benchmark、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不启 cloud egress，不使用真实数据，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
+
+## D-031 AI 视觉复核的等效性只在 synthetic diagnostic scope 内成立
+
+- 决定：VISION-013 将当前 AI 对三份公开 synthetic crop 的视觉判断记录为 `VisualMachineReviewReceipt`；reviewer 身份固定 `ai_agent / humanReviewed=false`，但在显式 `synthetic_fixture_equivalent / synthetic_fixture_diagnostic` 政策内可替代人工视觉检查
+- 原因：用户授权 AI 视觉审查作为真人替代，但把机器身份写成 `humanApproved` 会破坏审计和未来真实数据治理；独立 receipt 既能让本切片获得可追踪的视觉验收，又保留 reviewer 身份、artifact bytes、观察面和限制真相
+- 边界：machine review 不进入既有 human approval 字段，不推进 review lifecycle，不修改 DecisionRecord/delivery trust/WPF/readiness/live authority；只使用公开 synthetic fixture，不开启 cloud egress，不生成 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`

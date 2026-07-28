@@ -522,6 +522,14 @@ P1 样例集默认人工拆分题面/答案：
 - result 固定 `diagnosticScope=generator_declared_synthetic_fixture / candidateKind=text_region_candidate / acceptanceDisposition=not_accepted / requiresHumanReview=true / ocrDisposition=not_inferred / associationDisposition=not_decided / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`，并保持 local deterministic、禁云 provenance。
 - 本切片只证明三份冻结 synthetic fixture 的 heuristic text-region spatial proposal diagnostics，不构成人工 ground truth、真实 region benchmark、文字识别、OCR-region association、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
 
+### VISION-013 machine-equivalent synthetic visual review 边界
+
+- `VisualMachineReviewReceipt / CaseInventory / Report` 与 delivery review state、`humanApproved`、DecisionRecord、WPF 和 live acceptance 合同分离，只消费 VISION-007 committed preprocessing result 与相同 canonical scale=2 crop。
+- reviewer 身份固定为 `reviewerKind=ai_agent / humanReviewed=false / attestationClass=unattested_local_machine_review`；等效政策固定为 `synthetic_fixture_equivalent`，且仅在 `acceptanceScope=synthetic_fixture_diagnostic` 内替代人工视觉检查。任何把它投影为真人身份、签名或 `humanApproved` 的行为均为合同错误。
+- 每份 receipt 完整记录 primary-content visibility、required-label legibility、geometry integrity、crop-boundary disclosure 与 known limitations；已知 clipping 不得被静默折叠为无条件 clean pass。report 按 subject-pack 独立统计 accepted/rejected/limited、machine/human reviewed counts。
+- report compiler 只重验 upstream/receipt raw bytes、decoded RGB pixel hash、dimensions、coverage、policy 和 computed fields，不声称能确定性重演 AI 视觉判断；runtime output 仍需在 promotion 前重验全部快照。
+- 本切片只证明三份公开 synthetic fixture 已由当前 AI 视觉审查并可在该诊断范围内等效替代人工检查；不构成人工身份、真实视觉 benchmark、真实数据验收、OCR/layout/Track B correctness、delivery trust、WPF workflow 或 live acceptance，不生成 `OptimizationCandidate`。receipt/controls/eligibility 保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。
