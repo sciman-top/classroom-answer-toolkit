@@ -1,0 +1,303 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-text-region-diagnostic-report",
+  "fixtureSetId": "synthetic-visual-text-region-diagnostic-v1",
+  "fixtureKind": "synthetic_fixture",
+  "sourceInventory": {
+    "artifactRef": "eval/visual-text-region-diagnostics/cases/visual-text-region-diagnostic-case-inventory.json",
+    "rawByteSha256": "3bcedefc65b1c26cbc1bc600a75ff1e95537f946168c29d7a38e1b438768eac5"
+  },
+  "caseReports": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/math-function-graph.visual-synthetic-text-truth.json",
+        "rawByteSha256": "9dd9b54f208b3a5c4e4126ae1fc11d17cfa0914b77b141df21cee5ff30c02444"
+      },
+      "structureExtractionResult": {
+        "artifactRef": "eval/visual-structure-extraction/cases/math-function-graph.visual-structure-extraction-result.json",
+        "rawByteSha256": "9b8cf6317ba97678fe64eedf50fbf3ddaa40b8b45bb535b5945ce4d9f8f795c0",
+        "requestId": "math-function-graph"
+      },
+      "matches": [
+        {
+          "truthLabelRef": "truth-label-002",
+          "textRegionCandidateRef": "text-region-001",
+          "truthBounds": {
+            "x": 142,
+            "y": 2,
+            "width": 12,
+            "height": 16
+          },
+          "candidateBounds": {
+            "x": 142,
+            "y": 2,
+            "width": 10,
+            "height": 16
+          },
+          "intersectionArea": 160.0,
+          "truthCoverage": 0.83333333,
+          "candidateCoverage": 1.0,
+          "diagnosticDisposition": "positive_overlap"
+        }
+      ],
+      "unmatchedTruthRefs": [],
+      "falsePositiveCandidateRefs": [],
+      "unscoredCandidateRefs": [],
+      "metrics": {
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 1,
+        "falseNegativeCount": 0,
+        "candidateCount": 1,
+        "matchedCandidateCount": 1,
+        "unscoredCandidateCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": true,
+          "value": 1.0
+        },
+        "recall": {
+          "available": true,
+          "value": 1.0
+        }
+      }
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/junior-instrument-scale.visual-synthetic-text-truth.json",
+        "rawByteSha256": "5fdb62c97d7f4e1417c002a6de654a4cb3ac60ad5b49cc46580c2387920c2576"
+      },
+      "structureExtractionResult": {
+        "artifactRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
+        "rawByteSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027",
+        "requestId": "junior-instrument-scale"
+      },
+      "matches": [],
+      "unmatchedTruthRefs": [],
+      "falsePositiveCandidateRefs": [],
+      "unscoredCandidateRefs": [
+        "text-region-001"
+      ],
+      "metrics": {
+        "scorableTruthCount": 0,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 0,
+        "candidateCount": 1,
+        "matchedCandidateCount": 0,
+        "unscoredCandidateCount": 1,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": false
+        },
+        "recall": {
+          "available": false
+        }
+      }
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/senior-circuit-label.visual-synthetic-text-truth.json",
+        "rawByteSha256": "b4fccb163c41b5b6d8fe0b9efcb8dad25951bc09a4b533c1c2159a1b1a5c6000"
+      },
+      "structureExtractionResult": {
+        "artifactRef": "eval/visual-structure-extraction/cases/senior-circuit-label.visual-structure-extraction-result.json",
+        "rawByteSha256": "9b638be6a7ea0274ebe6fb0fbe36c0cec8222b4193d94fabbd498d31ffdea15c",
+        "requestId": "senior-circuit-label"
+      },
+      "matches": [
+        {
+          "truthLabelRef": "truth-label-001",
+          "textRegionCandidateRef": "text-region-022",
+          "truthBounds": {
+            "x": 152,
+            "y": 116,
+            "width": 14,
+            "height": 16
+          },
+          "candidateBounds": {
+            "x": 152,
+            "y": 116,
+            "width": 12,
+            "height": 16
+          },
+          "intersectionArea": 192.0,
+          "truthCoverage": 0.85714286,
+          "candidateCoverage": 1.0,
+          "diagnosticDisposition": "positive_overlap"
+        },
+        {
+          "truthLabelRef": "truth-label-002",
+          "textRegionCandidateRef": "text-region-023",
+          "truthBounds": {
+            "x": 366,
+            "y": 116,
+            "width": 14,
+            "height": 16
+          },
+          "candidateBounds": {
+            "x": 368,
+            "y": 116,
+            "width": 10,
+            "height": 16
+          },
+          "intersectionArea": 160.0,
+          "truthCoverage": 0.71428571,
+          "candidateCoverage": 1.0,
+          "diagnosticDisposition": "positive_overlap"
+        }
+      ],
+      "unmatchedTruthRefs": [],
+      "falsePositiveCandidateRefs": [],
+      "unscoredCandidateRefs": [
+        "text-region-001",
+        "text-region-002",
+        "text-region-003",
+        "text-region-004",
+        "text-region-005",
+        "text-region-006",
+        "text-region-007",
+        "text-region-008",
+        "text-region-009",
+        "text-region-010",
+        "text-region-011",
+        "text-region-012",
+        "text-region-013",
+        "text-region-014",
+        "text-region-015",
+        "text-region-016",
+        "text-region-017",
+        "text-region-018",
+        "text-region-019",
+        "text-region-020",
+        "text-region-021"
+      ],
+      "metrics": {
+        "scorableTruthCount": 2,
+        "detectedTruthCount": 2,
+        "falseNegativeCount": 0,
+        "candidateCount": 23,
+        "matchedCandidateCount": 2,
+        "unscoredCandidateCount": 21,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": true,
+          "value": 1.0
+        },
+        "recall": {
+          "available": true,
+          "value": 1.0
+        }
+      }
+    }
+  ],
+  "subjectReports": [
+    {
+      "subjectPack": "math-answer",
+      "caseCount": 1,
+      "metrics": {
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 1,
+        "falseNegativeCount": 0,
+        "candidateCount": 1,
+        "matchedCandidateCount": 1,
+        "unscoredCandidateCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": true,
+          "value": 1.0
+        },
+        "recall": {
+          "available": true,
+          "value": 1.0
+        }
+      }
+    },
+    {
+      "subjectPack": "junior-physics-answer",
+      "caseCount": 1,
+      "metrics": {
+        "scorableTruthCount": 0,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 0,
+        "candidateCount": 1,
+        "matchedCandidateCount": 0,
+        "unscoredCandidateCount": 1,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": false
+        },
+        "recall": {
+          "available": false
+        }
+      }
+    },
+    {
+      "subjectPack": "senior-physics-answer",
+      "caseCount": 1,
+      "metrics": {
+        "scorableTruthCount": 2,
+        "detectedTruthCount": 2,
+        "falseNegativeCount": 0,
+        "candidateCount": 23,
+        "matchedCandidateCount": 2,
+        "unscoredCandidateCount": 21,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": true,
+          "value": 1.0
+        },
+        "recall": {
+          "available": true,
+          "value": 1.0
+        }
+      }
+    }
+  ],
+  "totals": {
+    "scorableTruthCount": 3,
+    "detectedTruthCount": 3,
+    "falseNegativeCount": 0,
+    "candidateCount": 25,
+    "matchedCandidateCount": 3,
+    "unscoredCandidateCount": 22,
+    "falsePositiveCount": 0,
+    "precision": {
+      "available": true,
+      "value": 1.0
+    },
+    "recall": {
+      "available": true,
+      "value": 1.0
+    }
+  },
+  "diagnosticPolicySha256": "1b8dc0f7378f511d5f98473f94e813a490b387ea9dde84ebb02954ec1563623c",
+  "dispositions": {
+    "diagnosticStatus": "completed",
+    "diagnosticScope": "generator_declared_synthetic_fixture",
+    "candidateKind": "text_region_candidate",
+    "acceptanceDisposition": "not_accepted",
+    "requiresHumanReview": true,
+    "ocrDisposition": "not_inferred",
+    "associationDisposition": "not_decided",
+    "layoutDisposition": "not_inferred",
+    "semanticDisposition": "not_inferred",
+    "trackDisposition": "not_integrated"
+  },
+  "engineProvenance": {
+    "engineKind": "deterministic_diagnostic",
+    "engineId": "visual-text-region-diagnostics",
+    "engineVersion": "1.0.0",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-28T03:00:00Z"
+}
