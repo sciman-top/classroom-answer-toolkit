@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import visual_text_region_diagnostics as diagnostics
 from visual_text_region_diagnostics import (
     CANONICAL_ROOT,
     INVENTORY_NAME,
@@ -30,6 +31,10 @@ from visual_text_region_diagnostics import (
 
 
 class VisualTextRegionDiagnosticTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.upstream_authorities = load_upstream_authorities()
+
     def test_canonical_report_preserves_diagnostic_only_boundary(self) -> None:
         report = self.read_json(CANONICAL_ROOT / REPORT_NAME)
         cases = {case["caseId"]: case for case in report["caseReports"]}
@@ -215,6 +220,56 @@ class VisualTextRegionDiagnosticTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Staged diagnostic report bytes drifted"):
                     run_diagnostics(output)
 
+    def test_runtime_rejects_midrun_upstream_result_and_truth_drift(self) -> None:
+        for authority_kind in ("structure", "truth"):
+            with self.subTest(authority=authority_kind), self.upstream_copy() as upstream_roots:
+                structure_root, truth_root = upstream_roots
+                target = (
+                    structure_root / diagnostics.structure_result_name("math-function-graph")
+                    if authority_kind == "structure"
+                    else truth_root / diagnostics.truth_name("math-function-graph")
+                )
+                with self.patched_upstream_roots(structure_root, truth_root):
+                    with tempfile.TemporaryDirectory(prefix="visual-text-region-output-") as temp:
+                        output = Path(temp) / "bundle"
+
+                        def write_then_mutate(path: Path, data: bytes) -> None:
+                            atomic_write(path, data)
+                            target.write_bytes(b"{}\n")
+
+                        with patch(
+                            "visual_text_region_diagnostics.atomic_write",
+                            side_effect=write_then_mutate,
+                        ):
+                            with self.assertRaisesRegex(ValueError, "bytes drifted"):
+                                _run_diagnostics(output, CANONICAL_ROOT)
+
+    def test_upstream_crop_authority_mismatch_fails_closed(self) -> None:
+        with self.upstream_copy() as upstream_roots:
+            structure_root, truth_root = upstream_roots
+            truth_path = truth_root / diagnostics.truth_name("math-function-graph")
+            truth = self.read_json(truth_path)
+            truth["crop"]["artifactRef"] = "mismatched-crop-authority.png"
+            truth_bytes = stable_json_bytes(truth)
+            truth_path.write_bytes(truth_bytes)
+            self.update_truth_inventory_hash(truth_root, "math-function-graph", truth_bytes)
+            with self.patched_upstream_roots(structure_root, truth_root):
+                with self.assertRaisesRegex(ValueError, "crop authorities differ"):
+                    load_upstream_authorities()
+
+    def test_upstream_case_identity_mismatch_fails_closed(self) -> None:
+        with self.upstream_copy() as upstream_roots:
+            structure_root, truth_root = upstream_roots
+            truth_path = truth_root / diagnostics.truth_name("math-function-graph")
+            truth = self.read_json(truth_path)
+            truth["caseId"] = "mismatched-case"
+            truth_bytes = stable_json_bytes(truth)
+            truth_path.write_bytes(truth_bytes)
+            self.update_truth_inventory_hash(truth_root, "math-function-graph", truth_bytes)
+            with self.patched_upstream_roots(structure_root, truth_root):
+                with self.assertRaisesRegex(ValueError, "request identity drifted"):
+                    load_upstream_authorities()
+
     def test_runtime_identity_drift_fails_closed(self) -> None:
         with patch(
             "visual_ocr_diagnostics.interpreter_identity",
@@ -242,9 +297,9 @@ class VisualTextRegionDiagnosticTests(unittest.TestCase):
             "heuristicOnly": True,
         }
 
-    @staticmethod
-    def case_inputs(case_id: str) -> tuple[dict, dict, bytes, bytes]:
-        upstream = load_upstream_authorities().fixtures[case_id]
+    @classmethod
+    def case_inputs(cls, case_id: str) -> tuple[dict, dict, bytes, bytes]:
+        upstream = cls.upstream_authorities.fixtures[case_id]
         return (
             copy.deepcopy(upstream.truth),
             copy.deepcopy(upstream.structure_result),
@@ -266,6 +321,36 @@ class VisualTextRegionDiagnosticTests(unittest.TestCase):
 
         def __exit__(self, exc_type, exc_value, traceback) -> None:
             shutil.rmtree(self.temp)
+
+    class upstream_copy:
+        def __enter__(self) -> tuple[Path, Path]:
+            self.temp = Path(tempfile.mkdtemp(prefix="visual-text-region-upstream-"))
+            self.structure_root = self.temp / "structure"
+            self.truth_root = self.temp / "truth"
+            shutil.copytree(diagnostics.STRUCTURE_ROOT, self.structure_root)
+            shutil.copytree(diagnostics.TRUTH_ROOT, self.truth_root)
+            return self.structure_root, self.truth_root
+
+        def __exit__(self, exc_type, exc_value, traceback) -> None:
+            shutil.rmtree(self.temp)
+
+    @staticmethod
+    def patched_upstream_roots(structure_root: Path, truth_root: Path):
+        return patch.multiple(
+            "visual_text_region_diagnostics",
+            STRUCTURE_ROOT=structure_root,
+            TRUTH_ROOT=truth_root,
+            validate_structure_fixtures=lambda: None,
+            validate_truth_fixtures=lambda: None,
+        )
+
+    @staticmethod
+    def update_truth_inventory_hash(truth_root: Path, case_id: str, truth_bytes: bytes) -> None:
+        inventory_path = truth_root / diagnostics.TRUTH_INVENTORY_NAME
+        inventory = VisualTextRegionDiagnosticTests.read_json(inventory_path)
+        entry = next(item for item in inventory["entries"] if item["caseId"] == case_id)
+        entry["truthSha256"] = sha256_bytes(truth_bytes)
+        inventory_path.write_bytes(stable_json_bytes(inventory))
 
     @staticmethod
     def read_json(path: Path) -> dict:
