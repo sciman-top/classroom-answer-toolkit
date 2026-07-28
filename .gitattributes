@@ -7,3 +7,4 @@ eval/visual-preprocessing/**/*.json text eol=lf
 eval/visual-structure-extraction/**/*.json text eol=lf
 eval/visual-ocr-observation/**/*.json text eol=lf
 eval/visual-spatial-observation/**/*.json text eol=lf
+eval/visual-ocr-diagnostics/**/*.json text eol=lf

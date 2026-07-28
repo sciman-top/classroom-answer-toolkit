@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-ocr-diagnostic-case-inventory",
+  "fixtureSetId": "synthetic-visual-ocr-diagnostic-v1",
+  "fixtureKind": "synthetic_fixture",
+  "entries": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "truthRef": "math-function-graph.visual-synthetic-text-truth.json",
+      "truthSha256": "9dd9b54f208b3a5c4e4126ae1fc11d17cfa0914b77b141df21cee5ff30c02444",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/math-function-graph.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "1d392af4c6080bb5222931bd714a14b610d455ab93946cc73d824b08aba7ab8e"
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "truthRef": "junior-instrument-scale.visual-synthetic-text-truth.json",
+      "truthSha256": "5fdb62c97d7f4e1417c002a6de654a4cb3ac60ad5b49cc46580c2387920c2576",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/junior-instrument-scale.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "e3244936d0350cea21d9b96618ea975dd7ba7eba507fb0493336c29f7ec20839"
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "truthRef": "senior-circuit-label.visual-synthetic-text-truth.json",
+      "truthSha256": "b4fccb163c41b5b6d8fe0b9efcb8dad25951bc09a4b533c1c2159a1b1a5c6000",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/senior-circuit-label.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "ea3458311113a609f831fbba66c85c5fa358728aafd51cb25957b9cf01aef674"
+    }
+  ]
+}

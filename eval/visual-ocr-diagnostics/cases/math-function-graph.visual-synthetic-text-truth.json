@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-synthetic-text-truth",
+  "truthId": "math-function-graph-synthetic-text-truth",
+  "caseId": "math-function-graph",
+  "subjectPack": "math-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Generator-declared synthetic text only; no teacher, student, or exam data."
+  },
+  "renderer": {
+    "artifactRef": "tools/visual-preprocessor/visual_preprocessor.py",
+    "rawByteSha256": "f8894adbe43accf66875033228ef87fd1107ebefba69f95008b8b50c16588ddb"
+  },
+  "preprocessingResult": {
+    "artifactRef": "eval/visual-preprocessing/cases/math-function-graph.visual-preprocessing-result.json",
+    "rawByteSha256": "9dc94ae6d5eee7142e9acf779bff39859914d57acbaf1cc9bcab2112e9c4627b",
+    "requestId": "math-function-graph"
+  },
+  "source": {
+    "artifactRef": "math-function-graph.source.png",
+    "rawByteSha256": "b9de4845e18bb01f6b129f712b737e4fe0ae16bad9b4f08eeb02b8bb53b1f9b2",
+    "decodedRgbPixelSha256": "4d54c2b39bd87456e5624c27faef4c270f086bec2d16f797ca97f9bb45f67254",
+    "pixelSize": {
+      "width": 320,
+      "height": 240
+    }
+  },
+  "crop": {
+    "artifactRef": "math-function-graph.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "77911d7a23d34a664a907e596a421fd3fea575d53b191ee29c0030e773c66d92",
+    "decodedRgbPixelSha256": "f7384abdf7091caf909056ca3d3698709bcce53ae9997bd13d5132b4e284dc9a",
+    "pixelSize": {
+      "width": 460,
+      "height": 370
+    },
+    "sourceBounds": {
+      "x": 45,
+      "y": 25,
+      "width": 230,
+      "height": 185
+    }
+  },
+  "coordinateSpace": "crop_pixel",
+  "labels": [
+    {
+      "labelId": "truth-label-001",
+      "text": "x",
+      "sourceBounds": {
+        "x": 277,
+        "y": 172,
+        "width": 6,
+        "height": 6
+      },
+      "visibilityDisposition": "outside_crop"
+    },
+    {
+      "labelId": "truth-label-002",
+      "text": "y",
+      "sourceBounds": {
+        "x": 116,
+        "y": 26,
+        "width": 6,
+        "height": 8
+      },
+      "visibilityDisposition": "fully_visible",
+      "cropIntersectionBounds": {
+        "x": 142,
+        "y": 2,
+        "width": 12,
+        "height": 16
+      }
+    }
+  ],
+  "truthProvenance": {
+    "authorityKind": "generator_declared_synthetic",
+    "declarationSource": "renderer_text_declarations",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
+    "pillowVersion": "12.3.0",
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-28T02:00:00Z"
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-ocr-diagnostic-case-inventory/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualOcrDiagnosticCaseInventory",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "fixtureSetId", "fixtureKind", "entries"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-ocr-diagnostic-case-inventory" },
+    "fixtureSetId": { "const": "synthetic-visual-ocr-diagnostic-v1" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "entries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId", "subjectPack", "truthRef", "truthSha256",
+          "ocrObservationResultRef", "ocrObservationResultSha256"
+        ],
+        "properties": {
+          "caseId": { "type": "string", "minLength": 1 },
+          "subjectPack": {
+            "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
+          },
+          "truthRef": { "type": "string", "minLength": 1 },
+          "truthSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "ocrObservationResultRef": { "type": "string", "minLength": 1 },
+          "ocrObservationResultSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

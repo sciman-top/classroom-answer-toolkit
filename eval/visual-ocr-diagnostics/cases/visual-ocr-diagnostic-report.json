@@ -1,0 +1,219 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-ocr-diagnostic-report",
+  "fixtureSetId": "synthetic-visual-ocr-diagnostic-v1",
+  "fixtureKind": "synthetic_fixture",
+  "sourceInventory": {
+    "artifactRef": "eval/visual-ocr-diagnostics/cases/visual-ocr-diagnostic-case-inventory.json",
+    "rawByteSha256": "d42d242376bd9c5e5269a920d28d15f435d6bd63a497a6dfabb432f8208809a9"
+  },
+  "caseReports": [
+    {
+      "caseId": "math-function-graph",
+      "subjectPack": "math-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/math-function-graph.visual-synthetic-text-truth.json",
+        "rawByteSha256": "9dd9b54f208b3a5c4e4126ae1fc11d17cfa0914b77b141df21cee5ff30c02444"
+      },
+      "ocrObservationResult": {
+        "artifactRef": "eval/visual-ocr-observation/cases/math-function-graph.visual-ocr-observation-result.json",
+        "rawByteSha256": "1d392af4c6080bb5222931bd714a14b610d455ab93946cc73d824b08aba7ab8e",
+        "requestId": "math-function-graph"
+      },
+      "matches": [],
+      "unmatchedTruthRefs": [
+        "truth-label-002"
+      ],
+      "falsePositiveObservationRefs": [],
+      "unscoredObservationRefs": [],
+      "metrics": {
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 1,
+        "observationCount": 0,
+        "matchedObservationCount": 0,
+        "unscoredObservationCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": false
+        },
+        "recall": {
+          "available": true,
+          "value": 0.0
+        }
+      }
+    },
+    {
+      "caseId": "junior-instrument-scale",
+      "subjectPack": "junior-physics-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/junior-instrument-scale.visual-synthetic-text-truth.json",
+        "rawByteSha256": "5fdb62c97d7f4e1417c002a6de654a4cb3ac60ad5b49cc46580c2387920c2576"
+      },
+      "ocrObservationResult": {
+        "artifactRef": "eval/visual-ocr-observation/cases/junior-instrument-scale.visual-ocr-observation-result.json",
+        "rawByteSha256": "e3244936d0350cea21d9b96618ea975dd7ba7eba507fb0493336c29f7ec20839",
+        "requestId": "junior-instrument-scale"
+      },
+      "matches": [],
+      "unmatchedTruthRefs": [],
+      "falsePositiveObservationRefs": [
+        "ocr-observation-001"
+      ],
+      "unscoredObservationRefs": [],
+      "metrics": {
+        "scorableTruthCount": 0,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 0,
+        "observationCount": 1,
+        "matchedObservationCount": 0,
+        "unscoredObservationCount": 0,
+        "falsePositiveCount": 1,
+        "precision": {
+          "available": true,
+          "value": 0.0
+        },
+        "recall": {
+          "available": false
+        }
+      }
+    },
+    {
+      "caseId": "senior-circuit-label",
+      "subjectPack": "senior-physics-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/senior-circuit-label.visual-synthetic-text-truth.json",
+        "rawByteSha256": "b4fccb163c41b5b6d8fe0b9efcb8dad25951bc09a4b533c1c2159a1b1a5c6000"
+      },
+      "ocrObservationResult": {
+        "artifactRef": "eval/visual-ocr-observation/cases/senior-circuit-label.visual-ocr-observation-result.json",
+        "rawByteSha256": "ea3458311113a609f831fbba66c85c5fa358728aafd51cb25957b9cf01aef674",
+        "requestId": "senior-circuit-label"
+      },
+      "matches": [],
+      "unmatchedTruthRefs": [
+        "truth-label-001",
+        "truth-label-002"
+      ],
+      "falsePositiveObservationRefs": [],
+      "unscoredObservationRefs": [],
+      "metrics": {
+        "scorableTruthCount": 2,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 2,
+        "observationCount": 0,
+        "matchedObservationCount": 0,
+        "unscoredObservationCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": false
+        },
+        "recall": {
+          "available": true,
+          "value": 0.0
+        }
+      }
+    }
+  ],
+  "subjectReports": [
+    {
+      "subjectPack": "math-answer",
+      "caseCount": 1,
+      "metrics": {
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 1,
+        "observationCount": 0,
+        "matchedObservationCount": 0,
+        "unscoredObservationCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": false
+        },
+        "recall": {
+          "available": true,
+          "value": 0.0
+        }
+      }
+    },
+    {
+      "subjectPack": "junior-physics-answer",
+      "caseCount": 1,
+      "metrics": {
+        "scorableTruthCount": 0,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 0,
+        "observationCount": 1,
+        "matchedObservationCount": 0,
+        "unscoredObservationCount": 0,
+        "falsePositiveCount": 1,
+        "precision": {
+          "available": true,
+          "value": 0.0
+        },
+        "recall": {
+          "available": false
+        }
+      }
+    },
+    {
+      "subjectPack": "senior-physics-answer",
+      "caseCount": 1,
+      "metrics": {
+        "scorableTruthCount": 2,
+        "detectedTruthCount": 0,
+        "falseNegativeCount": 2,
+        "observationCount": 0,
+        "matchedObservationCount": 0,
+        "unscoredObservationCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": false
+        },
+        "recall": {
+          "available": true,
+          "value": 0.0
+        }
+      }
+    }
+  ],
+  "totals": {
+    "scorableTruthCount": 3,
+    "detectedTruthCount": 0,
+    "falseNegativeCount": 3,
+    "observationCount": 1,
+    "matchedObservationCount": 0,
+    "unscoredObservationCount": 0,
+    "falsePositiveCount": 1,
+    "precision": {
+      "available": true,
+      "value": 0.0
+    },
+    "recall": {
+      "available": true,
+      "value": 0.0
+    }
+  },
+  "diagnosticPolicySha256": "325a110b6dfc586629210a80265a1f2fe858c3bff0584ae6c0a25019583f0498",
+  "dispositions": {
+    "diagnosticStatus": "completed",
+    "diagnosticScope": "generator_declared_synthetic_fixture",
+    "acceptanceDisposition": "not_accepted",
+    "requiresHumanReview": true,
+    "layoutDisposition": "not_inferred",
+    "semanticDisposition": "not_inferred",
+    "trackDisposition": "not_integrated"
+  },
+  "engineProvenance": {
+    "engineKind": "deterministic_diagnostic",
+    "engineId": "visual-ocr-diagnostics",
+    "engineVersion": "1.0.0",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-28T02:03:00Z"
+}
