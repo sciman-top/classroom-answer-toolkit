@@ -62,6 +62,9 @@ function collectValidationTargets() {
   const visualOcrDiagnosticReportSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-diagnostic-report.schema.json");
   const visualTextRegionDiagnosticCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-text-region-diagnostic-case-inventory.schema.json");
   const visualTextRegionDiagnosticReportSchema = resolveRepoPath("prompts/shared/schemas/visual-text-region-diagnostic-report.schema.json");
+  const visualMachineReviewReceiptSchema = resolveRepoPath("prompts/shared/schemas/visual-machine-review-receipt.schema.json");
+  const visualMachineReviewCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-machine-review-case-inventory.schema.json");
+  const visualMachineReviewReportSchema = resolveRepoPath("prompts/shared/schemas/visual-machine-review-report.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -97,6 +100,7 @@ function collectValidationTargets() {
   const visualSpatialObservationFixtureRoot = resolveRepoPath("eval/visual-spatial-observation/cases");
   const visualOcrDiagnosticFixtureRoot = resolveRepoPath("eval/visual-ocr-diagnostics/cases");
   const visualTextRegionDiagnosticFixtureRoot = resolveRepoPath("eval/visual-text-region-diagnostics/cases");
+  const visualMachineReviewFixtureRoot = resolveRepoPath("eval/visual-machine-review/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -233,6 +237,20 @@ function collectValidationTargets() {
       "visual-text-region-diagnostic-report.json"),
     schemaPath: visualTextRegionDiagnosticReportSchema
   }];
+  const visualMachineReviewReceiptFiles = listFilesBySuffixRecursive(
+    visualMachineReviewFixtureRoot,
+    ".visual-machine-review-receipt.json")
+    .map((filePath) => ({ filePath, schemaPath: visualMachineReviewReceiptSchema }));
+  const visualMachineReviewCaseInventoryFiles = [{
+    filePath: path.join(
+      visualMachineReviewFixtureRoot,
+      "visual-machine-review-case-inventory.json"),
+    schemaPath: visualMachineReviewCaseInventorySchema
+  }];
+  const visualMachineReviewReportFiles = [{
+    filePath: path.join(visualMachineReviewFixtureRoot, "visual-machine-review-report.json"),
+    schemaPath: visualMachineReviewReportSchema
+  }];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
   const optimizationReadinessInputFiles = listFilesByNameRecursive(
@@ -332,6 +350,9 @@ function collectValidationTargets() {
     visualOcrDiagnosticReports: visualOcrDiagnosticReportFiles,
     visualTextRegionDiagnosticCaseInventories: visualTextRegionDiagnosticCaseInventoryFiles,
     visualTextRegionDiagnosticReports: visualTextRegionDiagnosticReportFiles,
+    visualMachineReviewReceipts: visualMachineReviewReceiptFiles,
+    visualMachineReviewCaseInventories: visualMachineReviewCaseInventoryFiles,
+    visualMachineReviewReports: visualMachineReviewReportFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -379,6 +400,9 @@ function collectValidationTargets() {
       visualOcrDiagnosticReportSchema,
       visualTextRegionDiagnosticCaseInventorySchema,
       visualTextRegionDiagnosticReportSchema,
+      visualMachineReviewReceiptSchema,
+      visualMachineReviewCaseInventorySchema,
+      visualMachineReviewReportSchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -446,7 +470,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualMachineReviewReceipts, targets.visualMachineReviewCaseInventories, targets.visualMachineReviewReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -780,6 +804,66 @@ function validateVisualTextRegionDiagnosticBoundary(reportTargets) {
   return errors;
 }
 
+function validateVisualMachineReviewBoundary(receiptTargets, reportTargets) {
+  const errors = [];
+  const canonicalReceiptTarget = receiptTargets[0];
+  const canonicalReportTarget = reportTargets[0];
+  if (!canonicalReceiptTarget) {
+    errors.push("Visual machine review boundary requires a canonical receipt fixture.");
+  } else {
+    const canonicalReceipt = readJsonFile(canonicalReceiptTarget.filePath);
+    const receiptMutations = [
+      ["human reviewer kind", (value) => { value.reviewer.reviewerKind = "human"; }],
+      ["human review claim", (value) => { value.reviewer.humanReviewed = true; }],
+      ["human attestation", (value) => { value.reviewer.attestationClass = "human_attested"; }],
+      ["production equivalence", (value) => { value.reviewPolicy.equivalencePolicy = "production_equivalent"; }],
+      ["production acceptance scope", (value) => { value.reviewPolicy.acceptanceScope = "production"; }],
+      ["delivery trust projection", (value) => { value.dispositions.deliveryTrustDisposition = "trusted"; }],
+      ["WPF integration", (value) => { value.dispositions.wpfDisposition = "integrated"; }],
+      ["live acceptance", (value) => { value.dispositions.liveAcceptanceDisposition = "accepted"; }],
+      ["verified controls", (value) => { value.dispositions.controlsDisposition = "verified"; }],
+      ["eligibility", (value) => { value.dispositions.eligible = true; }],
+      ["live provider", (value) => { value.reviewer.liveProvider = true; }],
+      ["cloud egress", (value) => { value.reviewer.cloudEgress = true; }]
+    ];
+    for (const [label, mutate] of receiptMutations) {
+      const candidate = structuredClone(canonicalReceipt);
+      mutate(candidate);
+      if (validateValueAgainstSchema(candidate, canonicalReceiptTarget.schemaPath).length === 0) {
+        errors.push(`Visual machine review receipt schema must reject ${label}.`);
+      }
+    }
+  }
+
+  if (!canonicalReportTarget) {
+    errors.push("Visual machine review boundary requires a canonical report fixture.");
+  } else {
+    const canonicalReport = readJsonFile(canonicalReportTarget.filePath);
+    const reportMutations = [
+      ["production equivalence", (value) => { value.dispositions.equivalencePolicy = "production_equivalent"; }],
+      ["production acceptance scope", (value) => { value.dispositions.acceptanceScope = "production"; }],
+      ["human identity claim", (value) => { value.dispositions.humanIdentityDisposition = "claimed"; }],
+      ["delivery trust projection", (value) => { value.dispositions.deliveryTrustDisposition = "trusted"; }],
+      ["WPF integration", (value) => { value.dispositions.wpfDisposition = "integrated"; }],
+      ["live acceptance", (value) => { value.dispositions.liveAcceptanceDisposition = "accepted"; }],
+      ["verified controls", (value) => { value.dispositions.controlsDisposition = "verified"; }],
+      ["eligibility", (value) => { value.dispositions.eligible = true; }],
+      ["optimization candidate", (value) => { value.dispositions.optimizationCandidateRefs = ["forbidden"]; }],
+      ["human-reviewed count", (value) => { value.totals.humanReviewedCount = 1; }],
+      ["live provider", (value) => { value.engineProvenance.liveProvider = true; }],
+      ["cloud egress", (value) => { value.engineProvenance.cloudEgress = true; }]
+    ];
+    for (const [label, mutate] of reportMutations) {
+      const candidate = structuredClone(canonicalReport);
+      mutate(candidate);
+      if (validateValueAgainstSchema(candidate, canonicalReportTarget.schemaPath).length === 0) {
+        errors.push(`Visual machine review report schema must reject ${label}.`);
+      }
+    }
+  }
+  return errors;
+}
+
 function main() {
   const targets = collectValidationTargets();
   const fileValidation = validateFiles(targets);
@@ -800,6 +884,9 @@ function main() {
     validateVisualOcrDiagnosticBoundary(targets.visualOcrDiagnosticReports);
   const visualTextRegionDiagnosticBoundaryErrors =
     validateVisualTextRegionDiagnosticBoundary(targets.visualTextRegionDiagnosticReports);
+  const visualMachineReviewBoundaryErrors = validateVisualMachineReviewBoundary(
+    targets.visualMachineReviewReceipts,
+    targets.visualMachineReviewReports);
   const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
@@ -876,6 +963,7 @@ function main() {
     ...visualSpatialObservationBoundaryErrors,
     ...visualOcrDiagnosticBoundaryErrors,
     ...visualTextRegionDiagnosticBoundaryErrors,
+    ...visualMachineReviewBoundaryErrors,
     ...(teacherFeedbackFixtureError
       ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
       : []),

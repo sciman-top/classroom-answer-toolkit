@@ -128,6 +128,16 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-text-region-diagnostics run validate:fixtures
 } "Visual text-region diagnostic canonical fixture validation failed."
 
+Write-Host "visual machine review contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-machine-review test
+} "Visual machine review contract tests failed."
+
+Write-Host "visual machine review canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-machine-review run validate:fixtures
+} "Visual machine review canonical fixture validation failed."
+
 Write-Host "visual evidence delivery aggregate contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-evidence run test:aggregate
