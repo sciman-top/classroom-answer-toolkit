@@ -53,6 +53,13 @@ class FixtureDefinition:
         return f"{self.case_id}.crop-{scale}x.png"
 
 
+@dataclass(frozen=True)
+class SyntheticTextDeclaration:
+    text: str
+    position: tuple[int, int]
+    fill: str | tuple[int, int, int]
+
+
 DEFINITIONS = (
     FixtureDefinition(
         "math-function-graph",
@@ -83,6 +90,20 @@ DEFINITIONS = (
     ),
 )
 DEFINITION_BY_ID = {definition.case_id: definition for definition in DEFINITIONS}
+TEXT_DECLARATIONS = {
+    "math-function-graph": (
+        SyntheticTextDeclaration("x", (278, 168), "black"),
+        SyntheticTextDeclaration("y", (116, 22), "black"),
+    ),
+    "junior-instrument-scale": (
+        SyntheticTextDeclaration("synthetic scale", (50, 25), (35, 70, 120)),
+    ),
+    "senior-circuit-label": (
+        SyntheticTextDeclaration("A", (116, 96), (25, 85, 180)),
+        SyntheticTextDeclaration("R", (223, 96), (190, 35, 45)),
+        SyntheticTextDeclaration("synthetic circuit", (50, 35), (35, 70, 120)),
+    ),
+}
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -132,8 +153,6 @@ def render_synthetic_source(definition: FixtureDefinition) -> Image.Image:
             draw.line((105, y, 115, y), fill="black", width=2)
         points = [(60, 190), (95, 165), (130, 140), (165, 115), (200, 90), (235, 65), (270, 40)]
         draw.line(points, fill=(25, 85, 180), width=4)
-        draw.text((278, 168), "x", fill="black")
-        draw.text((116, 22), "y", fill="black")
     elif definition.fixture_type == "instrument_scale":
         draw.rectangle((45, 50, 315, 125), outline="black", width=3)
         for index in range(21):
@@ -141,17 +160,15 @@ def render_synthetic_source(definition: FixtureDefinition) -> Image.Image:
             tick = 28 if index % 5 == 0 else 16
             draw.line((x, 112, x, 112 - tick), fill="black", width=2)
         draw.line((187, 122, 187, 65), fill=(190, 35, 45), width=4)
-        draw.text((50, 25), "synthetic scale", fill=(35, 70, 120))
     else:
         draw.line((55, 105, 100, 105), fill="black", width=3)
         draw.rectangle((100, 82, 145, 128), outline="black", width=3)
-        draw.text((116, 96), "A", fill=(25, 85, 180))
         draw.line((145, 105, 205, 105), fill="black", width=3)
         draw.ellipse((205, 80, 255, 130), outline="black", width=3)
-        draw.text((223, 96), "R", fill=(190, 35, 45))
         draw.line((255, 105, 305, 105), fill="black", width=3)
         draw.line((55, 105, 55, 155, 305, 155, 305, 105), fill="black", width=3)
-        draw.text((50, 35), "synthetic circuit", fill=(35, 70, 120))
+    for declaration in TEXT_DECLARATIONS[definition.case_id]:
+        draw.text(declaration.position, declaration.text, fill=declaration.fill)
     return image
 
 
