@@ -181,3 +181,9 @@
 - 决定：VISION-015 新增 `junior-readable-measurement`，通过未改 policy 的 VISION-007 至 VISION-014 完整链形成一份 exact OCR truth、唯一 text-region coverage、positive-area measurement 与双向唯一 canonical association；原三例 source/crop 和各层 case request/result 不改写
 - 原因：policy-only 正向单元测试不能证明 canonical runtime 能产出正向结果；独立小型 fixture 可在不篡改失败样例或手写 OCR observation 的前提下补齐正向 plumbing 证据。两轮风险探针失败后，仅调整公开 synthetic renderer，最终 OCR 输出 `12` 且唯一 endpoint 交面积为 `192`
 - 边界：VISION-011 truth 绑定当前 renderer 源文件 SHA-256，故原三份 truth 随 renderer 定义扩展合法重签；inventory/report 随第四例更新。当前两例 unavailable、一例 unmatched、一例 matched 与 `0.5` association rate 只描述 synthetic fixture coverage，不构成真实 OCR/region/association precision 或 recall、layout semantics、`FigureUnderstandingResult`、Track B、delivery trust、WPF workflow、gateway live verified、real-data/workstation/live acceptance；不启 cloud egress、不改 `.env`、不生成 `OptimizationCandidate`，receipt/controls/eligibility 保持原状态
+
+## D-034 semantic role 只来自独立声明与精确 evidence triangle
+
+- 决定：VISION-016 以独立 `VisualSyntheticSemanticDeclaration` 声明 `truth-label-001=measurement_reading`；projector 只在 VISION-011 exact-text OCR match、VISION-012 unique positive-overlap text-region match 与 VISION-014 唯一 association 连接相同 endpoint 时投影角色，recognized text 只从绑定 VISION-009 OCR observation 读取
+- 原因：从 truth text、文件名、OCR confidence、geometry 或 subject rules 猜角色会把 fixture knowledge 混入运行时；独立 sidecar declaration 保持 semantic authority、pixel generation 与 observation authority 可单独审计和回滚
+- 边界：单角色 projection 不生成 layout semantics、`FigureUnderstandingResult / ProblemEvidenceBundle / TrackResult / answer candidate`，不解释数值或单位，不构成 solver correctness、delivery trust、WPF workflow、gateway live verified 或 real-data/live acceptance；不启 cloud egress、不改 `.env`、不生成 `OptimizationCandidate`，receipt/controls/eligibility 保持原状态

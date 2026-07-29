@@ -362,6 +362,16 @@
 - blocks: VISION-007, VISION-008, VISION-009, VISION-010, VISION-011, VISION-012, VISION-013, VISION-014
 - done_definition: 仓内可从 current canonical bytes 确定性重算一个公开 synthetic 正向 association，并保留前三份负向结果；只证明 positive association plumbing，不构成真实 OCR/region/association precision 或 recall、layout/subject semantics、FigureUnderstanding、Track B、delivery trust、WPF/workflow、live gateway 或 real-data acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-016
+
+- goal: 建立首个由独立 declaration 与精确 synthetic evidence triangle 驱动的 semantic-role projection 诊断
+- inputs: VISION-011 `truth-label-001 -> ocr-observation-001` exact-text positive match、VISION-012 `truth-label-001 -> text-region-001` unique positive overlap、VISION-014 `ocr-region-association-001`，以及 VISION-009 绑定 OCR observation text
+- changes: 新增 declaration/request/result/inventory/report schema 与 local deterministic projector；角色只来自 explicit declaration，recognized text 只来自绑定 OCR result；固定 canonical root、raw-byte/hash/crop/path/physical identity/TOCTOU/staged-output 守卫；只准入 `junior-readable-measurement / measurement_reading`；纳入 assets 与 hotspot
+- verification: canonical result/report byte-exact replay；missing/duplicate/crossed truth/observation/candidate/association、unavailable/unmatched/ambiguous、recognized-text source、hash/path/alias/crop/computed-field/disposition、TOCTOU/staged tamper、external atomic output/repository output rejection均 fail closed；完整固定顺序项目门禁
+- rollback: 先回滚 VISION-016 evidence，再回滚 docs/integration/canonical/runtime/schema/design commits；删除本切片 tool/eval/schema/validator/hotspot/strategy 增量，保留 VISION-007 至 VISION-015 authority、`.env`、OCR 环境、gateway、delivery/review、readiness、flywheel 与 canonical sample authority
+- blocks: VISION-011, VISION-012, VISION-014, VISION-015
+- done_definition: 仓内可从 current canonical bytes 确定性重算一份显式 `measurement_reading` projection，且角色和 recognized text 来源独立；只证明 public synthetic semantic projection plumbing，不构成数值/单位理解、layout semantics、FigureUnderstanding、ProblemEvidenceBundle、TrackResult、answer candidate、solver result、delivery trust、WPF/workflow、gateway live 或 real-data/live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

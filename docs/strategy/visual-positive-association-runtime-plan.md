@@ -124,9 +124,10 @@ controls remain `not_verified`; `eligible=false`; no `OptimizationCandidate` is 
 
 ## Follow-on boundary
 
-`VISION-016` may design the first minimal Track B semantic projection only after VISION-015 is
-verified and committed. It must define a separate admitted semantic authority and cannot infer
-figure meaning from OCR-region association alone.
+`VISION-016` implements a narrower diagnostic prerequisite rather than Track B: it defines a
+separate admitted semantic declaration and projects one role only through the exact OCR truth,
+text-region truth, and association triangle. Question binding, quantity/unit interpretation,
+solver authority, answer candidates, and Track B remain follow-on work.
 
 ## Rollback
 

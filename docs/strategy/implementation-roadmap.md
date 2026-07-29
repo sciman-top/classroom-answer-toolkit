@@ -44,6 +44,7 @@
 - 再以 VISION-013 对公开 synthetic 2x crop 建立 transparent `ai_agent` visual review receipt；只在 `synthetic_fixture_diagnostic` 内视为人工检查等效，保持 `humanReviewed=false`，不接 delivery trust/WPF/live acceptance
 - 再以 VISION-014 对 VISION-010 exhaustive measurements 应用双向唯一、正交面积 association policy；原三份 frozen authority 诚实输出两例 unavailable 与一例 unmatched，正向/歧义先以非权威 policy 回归验证
 - 再以 VISION-015 新增一份独立准入的公开 synthetic fixture，在不改写前三份 source/crop 与 case request/result authority 的前提下完整重放 VISION-007 至 VISION-014，并仅当 OCR exact truth、text-region coverage、positive-area geometry 与双向唯一 policy 同时成立时形成一个 canonical positive association；renderer-bound truth 合法重签，结果仍不构成真实 association benchmark、layout semantics 或 Track B
+- 再以 VISION-016 为该正向 case 增加独立 `measurement_reading` declaration，并只在 VISION-011/012/014 形成精确唯一 evidence triangle 时投影角色和绑定 OCR text；该诊断不推断数值/单位/layout，不创建 FigureUnderstanding、Track B、答案、trust 或 live authority
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 

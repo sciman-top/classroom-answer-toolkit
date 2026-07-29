@@ -546,6 +546,14 @@ P1 样例集默认人工拆分题面/答案：
 - canonical aggregate 当前包含两例 unavailable、一例 unmatched、一例 matched；两份 OCR observations 中一份形成 association，association rate 为 `0.5`。这些是 fixture coverage 指标，不是现实数据上的 precision、recall 或质量结论。
 - 本切片不生成 layout relation、学科语义、`FigureUnderstandingResult`、Track B、delivery trust、WPF workflow 或 live acceptance；不启 cloud egress、不修改 `.env`、不使用真实数据、不生成 `OptimizationCandidate`。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 保持不变。
 
+### VISION-016 explicit semantic-role projection 边界
+
+- `VisualSyntheticSemanticDeclaration` 是与 renderer、OCR、geometry 和 association 分离的角色真源；首版只准入 `junior-readable-measurement / truth-label-001 / measurement_reading`，不包含数值、单位、答案、置信度、正确性或 layout 字段。
+- `VisualSemanticProjectionRequest / Result / CaseInventory / Report` 只消费同一 case 的 declaration、VISION-011 OCR diagnostic report、VISION-012 text-region diagnostic report、VISION-014 association result、VISION-009 OCR result 与 canonical scale-2 crop，并对路径、physical identity、raw-byte hash、crop hash/dimensions 和快照稳定性 fail closed。
+- 投影要求唯一 evidence triangle：`truth-label-001 -> ocr-observation-001` 必须为 `exact_text_positive_overlap`，同一 truth 到 `text-region-001` 必须为 `positive_overlap`，`ocr-region-association-001` 必须连接这两个 endpoint。角色只取 declaration，recognized text 只取绑定 OCR observation；不得从 truth text、文件名、confidence、geometry 或 subject rules 推断。
+- 当前 canonical result 只输出一份 `measurement_reading` projection 和 recognized text `12`。它不生成 `FigureUnderstandingResult / ProblemEvidenceBundle / TrackResult / answer candidate`，不解释数值或单位，不构成 layout semantics、question binding、solver correctness 或真实数据质量。
+- result/report 固定 not accepted、requires human review、layout not inferred、figure understanding not generated、Track/WPF not integrated、delivery trust not projected、live not accepted、controls not verified、`eligible=false`、`optimizationCandidateRefs=[]`；cloud egress disabled，`.env` 不变，`ReadinessControlReceipt=unattested_local_record` 保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。
