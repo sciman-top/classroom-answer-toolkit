@@ -21,10 +21,11 @@
 15. [visual-text-region-diagnostic-runtime-plan.md](./visual-text-region-diagnostic-runtime-plan.md)
 16. [visual-machine-review-runtime-plan.md](./visual-machine-review-runtime-plan.md)
 17. [visual-ocr-region-association-runtime-plan.md](./visual-ocr-region-association-runtime-plan.md)
-18. [implementation-roadmap.md](./implementation-roadmap.md)
-19. [implementation-plan.md](./implementation-plan.md)
-20. [execution-backlog.md](./execution-backlog.md)
-21. [decision-log.md](./decision-log.md)
+18. [visual-positive-association-runtime-plan.md](./visual-positive-association-runtime-plan.md)
+19. [implementation-roadmap.md](./implementation-roadmap.md)
+20. [implementation-plan.md](./implementation-plan.md)
+21. [execution-backlog.md](./execution-backlog.md)
+22. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 
