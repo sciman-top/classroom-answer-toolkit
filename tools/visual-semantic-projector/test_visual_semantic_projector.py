@@ -24,6 +24,7 @@ from visual_semantic_projector import (
     build_request,
     compile_request,
     load_upstream_authorities,
+    materialize_fixtures,
     run_diagnostics,
     sha256_bytes,
     stable_json_bytes,
@@ -72,10 +73,71 @@ class VisualSemanticProjectorTests(unittest.TestCase):
             copy.deepcopy(upstream.values["truth"]["labels"][0])
         )
         self.reserialize(upstream, "truth")
+        self.rebind_truth_contracts(upstream)
         with self.fixture_copy() as root:
             self.rebind_fixture_to_upstream(root, upstream)
-            with self.assertRaisesRegex(ValueError, "IDs must be present and unique"):
+            with self.assertRaisesRegex(ValueError, "exactly one unique endpoint"):
                 compile_request(root / DEFINITION.request_name, root, upstream)
+
+    def test_missing_truth_label_fails_closed(self) -> None:
+        upstream = self.mutated_upstream()
+        upstream.values["truth"]["labels"] = []
+        self.reserialize(upstream, "truth")
+        self.rebind_truth_contracts(upstream)
+        with self.fixture_copy() as root:
+            self.rebind_fixture_to_upstream(root, upstream)
+            with self.assertRaisesRegex(ValueError, "exactly one unique endpoint"):
+                compile_request(root / DEFINITION.request_name, root, upstream)
+
+    def test_missing_and_duplicate_diagnostic_matches_fail_closed(self) -> None:
+        for report_key in ("ocr_report", "text_report"):
+            canonical_match = self.case_report(self.upstream.values[report_key])["matches"][0]
+            for matches in ([], [copy.deepcopy(canonical_match), copy.deepcopy(canonical_match)]):
+                with self.subTest(report=report_key, count=len(matches)):
+                    upstream = self.mutated_upstream()
+                    self.case_report(upstream.values[report_key])["matches"] = matches
+                    self.reserialize(upstream, report_key)
+                    with self.fixture_copy() as root:
+                        self.rebind_fixture_to_upstream(root, upstream)
+                        with self.assertRaisesRegex(ValueError, "exactly one unique endpoint"):
+                            compile_request(root / DEFINITION.request_name, root, upstream)
+
+    def test_missing_and_duplicate_observation_endpoints_fail_closed(self) -> None:
+        for observations in ([], [
+            copy.deepcopy(self.upstream.values["ocr_result"]["observations"][0]),
+            copy.deepcopy(self.upstream.values["ocr_result"]["observations"][0]),
+        ]):
+            with self.subTest(count=len(observations)):
+                upstream = self.mutated_upstream()
+                upstream.values["ocr_result"]["observations"] = observations
+                self.reserialize(upstream, "ocr_result")
+                self.rebind_ocr_result_contracts(upstream)
+                with self.fixture_copy() as root:
+                    self.rebind_fixture_to_upstream(root, upstream)
+                    with self.assertRaisesRegex(ValueError, "exactly one unique endpoint"):
+                        compile_request(root / DEFINITION.request_name, root, upstream)
+
+    def test_missing_and_ambiguous_association_endpoints_fail_closed(self) -> None:
+        canonical_edge = self.upstream.values["association"]["associations"][0]
+        for edges in ([], [copy.deepcopy(canonical_edge), {
+            **copy.deepcopy(canonical_edge),
+            "associationId": "ocr-region-association-002",
+        }]):
+            with self.subTest(count=len(edges)):
+                upstream = self.mutated_upstream()
+                upstream.values["association"]["associations"] = edges
+                upstream.values["association"]["summary"]["matchedAssociationCount"] = len(edges)
+                upstream.values["association"]["summary"]["ambiguousEndpointCount"] = (
+                    1 if len(edges) > 1 else 0
+                )
+                upstream.values["association"]["dispositions"]["associationStatus"] = (
+                    "unavailable" if not edges else "matched"
+                )
+                self.reserialize(upstream, "association")
+                with self.fixture_copy() as root:
+                    self.rebind_fixture_to_upstream(root, upstream)
+                    with self.assertRaises(ValueError):
+                        compile_request(root / DEFINITION.request_name, root, upstream)
 
     def test_crossed_ocr_endpoint_fails_closed(self) -> None:
         upstream = self.mutated_upstream()
@@ -104,8 +166,22 @@ class VisualSemanticProjectorTests(unittest.TestCase):
         self.reserialize(upstream, "association")
         with self.fixture_copy() as root:
             self.rebind_fixture_to_upstream(root, upstream)
-            with self.assertRaisesRegex(ValueError, "exactly one"):
+            with self.assertRaisesRegex(ValueError, "matched, unambiguous association"):
                 compile_request(root / DEFINITION.request_name, root, upstream)
+
+    def test_nonmatched_or_ambiguous_association_disposition_fails_closed(self) -> None:
+        for status in ("unmatched", "unavailable", "ambiguous"):
+            with self.subTest(status=status):
+                upstream = self.mutated_upstream()
+                upstream.values["association"]["dispositions"]["associationStatus"] = status
+                upstream.values["association"]["summary"]["ambiguousEndpointCount"] = (
+                    1 if status == "ambiguous" else 0
+                )
+                self.reserialize(upstream, "association")
+                with self.fixture_copy() as root:
+                    self.rebind_fixture_to_upstream(root, upstream)
+                    with self.assertRaisesRegex(ValueError, "matched, unambiguous association"):
+                        compile_request(root / DEFINITION.request_name, root, upstream)
 
     def test_request_hash_drift_fails_closed(self) -> None:
         with self.fixture_copy() as root:
@@ -115,6 +191,13 @@ class VisualSemanticProjectorTests(unittest.TestCase):
             request_path.write_bytes(stable_json_bytes(request))
             with self.assertRaisesRegex(ValueError, "Request authority drifted"):
                 compile_request(request_path, root, self.upstream)
+
+    def test_request_path_escape_fails_closed(self) -> None:
+        with self.fixture_copy() as root:
+            outside = root.parent / DEFINITION.request_name
+            shutil.copy2(root / DEFINITION.request_name, outside)
+            with self.assertRaisesRegex(ValueError, "escapes its allowed root"):
+                compile_request(outside, root, self.upstream)
 
     def test_result_computed_field_drift_fails_closed(self) -> None:
         with self.fixture_copy() as root:
@@ -206,11 +289,19 @@ class VisualSemanticProjectorTests(unittest.TestCase):
     def test_canonical_fixtures_replay(self) -> None:
         self.assertEqual(validate_canonical_fixtures(upstream=self.upstream), 1)
 
+    def test_materialization_is_repeatable_and_byte_exact(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="visual-semantic-materialize-") as temp:
+            root = Path(temp) / "cases"
+            self.assertEqual(materialize_fixtures(root, self.upstream), 1)
+            first = {path.name: path.read_bytes() for path in root.iterdir()}
+            self.assertEqual(materialize_fixtures(root, self.upstream), 1)
+            second = {path.name: path.read_bytes() for path in root.iterdir()}
+            self.assertEqual(first, second)
+
     def mutated_upstream(self) -> UpstreamAuthority:
         return UpstreamAuthority(
             values=copy.deepcopy(self.upstream.values),
             bytes_by_key=dict(self.upstream.bytes_by_key),
-            paths_by_key=dict(self.upstream.paths_by_key),
             snapshots=self.upstream.snapshots,
         )
 
@@ -218,6 +309,10 @@ class VisualSemanticProjectorTests(unittest.TestCase):
         upstream = self.mutated_upstream()
         upstream.values["truth"]["labels"][0]["text"] = text
         self.reserialize(upstream, "truth")
+        self.rebind_truth_contracts(upstream)
+        return upstream
+
+    def rebind_truth_contracts(self, upstream: UpstreamAuthority) -> None:
         truth_contract = {
             "artifactRef": projector.TRUTH_REF,
             "rawByteSha256": sha256_bytes(upstream.bytes_by_key["truth"]),
@@ -225,7 +320,6 @@ class VisualSemanticProjectorTests(unittest.TestCase):
         for key in ("ocr_report", "text_report"):
             self.case_report(upstream.values[key])["truth"] = truth_contract
             self.reserialize(upstream, key)
-        return upstream
 
     @staticmethod
     def reserialize(upstream: UpstreamAuthority, key: str) -> None:
@@ -241,6 +335,17 @@ class VisualSemanticProjectorTests(unittest.TestCase):
         (root / DEFINITION.declaration_name).write_bytes(declaration_bytes)
         request = build_request(declaration_bytes, upstream)
         (root / DEFINITION.request_name).write_bytes(stable_json_bytes(request))
+
+    def rebind_ocr_result_contracts(self, upstream: UpstreamAuthority) -> None:
+        contract = {
+            "artifactRef": projector.OCR_OBSERVATION_RESULT_REF,
+            "rawByteSha256": sha256_bytes(upstream.bytes_by_key["ocr_result"]),
+            "requestId": DEFINITION.case_id,
+        }
+        self.case_report(upstream.values["ocr_report"])["ocrObservationResult"] = contract
+        self.reserialize(upstream, "ocr_report")
+        upstream.values["association"]["ocrObservationResult"] = contract
+        self.reserialize(upstream, "association")
 
     def rebind_declaration(self, root: Path, declaration: dict) -> None:
         declaration_bytes = stable_json_bytes(declaration)

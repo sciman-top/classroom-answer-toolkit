@@ -108,7 +108,6 @@ DEFINITION = FixtureDefinition()
 class UpstreamAuthority:
     values: dict[str, dict[str, Any]]
     bytes_by_key: dict[str, bytes]
-    paths_by_key: dict[str, Path]
     snapshots: tuple[tuple[Path, bytes, str], ...]
 
 
@@ -177,6 +176,43 @@ def validate_authority_integrity(upstream: UpstreamAuthority) -> None:
         or upstream.values["ocr_result"].get("crop") != crop
     ):
         raise ValueError("Semantic projection crop authority drifted across upstream results.")
+    expected_ocr_binding = result_contract(
+        OCR_OBSERVATION_RESULT_REF,
+        upstream.bytes_by_key["ocr_result"],
+        DEFINITION.case_id,
+    )
+    ocr_case = _one_case(upstream.values["ocr_report"], "OCR diagnostic report")
+    text_case = _one_case(
+        upstream.values["text_report"], "text-region diagnostic report"
+    )
+    expected_truth_binding = artifact_contract(TRUTH_REF, upstream.bytes_by_key["truth"])
+    if (
+        ocr_case.get("truth") != expected_truth_binding
+        or text_case.get("truth") != expected_truth_binding
+        or ocr_case.get("ocrObservationResult") != expected_ocr_binding
+        or upstream.values["association"].get("ocrObservationResult")
+        != expected_ocr_binding
+    ):
+        raise ValueError("Semantic projection upstream authority binding drifted.")
+    association = upstream.values["association"]
+    if (
+        association.get("dispositions", {}).get("associationStatus") != "matched"
+        or association.get("summary", {}).get("matchedAssociationCount") != 1
+        or association.get("summary", {}).get("ambiguousEndpointCount") != 0
+    ):
+        raise ValueError("Semantic projection requires one matched, unambiguous association.")
+    for report, label in (
+        (upstream.values["ocr_report"], "OCR diagnostic report"),
+        (upstream.values["text_report"], "text-region diagnostic report"),
+    ):
+        dispositions = report.get("dispositions")
+        if (
+            not isinstance(dispositions, dict)
+            or dispositions.get("diagnosticStatus") != "completed"
+            or dispositions.get("acceptanceDisposition") != "not_accepted"
+            or dispositions.get("semanticDisposition") != "not_inferred"
+        ):
+            raise ValueError(f"{label} dispositions are not admitted for semantic projection.")
 
 
 def _load_repo_json(reference: str, label: str) -> tuple[Path, bytes, dict[str, Any]]:
@@ -203,8 +239,8 @@ def _one_by_id(values: Any, field: str, expected_id: str, label: str) -> dict[st
     if not isinstance(values, list):
         raise ValueError(f"{label} must be an array.")
     ids = [value.get(field) for value in values if isinstance(value, dict)]
-    if len(ids) != len(values) or len(set(ids)) != len(ids):
-        raise ValueError(f"{label} IDs must be present and unique.")
+    if len(values) != 1 or len(ids) != 1 or len(set(ids)) != 1:
+        raise ValueError(f"{label} must contain exactly one unique endpoint.")
     matches = [value for value in values if value.get(field) == expected_id]
     if len(matches) != 1:
         raise ValueError(f"{label} must contain exactly one {expected_id} entry.")
@@ -235,7 +271,6 @@ def load_upstream_authorities(*, validate_upstream: bool = True) -> UpstreamAuth
     }
     values: dict[str, dict[str, Any]] = {}
     bytes_by_key: dict[str, bytes] = {}
-    paths_by_key: dict[str, Path] = {}
     snapshots: list[tuple[Path, bytes, str]] = []
     identities: set[tuple[int, int]] = set()
     for key, (reference, label) in references.items():
@@ -246,7 +281,6 @@ def load_upstream_authorities(*, validate_upstream: bool = True) -> UpstreamAuth
         identities.add(identity)
         values[key] = value
         bytes_by_key[key] = data
-        paths_by_key[key] = path
         snapshots.append((path, data, label))
 
     truth = values["truth"]
@@ -297,7 +331,6 @@ def load_upstream_authorities(*, validate_upstream: bool = True) -> UpstreamAuth
         raise ValueError("Semantic projection crop aliases another upstream authority.")
     values["crop"] = crop
     bytes_by_key["crop"] = crop_bytes
-    paths_by_key["crop"] = crop_path
     snapshots.append((crop_path, crop_bytes, "semantic projection crop"))
 
     ocr_case = _one_case(values["ocr_report"], "OCR diagnostic report")
@@ -329,6 +362,12 @@ def load_upstream_authorities(*, validate_upstream: bool = True) -> UpstreamAuth
     )
     if ocr_match.get("diagnosticDisposition") != "exact_text_positive_overlap":
         raise ValueError("OCR diagnostic match is not exact-text positive overlap.")
+    if ocr_case.get("ocrObservationResult") != result_contract(
+        OCR_OBSERVATION_RESULT_REF,
+        bytes_by_key["ocr_result"],
+        DEFINITION.case_id,
+    ):
+        raise ValueError("OCR diagnostic report observation authority drifted.")
     observation_id = ocr_match.get("ocrObservationRef")
     if observation_id != "ocr-observation-001":
         raise ValueError("OCR diagnostic observation endpoint drifted.")
@@ -354,6 +393,12 @@ def load_upstream_authorities(*, validate_upstream: bool = True) -> UpstreamAuth
         or association.get("dispositions", {}).get("associationStatus") != "matched"
         or association.get("summary", {}).get("matchedAssociationCount") != 1
         or association.get("summary", {}).get("ambiguousEndpointCount") != 0
+        or association.get("ocrObservationResult")
+        != result_contract(
+            OCR_OBSERVATION_RESULT_REF,
+            bytes_by_key["ocr_result"],
+            DEFINITION.case_id,
+        )
     ):
         raise ValueError("OCR-region association result is not one admitted exact match.")
     edge = _one_by_id(
@@ -391,7 +436,6 @@ def load_upstream_authorities(*, validate_upstream: bool = True) -> UpstreamAuth
     result = UpstreamAuthority(
         values,
         bytes_by_key,
-        paths_by_key,
         tuple(snapshots),
     )
     validate_authority_integrity(result)
@@ -516,13 +560,12 @@ def compile_request(
     validate_declaration(declaration, authorities)
     validate_request(request, declaration_bytes, authorities)
 
-    truth_label = _one_by_id(
+    _one_by_id(
         authorities.values["truth"].get("labels"),
         "labelId",
         declaration["truth"]["truthLabelRef"],
         "synthetic truth labels",
     )
-    _ = truth_label
     ocr_case = _one_case(authorities.values["ocr_report"], "OCR diagnostic report")
     text_case = _one_case(
         authorities.values["text_report"], "text-region diagnostic report"
@@ -822,20 +865,23 @@ def validate_canonical_fixtures(
     return 1
 
 
-def materialize_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
+def materialize_fixtures(
+    fixture_root: Path = CANONICAL_ROOT,
+    upstream: UpstreamAuthority | None = None,
+) -> int:
     validate_runtime_identity()
     fixture_root.mkdir(parents=True, exist_ok=True)
     if any(fixture_root.iterdir()):
-        raise ValueError("Semantic projection fixture root must be empty before materialization.")
-    upstream = load_upstream_authorities()
-    declaration = build_declaration(upstream)
+        validate_fixture_structure(fixture_root)
+    authorities = upstream or load_upstream_authorities()
+    declaration = build_declaration(authorities)
     declaration_bytes = stable_json_bytes(declaration)
     atomic_write(fixture_root / DEFINITION.declaration_name, declaration_bytes)
-    request = build_request(declaration_bytes, upstream)
+    request = build_request(declaration_bytes, authorities)
     request_bytes = stable_json_bytes(request)
     request_path = fixture_root / DEFINITION.request_name
     atomic_write(request_path, request_bytes)
-    result_bytes = stable_json_bytes(compile_request(request_path, fixture_root, upstream))
+    result_bytes = stable_json_bytes(compile_request(request_path, fixture_root, authorities))
     atomic_write(fixture_root / DEFINITION.result_name, result_bytes)
     inventory = {
         "schemaVersion": "1.0",
@@ -856,9 +902,9 @@ def materialize_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
         ],
     }
     atomic_write(fixture_root / INVENTORY_NAME, stable_json_bytes(inventory))
-    report = compile_report(fixture_root, upstream)
+    report = compile_report(fixture_root, authorities)
     atomic_write(fixture_root / REPORT_NAME, stable_json_bytes(report))
-    return validate_canonical_fixtures(fixture_root)
+    return validate_canonical_fixtures(fixture_root, authorities)
 
 
 def canonical_output_path(output_dir: Path) -> Path:
