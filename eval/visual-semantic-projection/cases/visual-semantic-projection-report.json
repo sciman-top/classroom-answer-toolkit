@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-semantic-projection-report",
+  "fixtureSetId": "synthetic-visual-semantic-projection-v1",
+  "fixtureKind": "synthetic_fixture",
+  "sourceInventory": {
+    "artifactRef": "eval/visual-semantic-projection/cases/visual-semantic-projection-case-inventory.json",
+    "rawByteSha256": "a244007a51a2a90731e962852995b623a26f3e4631c746e27349c4253c738d67"
+  },
+  "caseReports": [
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "projectionResult": {
+        "artifactRef": "eval/visual-semantic-projection/cases/junior-readable-measurement.visual-semantic-projection-result.json",
+        "rawByteSha256": "f7c84424a4248a9e7a9bf6d3c9ea17278202579f6d0b2c665bfaf08028b9bfe7",
+        "requestId": "junior-readable-measurement-semantic-projection"
+      },
+      "semanticRole": "measurement_reading",
+      "projectionStatus": "projected"
+    }
+  ],
+  "totals": {
+    "caseCount": 1,
+    "projectedCaseCount": 1,
+    "withheldCaseCount": 0,
+    "unavailableCaseCount": 0
+  },
+  "dispositions": {
+    "diagnosticStatus": "completed",
+    "diagnosticScope": "public_synthetic_semantic_projection",
+    "acceptanceDisposition": "not_accepted",
+    "requiresHumanReview": true,
+    "layoutDisposition": "not_inferred",
+    "figureUnderstandingDisposition": "not_generated",
+    "trackDisposition": "not_integrated",
+    "deliveryTrustDisposition": "not_projected",
+    "wpfDisposition": "not_integrated",
+    "liveAcceptanceDisposition": "not_accepted",
+    "controlsDisposition": "not_verified",
+    "eligible": false,
+    "optimizationCandidateRefs": []
+  },
+  "projectionPolicySha256": "fb550f34fd3d2f2c9fa79bf4a4a3fd9c7391dfabc8b8aa1e0b01b1bdd85b9365",
+  "engineProvenance": {
+    "engineKind": "deterministic_semantic_projection",
+    "engineId": "visual-semantic-projector",
+    "engineVersion": "1.0.0",
+    "interpreter": {
+      "implementation": "CPython",
+      "version": "3.13.7"
+    },
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "generatedAt": "2026-07-29T08:10:00Z"
+}
