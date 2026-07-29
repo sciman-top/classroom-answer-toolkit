@@ -138,6 +138,16 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-text-region-diagnostics run validate:fixtures
 } "Visual text-region diagnostic canonical fixture validation failed."
 
+Write-Host "visual semantic projection contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-semantic-projector test
+} "Visual semantic projection contract tests failed."
+
+Write-Host "visual semantic projection canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-semantic-projector run validate:fixtures
+} "Visual semantic projection canonical fixture validation failed."
+
 Write-Host "visual machine review contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-machine-review test

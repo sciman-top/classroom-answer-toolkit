@@ -14,6 +14,7 @@ import {
 import { validateCanonicalSyntheticGenerationFixtures } from "../answer-generator/synthetic-generator.mjs";
 import { validateVisualRiskDiagnosticReport } from "../visual-evidence/visual-risk-diagnostic.mjs";
 import { validateVisualOcrRegionAssociationBoundary } from "../visual-ocr-region-association/validate_schema_boundary.mjs";
+import { validateVisualSemanticProjectionBoundary } from "../visual-semantic-projector/validate_schema_boundary.mjs";
 
 function collectValidationTargets() {
   const dataClassificationSchema = resolveRepoPath("prompts/shared/schemas/data-classification.schema.json");
@@ -70,6 +71,11 @@ function collectValidationTargets() {
   const visualOcrRegionAssociationResultSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-region-association-result.schema.json");
   const visualOcrRegionAssociationCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-region-association-case-inventory.schema.json");
   const visualOcrRegionAssociationReportSchema = resolveRepoPath("prompts/shared/schemas/visual-ocr-region-association-report.schema.json");
+  const visualSyntheticSemanticDeclarationSchema = resolveRepoPath("prompts/shared/schemas/visual-synthetic-semantic-declaration.schema.json");
+  const visualSemanticProjectionRequestSchema = resolveRepoPath("prompts/shared/schemas/visual-semantic-projection-request.schema.json");
+  const visualSemanticProjectionResultSchema = resolveRepoPath("prompts/shared/schemas/visual-semantic-projection-result.schema.json");
+  const visualSemanticProjectionCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-semantic-projection-case-inventory.schema.json");
+  const visualSemanticProjectionReportSchema = resolveRepoPath("prompts/shared/schemas/visual-semantic-projection-report.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -107,6 +113,7 @@ function collectValidationTargets() {
   const visualTextRegionDiagnosticFixtureRoot = resolveRepoPath("eval/visual-text-region-diagnostics/cases");
   const visualMachineReviewFixtureRoot = resolveRepoPath("eval/visual-machine-review/cases");
   const visualOcrRegionAssociationFixtureRoot = resolveRepoPath("eval/visual-ocr-region-association/cases");
+  const visualSemanticProjectionFixtureRoot = resolveRepoPath("eval/visual-semantic-projection/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -277,6 +284,30 @@ function collectValidationTargets() {
       "visual-ocr-region-association-report.json"),
     schemaPath: visualOcrRegionAssociationReportSchema
   }];
+  const visualSyntheticSemanticDeclarationFiles = listFilesBySuffixRecursive(
+    visualSemanticProjectionFixtureRoot,
+    ".visual-synthetic-semantic-declaration.json")
+    .map((filePath) => ({ filePath, schemaPath: visualSyntheticSemanticDeclarationSchema }));
+  const visualSemanticProjectionRequestFiles = listFilesBySuffixRecursive(
+    visualSemanticProjectionFixtureRoot,
+    ".visual-semantic-projection-request.json")
+    .map((filePath) => ({ filePath, schemaPath: visualSemanticProjectionRequestSchema }));
+  const visualSemanticProjectionResultFiles = listFilesBySuffixRecursive(
+    visualSemanticProjectionFixtureRoot,
+    ".visual-semantic-projection-result.json")
+    .map((filePath) => ({ filePath, schemaPath: visualSemanticProjectionResultSchema }));
+  const visualSemanticProjectionCaseInventoryFiles = [{
+    filePath: path.join(
+      visualSemanticProjectionFixtureRoot,
+      "visual-semantic-projection-case-inventory.json"),
+    schemaPath: visualSemanticProjectionCaseInventorySchema
+  }];
+  const visualSemanticProjectionReportFiles = [{
+    filePath: path.join(
+      visualSemanticProjectionFixtureRoot,
+      "visual-semantic-projection-report.json"),
+    schemaPath: visualSemanticProjectionReportSchema
+  }];
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
   const optimizationReadinessInputFiles = listFilesByNameRecursive(
@@ -383,6 +414,11 @@ function collectValidationTargets() {
     visualOcrRegionAssociationResults: visualOcrRegionAssociationResultFiles,
     visualOcrRegionAssociationCaseInventories: visualOcrRegionAssociationCaseInventoryFiles,
     visualOcrRegionAssociationReports: visualOcrRegionAssociationReportFiles,
+    visualSyntheticSemanticDeclarations: visualSyntheticSemanticDeclarationFiles,
+    visualSemanticProjectionRequests: visualSemanticProjectionRequestFiles,
+    visualSemanticProjectionResults: visualSemanticProjectionResultFiles,
+    visualSemanticProjectionCaseInventories: visualSemanticProjectionCaseInventoryFiles,
+    visualSemanticProjectionReports: visualSemanticProjectionReportFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -437,6 +473,11 @@ function collectValidationTargets() {
       visualOcrRegionAssociationResultSchema,
       visualOcrRegionAssociationCaseInventorySchema,
       visualOcrRegionAssociationReportSchema,
+      visualSyntheticSemanticDeclarationSchema,
+      visualSemanticProjectionRequestSchema,
+      visualSemanticProjectionResultSchema,
+      visualSemanticProjectionCaseInventorySchema,
+      visualSemanticProjectionReportSchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -504,7 +545,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualMachineReviewReceipts, targets.visualMachineReviewCaseInventories, targets.visualMachineReviewReports, targets.visualOcrRegionAssociationRequests, targets.visualOcrRegionAssociationResults, targets.visualOcrRegionAssociationCaseInventories, targets.visualOcrRegionAssociationReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualMachineReviewReceipts, targets.visualMachineReviewCaseInventories, targets.visualMachineReviewReports, targets.visualOcrRegionAssociationRequests, targets.visualOcrRegionAssociationResults, targets.visualOcrRegionAssociationCaseInventories, targets.visualOcrRegionAssociationReports, targets.visualSyntheticSemanticDeclarations, targets.visualSemanticProjectionRequests, targets.visualSemanticProjectionResults, targets.visualSemanticProjectionCaseInventories, targets.visualSemanticProjectionReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;
@@ -925,6 +966,13 @@ function main() {
     validateVisualOcrRegionAssociationBoundary(
       targets.visualOcrRegionAssociationResults,
       targets.visualOcrRegionAssociationReports);
+  const visualSemanticProjectionBoundaryErrors =
+    validateVisualSemanticProjectionBoundary(
+      targets.visualSyntheticSemanticDeclarations,
+      targets.visualSemanticProjectionRequests,
+      targets.visualSemanticProjectionResults,
+      targets.visualSemanticProjectionCaseInventories,
+      targets.visualSemanticProjectionReports);
   const mergedAssetValidations = targets.subjectPacks.map((subjectPack) => ({
     subjectPack,
     mergedAssets: buildMergedAssets({ subjectPack })
@@ -1003,6 +1051,7 @@ function main() {
     ...visualTextRegionDiagnosticBoundaryErrors,
     ...visualMachineReviewBoundaryErrors,
     ...visualOcrRegionAssociationBoundaryErrors,
+    ...visualSemanticProjectionBoundaryErrors,
     ...(teacherFeedbackFixtureError
       ? [`Canonical teacher feedback fixtures: ${teacherFeedbackFixtureError}`]
       : []),
