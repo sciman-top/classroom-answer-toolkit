@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-synthetic-semantic-declaration/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualSyntheticSemanticDeclaration",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "declarationId", "caseId", "subjectPack", "fixtureKind",
+    "dataClassification", "truth", "crop", "semanticRole", "authorityProvenance", "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-synthetic-semantic-declaration" },
+    "declarationId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-semantic-declaration$" },
+    "caseId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "subjectPack": { "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"] },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "dataClassification": { "$ref": "#/$defs/dataClassification" },
+    "truth": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "truthId", "truthLabelRef"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "truthId": { "type": "string", "minLength": 1 },
+        "truthLabelRef": { "type": "string", "pattern": "^truth-label-[0-9]{3}$" }
+      },
+      "additionalProperties": false
+    },
+    "crop": { "$ref": "#/$defs/crop" },
+    "semanticRole": { "const": "measurement_reading" },
+    "authorityProvenance": {
+      "type": "object",
+      "required": ["authorityKind", "interpreter", "liveProvider", "cloudEgress"],
+      "properties": {
+        "authorityKind": { "const": "explicit_synthetic_semantic_declaration" },
+        "interpreter": { "$ref": "#/$defs/interpreter" },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "dataClassification": {
+      "type": "object",
+      "required": ["level", "notes"],
+      "properties": {
+        "level": { "const": "public" },
+        "notes": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "crop": {
+      "type": "object",
+      "required": ["artifactRef", "scale", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "scale": { "const": 2 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "decodedRgbPixelSha256": { "$ref": "#/$defs/sha256" },
+        "pixelSize": {
+          "type": "object",
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "interpreter": {
+      "type": "object",
+      "required": ["implementation", "version"],
+      "properties": {
+        "implementation": { "const": "CPython" },
+        "version": { "const": "3.13.7" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

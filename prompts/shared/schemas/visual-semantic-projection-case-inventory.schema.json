@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-semantic-projection-case-inventory/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualSemanticProjectionCaseInventory",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "fixtureSetId", "fixtureKind", "entries"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-semantic-projection-case-inventory" },
+    "fixtureSetId": { "const": "synthetic-visual-semantic-projection-v1" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "caseId", "subjectPack", "declarationRef", "declarationSha256", "requestRef",
+          "requestSha256", "expectedResultRef", "expectedResultSha256"
+        ],
+        "properties": {
+          "caseId": { "type": "string", "minLength": 1 },
+          "subjectPack": { "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"] },
+          "declarationRef": { "type": "string", "minLength": 1 },
+          "declarationSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "requestRef": { "type": "string", "minLength": 1 },
+          "requestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "expectedResultRef": { "type": "string", "minLength": 1 },
+          "expectedResultSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
