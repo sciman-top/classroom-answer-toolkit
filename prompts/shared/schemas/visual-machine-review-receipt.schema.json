@@ -76,7 +76,11 @@
       "type": "array",
       "uniqueItems": true,
       "items": {
-        "enum": ["outside_crop_axis_label", "partially_clipped_header"]
+        "enum": [
+          "outside_crop_axis_label",
+          "partially_clipped_header",
+          "synthetic_diagnostic_scope_only"
+        ]
       }
     },
     "decision": {

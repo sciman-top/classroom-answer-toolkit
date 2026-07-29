@@ -5,7 +5,7 @@
   "fixtureKind": "synthetic_fixture",
   "sourceInventory": {
     "artifactRef": "eval/visual-machine-review/cases/visual-machine-review-case-inventory.json",
-    "rawByteSha256": "0a01a4eca0c69ec7421a77a682782aa0c63e9413e85647ace4f20990c783cf03"
+    "rawByteSha256": "c7fb1896ae679315311f88561a2c700b23c94d6fd15e992d9f5aabf4506c0a0f"
   },
   "caseReports": [
     {
@@ -73,6 +73,28 @@
         "machineReviewedCount": 1,
         "humanReviewedCount": 0
       }
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "reviewReceipt": {
+        "artifactRef": "eval/visual-machine-review/cases/junior-readable-measurement.visual-machine-review-receipt.json",
+        "rawByteSha256": "1ea424a18707b1e2e86d41ecd913165d3cfb68c326a71722e7ab1aeba934dd1b"
+      },
+      "crop": {
+        "artifactRef": "eval/visual-preprocessing/cases/junior-readable-measurement.crop-2x.png",
+        "rawByteSha256": "619e236453646fdb4dfb772b3e8ead65e0597c6118af089f731a57cd57633aa6"
+      },
+      "decision": "accept_for_diagnostic_use",
+      "limitationCount": 1,
+      "metrics": {
+        "reviewedCaseCount": 1,
+        "acceptedCaseCount": 1,
+        "rejectedCaseCount": 0,
+        "limitedCaseCount": 1,
+        "machineReviewedCount": 1,
+        "humanReviewedCount": 0
+      }
     }
   ],
   "subjectReports": [
@@ -90,13 +112,13 @@
     },
     {
       "subjectPack": "junior-physics-answer",
-      "caseCount": 1,
+      "caseCount": 2,
       "metrics": {
-        "reviewedCaseCount": 1,
-        "acceptedCaseCount": 1,
+        "reviewedCaseCount": 2,
+        "acceptedCaseCount": 2,
         "rejectedCaseCount": 0,
-        "limitedCaseCount": 1,
-        "machineReviewedCount": 1,
+        "limitedCaseCount": 2,
+        "machineReviewedCount": 2,
         "humanReviewedCount": 0
       }
     },
@@ -114,11 +136,11 @@
     }
   ],
   "totals": {
-    "reviewedCaseCount": 3,
-    "acceptedCaseCount": 3,
+    "reviewedCaseCount": 4,
+    "acceptedCaseCount": 4,
     "rejectedCaseCount": 0,
-    "limitedCaseCount": 3,
-    "machineReviewedCount": 3,
+    "limitedCaseCount": 4,
+    "machineReviewedCount": 4,
     "humanReviewedCount": 0
   },
   "reviewPolicySha256": "024cf3cc2970ee9b2fa7c4e966404ecfbee16257d4a33489898e0764fde82fa6",
@@ -145,5 +167,5 @@
     "liveProvider": false,
     "cloudEgress": false
   },
-  "generatedAt": "2026-07-28T06:10:00Z"
+  "generatedAt": "2026-07-29T06:10:00Z"
 }

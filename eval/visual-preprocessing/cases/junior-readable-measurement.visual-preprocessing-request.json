@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-preprocessing-request",
+  "requestId": "junior-readable-measurement",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "notes": "Fully synthetic public fixture; no teacher, student, or exam data."
+  },
+  "source": {
+    "artifactRef": "junior-readable-measurement.source.png",
+    "mediaType": "image/png",
+    "rawByteSha256": "58115ee4199983e2db264d5c23f26999454c2fc80203e619710a9e34ce5e4c89",
+    "decodedRgbPixelSha256": "ce49f43cfe02cd00e7ea3c116d32c8d3148aee2617dadf858baf003f952b8d3f",
+    "pixelSize": {
+      "width": 80,
+      "height": 48
+    }
+  },
+  "bbox": {
+    "x": 0,
+    "y": 0,
+    "width": 80,
+    "height": 48,
+    "coordinateSpace": "page_pixel"
+  },
+  "scales": [
+    1,
+    2
+  ],
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-29T01:03:00Z"
+}

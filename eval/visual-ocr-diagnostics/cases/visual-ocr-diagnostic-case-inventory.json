@@ -8,7 +8,7 @@
       "caseId": "math-function-graph",
       "subjectPack": "math-answer",
       "truthRef": "math-function-graph.visual-synthetic-text-truth.json",
-      "truthSha256": "9dd9b54f208b3a5c4e4126ae1fc11d17cfa0914b77b141df21cee5ff30c02444",
+      "truthSha256": "7acc3b64136736a419f1f5d452079860dd62229d4f264b4029492c00338f9918",
       "ocrObservationResultRef": "eval/visual-ocr-observation/cases/math-function-graph.visual-ocr-observation-result.json",
       "ocrObservationResultSha256": "1d392af4c6080bb5222931bd714a14b610d455ab93946cc73d824b08aba7ab8e"
     },
@@ -16,7 +16,7 @@
       "caseId": "junior-instrument-scale",
       "subjectPack": "junior-physics-answer",
       "truthRef": "junior-instrument-scale.visual-synthetic-text-truth.json",
-      "truthSha256": "5fdb62c97d7f4e1417c002a6de654a4cb3ac60ad5b49cc46580c2387920c2576",
+      "truthSha256": "ebb02c0ad5a18ac20a55f7e0341cfad922f54c658a94c36ff927b399b204961a",
       "ocrObservationResultRef": "eval/visual-ocr-observation/cases/junior-instrument-scale.visual-ocr-observation-result.json",
       "ocrObservationResultSha256": "e3244936d0350cea21d9b96618ea975dd7ba7eba507fb0493336c29f7ec20839"
     },
@@ -24,9 +24,17 @@
       "caseId": "senior-circuit-label",
       "subjectPack": "senior-physics-answer",
       "truthRef": "senior-circuit-label.visual-synthetic-text-truth.json",
-      "truthSha256": "b4fccb163c41b5b6d8fe0b9efcb8dad25951bc09a4b533c1c2159a1b1a5c6000",
+      "truthSha256": "245f0fe62bf1238e939fd7f7d4be909057dafed544e21e806e452cbc2838170d",
       "ocrObservationResultRef": "eval/visual-ocr-observation/cases/senior-circuit-label.visual-ocr-observation-result.json",
       "ocrObservationResultSha256": "ea3458311113a609f831fbba66c85c5fa358728aafd51cb25957b9cf01aef674"
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "truthRef": "junior-readable-measurement.visual-synthetic-text-truth.json",
+      "truthSha256": "b578283d6cfe4e1fe3bbc0aae1709301891d3f228995170f1ad161b9a9e0c267",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/junior-readable-measurement.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "17aa31f7fa71bae34c0c72213b6557546c43b3c038daa1f209743bf67d15c532"
     }
   ]
 }

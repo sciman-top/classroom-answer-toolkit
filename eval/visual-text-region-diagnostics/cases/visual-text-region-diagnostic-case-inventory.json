@@ -8,7 +8,7 @@
       "caseId": "math-function-graph",
       "subjectPack": "math-answer",
       "truthRef": "eval/visual-ocr-diagnostics/cases/math-function-graph.visual-synthetic-text-truth.json",
-      "truthSha256": "9dd9b54f208b3a5c4e4126ae1fc11d17cfa0914b77b141df21cee5ff30c02444",
+      "truthSha256": "7acc3b64136736a419f1f5d452079860dd62229d4f264b4029492c00338f9918",
       "structureExtractionResultRef": "eval/visual-structure-extraction/cases/math-function-graph.visual-structure-extraction-result.json",
       "structureExtractionResultSha256": "9b8cf6317ba97678fe64eedf50fbf3ddaa40b8b45bb535b5945ce4d9f8f795c0"
     },
@@ -16,7 +16,7 @@
       "caseId": "junior-instrument-scale",
       "subjectPack": "junior-physics-answer",
       "truthRef": "eval/visual-ocr-diagnostics/cases/junior-instrument-scale.visual-synthetic-text-truth.json",
-      "truthSha256": "5fdb62c97d7f4e1417c002a6de654a4cb3ac60ad5b49cc46580c2387920c2576",
+      "truthSha256": "ebb02c0ad5a18ac20a55f7e0341cfad922f54c658a94c36ff927b399b204961a",
       "structureExtractionResultRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
       "structureExtractionResultSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027"
     },
@@ -24,9 +24,17 @@
       "caseId": "senior-circuit-label",
       "subjectPack": "senior-physics-answer",
       "truthRef": "eval/visual-ocr-diagnostics/cases/senior-circuit-label.visual-synthetic-text-truth.json",
-      "truthSha256": "b4fccb163c41b5b6d8fe0b9efcb8dad25951bc09a4b533c1c2159a1b1a5c6000",
+      "truthSha256": "245f0fe62bf1238e939fd7f7d4be909057dafed544e21e806e452cbc2838170d",
       "structureExtractionResultRef": "eval/visual-structure-extraction/cases/senior-circuit-label.visual-structure-extraction-result.json",
       "structureExtractionResultSha256": "9b638be6a7ea0274ebe6fb0fbe36c0cec8222b4193d94fabbd498d31ffdea15c"
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "truthRef": "eval/visual-ocr-diagnostics/cases/junior-readable-measurement.visual-synthetic-text-truth.json",
+      "truthSha256": "b578283d6cfe4e1fe3bbc0aae1709301891d3f228995170f1ad161b9a9e0c267",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/junior-readable-measurement.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "ac8277a56d08d0821a0d68cb0c998da47c95a595e67d976e286de27f2a213b21"
     }
   ]
 }

@@ -11,7 +11,7 @@
   },
   "renderer": {
     "artifactRef": "tools/visual-preprocessor/visual_preprocessor.py",
-    "rawByteSha256": "f8894adbe43accf66875033228ef87fd1107ebefba69f95008b8b50c16588ddb"
+    "rawByteSha256": "2ae7f4e8d66a23119fe09a5bb32f2a1ee0a38c8b82f7613b6653337aa6e8e3e5"
   },
   "preprocessingResult": {
     "artifactRef": "eval/visual-preprocessing/cases/junior-instrument-scale.visual-preprocessing-result.json",

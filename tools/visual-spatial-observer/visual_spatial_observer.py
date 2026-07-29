@@ -101,6 +101,10 @@ DEFINITIONS = (
         "senior-circuit-label", "senior-physics-answer",
         "2026-07-28T01:02:00Z", "2026-07-28T01:02:01Z",
     ),
+    FixtureDefinition(
+        "junior-readable-measurement", "junior-physics-answer",
+        "2026-07-29T04:03:00Z", "2026-07-29T04:03:01Z",
+    ),
 )
 DEFINITION_BY_ID = {definition.case_id: definition for definition in DEFINITIONS}
 
@@ -607,9 +611,11 @@ def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
     ):
         raise ValueError("VisualSpatialObservationCaseInventory metadata is not admitted.")
     entries = inventory.get("entries")
-    if not isinstance(entries, list) or len(entries) != 3:
-        raise ValueError("VisualSpatialObservationCaseInventory must contain exactly three entries.")
-    if [entry.get("subjectPack") for entry in entries] != list(SUBJECT_PACKS):
+    if not isinstance(entries, list) or len(entries) != len(DEFINITIONS):
+        raise ValueError("VisualSpatialObservationCaseInventory coverage drifted.")
+    if [entry.get("subjectPack") for entry in entries] != [
+        definition.subject_pack for definition in DEFINITIONS
+    ]:
         raise ValueError("VisualSpatialObservationCaseInventory subject packs or order drifted.")
     referenced_paths = {inventory_path}
     referenced_identities = {file_identity(inventory_path)}

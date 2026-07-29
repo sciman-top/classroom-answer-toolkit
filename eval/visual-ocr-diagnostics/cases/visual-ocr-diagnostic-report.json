@@ -5,7 +5,7 @@
   "fixtureKind": "synthetic_fixture",
   "sourceInventory": {
     "artifactRef": "eval/visual-ocr-diagnostics/cases/visual-ocr-diagnostic-case-inventory.json",
-    "rawByteSha256": "d42d242376bd9c5e5269a920d28d15f435d6bd63a497a6dfabb432f8208809a9"
+    "rawByteSha256": "7b77d664a73148107b5151a5b0bba4cd6fbf63968f6cca33cac69365d34471da"
   },
   "caseReports": [
     {
@@ -13,7 +13,7 @@
       "subjectPack": "math-answer",
       "truth": {
         "artifactRef": "eval/visual-ocr-diagnostics/cases/math-function-graph.visual-synthetic-text-truth.json",
-        "rawByteSha256": "9dd9b54f208b3a5c4e4126ae1fc11d17cfa0914b77b141df21cee5ff30c02444"
+        "rawByteSha256": "7acc3b64136736a419f1f5d452079860dd62229d4f264b4029492c00338f9918"
       },
       "ocrObservationResult": {
         "artifactRef": "eval/visual-ocr-observation/cases/math-function-graph.visual-ocr-observation-result.json",
@@ -48,7 +48,7 @@
       "subjectPack": "junior-physics-answer",
       "truth": {
         "artifactRef": "eval/visual-ocr-diagnostics/cases/junior-instrument-scale.visual-synthetic-text-truth.json",
-        "rawByteSha256": "5fdb62c97d7f4e1417c002a6de654a4cb3ac60ad5b49cc46580c2387920c2576"
+        "rawByteSha256": "ebb02c0ad5a18ac20a55f7e0341cfad922f54c658a94c36ff927b399b204961a"
       },
       "ocrObservationResult": {
         "artifactRef": "eval/visual-ocr-observation/cases/junior-instrument-scale.visual-ocr-observation-result.json",
@@ -83,7 +83,7 @@
       "subjectPack": "senior-physics-answer",
       "truth": {
         "artifactRef": "eval/visual-ocr-diagnostics/cases/senior-circuit-label.visual-synthetic-text-truth.json",
-        "rawByteSha256": "b4fccb163c41b5b6d8fe0b9efcb8dad25951bc09a4b533c1c2159a1b1a5c6000"
+        "rawByteSha256": "245f0fe62bf1238e939fd7f7d4be909057dafed544e21e806e452cbc2838170d"
       },
       "ocrObservationResult": {
         "artifactRef": "eval/visual-ocr-observation/cases/senior-circuit-label.visual-ocr-observation-result.json",
@@ -113,6 +113,46 @@
           "value": 0.0
         }
       }
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/junior-readable-measurement.visual-synthetic-text-truth.json",
+        "rawByteSha256": "b578283d6cfe4e1fe3bbc0aae1709301891d3f228995170f1ad161b9a9e0c267"
+      },
+      "ocrObservationResult": {
+        "artifactRef": "eval/visual-ocr-observation/cases/junior-readable-measurement.visual-ocr-observation-result.json",
+        "rawByteSha256": "17aa31f7fa71bae34c0c72213b6557546c43b3c038daa1f209743bf67d15c532",
+        "requestId": "junior-readable-measurement"
+      },
+      "matches": [
+        {
+          "truthLabelRef": "truth-label-001",
+          "ocrObservationRef": "ocr-observation-001",
+          "diagnosticDisposition": "exact_text_positive_overlap"
+        }
+      ],
+      "unmatchedTruthRefs": [],
+      "falsePositiveObservationRefs": [],
+      "unscoredObservationRefs": [],
+      "metrics": {
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 1,
+        "falseNegativeCount": 0,
+        "observationCount": 1,
+        "matchedObservationCount": 1,
+        "unscoredObservationCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": true,
+          "value": 1.0
+        },
+        "recall": {
+          "available": true,
+          "value": 1.0
+        }
+      }
     }
   ],
   "subjectReports": [
@@ -138,21 +178,22 @@
     },
     {
       "subjectPack": "junior-physics-answer",
-      "caseCount": 1,
+      "caseCount": 2,
       "metrics": {
-        "scorableTruthCount": 0,
-        "detectedTruthCount": 0,
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 1,
         "falseNegativeCount": 0,
-        "observationCount": 1,
-        "matchedObservationCount": 0,
+        "observationCount": 2,
+        "matchedObservationCount": 1,
         "unscoredObservationCount": 0,
         "falsePositiveCount": 1,
         "precision": {
           "available": true,
-          "value": 0.0
+          "value": 0.5
         },
         "recall": {
-          "available": false
+          "available": true,
+          "value": 1.0
         }
       }
     },
@@ -178,20 +219,20 @@
     }
   ],
   "totals": {
-    "scorableTruthCount": 3,
-    "detectedTruthCount": 0,
+    "scorableTruthCount": 4,
+    "detectedTruthCount": 1,
     "falseNegativeCount": 3,
-    "observationCount": 1,
-    "matchedObservationCount": 0,
+    "observationCount": 2,
+    "matchedObservationCount": 1,
     "unscoredObservationCount": 0,
     "falsePositiveCount": 1,
     "precision": {
       "available": true,
-      "value": 0.0
+      "value": 0.5
     },
     "recall": {
       "available": true,
-      "value": 0.0
+      "value": 0.25
     }
   },
   "diagnosticPolicySha256": "325a110b6dfc586629210a80265a1f2fe858c3bff0584ae6c0a25019583f0498",
@@ -215,5 +256,5 @@
     "liveProvider": false,
     "cloudEgress": false
   },
-  "generatedAt": "2026-07-28T02:03:00Z"
+  "generatedAt": "2026-07-29T05:10:00Z"
 }

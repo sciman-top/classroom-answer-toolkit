@@ -354,11 +354,11 @@
 
 ### task_id: VISION-015
 
-- goal: 在不改写 VISION-007 至 VISION-014 三份冻结 fixture 的前提下，建立首个具有诚实 canonical 正向 OCR-region association 的公开 synthetic 诊断闭环
+- goal: 在不改写原三份 source/crop 与 preprocessing/structure/OCR/spatial/association case request/result 的前提下，建立首个具有诚实 canonical 正向 OCR-region association 的公开 synthetic 诊断闭环
 - inputs: VISION-007 deterministic renderer/preprocessing、VISION-008 structure candidates、VISION-009 RapidOCR observation、VISION-010 exhaustive geometry、VISION-011/012 synthetic truth diagnostics、VISION-013 machine review、VISION-014 bidirectional-uniqueness policy
-- changes: 先在仓外临时目录执行 risk-first probe，只有 exact OCR text、唯一 eligible text-region candidate、positive-area overlap 与双向唯一 association 同时成立才扩展八级 canonical authority；新增 fixture 的 source/crop/request/result/inventory/report 全链绑定 canonical path、physical identity、raw-byte SHA-256、upstream bytes 和本地 engine provenance；前三份 case 原始 bytes 保持不变；新增 machine review 固定 `ai_agent / humanReviewed=false / synthetic_fixture_diagnostic`；assets/hotspot 重放新增 case
+- changes: 先在仓外临时目录执行 risk-first probe，只有 exact OCR text、唯一 eligible text-region candidate、positive-area overlap 与双向唯一 association 同时成立才扩展八级 canonical authority；新增 fixture 的 source/crop/request/result/inventory/report 全链绑定 canonical path、physical identity、raw-byte SHA-256、upstream bytes 和本地 engine provenance；前三份 source/crop 与 case request/result bytes 保持不变，renderer-bound truth 合法重签；新增 machine review 固定 `ai_agent / humanReviewed=false / synthetic_fixture_diagnostic`；assets/hotspot 重放新增 case
 - verification: probe 前后 tracked tree 一致；两次临时全链 materialization byte-exact；八个 focused package suites/validators；existing unavailable/unmatched cases 不变；positive/disjoint/unavailable/many-to-one/one-to-many、hash/path/alias/TOCTOU/staged-output tamper fail closed；完整固定顺序项目门禁
-- rollback: 先回滚 VISION-015 evidence，再回滚 atomic implementation 和 strategy commits；只删除新增 case 与 inventory/report/hotspot/README/strategy 增量，保留 VISION-007 至 VISION-014 既有 bytes、`.env`、OCR 环境、gateway、delivery/review、readiness、flywheel 与 canonical sample authority
+- rollback: 先回滚 VISION-015 evidence，再回滚 atomic implementation 和 strategy commits；删除新增 case 与 inventory/report/hotspot/README/strategy 增量，并恢复 renderer-bound truth；保留原三份 source/crop 与 preprocessing/structure/OCR/spatial/association case request/result bytes、`.env`、OCR 环境、gateway、delivery/review、readiness、flywheel 与 canonical sample authority
 - blocks: VISION-007, VISION-008, VISION-009, VISION-010, VISION-011, VISION-012, VISION-013, VISION-014
 - done_definition: 仓内可从 current canonical bytes 确定性重算一个公开 synthetic 正向 association，并保留前三份负向结果；只证明 positive association plumbing，不构成真实 OCR/region/association precision 或 recall、layout/subject semantics、FigureUnderstanding、Track B、delivery trust、WPF/workflow、live gateway 或 real-data acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 

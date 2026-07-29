@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from visual_ocr_observer import (
     CANONICAL_ROOT,
+    DEFINITIONS,
     INVENTORY_NAME,
     REPO_ROOT,
     compile_request,
@@ -37,14 +38,15 @@ class VisualOcrObserverTests(unittest.TestCase):
         self.assertIsInstance(captured[0], bytes)
         self.assertEqual(sha256_bytes(captured[0]), self.read_json(request_path)["crop"]["rawByteSha256"])
 
-    def test_three_canonical_fixtures_replay_deterministically(self) -> None:
-        self.assertEqual(validate_canonical_fixtures(), 3)
+    def test_all_canonical_fixtures_replay_deterministically(self) -> None:
+        self.assertEqual(validate_canonical_fixtures(), len(DEFINITIONS))
 
     def test_canonical_outputs_preserve_diagnostic_only_observations(self) -> None:
         expected = {
             "math-function-graph": [],
             "junior-instrument-scale": ["+++++++++"],
             "senior-circuit-label": [],
+            "junior-readable-measurement": ["12"],
         }
         for request_path in sorted(CANONICAL_ROOT.glob("*.visual-ocr-observation-request.json")):
             result = compile_request(request_path, CANONICAL_ROOT)

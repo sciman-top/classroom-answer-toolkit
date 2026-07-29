@@ -45,6 +45,20 @@
       "requestSha256": "89cd5037ecdc55b52cc5c68e2eb79f540280f243c0ee83e88103fc2b6c9f8cdc",
       "expectedResultRef": "senior-circuit-label.visual-ocr-region-association-result.json",
       "expectedResultSha256": "f42de43cb9d3848581aefda578f76ae71644cacb9da0540de3f9bbe8725cfb19"
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/junior-readable-measurement.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "ac8277a56d08d0821a0d68cb0c998da47c95a595e67d976e286de27f2a213b21",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/junior-readable-measurement.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "17aa31f7fa71bae34c0c72213b6557546c43b3c038daa1f209743bf67d15c532",
+      "spatialObservationResultRef": "eval/visual-spatial-observation/cases/junior-readable-measurement.visual-spatial-observation-result.json",
+      "spatialObservationResultSha256": "9dbb7492cef2075c72fcd4e4bba9c7e5bcd524a5e98f925ac0ea5ef0c9a49c5b",
+      "requestRef": "junior-readable-measurement.visual-ocr-region-association-request.json",
+      "requestSha256": "f9aeb4d8f9e4f107e0c653226e00daff3228c9cd416a404c8f1c0376b2095cc3",
+      "expectedResultRef": "junior-readable-measurement.visual-ocr-region-association-result.json",
+      "expectedResultSha256": "016116b9964e31e412bb40b2ec789a047e42dac7289814925b6e54254370b799"
     }
   ]
 }

@@ -42,8 +42,9 @@ class VisualOcrDiagnosticTests(unittest.TestCase):
         self.assertEqual(cases["junior-instrument-scale"]["metrics"]["falsePositiveCount"], 1)
         self.assertFalse(cases["junior-instrument-scale"]["metrics"]["recall"]["available"])
         self.assertEqual(cases["senior-circuit-label"]["metrics"]["falseNegativeCount"], 2)
-        self.assertEqual(report["totals"]["scorableTruthCount"], 3)
-        self.assertEqual(report["totals"]["detectedTruthCount"], 0)
+        self.assertEqual(cases["junior-readable-measurement"]["metrics"]["detectedTruthCount"], 1)
+        self.assertEqual(report["totals"]["scorableTruthCount"], 4)
+        self.assertEqual(report["totals"]["detectedTruthCount"], 1)
         self.assertEqual(report["totals"]["falsePositiveCount"], 1)
         self.assertEqual(report["dispositions"]["acceptanceDisposition"], "not_accepted")
         self.assertEqual(report["dispositions"]["layoutDisposition"], "not_inferred")
@@ -292,7 +293,7 @@ class VisualOcrDiagnosticTests(unittest.TestCase):
                 validate_runtime_identity()
 
     def test_canonical_fixtures_replay_deterministically(self) -> None:
-        self.assertEqual(validate_canonical_fixtures(), 3)
+        self.assertEqual(validate_canonical_fixtures(), len(DEFINITIONS))
         self.assertEqual(
             stable_json_bytes(compile_report()),
             (CANONICAL_ROOT / REPORT_NAME).read_bytes(),

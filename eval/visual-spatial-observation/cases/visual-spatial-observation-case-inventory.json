@@ -39,6 +39,18 @@
       "requestSha256": "91ea1d45592a77ed38860a5bb64279c7680c62b075e5b5ac00a7cb9ed3eaa9f7",
       "expectedResultRef": "senior-circuit-label.visual-spatial-observation-result.json",
       "expectedResultSha256": "7f69bcf391243f45081a7d2e93242e9e960ea911f6b262e78569528806c5bb92"
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "structureExtractionResultRef": "eval/visual-structure-extraction/cases/junior-readable-measurement.visual-structure-extraction-result.json",
+      "structureExtractionResultSha256": "ac8277a56d08d0821a0d68cb0c998da47c95a595e67d976e286de27f2a213b21",
+      "ocrObservationResultRef": "eval/visual-ocr-observation/cases/junior-readable-measurement.visual-ocr-observation-result.json",
+      "ocrObservationResultSha256": "17aa31f7fa71bae34c0c72213b6557546c43b3c038daa1f209743bf67d15c532",
+      "requestRef": "junior-readable-measurement.visual-spatial-observation-request.json",
+      "requestSha256": "8bfc4cc3f3f59b801796436a06df39e48499c2ec54cac22cc5e1aa823bbc1db4",
+      "expectedResultRef": "junior-readable-measurement.visual-spatial-observation-result.json",
+      "expectedResultSha256": "9dbb7492cef2075c72fcd4e4bba9c7e5bcd524a5e98f925ac0ea5ef0c9a49c5b"
     }
   ]
 }

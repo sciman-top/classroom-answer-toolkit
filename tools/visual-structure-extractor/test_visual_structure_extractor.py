@@ -9,6 +9,7 @@ from pathlib import Path
 
 from visual_structure_extractor import (
     CANONICAL_ROOT,
+    DEFINITIONS,
     INVENTORY_NAME,
     REPO_ROOT,
     compile_request,
@@ -20,8 +21,8 @@ from visual_structure_extractor import (
 
 
 class VisualStructureExtractorTests(unittest.TestCase):
-    def test_three_canonical_fixtures_replay_deterministically(self) -> None:
-        self.assertEqual(validate_canonical_fixtures(), 3)
+    def test_all_canonical_fixtures_replay_deterministically(self) -> None:
+        self.assertEqual(validate_canonical_fixtures(), len(DEFINITIONS))
 
     def test_all_subjects_produce_nonsemantic_candidates(self) -> None:
         for request_path in sorted(CANONICAL_ROOT.glob("*.visual-structure-extraction-request.json")):

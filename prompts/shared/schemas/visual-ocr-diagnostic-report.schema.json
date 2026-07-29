@@ -18,7 +18,7 @@
     "caseReports": {
       "type": "array",
       "minItems": 3,
-      "maxItems": 3,
+      "maxItems": 4,
       "items": { "$ref": "#/$defs/caseReport" }
     },
     "subjectReports": {

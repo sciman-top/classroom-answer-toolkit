@@ -55,7 +55,7 @@ from visual_ocr_diagnostics import (  # noqa: E402
 CANONICAL_ROOT = (REPO_ROOT / "eval" / "visual-text-region-diagnostics" / "cases").resolve()
 INVENTORY_NAME = "visual-text-region-diagnostic-case-inventory.json"
 REPORT_NAME = "visual-text-region-diagnostic-report.json"
-REPORT_GENERATED_AT = "2026-07-28T03:00:00Z"
+REPORT_GENERATED_AT = "2026-07-29T05:20:00Z"
 
 
 @dataclass(frozen=True)
@@ -487,10 +487,14 @@ def _compile_report_snapshot(
     subject_reports = []
     for subject_pack in SUBJECT_PACKS:
         selected = [report for report in case_reports if report["subjectPack"] == subject_pack]
-        if len(selected) != 1:
+        if not selected:
             raise ValueError(f"Visual text-region diagnostic subject {subject_pack} coverage drifted.")
         subject_reports.append(
-            {"subjectPack": subject_pack, "caseCount": 1, "metrics": aggregate_metrics(selected)}
+            {
+                "subjectPack": subject_pack,
+                "caseCount": len(selected),
+                "metrics": aggregate_metrics(selected),
+            }
         )
     report = {
         "schemaVersion": "1.0",

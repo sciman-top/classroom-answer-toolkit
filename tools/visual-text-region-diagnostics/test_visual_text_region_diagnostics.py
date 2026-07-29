@@ -42,9 +42,10 @@ class VisualTextRegionDiagnosticTests(unittest.TestCase):
         self.assertEqual(cases["junior-instrument-scale"]["metrics"]["unscoredCandidateCount"], 1)
         self.assertFalse(cases["junior-instrument-scale"]["metrics"]["precision"]["available"])
         self.assertEqual(cases["senior-circuit-label"]["metrics"]["matchedCandidateCount"], 2)
-        self.assertEqual(report["totals"]["scorableTruthCount"], 3)
-        self.assertEqual(report["totals"]["detectedTruthCount"], 3)
-        self.assertEqual(report["totals"]["candidateCount"], 25)
+        self.assertEqual(cases["junior-readable-measurement"]["metrics"]["detectedTruthCount"], 1)
+        self.assertEqual(report["totals"]["scorableTruthCount"], 4)
+        self.assertEqual(report["totals"]["detectedTruthCount"], 4)
+        self.assertEqual(report["totals"]["candidateCount"], 26)
         self.assertEqual(report["totals"]["unscoredCandidateCount"], 22)
         self.assertEqual(report["totals"]["falsePositiveCount"], 0)
         self.assertEqual(report["totals"]["precision"], {"available": True, "value": 1.0})
@@ -280,8 +281,8 @@ class VisualTextRegionDiagnosticTests(unittest.TestCase):
 
     def test_upstream_authority_snapshots_and_replay_are_deterministic(self) -> None:
         upstream = load_upstream_authorities()
-        self.assertEqual(len(upstream.snapshots), 8)
-        self.assertEqual(validate_canonical_fixtures(), 3)
+        self.assertEqual(len(upstream.snapshots), 2 + 2 * len(diagnostics.DEFINITIONS))
+        self.assertEqual(validate_canonical_fixtures(), len(diagnostics.DEFINITIONS))
         self.assertEqual(
             stable_json_bytes(compile_report()),
             (CANONICAL_ROOT / REPORT_NAME).read_bytes(),

@@ -16,7 +16,7 @@
     "fixtureKind": { "const": "synthetic_fixture" },
     "sourceInventory": { "$ref": "#/$defs/artifact" },
     "caseReports": {
-      "type": "array", "minItems": 3, "maxItems": 3,
+      "type": "array", "minItems": 3, "maxItems": 4,
       "items": { "$ref": "#/$defs/caseReport" }
     },
     "subjectReports": {

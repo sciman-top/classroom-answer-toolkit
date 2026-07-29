@@ -48,7 +48,7 @@ SUBJECT_PACKS = (
     "senior-physics-answer",
 )
 INTERPRETER = {"implementation": "CPython", "version": "3.13.7"}
-REPORT_GENERATED_AT = "2026-07-28T07:10:00Z"
+REPORT_GENERATED_AT = "2026-07-29T07:10:00Z"
 
 
 @dataclass(frozen=True)
@@ -89,6 +89,12 @@ DEFINITIONS = (
         "senior-physics-answer",
         "2026-07-28T07:02:00Z",
         "2026-07-28T07:02:01Z",
+    ),
+    FixtureDefinition(
+        "junior-readable-measurement",
+        "junior-physics-answer",
+        "2026-07-29T07:03:00Z",
+        "2026-07-29T07:03:01Z",
     ),
 )
 DEFINITION_BY_ID = {definition.case_id: definition for definition in DEFINITIONS}
@@ -668,9 +674,9 @@ def validate_inventory(inventory: dict[str, Any]) -> list[dict[str, Any]]:
     entries = inventory.get("entries")
     if not isinstance(entries, list) or len(entries) != len(DEFINITIONS):
         raise ValueError("VisualOcrRegionAssociationCaseInventory coverage drifted.")
-    if [entry.get("subjectPack") for entry in entries if isinstance(entry, dict)] != list(
-        SUBJECT_PACKS
-    ):
+    if [entry.get("subjectPack") for entry in entries if isinstance(entry, dict)] != [
+        definition.subject_pack for definition in DEFINITIONS
+    ]:
         raise ValueError("VisualOcrRegionAssociationCaseInventory subject order drifted.")
     return entries
 
@@ -771,10 +777,14 @@ def _compile_report_snapshot(
     subject_reports = []
     for subject_pack in SUBJECT_PACKS:
         selected = [report for report in case_reports if report["subjectPack"] == subject_pack]
-        if len(selected) != 1:
+        if not selected:
             raise ValueError(f"Association subject {subject_pack} coverage drifted.")
         subject_reports.append(
-            {"subjectPack": subject_pack, "caseCount": 1, "metrics": aggregate_metrics(selected)}
+            {
+                "subjectPack": subject_pack,
+                "caseCount": len(selected),
+                "metrics": aggregate_metrics(selected),
+            }
         )
     report = {
         "schemaVersion": "1.0",

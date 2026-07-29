@@ -65,8 +65,9 @@ TRUTH_GENERATED_AT = {
     "math-function-graph": "2026-07-28T02:00:00Z",
     "junior-instrument-scale": "2026-07-28T02:01:00Z",
     "senior-circuit-label": "2026-07-28T02:02:00Z",
+    "junior-readable-measurement": "2026-07-29T05:03:00Z",
 }
-REPORT_GENERATED_AT = "2026-07-28T02:03:00Z"
+REPORT_GENERATED_AT = "2026-07-29T05:10:00Z"
 
 
 @dataclass(frozen=True)
@@ -387,7 +388,10 @@ def build_truth(definition: Any, authorities: AuthoritySet) -> dict[str, Any]:
     crop_bottom = crop_top + crop_source_bounds["height"]
     labels = []
     for index, declaration in enumerate(TEXT_DECLARATIONS[definition.case_id], start=1):
-        left, top, right, bottom = draw.textbbox(declaration.position, declaration.text)
+        if declaration.source_bounds is None:
+            left, top, right, bottom = draw.textbbox(declaration.position, declaration.text)
+        else:
+            left, top, right, bottom = declaration.source_bounds
         if right <= left or bottom <= top:
             raise ValueError(f"{definition.case_id} renderer declared a degenerate text bbox.")
         if (
@@ -693,12 +697,14 @@ def validate_inventory(inventory: dict[str, Any]) -> list[dict[str, Any]]:
         raise ValueError("VisualOcrDiagnosticCaseInventory metadata is not admitted.")
     entries = inventory.get("entries")
     if not isinstance(entries, list) or len(entries) != len(DEFINITIONS):
-        raise ValueError("VisualOcrDiagnosticCaseInventory must contain exactly three entries.")
+        raise ValueError("VisualOcrDiagnosticCaseInventory coverage drifted.")
     if [entry.get("caseId") for entry in entries if isinstance(entry, dict)] != [
         definition.case_id for definition in DEFINITIONS
     ]:
         raise ValueError("VisualOcrDiagnosticCaseInventory case order or coverage drifted.")
-    if [entry.get("subjectPack") for entry in entries if isinstance(entry, dict)] != list(SUBJECT_PACKS):
+    if [entry.get("subjectPack") for entry in entries if isinstance(entry, dict)] != [
+        definition.subject_pack for definition in DEFINITIONS
+    ]:
         raise ValueError("VisualOcrDiagnosticCaseInventory subject order drifted.")
     for entry in entries:
         if not isinstance(entry, dict):

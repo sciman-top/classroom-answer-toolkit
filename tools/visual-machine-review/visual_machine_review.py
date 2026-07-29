@@ -37,7 +37,7 @@ from visual_preprocessor import (  # noqa: E402
 CANONICAL_ROOT = (REPO_ROOT / "eval" / "visual-machine-review" / "cases").resolve()
 INVENTORY_NAME = "visual-machine-review-case-inventory.json"
 REPORT_NAME = "visual-machine-review-report.json"
-REPORT_GENERATED_AT = "2026-07-28T06:10:00Z"
+REPORT_GENERATED_AT = "2026-07-29T06:10:00Z"
 CHECK_CODES = (
     "primary_content_visibility",
     "required_label_legibility",
@@ -133,6 +133,25 @@ DEFINITIONS = (
         "60854d32152030d5867875669073b73f320c1f67bd21c5fefc82b7f6114a316e",
         "b1c7bfb96999bda5f8ca36997a32a4feb578da168001d1bd503b39a04b0ac8c4",
         (560, 280),
+    ),
+    FixtureDefinition(
+        "junior-readable-measurement",
+        "junior-physics-answer",
+        "2026-07-29T06:03:00Z",
+        ("direct_image_render",),
+        ("synthetic_diagnostic_scope_only",),
+        ("pass", "pass", "pass", "pass_with_limitation"),
+        (
+            "The rendered measurement 12 is visibly present and isolated above the baseline.",
+            "Both digits are legible as 12 in the admitted crop.",
+            "The connected glyph pixels and horizontal baseline remain spatially separated and undistorted.",
+            "The complete crop is visible, but this review remains limited to synthetic diagnostic use.",
+        ),
+        "accept_for_diagnostic_use",
+        "df60fc1e987eefde04acaad038141d16dc29a3d91f971745ffe8e4cfd29ec01e",
+        "619e236453646fdb4dfb772b3e8ead65e0597c6118af089f731a57cd57633aa6",
+        "ac5f2a7abd8ad3aeb98c83ce2db7f9cf2d02b1b7cd357aba0c8323b94b1b01ef",
+        (160, 96),
     ),
 )
 DEFINITION_BY_ID = {definition.case_id: definition for definition in DEFINITIONS}
@@ -587,7 +606,7 @@ def _compile_report_snapshot(fixture_root: Path) -> ReviewCompilation:
         for subject_pack in SUBJECT_PACKS
         for selected in [[item for item in receipts if item["subjectPack"] == subject_pack]]
     ]
-    if any(item["caseCount"] != 1 for item in subject_reports):
+    if any(item["caseCount"] == 0 for item in subject_reports):
         raise ValueError("Machine review subject coverage drifted.")
     report = {
         "schemaVersion": "1.0",

@@ -58,7 +58,7 @@ the existing stage compilers in dependency order before editing canonical reposi
 **Acceptance criteria:**
 
 - Every stage emits schema-valid, semantically valid, deterministic output.
-- Existing three case bytes remain unchanged when their current materializers replay.
+- Existing three source/crop and preprocessing/structure/OCR/spatial/association case request/result bytes remain unchanged when their current materializers replay; renderer-bound truth is expected to re-sign when the renderer source hash changes.
 - The new case reaches exact OCR truth, positive region coverage, transparent machine-review
   input, and one positive association without layout or semantic state.
 
@@ -83,7 +83,7 @@ dependency order only after the temporary rehearsal passes.
 - Structure contains exactly one eligible text-region candidate; OCR contains exactly one
   exact-text observation; spatial output contains complete Cartesian coverage and one positive
   eligible edge.
-- The original three canonical bundles remain byte-identical.
+- The original three source/crop and preprocessing/structure/OCR/spatial case request/result bundles remain byte-identical; renderer-bound truth re-signing and aggregate inventory/report updates are reviewed explicitly.
 
 **Verification:** Run `test`, `materialize:fixtures` where required, and `validate:fixtures` for
 each of the four packages; compare original-case hashes to the pre-cutover snapshot.
@@ -141,8 +141,7 @@ unmatched, unavailable, many-to-one, one-to-many, hash/path/alias, TOCTOU, and s
 ## Checkpoint: Canonical authority coherence
 
 - All eight package test and validation commands pass on the same working tree.
-- Original three fixture bundles remain unchanged except inventory/report fields that must add
-  the fourth case and therefore receive new hashes.
+- Original three source/crop and preprocessing/structure/OCR/spatial/association case request/result bundles remain unchanged. Renderer-bound truth files re-sign against the current renderer source hash; inventories/reports add the fourth case and therefore receive new hashes.
 - No partial authority, copied inventory, alternate root, live provider, or cloud egress is used.
 - `git diff --check` passes and the full intended write set is reviewed before commit.
 
@@ -202,7 +201,7 @@ the write set.
 | Fixture is tuned to extractor internals | High | Require independent renderer truth, OCR exact match, region coverage, and direct visual review; do not add case-specific extractor branches. |
 | Upstream definition change breaks downstream inventories | High | Rehearse externally, then perform one atomic canonical cutover and run all stage validators before commit. |
 | Positive diagnostic is mistaken for production quality | High | Preserve synthetic scope, negative dispositions, controls, eligibility, and explicit non-goals in schemas, semantic validators, README, and evidence. |
-| Existing fixture bytes drift during materialization | High | Snapshot original bytes and fail if any original case changes outside required aggregate inventory/report hashes. |
+| Existing fixture bytes drift during materialization | High | Snapshot original source/crop and case request/result bytes and fail on drift; separately verify the expected renderer-bound truth re-signing and aggregate inventory/report updates. |
 | Runtime grows harder to maintain | Medium | Avoid unrelated refactoring in VISION-015; schedule module extraction separately after behavior is closed. |
 
 ## Open questions

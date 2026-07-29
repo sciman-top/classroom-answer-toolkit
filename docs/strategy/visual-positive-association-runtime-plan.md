@@ -15,7 +15,7 @@ OCR observations, while the junior physics observation is disjoint from its only
 candidate. Policy-only positive geometry tests are not canonical evidence.
 
 VISION-015 therefore adds a new deterministic fixture instead of changing the existing source
-images, crops, observations, hashes, or expected results. The fixture uses a large, isolated,
+images, crops, or per-case preprocessing/structure/OCR/spatial/association results. The fixture uses a large, isolated,
 renderer-declared label inside an explicit integer crop. Before any authority is committed, a
 risk-first probe must show all of the following on the prepared local runtime:
 
@@ -130,8 +130,8 @@ figure meaning from OCR-region association alone.
 
 ## Rollback
 
-Rollback VISION-015 additions in reverse dependency order while preserving all VISION-007 through
-VISION-014 bytes and evidence. Remove only the new case's association, review, diagnostic,
+Rollback VISION-015 additions in reverse dependency order while preserving the original source,
+crop, preprocessing, structure, OCR, spatial, and association case request/result bytes. Remove only the new case's association, review, diagnostic,
 spatial, OCR, structure, preprocessing, source, inventory/report increments, validator/hotspot
 wiring, strategy, and evidence. Do not modify `.env`, OCR environments, gateway configuration,
 delivery/review authority, readiness receipts, sample-flywheel authority, or existing canonical

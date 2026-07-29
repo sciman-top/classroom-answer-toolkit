@@ -5,7 +5,7 @@
   "fixtureKind": "synthetic_fixture",
   "sourceInventory": {
     "artifactRef": "eval/visual-text-region-diagnostics/cases/visual-text-region-diagnostic-case-inventory.json",
-    "rawByteSha256": "3bcedefc65b1c26cbc1bc600a75ff1e95537f946168c29d7a38e1b438768eac5"
+    "rawByteSha256": "0d71b35805cb1e1de5c037a185c575282c395460641efe96a76eeaa5909b6a46"
   },
   "caseReports": [
     {
@@ -13,7 +13,7 @@
       "subjectPack": "math-answer",
       "truth": {
         "artifactRef": "eval/visual-ocr-diagnostics/cases/math-function-graph.visual-synthetic-text-truth.json",
-        "rawByteSha256": "9dd9b54f208b3a5c4e4126ae1fc11d17cfa0914b77b141df21cee5ff30c02444"
+        "rawByteSha256": "7acc3b64136736a419f1f5d452079860dd62229d4f264b4029492c00338f9918"
       },
       "structureExtractionResult": {
         "artifactRef": "eval/visual-structure-extraction/cases/math-function-graph.visual-structure-extraction-result.json",
@@ -68,7 +68,7 @@
       "subjectPack": "junior-physics-answer",
       "truth": {
         "artifactRef": "eval/visual-ocr-diagnostics/cases/junior-instrument-scale.visual-synthetic-text-truth.json",
-        "rawByteSha256": "5fdb62c97d7f4e1417c002a6de654a4cb3ac60ad5b49cc46580c2387920c2576"
+        "rawByteSha256": "ebb02c0ad5a18ac20a55f7e0341cfad922f54c658a94c36ff927b399b204961a"
       },
       "structureExtractionResult": {
         "artifactRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
@@ -102,7 +102,7 @@
       "subjectPack": "senior-physics-answer",
       "truth": {
         "artifactRef": "eval/visual-ocr-diagnostics/cases/senior-circuit-label.visual-synthetic-text-truth.json",
-        "rawByteSha256": "b4fccb163c41b5b6d8fe0b9efcb8dad25951bc09a4b533c1c2159a1b1a5c6000"
+        "rawByteSha256": "245f0fe62bf1238e939fd7f7d4be909057dafed544e21e806e452cbc2838170d"
       },
       "structureExtractionResult": {
         "artifactRef": "eval/visual-structure-extraction/cases/senior-circuit-label.visual-structure-extraction-result.json",
@@ -193,6 +193,61 @@
           "value": 1.0
         }
       }
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "truth": {
+        "artifactRef": "eval/visual-ocr-diagnostics/cases/junior-readable-measurement.visual-synthetic-text-truth.json",
+        "rawByteSha256": "b578283d6cfe4e1fe3bbc0aae1709301891d3f228995170f1ad161b9a9e0c267"
+      },
+      "structureExtractionResult": {
+        "artifactRef": "eval/visual-structure-extraction/cases/junior-readable-measurement.visual-structure-extraction-result.json",
+        "rawByteSha256": "ac8277a56d08d0821a0d68cb0c998da47c95a595e67d976e286de27f2a213b21",
+        "requestId": "junior-readable-measurement"
+      },
+      "matches": [
+        {
+          "truthLabelRef": "truth-label-001",
+          "textRegionCandidateRef": "text-region-001",
+          "truthBounds": {
+            "x": 74,
+            "y": 40,
+            "width": 12,
+            "height": 16
+          },
+          "candidateBounds": {
+            "x": 74,
+            "y": 40,
+            "width": 12,
+            "height": 16
+          },
+          "intersectionArea": 192.0,
+          "truthCoverage": 1.0,
+          "candidateCoverage": 1.0,
+          "diagnosticDisposition": "positive_overlap"
+        }
+      ],
+      "unmatchedTruthRefs": [],
+      "falsePositiveCandidateRefs": [],
+      "unscoredCandidateRefs": [],
+      "metrics": {
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 1,
+        "falseNegativeCount": 0,
+        "candidateCount": 1,
+        "matchedCandidateCount": 1,
+        "unscoredCandidateCount": 0,
+        "falsePositiveCount": 0,
+        "precision": {
+          "available": true,
+          "value": 1.0
+        },
+        "recall": {
+          "available": true,
+          "value": 1.0
+        }
+      }
     }
   ],
   "subjectReports": [
@@ -219,20 +274,22 @@
     },
     {
       "subjectPack": "junior-physics-answer",
-      "caseCount": 1,
+      "caseCount": 2,
       "metrics": {
-        "scorableTruthCount": 0,
-        "detectedTruthCount": 0,
+        "scorableTruthCount": 1,
+        "detectedTruthCount": 1,
         "falseNegativeCount": 0,
-        "candidateCount": 1,
-        "matchedCandidateCount": 0,
+        "candidateCount": 2,
+        "matchedCandidateCount": 1,
         "unscoredCandidateCount": 1,
         "falsePositiveCount": 0,
         "precision": {
-          "available": false
+          "available": true,
+          "value": 1.0
         },
         "recall": {
-          "available": false
+          "available": true,
+          "value": 1.0
         }
       }
     },
@@ -259,11 +316,11 @@
     }
   ],
   "totals": {
-    "scorableTruthCount": 3,
-    "detectedTruthCount": 3,
+    "scorableTruthCount": 4,
+    "detectedTruthCount": 4,
     "falseNegativeCount": 0,
-    "candidateCount": 25,
-    "matchedCandidateCount": 3,
+    "candidateCount": 26,
+    "matchedCandidateCount": 4,
     "unscoredCandidateCount": 22,
     "falsePositiveCount": 0,
     "precision": {
@@ -299,5 +356,5 @@
     "liveProvider": false,
     "cloudEgress": false
   },
-  "generatedAt": "2026-07-28T03:00:00Z"
+  "generatedAt": "2026-07-29T05:20:00Z"
 }

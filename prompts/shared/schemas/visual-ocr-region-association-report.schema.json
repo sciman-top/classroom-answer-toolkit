@@ -18,7 +18,7 @@
     "caseReports": {
       "type": "array",
       "minItems": 3,
-      "maxItems": 3,
+      "maxItems": 4,
       "items": { "$ref": "#/$defs/caseReport" }
     },
     "subjectReports": {
@@ -32,7 +32,7 @@
           "subjectPack": {
             "enum": ["math-answer", "junior-physics-answer", "senior-physics-answer"]
           },
-          "caseCount": { "const": 1 },
+          "caseCount": { "type": "integer", "minimum": 1 },
           "metrics": { "$ref": "#/$defs/reportMetrics" }
         },
         "additionalProperties": false

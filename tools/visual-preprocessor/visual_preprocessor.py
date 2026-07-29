@@ -13,7 +13,7 @@ from typing import Any
 
 import cv2
 import numpy as np
-from PIL import Image, ImageDraw, __version__ as pillow_version
+from PIL import Image, ImageDraw, ImageFont, __version__ as pillow_version
 
 
 TOOL_ROOT = Path(__file__).resolve().parent
@@ -58,6 +58,8 @@ class SyntheticTextDeclaration:
     text: str
     position: tuple[int, int]
     fill: str | tuple[int, int, int]
+    render_mode: str = "default_text"
+    source_bounds: tuple[int, int, int, int] | None = None
 
 
 DEFINITIONS = (
@@ -88,6 +90,15 @@ DEFINITIONS = (
         "2026-07-27T01:02:00Z",
         "circuit_label",
     ),
+    FixtureDefinition(
+        "junior-readable-measurement",
+        "junior-physics-answer",
+        80,
+        48,
+        (0, 0, 80, 48),
+        "2026-07-29T01:03:00Z",
+        "readable_measurement",
+    ),
 )
 DEFINITION_BY_ID = {definition.case_id: definition for definition in DEFINITIONS}
 TEXT_DECLARATIONS = {
@@ -102,6 +113,15 @@ TEXT_DECLARATIONS = {
         SyntheticTextDeclaration("A", (116, 96), (25, 85, 180)),
         SyntheticTextDeclaration("R", (223, 96), (190, 35, 45)),
         SyntheticTextDeclaration("synthetic circuit", (50, 35), (35, 70, 120)),
+    ),
+    "junior-readable-measurement": (
+        SyntheticTextDeclaration(
+            "12",
+            (34, 16),
+            "black",
+            "connected_bitmap",
+            (37, 20, 43, 28),
+        ),
     ),
 }
 
@@ -160,15 +180,45 @@ def render_synthetic_source(definition: FixtureDefinition) -> Image.Image:
             tick = 28 if index % 5 == 0 else 16
             draw.line((x, 112, x, 112 - tick), fill="black", width=2)
         draw.line((187, 122, 187, 65), fill=(190, 35, 45), width=4)
-    else:
+    elif definition.fixture_type == "circuit_label":
         draw.line((55, 105, 100, 105), fill="black", width=3)
         draw.rectangle((100, 82, 145, 128), outline="black", width=3)
         draw.line((145, 105, 205, 105), fill="black", width=3)
         draw.ellipse((205, 80, 255, 130), outline="black", width=3)
         draw.line((255, 105, 305, 105), fill="black", width=3)
         draw.line((55, 105, 55, 155, 305, 155, 305, 105), fill="black", width=3)
+    elif definition.fixture_type == "readable_measurement":
+        draw.line((10, 38, 70, 38), fill="black", width=1)
     for declaration in TEXT_DECLARATIONS[definition.case_id]:
-        draw.text(declaration.position, declaration.text, fill=declaration.fill)
+        if declaration.render_mode == "default_text":
+            draw.text(declaration.position, declaration.text, fill=declaration.fill)
+        elif declaration.render_mode == "connected_bitmap":
+            font = ImageFont.load_default()
+            bounds = font.getbbox(declaration.text)
+            glyph = Image.new(
+                "L",
+                (bounds[2] - bounds[0] + 8, bounds[3] - bounds[1] + 8),
+                255,
+            )
+            ImageDraw.Draw(glyph).text(
+                (4 - bounds[0], 4 - bounds[1]),
+                declaration.text,
+                font=font,
+                fill=0,
+            )
+            foreground = 255 - np.asarray(glyph, dtype=np.uint8)
+            connected = cv2.dilate(
+                foreground,
+                np.ones((1, 2), dtype=np.uint8),
+                iterations=1,
+            )
+            patch = Image.fromarray(255 - connected, mode="L").resize(
+                (11, glyph.height),
+                Image.Resampling.NEAREST,
+            )
+            image.paste(Image.merge("RGB", (patch, patch, patch)), declaration.position)
+        else:
+            raise ValueError(f"Unsupported synthetic text render mode: {declaration.render_mode}")
     return image
 
 
@@ -451,9 +501,11 @@ def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
     ):
         raise ValueError("VisualPreprocessingCaseInventory metadata is not admitted.")
     entries = inventory.get("entries")
-    if not isinstance(entries, list) or len(entries) != 3:
-        raise ValueError("VisualPreprocessingCaseInventory must contain exactly three entries.")
-    if [entry.get("subjectPack") for entry in entries] != list(SUBJECT_PACKS):
+    if not isinstance(entries, list) or len(entries) != len(DEFINITIONS):
+        raise ValueError("VisualPreprocessingCaseInventory coverage drifted.")
+    if [entry.get("subjectPack") for entry in entries] != [
+        definition.subject_pack for definition in DEFINITIONS
+    ]:
         raise ValueError("VisualPreprocessingCaseInventory subject packs or order drifted.")
 
     referenced_paths = {inventory_path}

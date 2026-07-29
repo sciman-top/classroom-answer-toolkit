@@ -85,6 +85,7 @@ DEFINITIONS = (
     FixtureDefinition("math-function-graph", "math-answer", "2026-07-27T03:00:00Z"),
     FixtureDefinition("junior-instrument-scale", "junior-physics-answer", "2026-07-27T03:01:00Z"),
     FixtureDefinition("senior-circuit-label", "senior-physics-answer", "2026-07-27T03:02:00Z"),
+    FixtureDefinition("junior-readable-measurement", "junior-physics-answer", "2026-07-29T03:03:00Z"),
 )
 DEFINITION_BY_ID = {definition.case_id: definition for definition in DEFINITIONS}
 
@@ -443,9 +444,11 @@ def validate_canonical_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
     ):
         raise ValueError("VisualOcrObservationCaseInventory metadata is not admitted.")
     entries = inventory.get("entries")
-    if not isinstance(entries, list) or len(entries) != 3:
-        raise ValueError("VisualOcrObservationCaseInventory must contain exactly three entries.")
-    if [entry.get("subjectPack") for entry in entries] != list(SUBJECT_PACKS):
+    if not isinstance(entries, list) or len(entries) != len(DEFINITIONS):
+        raise ValueError("VisualOcrObservationCaseInventory coverage drifted.")
+    if [entry.get("subjectPack") for entry in entries] != [
+        definition.subject_pack for definition in DEFINITIONS
+    ]:
         raise ValueError("VisualOcrObservationCaseInventory subject packs or order drifted.")
 
     referenced_paths = {inventory_path}

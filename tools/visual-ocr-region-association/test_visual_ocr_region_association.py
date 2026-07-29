@@ -44,15 +44,16 @@ class VisualOcrRegionAssociationTests(unittest.TestCase):
                 "math-function-graph": "unavailable",
                 "junior-instrument-scale": "unmatched",
                 "senior-circuit-label": "unavailable",
+                "junior-readable-measurement": "matched",
             },
         )
-        self.assertEqual(report["totals"]["matchedCaseCount"], 0)
+        self.assertEqual(report["totals"]["matchedCaseCount"], 1)
         self.assertEqual(report["totals"]["unmatchedCaseCount"], 1)
         self.assertEqual(report["totals"]["ambiguousCaseCount"], 0)
         self.assertEqual(report["totals"]["unavailableCaseCount"], 2)
-        self.assertEqual(report["totals"]["matchedAssociationCount"], 0)
-        self.assertEqual(report["totals"]["ocrObservationCount"], 1)
-        self.assertEqual(report["totals"]["associationRate"], {"available": True, "value": 0.0})
+        self.assertEqual(report["totals"]["matchedAssociationCount"], 1)
+        self.assertEqual(report["totals"]["ocrObservationCount"], 2)
+        self.assertEqual(report["totals"]["associationRate"], {"available": True, "value": 0.5})
         self.assertEqual(report["dispositions"]["acceptanceDisposition"], "not_accepted")
         self.assertFalse(report["dispositions"]["eligible"])
         self.assertEqual(report["dispositions"]["optimizationCandidateRefs"], [])
@@ -215,7 +216,7 @@ class VisualOcrRegionAssociationTests(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_canonical_fixtures_replay_in_fresh_process_contract(self) -> None:
-        self.assertEqual(validate_canonical_fixtures(), 3)
+        self.assertEqual(validate_canonical_fixtures(), len(association.DEFINITIONS))
 
     @staticmethod
     def measurement(

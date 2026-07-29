@@ -174,4 +174,10 @@
 
 - 决定：VISION-014 只把 VISION-010 中 positive-area、non-disjoint 且 observation/candidate 双向唯一的 measurement 投影为 diagnostic association；零 observation/candidate 为 unavailable，无 eligible edge 为 unmatched，任一端多 eligible edge 必须 fail closed
 - 原因：risk-first probe 显示当前 frozen authority 只有两个 empty-observation case 和一个 disjoint pair，没有可诚实提升为 canonical success 的正向样例；距离最近、OCR confidence 或 fixture truth 都不能修复这一证据缺口
-- 边界：canonical report 固定保留两例 unavailable、一例 unmatched、零 matched；正向与歧义只用非权威 policy 单元输入验证算法，不进入 canonical fixture、generated/historical/human sample 或 acceptance authority；不复制 OCR/truth text，不生成 layout semantics、FigureUnderstanding、Track B、delivery trust、WPF/live state 或 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`
+- 边界：VISION-014 首次落地时 canonical report 固定保留两例 unavailable、一例 unmatched、零 matched；正向与歧义先用非权威 policy 单元输入验证算法。后续正向 fixture 必须独立准入并重放完整 authority chain；不复制 OCR/truth text，不生成 layout semantics、FigureUnderstanding、Track B、delivery trust、WPF/live state 或 `OptimizationCandidate`，controls 保持 `not_verified`、`eligible=false`
+
+## D-033 canonical 正向 association 使用独立 public synthetic fixture
+
+- 决定：VISION-015 新增 `junior-readable-measurement`，通过未改 policy 的 VISION-007 至 VISION-014 完整链形成一份 exact OCR truth、唯一 text-region coverage、positive-area measurement 与双向唯一 canonical association；原三例 source/crop 和各层 case request/result 不改写
+- 原因：policy-only 正向单元测试不能证明 canonical runtime 能产出正向结果；独立小型 fixture 可在不篡改失败样例或手写 OCR observation 的前提下补齐正向 plumbing 证据。两轮风险探针失败后，仅调整公开 synthetic renderer，最终 OCR 输出 `12` 且唯一 endpoint 交面积为 `192`
+- 边界：VISION-011 truth 绑定当前 renderer 源文件 SHA-256，故原三份 truth 随 renderer 定义扩展合法重签；inventory/report 随第四例更新。当前两例 unavailable、一例 unmatched、一例 matched 与 `0.5` association rate 只描述 synthetic fixture coverage，不构成真实 OCR/region/association precision 或 recall、layout semantics、`FigureUnderstandingResult`、Track B、delivery trust、WPF workflow、gateway live verified、real-data/workstation/live acceptance；不启 cloud egress、不改 `.env`、不生成 `OptimizationCandidate`，receipt/controls/eligibility 保持原状态

@@ -173,6 +173,7 @@
 - VISION-012 provider-neutral text-region diagnostic runtime；只对 generator-declared synthetic text/bbox truth 与 canonical heuristic text-region candidates 做 positive-overlap 诊断，按 subject-pack 报告 fully-visible truth recall、candidate precision 与 partial unscored 数量
 - VISION-013 provider-neutral machine visual review compiler；只把当前 `ai_agent` 对 canonical synthetic crop 的显式 verdict/checks/limitations 固化为 hash-bound receipt，并按 subject-pack 重算 diagnostic-scope review coverage
 - VISION-014 provider-neutral OCR-region association diagnostic；只从 canonical VISION-008/009/010 authority 选择双向唯一的 positive-area edge，按 subject-pack 报告 matched/unmatched/ambiguous/unavailable，当前 canonical truth 保持零正向 match
+- VISION-015 public synthetic positive-association fixture；完整重放 VISION-007 至 VISION-014，在不改变 association policy 的前提下追加一份 exact OCR truth、唯一 text-region coverage 与双向唯一 positive-area canonical match，并保持 diagnostic-only 边界
 
 ### 涉及文件面
 
@@ -209,10 +210,10 @@
 - canonical 2x crop 可确定性生成并重验非语义结构候选；它只证明 primitive extraction plumbing，不等于 OCR、layout semantics、FigureUnderstandingResult 或 Track B
 - canonical 2x crop 可在 admitted package/model hashes 上重放 OCR observation；它只证明 OCR plumbing，不等于识别正确、OCR acceptance、layout semantics 或 Track B
 - canonical structure/OCR results 可确定性重放 exhaustive spatial measurements；它只证明 geometry plumbing，不等于匹配正确、layout semantics、FigureUnderstanding 或 Track B
-- renderer source declarations 与 canonical OCR results 可确定性重算 synthetic diagnostic metrics；它只证明三份冻结 fixture 的 exact-text 漏检/误检，不等于人工 truth、真实 OCR benchmark 或 OCR acceptance
-- renderer source declarations 与 canonical structure results 可确定性重算 text-region diagnostic metrics；它只证明三份冻结 fixture 的 spatial proposal coverage，不等于文字识别、OCR-region association、layout semantics 或 Track B acceptance
+- renderer source declarations 与 canonical OCR results 可确定性重算 synthetic diagnostic metrics；当前四份 fixture 保留前三份漏检/误检并新增一份 exact-text 正向诊断，不等于人工 truth、真实 OCR benchmark 或 OCR acceptance
+- renderer source declarations 与 canonical structure results 可确定性重算 text-region diagnostic metrics；当前四份 fixture 保留前三份结果并新增一份唯一正向 coverage，不等于文字识别、真实 region benchmark、layout semantics 或 Track B acceptance
 - current AI visual checks 可由 raw-byte-bound receipts 与 deterministic aggregate report 重验；它只在 `synthetic_fixture_diagnostic` 范围内等效替代人工检查，不能冒充 human identity、delivery trust 或 live acceptance
-- canonical structure/OCR/spatial authority 可确定性重算 association policy outcome；当前只证明两例 unavailable 与一例 unmatched，零 canonical match 不得被测试用正向 geometry 冒充
+- canonical structure/OCR/spatial authority 可确定性重算 association policy outcome；当前证明两例 unavailable、一例 unmatched 与一例 public synthetic matched，不能把 fixture coverage 冒充真实 association 质量
 
 ### 验证方式
 

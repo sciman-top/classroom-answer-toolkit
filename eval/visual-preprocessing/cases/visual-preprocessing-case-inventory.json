@@ -36,6 +36,17 @@
       "requestSha256": "9d8c2b1ad01bbd53ee7e77f11e0601663ab714fddd9c2f48504e68fcb070d68b",
       "expectedResultRef": "senior-circuit-label.visual-preprocessing-result.json",
       "expectedResultSha256": "aa29231239edf9e7ec7142e52abfa07062bdbd7f42955768b060bd8fa20cf1fa"
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "sourceRef": "junior-readable-measurement.source.png",
+      "sourceSha256": "58115ee4199983e2db264d5c23f26999454c2fc80203e619710a9e34ce5e4c89",
+      "sourceDecodedRgbPixelSha256": "ce49f43cfe02cd00e7ea3c116d32c8d3148aee2617dadf858baf003f952b8d3f",
+      "requestRef": "junior-readable-measurement.visual-preprocessing-request.json",
+      "requestSha256": "0ff1874865fe8fedef002b11ed15d08f00dc1f6dd510218bf502e0dbbd65c804",
+      "expectedResultRef": "junior-readable-measurement.visual-preprocessing-result.json",
+      "expectedResultSha256": "df60fc1e987eefde04acaad038141d16dc29a3d91f971745ffe8e4cfd29ec01e"
     }
   ]
 }

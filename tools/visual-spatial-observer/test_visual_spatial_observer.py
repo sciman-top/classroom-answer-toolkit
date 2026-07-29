@@ -32,14 +32,15 @@ class VisualSpatialObserverTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.authorities = validate_upstream_authorities()
 
-    def test_three_canonical_fixtures_replay_deterministically(self) -> None:
-        self.assertEqual(validate_canonical_fixtures(), 3)
+    def test_all_canonical_fixtures_replay_deterministically(self) -> None:
+        self.assertEqual(validate_canonical_fixtures(), len(DEFINITIONS))
 
     def test_canonical_outputs_preserve_geometry_only_boundary(self) -> None:
         expected_counts = {
             "math-function-graph": (1, 0, 0),
             "junior-instrument-scale": (1, 1, 1),
             "senior-circuit-label": (23, 0, 0),
+            "junior-readable-measurement": (1, 1, 1),
         }
         for request_path in sorted(CANONICAL_ROOT.glob("*.visual-spatial-observation-request.json")):
             result = compile_request(request_path, CANONICAL_ROOT, self.authorities)

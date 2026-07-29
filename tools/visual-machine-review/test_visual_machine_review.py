@@ -34,11 +34,11 @@ from visual_machine_review import (
 class VisualMachineReviewTests(unittest.TestCase):
     def test_canonical_report_preserves_machine_identity_and_scope(self) -> None:
         report = self.read_json(CANONICAL_ROOT / REPORT_NAME)
-        self.assertEqual(report["totals"]["reviewedCaseCount"], 3)
-        self.assertEqual(report["totals"]["acceptedCaseCount"], 3)
+        self.assertEqual(report["totals"]["reviewedCaseCount"], len(review.DEFINITIONS))
+        self.assertEqual(report["totals"]["acceptedCaseCount"], len(review.DEFINITIONS))
         self.assertEqual(report["totals"]["rejectedCaseCount"], 0)
-        self.assertEqual(report["totals"]["limitedCaseCount"], 3)
-        self.assertEqual(report["totals"]["machineReviewedCount"], 3)
+        self.assertEqual(report["totals"]["limitedCaseCount"], len(review.DEFINITIONS))
+        self.assertEqual(report["totals"]["machineReviewedCount"], len(review.DEFINITIONS))
         self.assertEqual(report["totals"]["humanReviewedCount"], 0)
         self.assertEqual(
             report["dispositions"]["equivalencePolicy"],
@@ -332,7 +332,7 @@ class VisualMachineReviewTests(unittest.TestCase):
     def test_materialization_and_report_replay_are_deterministic(self) -> None:
         with tempfile.TemporaryDirectory(prefix="visual-machine-review-materialize-") as temp:
             root = Path(temp) / "cases"
-            self.assertEqual(materialize_fixtures(root), 3)
+            self.assertEqual(materialize_fixtures(root), len(review.DEFINITIONS))
             for name in (
                 INVENTORY_NAME,
                 REPORT_NAME,

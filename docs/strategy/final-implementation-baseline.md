@@ -512,7 +512,7 @@ P1 样例集默认人工拆分题面/答案：
 - truth label 固定区分 `fully_visible / partially_clipped / outside_crop`；只有 `fully_visible` label 进入召回分母。exact case-sensitive text 且 OCR quad axis-aligned bounds 与 truth bbox 正面积相交才形成 diagnostic match；partial label 只允许产生 unscored observation，不贡献召回或正向准确性。
 - report 按 subject-pack 独立记录 scorable truth、detected truth、false negative、observation、matched observation、unscored observation、false positive，以及带 availability 的 precision/recall；零分母必须显式 unavailable，禁止伪造 0 或 1。
 - result 固定 `diagnosticScope=generator_declared_synthetic_fixture / acceptanceDisposition=not_accepted / requiresHumanReview=true / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`，并保持 local deterministic、禁云 provenance。
-- 本切片只证明三份冻结 synthetic fixture 的 source-declared OCR diagnostics，不构成人工 ground truth、真实 OCR benchmark、OCR acceptance、OCR-region association、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
+- VISION-015 追加第四份 public synthetic fixture 后，前三份既有诊断结果保持，新增 fixture 形成一份 exact-text 正向诊断；这只证明 committed synthetic fixture 的 source-declared OCR diagnostics，不构成人工 ground truth、真实 OCR benchmark、OCR acceptance、layout semantics、FigureUnderstanding 或 Track B。receipt/controls/eligibility 与 workflow/live 边界保持不变。
 
 ### VISION-012 generator-declared synthetic text-region diagnostic 边界
 
@@ -520,7 +520,7 @@ P1 样例集默认人工拆分题面/答案：
 - 只有 `fully_visible` truth label 进入召回分母；candidate bbox 与其 crop intersection bbox 正面积相交才形成 diagnostic match。candidate 只命中 `partially_clipped` truth 时记为 unscored；`outside_crop` truth 不保护 candidate。一个 candidate 命中多个 fully-visible truth，或一个 fully-visible truth 命中多个 candidates，必须 fail closed。
 - report 按 subject-pack 独立记录 scorable/detected truth、candidate/matched/unscored/false-positive candidate，以及带 availability 的 precision/recall；零分母显式 unavailable。报告不得复制 truth text，也不得从 candidate 推断 recognized text。
 - result 固定 `diagnosticScope=generator_declared_synthetic_fixture / candidateKind=text_region_candidate / acceptanceDisposition=not_accepted / requiresHumanReview=true / ocrDisposition=not_inferred / associationDisposition=not_decided / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`，并保持 local deterministic、禁云 provenance。
-- 本切片只证明三份冻结 synthetic fixture 的 heuristic text-region spatial proposal diagnostics，不构成人工 ground truth、真实 region benchmark、文字识别、OCR-region association、layout semantics、FigureUnderstanding 或 Track B；不接 WPF/gateway/readiness/trust/optimizer，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 workflow/live 边界保持不变。
+- VISION-015 追加第四份 public synthetic fixture 后，前三份既有结果保持，新增 fixture 形成一份唯一正向 coverage；这只证明 committed synthetic fixture 的 heuristic text-region spatial proposal diagnostics，不构成人工 ground truth、真实 region benchmark、文字识别、layout semantics、FigureUnderstanding 或 Track B。receipt/controls/eligibility 与 workflow/live 边界保持不变。
 
 ### VISION-013 machine-equivalent synthetic visual review 边界
 
@@ -528,16 +528,23 @@ P1 样例集默认人工拆分题面/答案：
 - reviewer 身份固定为 `reviewerKind=ai_agent / humanReviewed=false / attestationClass=unattested_local_machine_review`；等效政策固定为 `synthetic_fixture_equivalent`，且仅在 `acceptanceScope=synthetic_fixture_diagnostic` 内替代人工视觉检查。任何把它投影为真人身份、签名或 `humanApproved` 的行为均为合同错误。
 - 每份 receipt 完整记录 primary-content visibility、required-label legibility、geometry integrity、crop-boundary disclosure 与 known limitations；已知 clipping 不得被静默折叠为无条件 clean pass。report 按 subject-pack 独立统计 accepted/rejected/limited、machine/human reviewed counts。
 - report compiler 只重验 upstream/receipt raw bytes、decoded RGB pixel hash、dimensions、coverage、policy 和 computed fields，不声称能确定性重演 AI 视觉判断；runtime output 仍需在 promotion 前重验全部快照。
-- 本切片只证明三份公开 synthetic fixture 已由当前 AI 视觉审查并可在该诊断范围内等效替代人工检查；不构成人工身份、真实视觉 benchmark、真实数据验收、OCR/layout/Track B correctness、delivery trust、WPF workflow 或 live acceptance，不生成 `OptimizationCandidate`。receipt/controls/eligibility 保持不变。
+- VISION-015 追加第四份 public synthetic fixture 后，四份 crop 均由当前 AI 视觉审查并可在该诊断范围内等效替代人工检查；不构成人工身份、真实视觉 benchmark、真实数据验收、OCR/layout/Track B correctness、delivery trust、WPF workflow 或 live acceptance，不生成 `OptimizationCandidate`。receipt/controls/eligibility 保持不变。
 
 ### VISION-014 OCR-region association diagnostic 边界
 
 - `VisualOcrRegionAssociationRequest / Result / CaseInventory / Report` 与 OCR correctness、layout、FigureUnderstanding、TrackResult 和 acceptance 合同分离，只消费 same-case canonical VISION-008 structure、VISION-009 OCR 和 VISION-010 spatial result。
 - eligible edge 只能来自正交面积大于零且 relation 非 `disjoint` 的 VISION-010 measurement；只有 observation 与 candidate 双向唯一时才形成 association。任一端出现多个 eligible edge 都是 ambiguity，必须 fail closed，不能以距离或 confidence 猜选。
 - 零 candidate 或零 observation 的 case 固定 `unavailable`；双方非空但没有 eligible edge 固定 `unmatched`。所有零分母比率显式 unavailable，report 按 subject-pack 独立统计 matched/unmatched/ambiguous/unavailable。
-- risk-first probe 证明当前 frozen authority 没有正向 canonical association：math/senior OCR observation 为空，junior 唯一 pair 为 disjoint。因此 canonical report 固定为两例 unavailable、一例 unmatched、零 matched；正向和歧义只作为非权威 policy 单元回归，不写入 canonical fixture 或样本真值。
+- VISION-014 risk-first probe 证明原三份 frozen authority 没有正向 canonical association：math/senior OCR observation 为空，junior instrument 唯一 pair 为 disjoint。VISION-015 保留这些结果并追加一份独立准入的 public synthetic fixture；该 fixture 只有一组 positive-area 且双向唯一的 endpoint，因此 canonical report 为两例 unavailable、一例 unmatched、一例 matched。
 - result/report 不复制 OCR text 或 generator truth，不推断 recognized text、layout relation、题号/图号或学科语义，固定 `acceptanceDisposition=not_accepted / requiresHumanReview=true / layoutDisposition=not_inferred / semanticDisposition=not_inferred / trackDisposition=not_integrated`。
 - 本切片只证明冻结 synthetic fixture 上的 association policy plumbing；不构成 OCR correctness、真实 association benchmark、FigureUnderstanding、Track B、delivery trust、WPF workflow 或 live acceptance，不使用真实数据，不生成 `OptimizationCandidate`。receipt/controls/eligibility 与 gateway/workflow/live 边界保持不变。
+
+### VISION-015 positive synthetic association 边界
+
+- 新增 `junior-readable-measurement` public synthetic fixture，通过既有 VISION-007 至 VISION-014 authority chain 产生唯一 OCR observation、唯一 eligible text-region candidate、一份 positive-area spatial measurement 和一份双向唯一 association；不增加 case-specific extractor 或 association policy 分支。
+- source/crop 与 VISION-007/008/009/010/014 原三例 case request/result 保持 byte-identical；VISION-011 原三份 truth 因绑定当前 renderer 源文件 SHA-256 而合法重签，inventory/report 随第四例覆盖面更新。该 renderer-bound 重签不能被描述为前三例所有 bytes 不变。
+- canonical aggregate 当前包含两例 unavailable、一例 unmatched、一例 matched；两份 OCR observations 中一份形成 association，association rate 为 `0.5`。这些是 fixture coverage 指标，不是现实数据上的 precision、recall 或质量结论。
+- 本切片不生成 layout relation、学科语义、`FigureUnderstandingResult`、Track B、delivery trust、WPF workflow 或 live acceptance；不启 cloud egress、不修改 `.env`、不使用真实数据、不生成 `OptimizationCandidate`。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 保持不变。
 
 ### Track 定义
 

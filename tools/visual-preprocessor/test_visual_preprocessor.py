@@ -11,6 +11,7 @@ from PIL import Image
 
 from visual_preprocessor import (
     CANONICAL_ROOT,
+    DEFINITIONS,
     INVENTORY_NAME,
     REPO_ROOT,
     compile_request,
@@ -23,8 +24,8 @@ from visual_preprocessor import (
 
 
 class VisualPreprocessorTests(unittest.TestCase):
-    def test_three_canonical_fixtures_replay_deterministically(self) -> None:
-        self.assertEqual(validate_canonical_fixtures(), 3)
+    def test_all_canonical_fixtures_replay_deterministically(self) -> None:
+        self.assertEqual(validate_canonical_fixtures(), len(DEFINITIONS))
 
     def test_one_x_preserves_pixels_and_two_x_uses_nearest_dimensions(self) -> None:
         request_path = CANONICAL_ROOT / "math-function-graph.visual-preprocessing-request.json"

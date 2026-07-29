@@ -5,7 +5,7 @@
   "fixtureKind": "synthetic_fixture",
   "sourceInventory": {
     "artifactRef": "eval/visual-ocr-region-association/cases/visual-ocr-region-association-case-inventory.json",
-    "rawByteSha256": "30192916f972cf9dc9adc9efdd761a6f5983305bfda1fa52b9835915fb449154"
+    "rawByteSha256": "2926e6429fb3693ab9c19da01b6faea3f12060ba32f2fc6627b2f78a3cefb9d3"
   },
   "caseReports": [
     {
@@ -83,6 +83,32 @@
           "available": false
         }
       }
+    },
+    {
+      "caseId": "junior-readable-measurement",
+      "subjectPack": "junior-physics-answer",
+      "associationResult": {
+        "artifactRef": "eval/visual-ocr-region-association/cases/junior-readable-measurement.visual-ocr-region-association-result.json",
+        "rawByteSha256": "016116b9964e31e412bb40b2ec789a047e42dac7289814925b6e54254370b799",
+        "requestId": "junior-readable-measurement"
+      },
+      "associationStatus": "matched",
+      "metrics": {
+        "caseCount": 1,
+        "matchedCaseCount": 1,
+        "unmatchedCaseCount": 0,
+        "ambiguousCaseCount": 0,
+        "unavailableCaseCount": 0,
+        "textRegionCandidateCount": 1,
+        "ocrObservationCount": 1,
+        "matchedAssociationCount": 1,
+        "unmatchedTextRegionCandidateCount": 0,
+        "unmatchedOcrObservationCount": 0,
+        "associationRate": {
+          "available": true,
+          "value": 1.0
+        }
+      }
     }
   ],
   "subjectReports": [
@@ -107,21 +133,21 @@
     },
     {
       "subjectPack": "junior-physics-answer",
-      "caseCount": 1,
+      "caseCount": 2,
       "metrics": {
-        "caseCount": 1,
-        "matchedCaseCount": 0,
+        "caseCount": 2,
+        "matchedCaseCount": 1,
         "unmatchedCaseCount": 1,
         "ambiguousCaseCount": 0,
         "unavailableCaseCount": 0,
-        "textRegionCandidateCount": 1,
-        "ocrObservationCount": 1,
-        "matchedAssociationCount": 0,
+        "textRegionCandidateCount": 2,
+        "ocrObservationCount": 2,
+        "matchedAssociationCount": 1,
         "unmatchedTextRegionCandidateCount": 1,
         "unmatchedOcrObservationCount": 1,
         "associationRate": {
           "available": true,
-          "value": 0.0
+          "value": 0.5
         }
       }
     },
@@ -146,19 +172,19 @@
     }
   ],
   "totals": {
-    "caseCount": 3,
-    "matchedCaseCount": 0,
+    "caseCount": 4,
+    "matchedCaseCount": 1,
     "unmatchedCaseCount": 1,
     "ambiguousCaseCount": 0,
     "unavailableCaseCount": 2,
-    "textRegionCandidateCount": 25,
-    "ocrObservationCount": 1,
-    "matchedAssociationCount": 0,
+    "textRegionCandidateCount": 26,
+    "ocrObservationCount": 2,
+    "matchedAssociationCount": 1,
     "unmatchedTextRegionCandidateCount": 25,
     "unmatchedOcrObservationCount": 1,
     "associationRate": {
       "available": true,
-      "value": 0.0
+      "value": 0.5
     }
   },
   "associationPolicySha256": "043d9eaba59ef947086f40641ad6b262bd03fe1c9e95dda899db5ec72d768c80",
@@ -189,5 +215,5 @@
     "liveProvider": false,
     "cloudEgress": false
   },
-  "generatedAt": "2026-07-28T07:10:00Z"
+  "generatedAt": "2026-07-29T07:10:00Z"
 }
