@@ -43,6 +43,7 @@
 - 再以 VISION-012 将同一 truth authority 与 VISION-008 heuristic text-region candidates 做 positive-area spatial diagnostic；fully-visible label 一对一 overlap 才计分，partial overlap 只记 unscored，不识别文本、不接 OCR、不推断 layout/association/Track B
 - 再以 VISION-013 对三份公开 synthetic 2x crop 建立 transparent `ai_agent` visual review receipt；只在 `synthetic_fixture_diagnostic` 内视为人工检查等效，保持 `humanReviewed=false`，不接 delivery trust/WPF/live acceptance
 - 再以 VISION-014 对 VISION-010 exhaustive measurements 应用双向唯一、正交面积 association policy；当前 frozen authority 诚实输出两例 unavailable 与一例 unmatched，正向/歧义仅作非权威 policy 回归，不伪造 canonical success
+- 再以 VISION-015 新增一份独立准入的公开 synthetic fixture，在不改写前三份冻结 authority 的前提下完整重放 VISION-007 至 VISION-014，并仅当 OCR exact truth、text-region coverage、positive-area geometry 与双向唯一 policy 同时成立时形成一个 canonical positive association；该结果仍不构成真实 association benchmark、layout semantics 或 Track B
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 
