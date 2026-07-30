@@ -1,0 +1,11 @@
+{
+  "name": "classroom-toolkit-track-orchestrator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "materialize:fixtures": "node track-orchestrator.mjs materialize",
+    "validate:fixtures": "node track-orchestrator.mjs validate",
+    "test": "node --test track-orchestrator.test.mjs"
+  }
+}

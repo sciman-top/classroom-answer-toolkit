@@ -28,7 +28,11 @@ export function compileDecisionRecord(options) {
   const generatedAt = options.generatedAt ?? new Date().toISOString();
   const humanApproved = options.humanApproved === true;
 
-  const evidenceMissing = hasMissingEvidence(evidenceBundle, trackResults);
+  const evidenceMissing = hasMissingEvidence(
+    evidenceBundle,
+    trackResults,
+    options.requiredTrackTypes ?? []
+  );
   const bindingUnstable = evidenceBundle.binding?.status !== "stable";
   const ocrImageConflict = hasOcrImageConflict(evidenceBundle, trackResults);
   const dualTrackMatch = hasDualTrackMatch(trackResults);
@@ -145,12 +149,14 @@ export function validateDecisionRecord(decisionRecord) {
   return validateValueAgainstSchema(decisionRecord, decisionRecordSchemaPath);
 }
 
-function hasMissingEvidence(evidenceBundle, trackResults) {
+function hasMissingEvidence(evidenceBundle, trackResults, requiredTrackTypes) {
+  const presentTrackTypes = new Set(trackResults.map((trackResult) => trackResult.trackType));
   return (evidenceBundle.figureRefs ?? []).length === 0
     || (evidenceBundle.cropRefs ?? []).length === 0
     || (evidenceBundle.evidenceRefs ?? []).length === 0
     || evidenceBundle.binding?.status !== "stable"
-    || trackResults.some((trackResult) => (trackResult.missingEvidenceRefs ?? []).length > 0);
+    || trackResults.some((trackResult) => (trackResult.missingEvidenceRefs ?? []).length > 0)
+    || requiredTrackTypes.some((trackType) => !presentTrackTypes.has(trackType));
 }
 
 function hasDualTrackMatch(trackResults) {
@@ -168,11 +174,11 @@ function hasDualTrackConflict(trackResults) {
 function answerCandidates(trackResults) {
   return trackResults
     .filter((trackResult) => trackResult.trackType !== "rule_validator")
-    .map((trackResult) => normalizeAnswer(trackResult.answerCandidate))
+    .map((trackResult) => normalizeAnswerCandidate(trackResult.answerCandidate))
     .filter(Boolean);
 }
 
-function normalizeAnswer(answer) {
+export function normalizeAnswerCandidate(answer) {
   const value = String(answer ?? "").trim().toLowerCase();
   if (value.length === 0 || value.startsWith("blocked:")) {
     return "";

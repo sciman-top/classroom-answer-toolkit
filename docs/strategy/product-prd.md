@@ -88,6 +88,7 @@ Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一�
 - VISION-016 只把独立声明的 `measurement_reading` 角色投影到 VISION-011/012/014 已共同证明的唯一 truth/OCR/candidate association 上；recognized text 只来自绑定 OCR observation，不构成 layout、FigureUnderstanding、Track B、答案或 trust authority。
 - VISION-017 只把一份 public synthetic question authority、ProblemEvidenceBundle 与 VISION-016 projection 绑定为 deterministic `ocr_layout_solver` TrackResult；数值只取 OCR-bound text，quantity/unit 只取题干显式 authority，候选固定 review required，不构成通用题意/单位理解、Track C、DecisionRecord acceptance、workflow integrated 或 live accepted。
 - VISION-018 只对 VISION-017 的 question/bundle/projection/solver-request/Track B 五份 current bytes 执行七项 deterministic Track C consistency checks；canonical checks 全部 pass 仍固定 review required、untrusted、controls not verified，不能写成答案已批准、三轨已编排、DecisionRecord 已接受或 live accepted。
+- VISION-019 实际准入并编排一组 public synthetic Track A/B/C，分别报告 A/B agreement/conflict、complete/degraded inventory、Track C 与全源 blocking findings，并只调用既有 DecisionRecord compiler；canonical DecisionRecord 仍为 review required/untrusted，不能写成真实 provider orchestration、答案批准、WPF workflow、gateway/workstation verified 或 live accepted。
 - 高风险视觉题的新增主链必须先经过视觉证据编译器，形成 `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`，不得从整页图直接跳到可信答案。
 - Typst 主渲染属于终局迁移目标；未通过 parity gate 前，不得把当前运行时描述为 Typst 已上线。
 - 自动验收与优化候选只能在门禁通过、数据边界允许、真值可靠时推进。

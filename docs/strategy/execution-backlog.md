@@ -392,6 +392,16 @@
 - blocks: VISION-017
 - done_definition: 仓内可从五份 current raw-byte authority 确定性重算七项 synthetic Track C consistency checks、一份 ConsistencyReport 与一份 `rule_validator` TrackResult；canonical checks pass 仍固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side limited consistency validation，不构成真实 grounding、Track orchestration、DecisionRecord acceptance、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
 
+### task_id: VISION-019
+
+- goal: 建立首个实际消费 independent Track A/B/C source artifacts、复用 canonical DecisionRecord compiler 的 provider-neutral synthetic orchestration runtime
+- inputs: VISION-017 question/ProblemEvidenceBundle/Track B、VISION-018 Track C、同 question 的独立 public synthetic Track A、现有 `TrackResult / DecisionRecord` contracts
+- changes: 新增 `TrackOrchestrationRequest / Report` schema、raw-byte/path/type/question/bundle source admission、fixed A/B/C inventory、A/B normalized comparison、独立 complete/degraded 与 Track C/source-blocking 投影、external atomic report+DecisionRecord runtime；DecisionRecord compiler 增加 required-track evidence-loss 输入并导出同一 normalization helper；纳入 hotspot
+- verification: three-track agreement、A/B conflict、missing A、missing C while agreement、Track C blocking、source hash/question/duplicate/required-set shrink drift、4 artifact byte-exact replay、external request、existing/repository/junction output rejection；完整固定顺序项目门禁
+- rollback: 先回滚 VISION-019 evidence，再回滚本切片 strategy/hotspot/canonical/schema/runtime/tests 与 DecisionRecord additive hook；保留 VISION-007 至 VISION-018 authorities、commits `c291f9d`/`9c0d4f5`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
+- blocks: VISION-017, VISION-018
+- done_definition: 仓内可从 current raw bytes 准入一组 public synthetic Track A/B/C，独立报告 candidate agreement/conflict、track degradation、Track C 与全源 blocking findings，并通过既有 compiler 生成 fail-closed DecisionRecord；canonical result 固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side orchestration/evidence-compiler runtime，不构成真实 provider Track A/B/C、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

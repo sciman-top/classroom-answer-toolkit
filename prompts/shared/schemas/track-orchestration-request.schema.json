@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/track-orchestration-request/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "TrackOrchestrationRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "requestId",
+    "subjectPack",
+    "fixtureKind",
+    "requestArtifactRef",
+    "question",
+    "evidenceBundle",
+    "tracks",
+    "expectedTrackTypes",
+    "outputs",
+    "orchestrationPolicySha256",
+    "dispositions",
+    "requestedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "track-orchestration-request" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "subjectPack": { "type": "string", "minLength": 1 },
+    "fixtureKind": { "type": "string", "minLength": 1 },
+    "requestArtifactRef": { "type": "string", "minLength": 1 },
+    "question": { "$ref": "#/$defs/questionBinding" },
+    "evidenceBundle": { "$ref": "#/$defs/evidenceBundleBinding" },
+    "tracks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/trackBinding" }
+    },
+    "expectedTrackTypes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/trackType" }
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["orchestrationReportRef", "decisionRecordRef"],
+      "properties": {
+        "orchestrationReportRef": { "type": "string", "minLength": 1 },
+        "decisionRecordRef": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "orchestrationPolicySha256": { "$ref": "#/$defs/sha256" },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "scope",
+        "requiresHumanReview",
+        "acceptanceDisposition",
+        "controlsDisposition",
+        "eligible",
+        "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "scope": { "const": "public_synthetic_track_orchestration" },
+        "requiresHumanReview": { "const": true },
+        "acceptanceDisposition": { "const": "not_accepted" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false },
+        "optimizationCandidateRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    },
+    "requestedAt": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "trackType": {
+      "type": "string",
+      "enum": ["vlm_direct", "ocr_layout_solver", "rule_validator"]
+    },
+    "questionBinding": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "questionId", "questionRef"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "questionId": { "type": "string", "minLength": 1 },
+        "questionRef": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "evidenceBundleBinding": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "evidenceBundleId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "evidenceBundleId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "trackBinding": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "trackType", "trackResultId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "trackType": { "$ref": "#/$defs/trackType" },
+        "trackResultId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

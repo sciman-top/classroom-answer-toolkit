@@ -168,6 +168,16 @@ Assert-CommandSuccess {
     npm --prefix tools/synthetic-track-validator run validate:fixtures
 } "Synthetic Track C validator canonical fixture validation failed."
 
+Write-Host "synthetic Track A/B/C orchestration contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/track-orchestrator test
+} "Synthetic Track A/B/C orchestration contract tests failed."
+
+Write-Host "synthetic Track A/B/C orchestration canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/track-orchestrator run validate:fixtures
+} "Synthetic Track A/B/C orchestration canonical fixture validation failed."
+
 Write-Host "visual machine review contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-machine-review test

@@ -570,6 +570,14 @@ P1 样例集默认人工拆分题面/答案：
 - canonical Track C 固定 high risk、review required、`humanApproved=false`、`trusted=false`、`visualReviewPassed=null`、controls not verified、`eligible=false`、`optimizationCandidateRefs=[]`，且推荐 `acceptance_tier_unverified`。
 - 本切片不生成 DecisionRecord，不做 Track A/B/C orchestration、比较/冲突/降级、WPF/review writeback、gateway live、workstation 或 live acceptance；`ReadinessControlReceipt=unattested_local_record` 保持不变。
 
+### VISION-019 synthetic Track A/B/C orchestration 边界
+
+- `TrackOrchestrationRequest` 绑定 VISION-017 question/ProblemEvidenceBundle/Track B、VISION-018 Track C 与同 question 的独立 public synthetic Track A current bytes，并固定 A/B/C required inventory 与 orchestration policy；请求不能缩小 required set 绕过 degradation。
+- runtime 对每份 source 重新验证 repository-relative path、raw-byte SHA-256、Track type/id、evidence-bundle 与 exact question binding；A/B candidate normalization 直接复用 canonical DecisionRecord helper，不形成第二套比较语义。
+- `TrackOrchestrationReport` 正交记录 A/B `agreement/conflict/not_comparable` 与 overall `complete/degraded`，并把 Track C disposition 与全源 blocking finding refs 分开；canonical Track C pass 不隐藏 Track B 的 `synthetic_track_b_requires_review` blocker。
+- runtime 把 actual source tracks 和 required types 交给既有 DecisionRecord compiler；canonical DecisionRecord 为 `review_required`、`trusted=false`、`visualReviewPassed=null`、`high_risk_approval`，包含 `dual_track_match / rule_validator_failed / acceptance_tier_unverified / review_pending`，不输出 accepted answer。
+- 本切片只证明 repo-side public synthetic source admission、orchestration 与 evidence-compiler runtime，不证明 Track A VLM、production Track B/C、答案正确、review approval、WPF workflow、gateway/workstation 或 live acceptance；controls 仍 not verified、`eligible=false`，`ReadinessControlReceipt=unattested_local_record` 不变，不生成 `OptimizationCandidate`。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

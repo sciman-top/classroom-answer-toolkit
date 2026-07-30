@@ -35,13 +35,14 @@
 
 - `tools/ai-gateway/vision-request.mjs`：显式 Track A 视觉探针，返回并校验 `TrackResult`。
 - `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
+- `tools/track-orchestrator/track-orchestrator.mjs`：从 current raw bytes 准入 Track A/B/C，分别记录 candidate comparison、track degradation、Track C 与全源 blockers，并只调用上述 DecisionRecord compiler；当前 canonical inputs 全部为 public synthetic。
 - `tools/visual-evidence/attach-decision.mjs`：校验本地 `DecisionRecord` 与 delivery manifest，把本次写入的直接前像原子刷新到 rollback backup 后，再原子附着 `visualDecisionRef / visualReviewPassed / trusted`；不生成审批、不推进 lifecycle。
 - `tools/visual-evidence/delivery-decision-aggregate.mjs`：基于原始 bytes SHA-256、snapshot/input/manifest、sample-package inventory 和逐题 DecisionRecord 编译交付级 aggregate；只生成离线证据，不修改 manifest。
 - `tools/visual-evidence/attach-delivery-decision-aggregate.mjs`：重验 aggregate 对应的 manifest preimage，在共享 manifest 写锁内固定全部绑定源的 bytes 快照，写 receipt 与 backup 后、最终替换前再次核对，再原子附着 delivery-level trust；不推进 lifecycle。
 - `eval/visual-evidence/`：保存双轨一致但证据链缺失、不安全捷径绕过 grounding 仍 fail-closed 的回归样例。
 - WPF 交付入口：一次答案交付后投影 delivery manifest 的 `review.lifecycle / visualDecisionRef / visualReviewPassed / trusted`，允许选择本地 JSON 题目决策或 delivery aggregate 交给上述受控工具附着；aggregate 附着成功后立即 source-aware 重验，只有同批 manifest bytes 匹配 receipt hash 才投影正向时间点状态。
 
-该闭环证明 `TrackResult -> DecisionRecord -> delivery manifest -> WPF refresh` 的受控合同路径可以运行，但不等于局部高清 crop、OCR/layout 抽取、WPF review 队列、审批生成/回写或默认主答题流程已经产品化。
+该闭环证明 synthetic `TrackResult[] -> orchestration report + DecisionRecord -> delivery manifest -> WPF refresh` 的各段受控合同路径可以运行，但这些段尚未接成默认工作流，也不等于真实 provider Track A/B/C、生产局部高清/OCR/layout、审批生成/回写或默认主答题流程已经产品化。
 
 ### QQ 重链路可移植映射
 

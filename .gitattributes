@@ -16,4 +16,5 @@ eval/visual-ocr-region-association/**/*.json text eol=lf
 eval/visual-semantic-projection/**/*.json text eol=lf
 eval/ocr-layout-solver/**/*.json text eol=lf
 eval/synthetic-track-validator/**/*.json text eol=lf
+eval/track-orchestration/**/*.json text eol=lf
 tools/visual-preprocessor/**/*.py text eol=lf

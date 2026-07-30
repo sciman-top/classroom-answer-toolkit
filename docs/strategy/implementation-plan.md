@@ -213,6 +213,9 @@
 - `tools/ocr-layout-solver/`
 - `prompts/shared/schemas/synthetic-track-validator-request.schema.json`
 - `tools/synthetic-track-validator/`
+- `prompts/shared/schemas/track-orchestration-request.schema.json`
+- `prompts/shared/schemas/track-orchestration-report.schema.json`
+- `tools/track-orchestrator/`
 - evidence / review 文档与运行产物
 
 ### 完成定义
@@ -230,6 +233,7 @@
 - 独立 semantic declaration 与 canonical OCR/text-region/association authority 可确定性重算一份 `measurement_reading` projection；角色与 recognized text 来源分离，不能冒充 layout、FigureUnderstanding、Track B、答案或真实语义理解
 - public synthetic question、ProblemEvidenceBundle、VISION-016 projection 与 solver policy 可确定性重算一份 `12 cm` Track B candidate；它固定 review required，不能冒充通用 quantity/unit understanding、Track C、DecisionRecord acceptance 或 workflow/live acceptance
 - current VISION-016/017 五份 raw-byte authority 可确定性重算七项 synthetic Track C check、一份 ConsistencyReport 与一份 `rule_validator` TrackResult；checks pass 只证明有限一致性，不能冒充真实 grounding、Track orchestration、答案批准、DecisionRecord trust 或 workflow/live acceptance
+- current public synthetic question/bundle 与 independent Track A/B/C bytes 可由真实 runtime 准入、比较、降级并交给 canonical DecisionRecord compiler；它只证明 repo-side orchestration plumbing，不能冒充 provider execution、答案批准、WPF/gateway/workstation 或 live acceptance
 
 ### 验证方式
 
@@ -249,6 +253,7 @@
 - semantic projection schema、declaration/三角 endpoint/crop/hash/path/alias/TOCTOU/staged-output、source separation、负向 disposition 与 canonical replay 验证
 - synthetic question/ProblemEvidenceBundle/solver request/TrackResult schema、question/hash/crop/role/numeric/unit/provenance/review disposition、external output 与 canonical replay 验证
 - synthetic Track C request/ConsistencyReport/TrackResult schema、五输入 hash/provenance、七项 pass/blocking mutation、review disposition、atomic directory output、path/junction rejection与 canonical replay 验证
+- Track orchestration request/report/DecisionRecord schema、A/B agreement/conflict、missing A/C degradation、Track C/source blocker、required-set/source/hash/question/path/junction 与 atomic two-output canonical replay 验证
 
 ### 禁止扩张点
 
@@ -264,6 +269,7 @@
 - 不从 truth text、OCR confidence、geometry、文件名或 subject rules 推断 semantic role；不把单角色 projection 冒充数值/单位理解、FigureUnderstanding、Track B、answer candidate 或 solver result
 - 不把题干显式 quantity/unit authority 冒充通用 NLP 或单位推断；不把 synthetic Track B candidate 提升为已批准答案、Track C 结论、DecisionRecord trust 或 WPF/live workflow
 - 不把七项 synthetic Track C pass、`groundingSufficient=true` 或 deterministic confidence 冒充真实题目 grounding、solver correctness、三轨编排、review approval、delivery trust 或 live acceptance
+- 不把 synthetic Track A/B agreement、Track C pass、`orchestrationStatus=complete` 或已生成 DecisionRecord 冒充真实 provider orchestration、答案正确、review approval、workflow integrated 或 live acceptance
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项
