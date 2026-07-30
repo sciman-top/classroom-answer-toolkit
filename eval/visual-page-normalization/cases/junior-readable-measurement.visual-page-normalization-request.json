@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-page-normalization-request",
+  "requestId": "junior-readable-measurement-page-normalization",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "containsPersonalData": false
+  },
+  "capture": {
+    "artifactRef": "junior-readable-measurement.capture.png",
+    "mediaType": "image/png",
+    "rawByteSha256": "bbfa0af726ec5660cf62853232c3ca885fa412fbeff3891756a76cf1d23cab7a",
+    "decodedRgbPixelSha256": "ec4a891f935297a85a08b971eba9691914a6e8f99b38a56be438995bd6e75032",
+    "pixelSize": {
+      "width": 720,
+      "height": 540
+    }
+  },
+  "targetPixelSize": {
+    "width": 560,
+    "height": 360
+  },
+  "policy": {
+    "pageDetection": "largest_external_quadrilateral",
+    "minimumPageAreaRatio": 0.25,
+    "denoise": "median_3",
+    "outputInterpolation": "linear"
+  },
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-30T06:00:00Z"
+}

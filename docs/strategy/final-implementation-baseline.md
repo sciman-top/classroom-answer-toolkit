@@ -578,6 +578,14 @@ P1 样例集默认人工拆分题面/答案：
 - runtime 把 actual source tracks 和 required types 交给既有 DecisionRecord compiler；canonical DecisionRecord 为 `review_required`、`trusted=false`、`visualReviewPassed=null`、`high_risk_approval`，包含 `dual_track_match / rule_validator_failed / acceptance_tier_unverified / review_pending`，不输出 accepted answer。
 - 本切片只证明 repo-side public synthetic source admission、orchestration 与 evidence-compiler runtime，不证明 Track A VLM、production Track B/C、答案正确、review approval、WPF workflow、gateway/workstation 或 live acceptance；controls 仍 not verified、`eligible=false`，`ReadinessControlReceipt=unattested_local_record` 不变，不生成 `OptimizationCandidate`。
 
+### VISION-020 synthetic captured-page normalization 边界
+
+- `VisualPageNormalizationRequest` 只接受从 VISION-007 current `junior-readable-measurement.source.png` 确定性生成的一份 `synthetic_fixture/public` capture，固定 720x540 dimensions、target 560x360、largest-external-quadrilateral policy、median-3 denoise 与 `allowCloud=false`。
+- runtime 从 capture pixels 检测最大外部凸四边形，执行 perspective/orientation correction 与 denoise，并用 request/capture/normalized PNG raw-byte SHA-256、decoded RGB pixel SHA-256、geometry、corrections 和 OpenCV/Pillow provenance 绑定一份 `NormalizedPage`。
+- canonical quadrilateral 为 `(74,89)/(646,61)/(670,470)/(56,484)`，area ratio `0.607368`、orientation `-2.802452` 度；这些只描述冻结 synthetic fixture，不是实拍质量指标。
+- external runtime 仅写入仓外新目录，在 atomic directory promotion 前重验 staged PNG/result bytes 与 canonical request/capture snapshots；focused tests 不重写 canonical authority，显式 materialization 与验证分离。
+- canonical `regionRefs=[]`，human review required、not accepted、controls not verified、`eligible=false`；本切片不做自动题区/图区/表格/公式/axis/tick/legend/component proposal 或语义，不接 OCR/Track/WPF/gateway，不构成 workstation/live acceptance，`ReadinessControlReceipt=unattested_local_record` 不变，不生成 `OptimizationCandidate`。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

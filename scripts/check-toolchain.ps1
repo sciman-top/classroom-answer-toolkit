@@ -78,6 +78,16 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-preprocessor run validate:fixtures
 } "Visual preprocessing canonical fixture validation failed."
 
+Write-Host "visual page normalization contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-page-normalizer test
+} "Visual page normalization contract tests failed."
+
+Write-Host "visual page normalization canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/visual-page-normalizer run validate:fixtures
+} "Visual page normalization canonical fixture validation failed."
+
 Write-Host "visual structure extraction contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-structure-extractor test

@@ -402,6 +402,16 @@
 - blocks: VISION-017, VISION-018
 - done_definition: 仓内可从 current raw bytes 准入一组 public synthetic Track A/B/C，独立报告 candidate agreement/conflict、track degradation、Track C 与全源 blocking findings，并通过既有 compiler 生成 fail-closed DecisionRecord；canonical result 固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side orchestration/evidence-compiler runtime，不构成真实 provider Track A/B/C、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
 
+### task_id: VISION-020
+
+- goal: 在自动区域提议前建立首个 provider-neutral、确定性的 public synthetic captured-page normalization authority
+- inputs: VISION-007 `junior-readable-measurement.source.png` current raw bytes、既有 `NormalizedPage` schema、local OpenCV/Pillow runtime
+- changes: 新增 `VisualPageNormalizationRequest / Result` schema 和 deterministic local normalizer；从固定透视、旋转、噪声的 720x540 synthetic capture 检测最大外部凸四边形，透视/方向校正并 median denoise 到 560x360；绑定 request/capture/output raw-byte 与 decoded-pixel hash、geometry/corrections/engine provenance；external atomic PNG+result runtime 在 promotion 前重验 staging 与 canonical input snapshots；focused tests 只读 canonical authority；纳入 assets 与 hotspot
+- verification: positive page detection、no-page/policy/capture drift、noncanonical request、canonical byte-exact replay、existing/repository/junction output、staging tamper、schema、visual capture/normalized inspection 与完整固定顺序项目门禁
+- rollback: 回滚 VISION-020 atomic commit，删除本切片 schema/tool/canonical artifacts/EOL/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-019 authorities 与 commits `c291f9d`/`9c0d4f5`/`c09886b`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 prior samples
+- blocks: VISION-007, VISION-019
+- done_definition: 仓内可从 current public synthetic source 确定性生成一份具有透视/旋转/噪声的 capture，并检测、校正、重放一份 hash-bound `NormalizedPage`；canonical `regionRefs=[]` 且固定 human review required、not accepted、controls not verified、`eligible=false`，只证明 repo-side synthetic page-normalization plumbing，不构成自动区域检测、真实照片质量、OCR/layout/semantic correctness、Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001
