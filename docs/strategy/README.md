@@ -25,10 +25,11 @@
 19. [visual-positive-association-implementation-plan.md](./visual-positive-association-implementation-plan.md)
 20. [visual-semantic-projection-runtime-plan.md](./visual-semantic-projection-runtime-plan.md)
 21. [visual-semantic-projection-implementation-plan.md](./visual-semantic-projection-implementation-plan.md)
-22. [implementation-roadmap.md](./implementation-roadmap.md)
-23. [implementation-plan.md](./implementation-plan.md)
-24. [execution-backlog.md](./execution-backlog.md)
-25. [decision-log.md](./decision-log.md)
+22. [synthetic-ocr-layout-solver-runtime-plan.md](./synthetic-ocr-layout-solver-runtime-plan.md)
+23. [implementation-roadmap.md](./implementation-roadmap.md)
+24. [implementation-plan.md](./implementation-plan.md)
+25. [execution-backlog.md](./execution-backlog.md)
+26. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 

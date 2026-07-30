@@ -148,6 +148,16 @@ Assert-CommandSuccess {
     npm --prefix tools/visual-semantic-projector run validate:fixtures
 } "Visual semantic projection canonical fixture validation failed."
 
+Write-Host "synthetic OCR layout solver contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/ocr-layout-solver test
+} "Synthetic OCR layout solver contract tests failed."
+
+Write-Host "synthetic OCR layout solver canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/ocr-layout-solver run validate:fixtures
+} "Synthetic OCR layout solver canonical fixture validation failed."
+
 Write-Host "visual machine review contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-machine-review test

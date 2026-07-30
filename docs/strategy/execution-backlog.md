@@ -372,6 +372,16 @@
 - blocks: VISION-011, VISION-012, VISION-014, VISION-015
 - done_definition: 仓内可从 current canonical bytes 确定性重算一份显式 `measurement_reading` projection，且角色和 recognized text 来源独立；只证明 public synthetic semantic projection plumbing，不构成数值/单位理解、layout semantics、FigureUnderstanding、ProblemEvidenceBundle、TrackResult、answer candidate、solver result、delivery trust、WPF/workflow、gateway live 或 real-data/live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
 
+### task_id: VISION-017
+
+- goal: 建立首份由独立 public synthetic question/evidence authority 和 VISION-016 projection 驱动的 deterministic `ocr_layout_solver` TrackResult
+- inputs: VISION-016 `measurement_reading / recognizedText=12` projection、独立 question identity/crop/quantity/unit authority、现有 `ProblemEvidenceBundle / TrackResult` canonical contracts
+- changes: 新增 `VisualSyntheticQuestion` 与 `OcrLayoutSolverRequest` schema、question/evidence/request/Track B canonical artifacts 和 local deterministic compiler；ProblemEvidenceBundle 显式绑定 question/projection raw bytes；TrackResult 独立记录 question binding、quantity/unit interpretation、solver/candidate provenance 和 blocking review disposition；纳入 assets 与 hotspot
+- verification: positive `12 cm` provenance、question bytes、unit token、numeric grammar、semantic role、bundle/request/hash/crop binding、canonical byte-exact replay、fixed canonical request、external atomic output 与 repository-output rejection均 fail closed；完整固定顺序项目门禁
+- rollback: 先回滚 VISION-017 evidence，再回滚 strategy/integration/canonical/schema/runtime/tests；删除本切片 schema/tool/eval/validator/hotspot/strategy 增量，保留 VISION-007 至 VISION-016 authority、`.env`、OCR 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
+- blocks: VISION-016
+- done_definition: 仓内可从 current canonical bytes 确定性重算一份 question-bound、quantity/unit-source-separated、provenance-complete 的 synthetic Track B candidate，且固定 `review_required / trusted=false / controls=not_verified / eligible=false`；只证明 repo-side synthetic solver plumbing，不构成通用 question/quantity/unit understanding、Track C、DecisionRecord acceptance、真实答案质量、WPF workflow、gateway live、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

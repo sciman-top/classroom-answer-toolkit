@@ -76,6 +76,8 @@ function collectValidationTargets() {
   const visualSemanticProjectionResultSchema = resolveRepoPath("prompts/shared/schemas/visual-semantic-projection-result.schema.json");
   const visualSemanticProjectionCaseInventorySchema = resolveRepoPath("prompts/shared/schemas/visual-semantic-projection-case-inventory.schema.json");
   const visualSemanticProjectionReportSchema = resolveRepoPath("prompts/shared/schemas/visual-semantic-projection-report.schema.json");
+  const visualSyntheticQuestionSchema = resolveRepoPath("prompts/shared/schemas/visual-synthetic-question.schema.json");
+  const ocrLayoutSolverRequestSchema = resolveRepoPath("prompts/shared/schemas/ocr-layout-solver-request.schema.json");
   const deliveryQuestionCoverageSchema = resolveRepoPath("prompts/shared/schemas/delivery-question-coverage.schema.json");
   const deliveryDecisionAggregateSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate.schema.json");
   const deliveryDecisionAggregateAttachmentReceiptSchema = resolveRepoPath("prompts/shared/schemas/delivery-decision-aggregate-attachment-receipt.schema.json");
@@ -114,6 +116,7 @@ function collectValidationTargets() {
   const visualMachineReviewFixtureRoot = resolveRepoPath("eval/visual-machine-review/cases");
   const visualOcrRegionAssociationFixtureRoot = resolveRepoPath("eval/visual-ocr-region-association/cases");
   const visualSemanticProjectionFixtureRoot = resolveRepoPath("eval/visual-semantic-projection/cases");
+  const ocrLayoutSolverFixtureRoot = resolveRepoPath("eval/ocr-layout-solver/cases");
   const rendererContractRoot = resolveRepoPath("eval/renderer-contract/cases");
   const sampleFlywheelEvalRoot = resolveRepoPath("eval/sample-flywheel/cases");
   const teacherFeedbackFixtureRoot = path.join(
@@ -308,6 +311,22 @@ function collectValidationTargets() {
       "visual-semantic-projection-report.json"),
     schemaPath: visualSemanticProjectionReportSchema
   }];
+  const visualSyntheticQuestionFiles = listFilesBySuffixRecursive(
+    ocrLayoutSolverFixtureRoot,
+    ".visual-synthetic-question.json")
+    .map((filePath) => ({ filePath, schemaPath: visualSyntheticQuestionSchema }));
+  const ocrLayoutSolverRequestFiles = listFilesBySuffixRecursive(
+    ocrLayoutSolverFixtureRoot,
+    ".ocr-layout-solver-request.json")
+    .map((filePath) => ({ filePath, schemaPath: ocrLayoutSolverRequestSchema }));
+  const ocrLayoutSolverEvidenceBundleFiles = listFilesBySuffixRecursive(
+    ocrLayoutSolverFixtureRoot,
+    ".problem-evidence-bundle.json")
+    .map((filePath) => ({ filePath, schemaPath: problemEvidenceBundleSchema }));
+  const ocrLayoutSolverTrackResultFiles = listFilesBySuffixRecursive(
+    ocrLayoutSolverFixtureRoot,
+    ".track-b.json")
+    .map((filePath) => ({ filePath, schemaPath: trackResultSchema }));
   const rendererContractFiles = listFilesBySuffixRecursive(rendererContractRoot, ".renderer-contract.json")
     .map((filePath) => ({ filePath, schemaPath: rendererContractSchema }));
   const optimizationReadinessInputFiles = listFilesByNameRecursive(
@@ -419,6 +438,10 @@ function collectValidationTargets() {
     visualSemanticProjectionResults: visualSemanticProjectionResultFiles,
     visualSemanticProjectionCaseInventories: visualSemanticProjectionCaseInventoryFiles,
     visualSemanticProjectionReports: visualSemanticProjectionReportFiles,
+    visualSyntheticQuestions: visualSyntheticQuestionFiles,
+    ocrLayoutSolverRequests: ocrLayoutSolverRequestFiles,
+    ocrLayoutSolverEvidenceBundles: ocrLayoutSolverEvidenceBundleFiles,
+    ocrLayoutSolverTrackResults: ocrLayoutSolverTrackResultFiles,
     visualEvidenceFiles,
     rendererContractFiles,
     subjectPacks: subjectPackDirectories.map((directoryPath) => path.basename(directoryPath)),
@@ -478,6 +501,8 @@ function collectValidationTargets() {
       visualSemanticProjectionResultSchema,
       visualSemanticProjectionCaseInventorySchema,
       visualSemanticProjectionReportSchema,
+      visualSyntheticQuestionSchema,
+      ocrLayoutSolverRequestSchema,
       ...visualEvidenceSchemas,
       rendererContractSchema,
       ...figureSchemas
@@ -545,7 +570,7 @@ function validateFiles(targets) {
   const errors = [];
   let validatedFileCount = 0;
 
-  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationResults, targets.visualOcrObservationCaseInventories, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualMachineReviewReceipts, targets.visualMachineReviewCaseInventories, targets.visualMachineReviewReports, targets.visualOcrRegionAssociationRequests, targets.visualOcrRegionAssociationResults, targets.visualOcrRegionAssociationCaseInventories, targets.visualOcrRegionAssociationReports, targets.visualSyntheticSemanticDeclarations, targets.visualSemanticProjectionRequests, targets.visualSemanticProjectionResults, targets.visualSemanticProjectionCaseInventories, targets.visualSemanticProjectionReports, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
+  for (const group of [targets.manifests, targets.runtimeConfigs, targets.rulePacks, targets.profiles, targets.samplePackages, targets.sampleIndices, targets.sampleNegativeCandidates, targets.answerGenerationRequests, targets.answerGenerationResults, targets.optimizationReadinessCaseInventories, targets.optimizationReadinessInputs, targets.optimizationReadinessReports, targets.teacherFeedbackSubmissions, targets.teacherFeedbackParseResults, targets.teacherFeedbackFixtureInventories, targets.teacherFeedbackDiagnosticReports, targets.teacherFeedbackReplayDiagnosticReports, targets.visualRiskCaseInventories, targets.visualRiskDiagnosticReports, targets.visualPreprocessingRequests, targets.visualPreprocessingResults, targets.visualPreprocessingCaseInventories, targets.visualStructureExtractionRequests, targets.visualStructureExtractionResults, targets.visualStructureExtractionCaseInventories, targets.visualOcrObservationRequests, targets.visualOcrObservationCaseInventories, targets.visualOcrObservationResults, targets.visualSpatialObservationRequests, targets.visualSpatialObservationResults, targets.visualSpatialObservationCaseInventories, targets.visualSyntheticTextTruths, targets.visualOcrDiagnosticCaseInventories, targets.visualOcrDiagnosticReports, targets.visualTextRegionDiagnosticCaseInventories, targets.visualTextRegionDiagnosticReports, targets.visualMachineReviewReceipts, targets.visualMachineReviewCaseInventories, targets.visualMachineReviewReports, targets.visualOcrRegionAssociationRequests, targets.visualOcrRegionAssociationResults, targets.visualOcrRegionAssociationCaseInventories, targets.visualOcrRegionAssociationReports, targets.visualSyntheticSemanticDeclarations, targets.visualSemanticProjectionRequests, targets.visualSemanticProjectionResults, targets.visualSemanticProjectionCaseInventories, targets.visualSemanticProjectionReports, targets.visualSyntheticQuestions, targets.ocrLayoutSolverRequests, targets.ocrLayoutSolverEvidenceBundles, targets.ocrLayoutSolverTrackResults, targets.visualEvidenceFiles, targets.rendererContractFiles]) {
     for (const target of group) {
       const fileErrors = validateJsonFileAgainstSchema(target.filePath, target.schemaPath);
       validatedFileCount += 1;

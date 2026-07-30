@@ -3,6 +3,8 @@
 eval/answer-generation/**/*.json text eol=lf
 eval/sample-flywheel/**/*.json text eol=lf
 eval/visual-evidence/cases/visual-risk/**/*.json text eol=lf
+eval/visual-evidence/**/*.json text eol=lf
+eval/visual-evidence/**/*.md text eol=lf
 eval/visual-preprocessing/**/*.json text eol=lf
 eval/visual-structure-extraction/**/*.json text eol=lf
 eval/visual-ocr-observation/**/*.json text eol=lf
@@ -10,3 +12,7 @@ eval/visual-spatial-observation/**/*.json text eol=lf
 eval/visual-ocr-diagnostics/**/*.json text eol=lf
 eval/visual-text-region-diagnostics/**/*.json text eol=lf
 eval/visual-machine-review/**/*.json text eol=lf
+eval/visual-ocr-region-association/**/*.json text eol=lf
+eval/visual-semantic-projection/**/*.json text eol=lf
+eval/ocr-layout-solver/**/*.json text eol=lf
+tools/visual-preprocessor/**/*.py text eol=lf

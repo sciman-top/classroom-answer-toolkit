@@ -554,6 +554,14 @@ P1 样例集默认人工拆分题面/答案：
 - 当前 canonical result 只输出一份 `measurement_reading` projection 和 recognized text `12`。它不生成 `FigureUnderstandingResult / ProblemEvidenceBundle / TrackResult / answer candidate`，不解释数值或单位，不构成 layout semantics、question binding、solver correctness 或真实数据质量。
 - result/report 固定 not accepted、requires human review、layout not inferred、figure understanding not generated、Track/WPF not integrated、delivery trust not projected、live not accepted、controls not verified、`eligible=false`、`optimizationCandidateRefs=[]`；cloud egress disabled，`.env` 不变，`ReadinessControlReceipt=unattested_local_record` 保持不变。
 
+### VISION-017 synthetic OCR layout solver 边界
+
+- `VisualSyntheticQuestion` 与 VISION-016 projection 独立：题目 authority 明示 question identity、crop、`quantityKind=length`、`semanticRoleRequired=measurement_reading` 与 prompt 中实际出现的 `centimetres / cm`，但不包含期望数值答案。
+- `ProblemEvidenceBundle` 以 raw-byte SHA-256 分别绑定 question authority 与 VISION-016 projection；`OcrLayoutSolverRequest` 再绑定 bundle、solver policy 和 expected interpretation。数值只能来自 projection 的 OCR-bound `recognizedText`，quantity/unit 只能来自 question authority。
+- 当前 deterministic solver 只接受一个 ASCII decimal `measurement_reading`，canonical candidate 为 `12 cm`。`TrackResult` 分别记录 exact question binding、interpretation、candidate provenance 与 local/non-live/no-cloud solver provenance。
+- canonical result 固定 high risk、blocking validator finding、review required、`humanApproved=false`、`trusted=false`、`visualReviewPassed=null`、controls not verified、`eligible=false`、`optimizationCandidateRefs=[]`；不生成 `DecisionRecord`，不接 Track C、WPF、gateway、delivery trust 或 optimizer。
+- 本切片只证明 public synthetic Track B plumbing，不证明通用题意解析、数值/单位推断、真实量具读数、答案正确性、real-data quality、workflow integration、gateway verification 或 workstation/live acceptance；`ReadinessControlReceipt=unattested_local_record` 保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

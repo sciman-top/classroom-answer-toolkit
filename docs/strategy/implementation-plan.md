@@ -175,6 +175,7 @@
 - VISION-014 provider-neutral OCR-region association diagnostic；只从 canonical VISION-008/009/010 authority 选择双向唯一的 positive-area edge，按 subject-pack 报告 matched/unmatched/ambiguous/unavailable，当前 canonical truth 保持零正向 match
 - VISION-015 public synthetic positive-association fixture；完整重放 VISION-007 至 VISION-014，在不改变 association policy 的前提下追加一份 exact OCR truth、唯一 text-region coverage 与双向唯一 positive-area canonical match，并保持 diagnostic-only 边界
 - VISION-016 explicit semantic-role projection；以独立 declaration 为唯一角色真源，只在 VISION-011/012/014 精确连接同一 truth/OCR/candidate 时投影 `measurement_reading` 和绑定 OCR text，并保持 FigureUnderstanding/Track/answer/trust/live 全部未生成或未集成
+- VISION-017 synthetic OCR layout solver；以独立 public question authority 明示 quantity/unit，绑定 VISION-016 OCR-derived reading 与 ProblemEvidenceBundle，输出一份 provenance-complete 且固定 review-required 的 Track B candidate
 
 ### 涉及文件面
 
@@ -195,6 +196,7 @@
 - `eval/visual-machine-review/`
 - `eval/visual-ocr-region-association/`
 - `eval/visual-semantic-projection/`
+- `eval/ocr-layout-solver/`
 - `prompts/shared/schemas/visual-preprocessing-*.schema.json`
 - `prompts/shared/schemas/visual-structure-extraction-*.schema.json`
 - `prompts/shared/schemas/visual-spatial-observation-*.schema.json`
@@ -204,6 +206,9 @@
 - `prompts/shared/schemas/visual-ocr-region-association-*.schema.json`
 - `prompts/shared/schemas/visual-*-semantic-*.schema.json`
 - `tools/visual-semantic-projector/`
+- `prompts/shared/schemas/visual-synthetic-question.schema.json`
+- `prompts/shared/schemas/ocr-layout-solver-request.schema.json`
+- `tools/ocr-layout-solver/`
 - evidence / review 文档与运行产物
 
 ### 完成定义
@@ -219,6 +224,7 @@
 - current AI visual checks 可由 raw-byte-bound receipts 与 deterministic aggregate report 重验；它只在 `synthetic_fixture_diagnostic` 范围内等效替代人工检查，不能冒充 human identity、delivery trust 或 live acceptance
 - canonical structure/OCR/spatial authority 可确定性重算 association policy outcome；当前证明两例 unavailable、一例 unmatched 与一例 public synthetic matched，不能把 fixture coverage 冒充真实 association 质量
 - 独立 semantic declaration 与 canonical OCR/text-region/association authority 可确定性重算一份 `measurement_reading` projection；角色与 recognized text 来源分离，不能冒充 layout、FigureUnderstanding、Track B、答案或真实语义理解
+- public synthetic question、ProblemEvidenceBundle、VISION-016 projection 与 solver policy 可确定性重算一份 `12 cm` Track B candidate；它固定 review required，不能冒充通用 quantity/unit understanding、Track C、DecisionRecord acceptance 或 workflow/live acceptance
 
 ### 验证方式
 
@@ -236,6 +242,7 @@
 - machine visual review schema、preprocessing/crop/receipt raw-byte authority、reviewer identity、synthetic-only equivalence policy、完整 check coverage、known limitations 与 aggregate replay 验证
 - OCR-region association schema、三层 upstream/crop authority、双向唯一 positive-area policy、空 observation、disjoint unmatched、歧义 fail-closed、availability ratio 与 canonical replay 验证
 - semantic projection schema、declaration/三角 endpoint/crop/hash/path/alias/TOCTOU/staged-output、source separation、负向 disposition 与 canonical replay 验证
+- synthetic question/ProblemEvidenceBundle/solver request/TrackResult schema、question/hash/crop/role/numeric/unit/provenance/review disposition、external output 与 canonical replay 验证
 
 ### 禁止扩张点
 
@@ -249,6 +256,7 @@
 - 不把 `ai_agent` machine review 冒充真人身份、`humanApproved`、真实数据验收、delivery trust 或 live acceptance
 - 不把 policy 单元测试的正向 geometry 冒充 canonical fixture、OCR truth、真实 association 效果、layout semantics 或 Track B evidence
 - 不从 truth text、OCR confidence、geometry、文件名或 subject rules 推断 semantic role；不把单角色 projection 冒充数值/单位理解、FigureUnderstanding、Track B、answer candidate 或 solver result
+- 不把题干显式 quantity/unit authority 冒充通用 NLP 或单位推断；不把 synthetic Track B candidate 提升为已批准答案、Track C 结论、DecisionRecord trust 或 WPF/live workflow
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项
