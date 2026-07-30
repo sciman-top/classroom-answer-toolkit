@@ -33,6 +33,28 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "validationScope": {
+      "type": "string",
+      "enum": ["public_synthetic_track_c_validator"]
+    },
+    "inputBindings": {
+      "type": "object",
+      "required": [
+        "questionSha256", "evidenceBundleSha256", "semanticProjectionSha256",
+        "solverRequestSha256", "trackBSha256", "validatorRequestSha256",
+        "validatorPolicySha256"
+      ],
+      "properties": {
+        "questionSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "evidenceBundleSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "semanticProjectionSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "solverRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "trackBSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "validatorRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "validatorPolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": true
+    },
     "checks": {
       "type": "array",
       "items": {
@@ -73,6 +95,34 @@
           "rule_validator_failed"
         ]
       }
+    },
+    "validatorProvenance": {
+      "type": "object",
+      "required": ["engineKind", "engineId", "engineVersion", "liveProvider", "cloudEgress"],
+      "properties": {
+        "engineKind": { "const": "deterministic_rule_validator" },
+        "engineId": { "const": "synthetic-track-validator" },
+        "engineVersion": { "const": "1.0.0" },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": true
+    },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "trackDisposition", "requiresHumanReview", "deliveryTrustDisposition",
+        "controlsDisposition", "eligible", "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "trackDisposition": { "const": "validated_not_orchestrated" },
+        "requiresHumanReview": { "const": true },
+        "deliveryTrustDisposition": { "const": "not_projected" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false },
+        "optimizationCandidateRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
     },
     "generatedAt": { "type": "string" }
   },

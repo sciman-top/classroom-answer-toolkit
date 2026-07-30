@@ -158,6 +158,16 @@ Assert-CommandSuccess {
     npm --prefix tools/ocr-layout-solver run validate:fixtures
 } "Synthetic OCR layout solver canonical fixture validation failed."
 
+Write-Host "synthetic Track C validator contract tests:"
+Assert-CommandSuccess {
+    npm --prefix tools/synthetic-track-validator test
+} "Synthetic Track C validator contract tests failed."
+
+Write-Host "synthetic Track C validator canonical fixtures:"
+Assert-CommandSuccess {
+    npm --prefix tools/synthetic-track-validator run validate:fixtures
+} "Synthetic Track C validator canonical fixture validation failed."
+
 Write-Host "visual machine review contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-machine-review test

@@ -382,6 +382,16 @@
 - blocks: VISION-016
 - done_definition: 仓内可从 current canonical bytes 确定性重算一份 question-bound、quantity/unit-source-separated、provenance-complete 的 synthetic Track B candidate，且固定 `review_required / trusted=false / controls=not_verified / eligible=false`；只证明 repo-side synthetic solver plumbing，不构成通用 question/quantity/unit understanding、Track C、DecisionRecord acceptance、真实答案质量、WPF workflow、gateway live、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
 
+### task_id: VISION-018
+
+- goal: 建立首份独立消费 VISION-016/017 current authority 的 deterministic synthetic Track C validator
+- inputs: VISION-017 question、ProblemEvidenceBundle、OCR layout solver request、Track B 与 VISION-016 semantic projection 五份 raw-byte authority，现有 `ConsistencyReport / TrackResult` contracts
+- changes: 新增 `SyntheticTrackValidatorRequest` schema、七项 fixed check policy、request/ConsistencyReport/Track C canonical artifacts 与 local deterministic compiler；semantic mismatch 形成 blocking findings，stale hash/path/junction/output drift fail closed；纳入 assets 与 hotspot
+- verification: question/evidence、quantity/unit、numeric/answer format、semantic/solver provenance、review boundary 的 pass/blocking mutations，request hash drift、3 artifact byte-exact replay、external atomic directory、existing/repository/junction output rejection；完整固定顺序项目门禁
+- rollback: 先回滚 VISION-018 evidence，再回滚本切片 strategy/integration/canonical/schema/runtime/tests；保留 VISION-007 至 VISION-017 authorities 与 commit `c291f9d`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
+- blocks: VISION-017
+- done_definition: 仓内可从五份 current raw-byte authority 确定性重算七项 synthetic Track C consistency checks、一份 ConsistencyReport 与一份 `rule_validator` TrackResult；canonical checks pass 仍固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side limited consistency validation，不构成真实 grounding、Track orchestration、DecisionRecord acceptance、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

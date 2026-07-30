@@ -79,6 +79,8 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `tools/visual-text-region-diagnostics/`: 对同一 synthetic truth 与 canonical heuristic text-region candidates 做本地、确定性、禁云空间覆盖诊断。
 - `tools/visual-machine-review/`: 校验 synthetic crop 的机器视觉复核 receipt、上游 raw-byte/pixel/dimension authority、已披露限制和 fail-closed 状态边界。
 - `tools/visual-ocr-region-association/`: 对 canonical text-region/OCR/spatial authority 应用双向唯一 positive-area association policy，并按学科报告 matched/unmatched/ambiguous/unavailable。
+- `tools/ocr-layout-solver/`: 把一份 public synthetic question 与 VISION-016 projection 绑定为固定 review-required 的 Track B candidate。
+- `tools/synthetic-track-validator/`: 对 canonical Track B 的 question/quantity/unit/format/provenance/review 边界执行七项 deterministic Track C 检查；通过不等于批准或 trust。
 - `eval/`: 固定评测数据集、视觉基线和回归结果。
 - `tests/`: xUnit 与 FluentAssertions 测试。
 
@@ -132,6 +134,8 @@ npm --prefix tools/visual-evidence run compile:aggregate -- --manifest "<deliver
 npm --prefix tools/visual-evidence run attach:decision -- --manifest "<delivery-manifest.json>" --decision "<decision-record.json>"
 npm --prefix tools/visual-evidence run attach:aggregate -- --manifest "<delivery-manifest.json>" --aggregate "<delivery-decision-aggregate.json>"
 npm --prefix tools/visual-evidence run verify:aggregate-attachment -- --manifest "<delivery-manifest.json>"
+npm --prefix tools/ocr-layout-solver test
+npm --prefix tools/synthetic-track-validator test
 npm --prefix tools/sample-flywheel test
 npm --prefix tools/sample-flywheel run compile:run -- --sample-id "<sample-id>" --run-mode scoring --candidate "<indexed-negative-candidate.json>" --truth-extraction-status ok --input-answer-leakage none --iteration 1 --out "<sample-run-record.json>"
 npm --prefix tools/sample-flywheel run compile:feedback -- --run "<sample-run-record.json>" --created-at "<canonical-utc-timestamp>" --out "<feedback-parse-result.json>"

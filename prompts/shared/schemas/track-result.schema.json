@@ -123,6 +123,30 @@
       "required": ["engineKind", "engineId", "engineVersion", "liveProvider", "cloudEgress"],
       "additionalProperties": true
     },
+    "validatorProvenance": {
+      "type": "object",
+      "required": [
+        "engineKind", "engineId", "engineVersion", "liveProvider", "cloudEgress",
+        "sourceRequestSha256", "questionAuthoritySha256", "evidenceBundleSha256",
+        "semanticProjectionSha256", "solverRequestSha256", "sourceTrackResultSha256",
+        "validatorPolicySha256"
+      ],
+      "properties": {
+        "engineKind": { "const": "deterministic_rule_validator" },
+        "engineId": { "const": "synthetic-track-validator" },
+        "engineVersion": { "const": "1.0.0" },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false },
+        "sourceRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "questionAuthoritySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "evidenceBundleSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "semanticProjectionSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "solverRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sourceTrackResultSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "validatorPolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": true
+    },
     "reviewDisposition": {
       "type": "object",
       "required": [

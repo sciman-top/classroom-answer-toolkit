@@ -562,6 +562,14 @@ P1 样例集默认人工拆分题面/答案：
 - canonical result 固定 high risk、blocking validator finding、review required、`humanApproved=false`、`trusted=false`、`visualReviewPassed=null`、controls not verified、`eligible=false`、`optimizationCandidateRefs=[]`；不生成 `DecisionRecord`，不接 Track C、WPF、gateway、delivery trust 或 optimizer。
 - 本切片只证明 public synthetic Track B plumbing，不证明通用题意解析、数值/单位推断、真实量具读数、答案正确性、real-data quality、workflow integration、gateway verification 或 workstation/live acceptance；`ReadinessControlReceipt=unattested_local_record` 保持不变。
 
+### VISION-018 synthetic Track C validator 边界
+
+- `SyntheticTrackValidatorRequest` 以 raw-byte SHA-256 独立绑定 VISION-017 question、ProblemEvidenceBundle、solver request、Track B 与 VISION-016 projection，并固定七项 check inventory 和 validator policy。
+- validator 分别检查 question binding、quantity、unit whole-token、ASCII decimal、exact answer format、semantic/solver provenance 与 review boundary；principal semantic mismatch 编译为 blocking finding，stale request/input hash 直接拒绝。
+- canonical ConsistencyReport 七项全 pass，Track C 为 `rule_validator`；`groundingSufficient=true` 只表示这五份 public synthetic authority 足以完成这七项有限一致性检查，不证明真实题目 grounding、量具读数或答案正确。
+- canonical Track C 固定 high risk、review required、`humanApproved=false`、`trusted=false`、`visualReviewPassed=null`、controls not verified、`eligible=false`、`optimizationCandidateRefs=[]`，且推荐 `acceptance_tier_unverified`。
+- 本切片不生成 DecisionRecord，不做 Track A/B/C orchestration、比较/冲突/降级、WPF/review writeback、gateway live、workstation 或 live acceptance；`ReadinessControlReceipt=unattested_local_record` 保持不变。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。
