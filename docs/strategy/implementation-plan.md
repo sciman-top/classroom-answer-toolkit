@@ -180,6 +180,7 @@
 - VISION-019 synthetic Track A/B/C orchestration；准入 independent A/B/C current bytes，正交报告 comparison/degradation/Track C/source blockers，并复用 canonical DecisionRecord compiler
 - VISION-020 synthetic captured-page normalization；在自动 region proposal 前检测固定透视/旋转/噪声 capture 的 page quadrilateral，输出 hash-bound 560x360 `NormalizedPage` 与 PNG，保持 `regionRefs=[]`
 - VISION-021 synthetic automatic region proposal；绑定 VISION-020 current result/PNG，在 normalized coordinates 输出 `heuristicOnly` content-block candidates 与 diagnostic overlay，不生成 semantic `VisualRegion`
+- VISION-022 synthetic local crops；每个 admitted proposal 生成 1x/2x hash-bound crops，保持 nonsemantic/nonintegrated
 
 ### 涉及文件面
 

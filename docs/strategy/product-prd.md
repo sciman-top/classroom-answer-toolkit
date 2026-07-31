@@ -91,6 +91,7 @@ Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一�
 - VISION-019 实际准入并编排一组 public synthetic Track A/B/C，分别报告 A/B agreement/conflict、complete/degraded inventory、Track C 与全源 blocking findings，并只调用既有 DecisionRecord compiler；canonical DecisionRecord 仍为 review required/untrusted，不能写成真实 provider orchestration、答案批准、WPF workflow、gateway/workstation verified 或 live accepted。
 - VISION-020 从 VISION-007 current source 确定性生成一份带透视、旋转和噪声的 public synthetic capture，检测最大外部凸四边形并输出 hash-bound 560x360 `NormalizedPage`；`regionRefs=[]`，只证明 page-normalization plumbing，不构成自动区域检测、真实照片质量、OCR/layout/Track/workflow 或 live acceptance。
 - VISION-021 只在 VISION-020 normalized page 上自动提出两个 hash-bound `heuristicOnly` content-block candidates 与 diagnostic overlay；它不使用 `VisualRegion.regionType`，不构成 question/figure/text/axis/table 分类、region 质量指标、OCR/Track/workflow 或 live acceptance。
+- VISION-022 为每个 VISION-021 proposal 生成 1x pixel-preserving 与 2x nearest local crops；2x 不代表恢复细节，不构成 semantic `VisualRegion`、OCR 改善、Track/workflow 或 live acceptance。
 - 高风险视觉题的新增主链必须先经过视觉证据编译器，形成 `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`，不得从整页图直接跳到可信答案。
 - Typst 主渲染属于终局迁移目标；未通过 parity gate 前，不得把当前运行时描述为 Typst 已上线。
 - 自动验收与优化候选只能在门禁通过、数据边界允许、真值可靠时推进。

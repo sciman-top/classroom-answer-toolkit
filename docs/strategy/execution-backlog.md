@@ -422,6 +422,16 @@
 - blocks: VISION-020
 - done_definition: 仓内可从 current VISION-020 normalized bytes 确定性重算两个 nonsemantic content-block proposals 与一份 diagnostic overlay；canonical 固定 `heuristicOnly / semanticDisposition=not_inferred / visualRegionDisposition=not_generated / controls=not_verified / eligible=false`，只证明 repo-side synthetic automatic proposal plumbing，不构成 region precision/recall、question/figure/text/axis/table 语义、`VisualRegion` authority、OCR/Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
 
+### task_id: VISION-022
+
+- goal: 从 VISION-021 admitted nonsemantic proposals 确定性生成 1x/2x local crops
+- inputs: VISION-021 result 与 VISION-020 normalized PNG current bytes
+- changes: 新增 local-crop request/result schema、runtime 与四张 proposal-bound PNG；1x pixel-preserving、2x nearest；external atomic five-output bundle；纳入 assets/hotspot
+- verification: proposal/hash/bbox/scale/dimensions/pixel/replay/path/junction/tamper 与完整固定门禁
+- rollback: 回滚 VISION-022 atomic commit，保留 VISION-007 至 VISION-021 与 `4c302bb`
+- blocks: VISION-021
+- done_definition: 两个 proposals 各生成 1x/2x hash-bound crops；仅证明 synthetic local crop plumbing，不构成细节恢复、semantic `VisualRegion`、OCR/Track/workflow/live acceptance，controls not verified、`eligible=false`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

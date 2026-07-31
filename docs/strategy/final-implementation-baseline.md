@@ -596,6 +596,10 @@ P1 样例集默认人工拆分题面/答案：
 
 ### Track 定义
 
+VISION-022 在 VISION-021 proposal 上生成 1x pixel-preserving 与 2x nearest crops；所有 artifacts
+绑定 proposal/bbox/hash/pixels/dimensions，固定 nonsemantic/not integrated。2x 不证明细节恢复或
+OCR 改善，不生成 `VisualRegion`，controls=`not_verified`、`eligible=false`。
+
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。
 - Track B：OCR / layout / 图元抽取 / 结构化证据后再求解。
 - Track C：规则校验器，检查单位、量程、分度值、坐标轴、图号绑定、答案格式和学科约束。
