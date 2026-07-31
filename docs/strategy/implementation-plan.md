@@ -119,6 +119,7 @@
 
 - provider-neutral、严格 schema 化的 `AnswerGenerationRequest / AnswerGenerationResult`
 - GEN-004 provider-backed runtime：绑定 public problem 与 subject-pack spec，复用 text gateway/failover，三层 cloud-egress 授权后只写仓外新目录，固定 pending review/untrusted/not integrated
+- GEN-005 WPF provider workflow：显式选择 request/workspace/config/仓外新目录与云外发授权；编排器执行前验证路径/授权，执行后验证 request/candidate hashes、provider provenance 和 pending-review disposition；成功只回填交付输入，不自动运行 PDF/review
 - 明确标记 `synthetic_fixture` 且 `liveProvider=false` 的确定性本地 generator
 - request/result/candidate raw bytes 的 SHA-256 与 canonical provenance 绑定
 - 三个脱敏 `generated` 类型候选接入飞轮

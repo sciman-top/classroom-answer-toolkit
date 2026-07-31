@@ -8,5 +8,6 @@ public enum ToolchainScriptKind
     AttachVisualDecision = 3,
     VerifyDeliveryDecisionAggregateAttachment = 4,
     AttachDeliveryDecisionAggregate = 5,
-    ProjectReviewQueue = 6
+    ProjectReviewQueue = 6,
+    GenerateProviderAnswer = 7
 }

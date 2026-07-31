@@ -3,6 +3,7 @@ using System.Text;
 using System.Security.Cryptography;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Generation;
 using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
@@ -56,6 +57,127 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     public Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default)
     {
         return RunScriptAsync(ToolchainScriptKind.Check, GetWorkspaceInfo().CheckScriptPath, cancellationToken);
+    }
+
+    public async Task<ProviderAnswerGenerationExecutionResult> RunProviderAnswerGenerationAsync(
+        ProviderAnswerGenerationExecutionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var repositoryRoot = GetWorkspaceInfo().RepositoryRoot;
+        var toolPath = Path.Combine(repositoryRoot, "tools", "answer-generator", "provider-generator.mjs");
+        var startedAt = DateTimeOffset.Now;
+
+        string requestPath;
+        string workspaceRoot;
+        string outputDirectoryPath;
+        string configEnvFilePath;
+        try
+        {
+            requestPath = Path.GetFullPath(request.RequestArtifactPath);
+            workspaceRoot = Path.GetFullPath(request.WorkspaceRoot);
+            outputDirectoryPath = Path.GetFullPath(request.OutputDirectoryPath);
+            configEnvFilePath = Path.GetFullPath(request.ConfigEnvFilePath);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return ProviderGenerationFailure(toolPath, startedAt, $"Provider generation path is invalid: {ex.Message}");
+        }
+
+        var validationError = ValidateProviderGenerationInput(
+            repositoryRoot,
+            toolPath,
+            requestPath,
+            workspaceRoot,
+            outputDirectoryPath,
+            configEnvFilePath,
+            request);
+        if (validationError is not null)
+        {
+            return ProviderGenerationFailure(toolPath, startedAt, validationError);
+        }
+
+        ProcessRunResult processResult;
+        try
+        {
+            processResult = await _processRunner.RunAsync(
+                "node",
+                [
+                    toolPath,
+                    "--request", requestPath,
+                    "--workspace-root", workspaceRoot,
+                    "--instruction-root", repositoryRoot,
+                    "--out", outputDirectoryPath,
+                    "--config-env-file", configEnvFilePath,
+                    "--timeout-ms", request.TimeoutMilliseconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    "--max-output-tokens", request.MaxOutputTokens.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    "--allow-cloud-egress"
+                ],
+                repositoryRoot,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return ProviderGenerationFailure(toolPath, startedAt, $"Provider generation process failed: {ex.Message}", -3);
+        }
+
+        var finishedAt = DateTimeOffset.Now;
+        var output = BuildOutput(processResult.StandardOutput, processResult.StandardError);
+        if (processResult.ExitCode != 0)
+        {
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.GenerateProviderAnswer,
+                toolPath,
+                processResult.ExitCode,
+                startedAt,
+                finishedAt,
+                output);
+            return new ProviderAnswerGenerationExecutionResult(failed, null, null, null);
+        }
+
+        try
+        {
+            var answerPath = Path.Combine(outputDirectoryPath, "answer.md");
+            var resultPath = Path.Combine(outputDirectoryPath, "answer-generation-result.json");
+            var answerBytes = ReadBoundedFile(answerPath, "Generated answer Markdown");
+            var resultBytes = ReadBoundedFile(resultPath, "AnswerGenerationResult");
+            var generation = JsonSerializer.Deserialize<AnswerGenerationResult>(
+                resultBytes,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? throw new InvalidDataException("AnswerGenerationResult is empty.");
+            var sourceRequestBytes = ReadBoundedFile(requestPath, "AnswerGenerationRequest");
+            var sourceRequest = JsonSerializer.Deserialize<AnswerGenerationRequest>(
+                sourceRequestBytes,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                ?? throw new InvalidDataException("AnswerGenerationRequest is empty.");
+            ValidateProviderGenerationOutput(generation, sourceRequest, sourceRequestBytes, answerBytes);
+
+            var succeeded = ToolchainExecutionResult.Success(
+                ToolchainScriptKind.GenerateProviderAnswer,
+                toolPath,
+                startedAt,
+                finishedAt,
+                output);
+            return new ProviderAnswerGenerationExecutionResult(succeeded, generation, answerPath, resultPath);
+        }
+        catch (Exception ex)
+        {
+            var postcondition = $"Provider generation output was rejected: {ex.Message}";
+            var failedOutput = string.IsNullOrWhiteSpace(output)
+                ? postcondition
+                : $"{output}{Environment.NewLine}{Environment.NewLine}[postcondition]{Environment.NewLine}{postcondition}";
+            var failed = ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.GenerateProviderAnswer,
+                toolPath,
+                -2,
+                startedAt,
+                finishedAt,
+                failedOutput);
+            return new ProviderAnswerGenerationExecutionResult(failed, null, null, null);
+        }
     }
 
     public async Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
@@ -823,6 +945,143 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             throw new InvalidDataException($"{propertyName} must be a non-negative integer.");
         }
         return number;
+    }
+
+    private static string? ValidateProviderGenerationInput(
+        string repositoryRoot,
+        string toolPath,
+        string requestPath,
+        string workspaceRoot,
+        string outputDirectoryPath,
+        string configEnvFilePath,
+        ProviderAnswerGenerationExecutionRequest request)
+    {
+        if (!request.AllowCloudEgress)
+        {
+            return "Provider generation requires explicit cloud-egress consent.";
+        }
+        if (!File.Exists(toolPath))
+        {
+            return $"Provider generator not found: {toolPath}";
+        }
+        if (!Directory.Exists(workspaceRoot))
+        {
+            return $"Provider generation workspace not found: {workspaceRoot}";
+        }
+        if (!File.Exists(requestPath) || !IsPathWithin(requestPath, workspaceRoot))
+        {
+            return "AnswerGenerationRequest must be an existing file within its workspace root.";
+        }
+        if (!File.Exists(configEnvFilePath))
+        {
+            return $"Provider configuration file not found: {configEnvFilePath}";
+        }
+        if (Directory.Exists(outputDirectoryPath) || File.Exists(outputDirectoryPath))
+        {
+            return "Provider generation output directory must not already exist.";
+        }
+        var outputParent = Path.GetDirectoryName(outputDirectoryPath);
+        if (string.IsNullOrWhiteSpace(outputParent) || !Directory.Exists(outputParent))
+        {
+            return "Provider generation output parent directory must already exist.";
+        }
+        if (IsPathWithin(outputDirectoryPath, workspaceRoot)
+            || IsPathWithin(outputDirectoryPath, repositoryRoot))
+        {
+            return "Provider generation output must be outside workspace and repository authority.";
+        }
+        if (request.TimeoutMilliseconds is < 1_000 or > 300_000)
+        {
+            return "Provider generation timeout must be from 1000 through 300000 milliseconds.";
+        }
+        if (request.MaxOutputTokens is < 256 or > 16_384)
+        {
+            return "Provider generation max output tokens must be from 256 through 16384.";
+        }
+        return null;
+    }
+
+    private static void ValidateProviderGenerationOutput(
+        AnswerGenerationResult generation,
+        AnswerGenerationRequest sourceRequest,
+        byte[] sourceRequestBytes,
+        byte[] answerBytes)
+    {
+        var disposition = generation.GenerationDisposition
+            ?? throw new InvalidDataException("Generation disposition is missing.");
+        if (!disposition.ReviewRequired
+            || disposition.Trusted
+            || !string.Equals(disposition.AcceptanceDisposition, "pending_review", StringComparison.Ordinal)
+            || !string.Equals(disposition.WorkflowDisposition, "not_integrated", StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Generation disposition is not fail-closed pending review.");
+        }
+        if (!string.Equals(generation.Provenance.ProviderKind, "model_provider", StringComparison.Ordinal)
+            || !generation.Provenance.LiveProvider
+            || generation.Provenance.CloudEgress != true)
+        {
+            throw new InvalidDataException("Provider provenance is not live cloud egress.");
+        }
+        if (!string.Equals(generation.CandidateArtifactRef, "answer.md", StringComparison.Ordinal)
+            || !string.Equals(generation.RequestId, sourceRequest.RequestId, StringComparison.Ordinal)
+            || !string.Equals(generation.SubjectPack, sourceRequest.SubjectPack, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Generation identity or candidate reference does not match its request.");
+        }
+        if (!string.Equals(sourceRequest.DataClassification.Level, "public", StringComparison.Ordinal)
+            || !string.Equals(generation.DataClassification.Level, sourceRequest.DataClassification.Level, StringComparison.Ordinal)
+            || !string.Equals(generation.DataClassification.Notes, sourceRequest.DataClassification.Notes, StringComparison.Ordinal)
+            || !string.Equals(generation.StopReason, "provider_generated_pending_review", StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Generation classification or stop reason does not match the admitted boundary.");
+        }
+        var requestSha256 = Convert.ToHexString(SHA256.HashData(sourceRequestBytes)).ToLowerInvariant();
+        var answerSha256 = Convert.ToHexString(SHA256.HashData(answerBytes)).ToLowerInvariant();
+        if (!string.Equals(generation.SourceRequestSha256, requestSha256, StringComparison.Ordinal)
+            || !string.Equals(generation.RawAnswerSha256, answerSha256, StringComparison.Ordinal)
+            || !string.Equals(generation.AnswerMarkdown, Encoding.UTF8.GetString(answerBytes), StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Generated answer or source request hash binding failed.");
+        }
+    }
+
+    private static ProviderAnswerGenerationExecutionResult ProviderGenerationFailure(
+        string toolPath,
+        DateTimeOffset startedAt,
+        string output,
+        int exitCode = -1)
+    {
+        var failed = ToolchainExecutionResult.Failure(
+            ToolchainScriptKind.GenerateProviderAnswer,
+            toolPath,
+            exitCode,
+            startedAt,
+            DateTimeOffset.Now,
+            output);
+        return new ProviderAnswerGenerationExecutionResult(failed, null, null, null);
+    }
+
+    private static byte[] ReadBoundedFile(string path, string label)
+    {
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"{label} was not materialized.", path);
+        }
+        var info = new FileInfo(path);
+        if (info.Length is <= 0 or > 1_048_576)
+        {
+            throw new InvalidDataException($"{label} must be from 1 through 1048576 bytes.");
+        }
+        return File.ReadAllBytes(path);
+    }
+
+    private static bool IsPathWithin(string candidatePath, string rootPath)
+    {
+        var relative = Path.GetRelativePath(Path.GetFullPath(rootPath), Path.GetFullPath(candidatePath));
+        return relative != "."
+            && !string.Equals(relative, "..", StringComparison.Ordinal)
+            && !relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+            && !Path.IsPathRooted(relative);
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(

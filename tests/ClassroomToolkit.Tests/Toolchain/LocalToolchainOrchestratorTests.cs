@@ -1,7 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text;
 using System.Security.Cryptography;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Generation;
 using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
@@ -12,6 +14,123 @@ namespace ClassroomToolkit.Tests.Toolchain;
 
 public sealed class LocalToolchainOrchestratorTests
 {
+    [Fact]
+    public async Task RunProviderAnswerGenerationAsync_RejectsMissingEgressConsent_BeforeDispatch()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        var requestPath = workspace.WriteProviderGenerationRequest();
+        var outputPath = Path.Combine(Path.GetTempPath(), $"provider-output-{Guid.NewGuid():N}");
+        var runner = new CapturingProcessRunner();
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            runner);
+
+        var result = await orchestrator.RunProviderAnswerGenerationAsync(
+            new ProviderAnswerGenerationExecutionRequest(
+                requestPath,
+                workspace.GenerationWorkspaceRoot,
+                outputPath,
+                workspace.ProviderConfigPath,
+                AllowCloudEgress: false));
+
+        result.Execution.Succeeded.Should().BeFalse();
+        result.Execution.Output.Should().Contain("explicit cloud-egress consent");
+        result.Generation.Should().BeNull();
+        runner.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RunProviderAnswerGenerationAsync_InvokesProvider_AndProjectsPendingReviewCandidate()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        var requestPath = workspace.WriteProviderGenerationRequest();
+        var outputPath = Path.Combine(Path.GetTempPath(), $"课堂 答案-{Guid.NewGuid():N}");
+        var runner = new ProviderGenerationProcessRunner(outputPath, requestPath);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            runner);
+
+        try
+        {
+            var result = await orchestrator.RunProviderAnswerGenerationAsync(
+                new ProviderAnswerGenerationExecutionRequest(
+                    requestPath,
+                    workspace.GenerationWorkspaceRoot,
+                    outputPath,
+                    workspace.ProviderConfigPath,
+                    AllowCloudEgress: true,
+                    TimeoutMilliseconds: 45_000,
+                    MaxOutputTokens: 2_048));
+
+            result.Execution.Succeeded.Should().BeTrue();
+            result.AnswerMarkdownPath.Should().Be(Path.Combine(outputPath, "answer.md"));
+            result.ResultArtifactPath.Should().Be(Path.Combine(outputPath, "answer-generation-result.json"));
+            result.Generation.Should().NotBeNull();
+            result.Generation!.GenerationDisposition.Should().Be(
+                new AnswerGenerationDisposition(true, false, "pending_review", "not_integrated"));
+            result.Generation.Provenance.Should().Match<AnswerGenerationProvenance>(value =>
+                value.ProviderKind == "model_provider"
+                && value.LiveProvider
+                && value.CloudEgress == true);
+            runner.LastFileName.Should().Be("node");
+            runner.LastArguments.Should().ContainInOrder(
+                Path.Combine(workspace.Root, "tools", "answer-generator", "provider-generator.mjs"),
+                "--request", requestPath,
+                "--workspace-root", workspace.GenerationWorkspaceRoot,
+                "--instruction-root", workspace.Root,
+                "--out", outputPath,
+                "--config-env-file", workspace.ProviderConfigPath,
+                "--timeout-ms", "45000",
+                "--max-output-tokens", "2048",
+                "--allow-cloud-egress");
+        }
+        finally
+        {
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task RunProviderAnswerGenerationAsync_RejectsTamperedResult_AfterProviderReturns()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteSupportFiles();
+        var requestPath = workspace.WriteProviderGenerationRequest();
+        var outputPath = Path.Combine(Path.GetTempPath(), $"provider-output-{Guid.NewGuid():N}");
+        var runner = new ProviderGenerationProcessRunner(outputPath, requestPath, trusted: true);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            runner);
+
+        try
+        {
+            var result = await orchestrator.RunProviderAnswerGenerationAsync(
+                new ProviderAnswerGenerationExecutionRequest(
+                    requestPath,
+                    workspace.GenerationWorkspaceRoot,
+                    outputPath,
+                    workspace.ProviderConfigPath,
+                    AllowCloudEgress: true));
+
+            result.Execution.Succeeded.Should().BeFalse();
+            result.Execution.Output.Should().Contain("Provider generation output was rejected");
+            result.Generation.Should().BeNull();
+            result.AnswerMarkdownPath.Should().BeNull();
+        }
+        finally
+        {
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public void GetWorkspaceHealthReport_ReturnsHealthyState_WhenWorkspaceIsAligned()
     {
@@ -946,6 +1065,70 @@ public sealed class LocalToolchainOrchestratorTests
         }
     }
 
+    private sealed class ProviderGenerationProcessRunner : IProcessRunner
+    {
+        private readonly string _outputPath;
+        private readonly string _requestPath;
+        private readonly bool _trusted;
+
+        public ProviderGenerationProcessRunner(string outputPath, string requestPath, bool trusted = false)
+        {
+            _outputPath = outputPath;
+            _requestPath = requestPath;
+            _trusted = trusted;
+        }
+
+        public string? LastFileName { get; private set; }
+
+        public IReadOnlyList<string> LastArguments { get; private set; } = [];
+
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default)
+        {
+            LastFileName = fileName;
+            LastArguments = arguments.ToArray();
+            Directory.CreateDirectory(_outputPath);
+            var markdownBytes = Encoding.UTF8.GetBytes("# 参考答案\n\n42\n");
+            File.WriteAllBytes(Path.Combine(_outputPath, "answer.md"), markdownBytes);
+            var requestBytes = File.ReadAllBytes(_requestPath);
+            var result = new
+            {
+                requestId = "provider-request-001",
+                subjectPack = "math-answer",
+                sourceRequestSha256 = Convert.ToHexString(SHA256.HashData(requestBytes)).ToLowerInvariant(),
+                answerMarkdown = Encoding.UTF8.GetString(markdownBytes),
+                candidateArtifactRef = "answer.md",
+                rawAnswerSha256 = Convert.ToHexString(SHA256.HashData(markdownBytes)).ToLowerInvariant(),
+                dataClassification = new { level = "public", rationale = "Public synthetic problem." },
+                provenance = new
+                {
+                    providerKind = "model_provider",
+                    providerId = "primary",
+                    providerVersion = "test-model",
+                    liveProvider = true,
+                    providerSurface = "responses",
+                    attemptCount = 1,
+                    cloudEgress = true
+                },
+                stopReason = "provider_generated_pending_review",
+                generationDisposition = new
+                {
+                    reviewRequired = true,
+                    trusted = _trusted,
+                    acceptanceDisposition = "pending_review",
+                    workflowDisposition = "not_integrated"
+                }
+            };
+            File.WriteAllText(
+                Path.Combine(_outputPath, "answer-generation-result.json"),
+                JsonSerializer.Serialize(result));
+            return Task.FromResult(new ProcessRunResult(0, "{\"status\":\"ok\"}", string.Empty, TimeSpan.Zero));
+        }
+    }
+
     private sealed class AggregateVerificationProcessRunner : IProcessRunner
     {
         private readonly string _standardOutput;
@@ -1108,6 +1291,36 @@ public sealed class LocalToolchainOrchestratorTests
 
         public string AggregatePath => Path.Combine(Root, "aggregate.json");
 
+        public string GenerationWorkspaceRoot => Path.Combine(Root, "generation bundle");
+
+        public string ProviderConfigPath => Path.Combine(Root, ".env");
+
+        public string WriteProviderGenerationRequest()
+        {
+            Directory.CreateDirectory(GenerationWorkspaceRoot);
+            var problemBytes = Encoding.UTF8.GetBytes("A public synthetic problem.\n");
+            File.WriteAllBytes(Path.Combine(GenerationWorkspaceRoot, "problem.txt"), problemBytes);
+            var requestPath = Path.Combine(GenerationWorkspaceRoot, "answer-generation-request.json");
+            WriteJson(requestPath, new
+            {
+                schemaVersion = "1.0",
+                kind = "answer-generation-request",
+                requestId = "provider-request-001",
+                subjectPack = "math-answer",
+                problemArtifactRef = "problem.txt",
+                problemArtifactSha256 = Convert.ToHexString(SHA256.HashData(problemBytes)).ToLowerInvariant(),
+                dataClassification = new { level = "public", rationale = "Public synthetic problem." },
+                instructionAuthority = new
+                {
+                    artifactRef = "prompts/math-answer/spec.md",
+                    rawByteSha256 = new string('a', 64)
+                },
+                egressPolicy = new { allowCloud = true }
+            });
+            File.WriteAllText(ProviderConfigPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true\n");
+            return requestPath;
+        }
+
         public void WriteRootSpec(string version)
         {
             File.WriteAllText(Path.Combine(Root, $"spec_v{version}_release.md"), $"# v{version}\n");
@@ -1266,6 +1479,10 @@ public sealed class LocalToolchainOrchestratorTests
             File.WriteAllText(Path.Combine(Root, "scripts", "check-toolchain.ps1"), "# check\n");
             File.WriteAllText(Path.Combine(Root, "global.json"), "{}\n");
             File.WriteAllText(Path.Combine(Root, "ClassroomToolkit.sln"), "solution\n");
+            Directory.CreateDirectory(Path.Combine(Root, "tools", "answer-generator"));
+            File.WriteAllText(
+                Path.Combine(Root, "tools", "answer-generator", "provider-generator.mjs"),
+                "// test provider entrypoint\n");
         }
 
         private static void WriteJson(string path, object value)

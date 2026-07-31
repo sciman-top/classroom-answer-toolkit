@@ -1,4 +1,5 @@
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Generation;
 using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 
@@ -13,6 +14,10 @@ public interface IToolchainOrchestrator
     Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default);
 
     Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default);
+
+    Task<ProviderAnswerGenerationExecutionResult> RunProviderAnswerGenerationAsync(
+        ProviderAnswerGenerationExecutionRequest request,
+        CancellationToken cancellationToken = default);
 
     Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
         AnswerDeliveryRequest request,

@@ -387,6 +387,10 @@ attestation 或等价 authority。
 - GEN-004 model-provider runtime 要求 `instructionAuthority` 绑定 `prompts/<subject-pack>/spec.md` current bytes，且只准入 `dataClassification.level=public`；request、CLI 与 gateway 三层 cloud-egress 授权缺一即阻断。
 - provider candidate/result 只写 workspace 与 repository authority 之外的新目录，并在 request/problem/spec/config snapshots 未漂移时原子 promotion；result 固定 `liveProvider=true / cloudEgress=true / pending_review / trusted=false / workflowDisposition=not_integrated`。
 - 本轮仅用 local mock 验证 Responses/Chat Completions payload、retryable failover 与负向边界；没有真实凭据或 provider observation，不构成 gateway verified、答案质量、review approval、workflow integrated、workstation accepted 或 live accepted。
+- GEN-005 WPF 入口必须把 request/workspace/config/output 与 cloud-egress consent 作为显式用户状态；文件选择、路径编辑和 consent 变化不得 dispatch，只有显式 Generate command 可以调用 provider。
+- WPF 与 orchestrator 都必须拒绝缺失 consent；orchestrator 还要拒绝 workspace 外 request、既存/越权 output、缺失 config、非法 timeout/token bound，并在成功进程退出后独立重验 request SHA-256、candidate SHA-256、candidate ref、request/subject identity、live cloud provider provenance 与固定 `pending_review / trusted=false / not_integrated` disposition。
+- WPF 成功态只设置 `SelectedAnswerMarkdownPath`、建议 PDF 路径和匹配 subject-pack；不得自动调用 delivery、生成审批、推进 review lifecycle 或修改 trust。失败/异常不得留下上次 provider candidate 的生成状态。
+- GEN-005 的 local mock、xUnit、XAML contract 与原生窗口观察只证明 repo-side workflow integrated；未使用合法真实凭据时，`gateway verified / workstation accepted / live accepted` 继续为 no，readiness controls 不变。
 - 首个 generator 只允许仓内三个完全合成的 `synthetic_fixture`，输出必须固定 `liveProvider=false`，不得把确定性模板描述为真实模型输出或 historical sample。
 - generation request、result、candidate 原始 UTF-8 bytes、generated descriptor、sample package 与 flat index 逐层以 SHA-256 绑定；路径 containment、schema、deterministic recompile 或任一 hash 漂移都 fail closed。
 - generated 候选仍需满足 scoring 的 truth/leakage 条件，并沿既有 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 进入独立桶。

@@ -227,6 +227,16 @@
 - blocks: GEN-003
 - done_definition: 仓内具备显式执行的 provider-backed answer generation runtime，并能生成固定待复核的仓外候选；只证明 repo-side provider plumbing，不构成真实 provider/live gateway verified、答案正确、review approval、WPF default workflow、workstation/live accepted，不生成 `OptimizationCandidate`
 
+### task_id: GEN-005
+
+- goal: 把 GEN-004 受控 provider runtime 接入 WPF，并保持生成、交付、review/trust 三个动作边界可审计
+- inputs: GEN-004 provider runtime、`ProviderAnswerGenerationExecutionRequest/Result`、现有 `answer.md -> PDF/review` WPF 交付入口
+- changes: 新增 WPF request/workspace/config/仓外新目录选择与显式 cloud-egress consent；浏览/准备不 dispatch，Generate command 才调用 orchestrator；orchestrator 启动前验证 consent/path/bounds，退出后重验 request/candidate hash、identity、provider provenance 与 pending-review disposition；成功只回填现有答案/subject-pack 输入，交付仍需独立命令
+- verification: 缺失 consent 零 dispatch、中文/空格路径、参数顺序、provider failure、tampered result、stale generated state、生成与交付分离、AutomationId/XAML contract、原生 WPF UI Automation 观察与完整固定门禁
+- rollback: 回滚 GEN-005 atomic commit；删除 additive domain/application/orchestrator/ViewModel/XAML/tests/strategy/evidence，保留 GEN-004 runtime、`.env` 与任何仓外用户输出
+- blocks: GEN-004, REVIEW-002
+- done_definition: WPF 可显式调用 provider 生成并把固定 pending-review/untrusted 候选送入既有交付输入，且不会自动交付或提升 trust；只证明 repo-side workflow integrated，不构成真实 gateway verified、答案正确、review approval、workstation/live accepted，不生成 `OptimizationCandidate`
+
 ## Epic VISION：视觉双轨与 evidence
 
 ### task_id: VISION-001

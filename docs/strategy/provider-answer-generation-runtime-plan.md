@@ -30,8 +30,17 @@ directly change delivery trust or lifecycle.
 
 Tests mock both OpenAI-compatible surfaces and provider failures without real credentials or network
 egress. They prove request shaping, failover, authority checks, and atomic fail-closed behavior only.
-Live gateway verification, answer quality, WPF default workflow integration, review approval,
-workstation acceptance, and live acceptance remain open. No `OptimizationCandidate` is generated.
+GEN-005 now exposes this runtime through an explicit WPF Generate action and routes a verified
+candidate into the existing delivery input without automatically delivering it. Live gateway
+verification, answer quality, review approval, workstation acceptance, and live acceptance remain
+open. No `OptimizationCandidate` is generated.
+
+## GEN-005 Follow-On Boundary
+
+WPF selection and path preparation are local-only and must not dispatch. Both the command body and
+orchestrator require explicit cloud-egress consent. The orchestrator independently validates GEN-004
+outputs before WPF can select `answer.md`; PDF/review delivery remains a separate explicit command.
+See `provider-answer-generation-wpf-workflow-plan.md` for the workflow contract.
 
 ## Rollback
 

@@ -32,7 +32,7 @@ This project provides a local Windows workflow for generating, validating, and r
 - 已以独立 public synthetic declaration 把 VISION-021 两个 heuristic proposals 与 VISION-022 四份 crops 投影为有限 `text_area / measurement_reading` 和 `scale_area / measurement_scale_baseline` VisualRegion；该编译器不做像素、题意、答案或通用图元推断，结果保持待复核、未接受、未接 Track/WPF/live。
 - 已以独立 public synthetic declaration 把 current `junior-instrument-scale` structure/crop authority 投影为一组 pointer 与五组 major-tick edge groups；该编译器不做自动 component detection、量程、分度值、数值或读数理解，也未接 FigureUnderstanding、Track/WPF/live。
 - 已在上述 component authority 上用独立 declaration 和 doubled-pixel geometry 建立 relative scale lattice，并推导 pointer index 11；该 index 无物理量和单位，不是读数或答案，也未接 Track/WPF/live。
-- WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；还可对用户显式选择且通过 source-aware 重验的本地 review artifact 做三类只读队列投影。审批生成、lifecycle 回写和原题生成主链仍未接入。
+- WPF 已能显式选择 public `AnswerGenerationRequest`、工作区、provider 配置与仓外新输出目录；只有用户勾选云外发并点击生成时才调用 GEN-004，成功后仅把 pending-review/untrusted `answer.md` 回填到既有交付输入，PDF/review 仍需第二次显式执行。WPF 也能投影 delivery review/trust、附着并重验本地决策证据，以及投影三类只读 review queue；审批生成和 lifecycle writeback 仍未接入。
 - 已落地自动解题工作站终局计划与 Typst 主渲染迁移计划；当前运行时仍保持 Playwright / Chromium。
 - 支持实验性的受控插图插入链路，可把用户提供或人工复核后的答案图块插入 PDF。
 - WPF 桌面应用提供本地工具链入口和工作区诊断。
@@ -49,7 +49,7 @@ English summary:
 - Explicit public synthetic declarations can compile bounded reading/scale regions and pointer/major-tick edge groups from hash-bound authorities; these compilers do not establish automatic classification, scale interpretation, answers, trust, workflow integration, or live acceptance.
 - A bounded synthetic scale-lattice compiler derives relative pointer index 11 from hash-bound doubled-pixel geometry while keeping physical quantity, unit, answers, trust, workflow integration, and live acceptance absent.
 - Optional AI gateway config validation, text failover, and explicit vision TrackResult probes are available; cloud egress is disabled by default and real keys stay in local `.env`.
-- After a delivery, WPF can project the latest manifest's review lifecycle, visual-review, and trust state and use a fail-closed tool to attach, refresh, and open a local JSON `DecisionRecord`. It can also build a read-only three-lane queue from explicitly selected, source-reverified local review artifacts. Approval generation, lifecycle write-back, and source-question generation remain open.
+- WPF can explicitly launch public-data provider generation with cloud-egress consent and route the resulting pending-review/untrusted `answer.md` into the existing delivery input. Generation never starts delivery automatically. WPF also projects delivery review/trust, attaches and reverifies local decision evidence, and builds a source-reverified three-lane read-only review queue. Approval generation and lifecycle write-back remain open.
 - The final auto-solving workstation and Typst primary-renderer migration plans are documented; the current runtime remains Playwright / Chromium.
 - Experimental controlled-graphic helpers can place reviewed answer graphics into PDFs.
 - The WPF app provides a local toolchain entry point and workspace diagnostics.

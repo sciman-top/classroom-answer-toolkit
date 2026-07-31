@@ -36,6 +36,7 @@
 30. [visual-scale-lattice-runtime-plan.md](./visual-scale-lattice-runtime-plan.md)
 31. [docx-page-normalization-runtime-plan.md](./docx-page-normalization-runtime-plan.md)
 32. [provider-answer-generation-runtime-plan.md](./provider-answer-generation-runtime-plan.md)
+33. [provider-answer-generation-wpf-workflow-plan.md](./provider-answer-generation-wpf-workflow-plan.md)
 33. [implementation-roadmap.md](./implementation-roadmap.md)
 34. [implementation-plan.md](./implementation-plan.md)
 35. [execution-backlog.md](./execution-backlog.md)

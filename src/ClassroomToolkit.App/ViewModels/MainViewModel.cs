@@ -4,6 +4,7 @@ using System.Text;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Generation;
 using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -53,6 +54,7 @@ public partial class MainViewModel : ObservableObject
             ?? AvailableSubjectPacks.FirstOrDefault()
             ?? "junior-physics-answer";
         SelectedProfile = "classroom";
+        GenerationConfigEnvFilePath = Path.Combine(RepositoryRoot, ".env");
 
         _healthReport = _toolchainOrchestrator.GetWorkspaceHealthReport();
         StatusMessage = _healthReport.IsHealthy ? "工作区规则链已就绪" : "工作区仍有待处理项";
@@ -81,6 +83,38 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string activityLog = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GenerateProviderAnswerCommand))]
+    private string generationRequestArtifactPath = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GenerateProviderAnswerCommand))]
+    private string generationWorkspaceRoot = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GenerateProviderAnswerCommand))]
+    private string generationOutputDirectoryPath = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GenerateProviderAnswerCommand))]
+    private string generationConfigEnvFilePath = string.Empty;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GenerateProviderAnswerCommand))]
+    private bool allowGenerationCloudEgress;
+
+    [ObservableProperty]
+    private string lastGeneratedAnswerMarkdownPath = string.Empty;
+
+    [ObservableProperty]
+    private string lastGeneratedResultPath = string.Empty;
+
+    [ObservableProperty]
+    private string lastGenerationReviewStatus = "未生成";
+
+    [ObservableProperty]
+    private string lastGenerationTrustStatus = "未可信";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
@@ -177,6 +211,10 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
     [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
     [NotifyCanExecuteChangedFor(nameof(BrowseAnswerMarkdownCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BrowseGenerationRequestCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BrowseGenerationOutputParentCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BrowseGenerationConfigCommand))]
+    [NotifyCanExecuteChangedFor(nameof(GenerateProviderAnswerCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
     [NotifyCanExecuteChangedFor(nameof(AttachDeliveryDecisionAggregateCommand))]
@@ -186,6 +224,16 @@ public partial class MainViewModel : ObservableObject
     private bool isBusy;
 
     private bool CanRunActions() => !IsBusy;
+
+    private bool CanGenerateProviderAnswer()
+    {
+        return !IsBusy
+            && AllowGenerationCloudEgress
+            && !string.IsNullOrWhiteSpace(GenerationRequestArtifactPath)
+            && !string.IsNullOrWhiteSpace(GenerationWorkspaceRoot)
+            && !string.IsNullOrWhiteSpace(GenerationOutputDirectoryPath)
+            && !string.IsNullOrWhiteSpace(GenerationConfigEnvFilePath);
+    }
 
     private bool CanDeliver() => !IsBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
 
@@ -225,6 +273,121 @@ public partial class MainViewModel : ObservableObject
         {
             SelectedAnswerMarkdownPath = dialog.FileName;
             SelectedOutputPdfPath = Path.ChangeExtension(dialog.FileName, ".pdf");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void BrowseGenerationRequest()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "选择 AnswerGenerationRequest",
+            Filter = "JSON 文件 (*.json)|*.json",
+            InitialDirectory = Directory.Exists(GenerationWorkspaceRoot)
+                ? GenerationWorkspaceRoot
+                : RepositoryRoot
+        };
+        if (dialog.ShowDialog() == true)
+        {
+            GenerationRequestArtifactPath = dialog.FileName;
+            GenerationWorkspaceRoot = Path.GetDirectoryName(dialog.FileName) ?? string.Empty;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void BrowseGenerationOutputParent()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "选择 Provider 生成输出的父目录",
+            Multiselect = false
+        };
+        if (dialog.ShowDialog() == true)
+        {
+            GenerationOutputDirectoryPath = Path.Combine(
+                dialog.FolderName,
+                $"answer-generation-{DateTime.Now:yyyyMMdd-HHmmss}");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    private void BrowseGenerationConfig()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "选择 Provider 配置文件",
+            Filter = "环境配置 (.env;*.env)|.env;*.env|所有文件 (*.*)|*.*",
+            InitialDirectory = Directory.Exists(Path.GetDirectoryName(GenerationConfigEnvFilePath))
+                ? Path.GetDirectoryName(GenerationConfigEnvFilePath)
+                : RepositoryRoot
+        };
+        if (dialog.ShowDialog() == true)
+        {
+            GenerationConfigEnvFilePath = dialog.FileName;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGenerateProviderAnswer))]
+    private async Task GenerateProviderAnswerAsync()
+    {
+        if (!CanGenerateProviderAnswer())
+        {
+            StatusMessage = AllowGenerationCloudEgress
+                ? "Provider 生成参数不完整"
+                : "未授权公开题目云外发";
+            LastResultSummary = StatusMessage;
+            return;
+        }
+        ClearGenerationState();
+        IsBusy = true;
+        StatusMessage = "Provider 答案生成中...";
+        AppendSectionTitle("Provider 答案生成");
+        try
+        {
+            var request = new ProviderAnswerGenerationExecutionRequest(
+                GenerationRequestArtifactPath,
+                GenerationWorkspaceRoot,
+                GenerationOutputDirectoryPath,
+                GenerationConfigEnvFilePath,
+                AllowGenerationCloudEgress);
+            var result = await _toolchainOrchestrator.RunProviderAnswerGenerationAsync(request);
+            AppendExecution("Provider 答案生成", result.Execution);
+            if (result.Execution.Succeeded
+                && result.Generation is not null
+                && !string.IsNullOrWhiteSpace(result.AnswerMarkdownPath)
+                && !string.IsNullOrWhiteSpace(result.ResultArtifactPath))
+            {
+                LastGeneratedAnswerMarkdownPath = result.AnswerMarkdownPath;
+                LastGeneratedResultPath = result.ResultArtifactPath;
+                LastGenerationReviewStatus = "待人工复核";
+                LastGenerationTrustStatus = "未可信";
+                SelectedAnswerMarkdownPath = result.AnswerMarkdownPath;
+                SelectedOutputPdfPath = Path.ChangeExtension(result.AnswerMarkdownPath, ".pdf");
+                if (AvailableSubjectPacks.Contains(result.Generation.SubjectPack))
+                {
+                    SelectedSubjectPack = result.Generation.SubjectPack;
+                }
+                AppendLine($"生成答案: {result.AnswerMarkdownPath}");
+                AppendLine($"生成凭据: {result.ResultArtifactPath}");
+                AppendLine("Disposition: pending_review / trusted=false / awaiting explicit delivery");
+                StatusMessage = "Provider 答案已生成，等待显式交付";
+            }
+            else
+            {
+                StatusMessage = "Provider 答案生成失败";
+            }
+            LastResultSummary = $"Provider 答案生成 | 退出码 {result.Execution.ExitCode} | {result.Execution.Duration.TotalSeconds:0.0}s";
+        }
+        catch (Exception ex)
+        {
+            ClearGenerationState();
+            AppendLine(ex.Message);
+            StatusMessage = "Provider 答案生成异常";
+            LastResultSummary = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
@@ -739,6 +902,23 @@ public partial class MainViewModel : ObservableObject
         LastVisualDecisionPath = delivery.VisualDecisionPath ?? string.Empty;
         LastAggregateVerificationStatus = "未验证";
         LastAggregateManifestResultSha256 = string.Empty;
+    }
+
+    private void ClearGenerationState()
+    {
+        if (!string.IsNullOrWhiteSpace(LastGeneratedAnswerMarkdownPath)
+            && string.Equals(
+                SelectedAnswerMarkdownPath,
+                LastGeneratedAnswerMarkdownPath,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            SelectedAnswerMarkdownPath = string.Empty;
+            SelectedOutputPdfPath = string.Empty;
+        }
+        LastGeneratedAnswerMarkdownPath = string.Empty;
+        LastGeneratedResultPath = string.Empty;
+        LastGenerationReviewStatus = "未生成";
+        LastGenerationTrustStatus = "未可信";
     }
 
     private void ClearReviewQueueProjection(string status)

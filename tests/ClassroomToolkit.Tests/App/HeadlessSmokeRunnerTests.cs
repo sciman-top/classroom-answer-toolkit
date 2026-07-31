@@ -1,6 +1,7 @@
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Generation;
 using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;
@@ -296,6 +297,13 @@ public sealed class HeadlessSmokeRunnerTests
         public Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(ToolchainExecutionResult.Success(ToolchainScriptKind.Check, @"D:\repo\scripts\check-toolchain.ps1", DateTimeOffset.Now, DateTimeOffset.Now, string.Empty));
+        }
+
+        public Task<ProviderAnswerGenerationExecutionResult> RunProviderAnswerGenerationAsync(
+            ProviderAnswerGenerationExecutionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException("Headless smoke does not dispatch provider generation.");
         }
 
         public Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(

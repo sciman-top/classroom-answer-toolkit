@@ -2,6 +2,7 @@ using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.Domain.Generation;
 using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;
@@ -10,6 +11,79 @@ namespace ClassroomToolkit.Tests.App;
 
 public sealed class MainViewModelTests
 {
+    [Fact]
+    public async Task GenerateProviderAnswerAsync_RequiresExplicitConsent_WithoutDispatch()
+    {
+        var orchestrator = new FakeToolchainOrchestrator();
+        var viewModel = new MainViewModel(orchestrator, new FakePathOpener(), new FakeDiagnosticsExporter())
+        {
+            GenerationRequestArtifactPath = @"D:\bundle\request.json",
+            GenerationWorkspaceRoot = @"D:\bundle",
+            GenerationOutputDirectoryPath = @"E:\outputs\candidate-001",
+            AllowGenerationCloudEgress = false
+        };
+
+        await viewModel.GenerateProviderAnswerCommand.ExecuteAsync(null);
+
+        orchestrator.LastGenerationRequest.Should().BeNull();
+        viewModel.SelectedAnswerMarkdownPath.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GenerateProviderAnswerAsync_PopulatesDeliveryInput_WithoutStartingDelivery()
+    {
+        var orchestrator = new FakeToolchainOrchestrator();
+        var viewModel = new MainViewModel(orchestrator, new FakePathOpener(), new FakeDiagnosticsExporter())
+        {
+            GenerationRequestArtifactPath = @"D:\bundle\题目 request.json",
+            GenerationWorkspaceRoot = @"D:\bundle",
+            GenerationOutputDirectoryPath = @"E:\课堂输出\candidate-001",
+            GenerationConfigEnvFilePath = @"D:\repo\.env",
+            AllowGenerationCloudEgress = true
+        };
+
+        await viewModel.GenerateProviderAnswerCommand.ExecuteAsync(null);
+
+        orchestrator.LastGenerationRequest.Should().Be(new ProviderAnswerGenerationExecutionRequest(
+            @"D:\bundle\题目 request.json",
+            @"D:\bundle",
+            @"E:\课堂输出\candidate-001",
+            @"D:\repo\.env",
+            AllowCloudEgress: true));
+        orchestrator.LastRequest.Should().BeNull("generation and delivery remain separate explicit actions");
+        viewModel.SelectedAnswerMarkdownPath.Should().Be(@"E:\课堂输出\candidate-001\answer.md");
+        viewModel.SelectedOutputPdfPath.Should().Be(@"E:\课堂输出\candidate-001\answer.pdf");
+        viewModel.LastGeneratedResultPath.Should().Be(@"E:\课堂输出\candidate-001\answer-generation-result.json");
+        viewModel.LastGenerationReviewStatus.Should().Be("待人工复核");
+        viewModel.LastGenerationTrustStatus.Should().Be("未可信");
+        viewModel.StatusMessage.Should().Be("Provider 答案已生成，等待显式交付");
+    }
+
+    [Fact]
+    public async Task GenerateProviderAnswerAsync_FailureClearsPriorGeneratedCandidate()
+    {
+        var orchestrator = new FakeToolchainOrchestrator();
+        var viewModel = new MainViewModel(orchestrator, new FakePathOpener(), new FakeDiagnosticsExporter())
+        {
+            GenerationRequestArtifactPath = @"D:\bundle\request.json",
+            GenerationWorkspaceRoot = @"D:\bundle",
+            GenerationOutputDirectoryPath = @"E:\outputs\candidate-001",
+            AllowGenerationCloudEgress = true
+        };
+        await viewModel.GenerateProviderAnswerCommand.ExecuteAsync(null);
+        orchestrator.FailGeneration = true;
+        viewModel.GenerationOutputDirectoryPath = @"E:\outputs\candidate-002";
+
+        await viewModel.GenerateProviderAnswerCommand.ExecuteAsync(null);
+
+        viewModel.SelectedAnswerMarkdownPath.Should().BeEmpty();
+        viewModel.LastGeneratedAnswerMarkdownPath.Should().BeEmpty();
+        viewModel.LastGeneratedResultPath.Should().BeEmpty();
+        viewModel.LastGenerationReviewStatus.Should().Be("未生成");
+        viewModel.LastGenerationTrustStatus.Should().Be("未可信");
+        viewModel.StatusMessage.Should().Be("Provider 答案生成失败");
+    }
+
     [Fact]
     public async Task DeliverAsync_UpdatesRecentArtifactState_AndSnapshotId()
     {
@@ -437,6 +511,8 @@ public sealed class MainViewModelTests
     {
         public AnswerDeliveryRequest? LastRequest { get; private set; }
 
+        public ProviderAnswerGenerationExecutionRequest? LastGenerationRequest { get; private set; }
+
         public VisualDecisionAttachmentRequest? LastAttachmentRequest { get; private set; }
 
         public DeliveryDecisionAggregateAttachmentVerificationRequest? LastVerificationRequest { get; private set; }
@@ -446,6 +522,8 @@ public sealed class MainViewModelTests
         public ReviewQueueProjectionRequest? LastReviewQueueRequest { get; private set; }
 
         public bool RejectReviewQueueProjection { get; set; }
+
+        public bool FailGeneration { get; set; }
 
         public bool FailAggregateAttachment { get; init; }
 
@@ -495,6 +573,44 @@ public sealed class MainViewModelTests
         public Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(Success(ToolchainScriptKind.Check, @"D:\repo\scripts\check-toolchain.ps1"));
+        }
+
+        public Task<ProviderAnswerGenerationExecutionResult> RunProviderAnswerGenerationAsync(
+            ProviderAnswerGenerationExecutionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            LastGenerationRequest = request;
+            var script = @"D:\repo\tools\answer-generator\provider-generator.mjs";
+            if (FailGeneration)
+            {
+                var failed = ToolchainExecutionResult.Failure(
+                    ToolchainScriptKind.GenerateProviderAnswer,
+                    script,
+                    1,
+                    DateTimeOffset.Now,
+                    DateTimeOffset.Now,
+                    "synthetic provider failure");
+                return Task.FromResult(new ProviderAnswerGenerationExecutionResult(failed, null, null, null));
+            }
+
+            var answerPath = Path.Combine(request.OutputDirectoryPath, "answer.md");
+            var resultPath = Path.Combine(request.OutputDirectoryPath, "answer-generation-result.json");
+            var generation = new AnswerGenerationResult(
+                "provider-request-001",
+                "math-answer",
+                new string('a', 64),
+                "# answer\n",
+                "answer.md",
+                new string('b', 64),
+                new AnswerGenerationDataClassification("public", "Public problem."),
+                new AnswerGenerationProvenance("model_provider", "primary", "test-model", true, "responses", 1, true),
+                "provider_generated_pending_review",
+                new AnswerGenerationDisposition(true, false, "pending_review", "not_integrated"));
+            return Task.FromResult(new ProviderAnswerGenerationExecutionResult(
+                Success(ToolchainScriptKind.GenerateProviderAnswer, script),
+                generation,
+                answerPath,
+                resultPath));
         }
 
         public Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
