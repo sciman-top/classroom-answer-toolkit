@@ -4,7 +4,6 @@ using System.Text;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
-using ClassroomToolkit.Domain.Review;
 using ClassroomToolkit.Domain.Toolchain;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -16,629 +15,157 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IToolchainOrchestrator _toolchainOrchestrator;
     private readonly IPathOpener _pathOpener;
-    private readonly IWorkspaceDiagnosticsExporter _workspaceDiagnosticsExporter;
     private readonly StringBuilder _activityLog = new();
-    private WorkspaceHealthReport _healthReport;
 
-    public MainViewModel(
-        IToolchainOrchestrator toolchainOrchestrator,
-        IPathOpener pathOpener,
-        IWorkspaceDiagnosticsExporter workspaceDiagnosticsExporter)
+    public MainViewModel(IToolchainOrchestrator toolchainOrchestrator, IPathOpener pathOpener)
     {
         _toolchainOrchestrator = toolchainOrchestrator;
         _pathOpener = pathOpener;
-        _workspaceDiagnosticsExporter = workspaceDiagnosticsExporter;
+        AvailableSubjectPacks = new ObservableCollection<string>();
         StatusCards = new ObservableCollection<StatusCardViewModel>();
         Issues = new ObservableCollection<string>();
-        AvailableSubjectPacks = new ObservableCollection<string>();
-        ReviewQueueItems = new ObservableCollection<ReviewQueueItem>();
 
-        var workspaceInfo = _toolchainOrchestrator.GetWorkspaceInfo();
-        RepositoryRoot = workspaceInfo.RepositoryRoot;
-        BootstrapScriptPath = workspaceInfo.BootstrapScriptPath;
-        CheckScriptPath = workspaceInfo.CheckScriptPath;
-        WorkspaceSummary = workspaceInfo.Summary;
-
-        foreach (var subjectPack in workspaceInfo.SubjectPacks)
+        var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
+        RepositoryRoot = workspace.RepositoryRoot;
+        WorkspaceSummary = workspace.Summary;
+        BootstrapScriptPath = workspace.BootstrapScriptPath;
+        CheckScriptPath = workspace.CheckScriptPath;
+        foreach (var subjectPack in workspace.SubjectPacks)
         {
             AvailableSubjectPacks.Add(subjectPack);
         }
-
         if (AvailableSubjectPacks.Count == 0)
         {
             AvailableSubjectPacks.Add("junior-physics-answer");
         }
+        SelectedSubjectPack = workspace.PrimarySubjectPack ?? AvailableSubjectPacks[0];
 
-        SelectedSubjectPack = workspaceInfo.PrimarySubjectPack
-            ?? AvailableSubjectPacks.FirstOrDefault()
-            ?? "junior-physics-answer";
-        SelectedProfile = "classroom";
-
-        _healthReport = _toolchainOrchestrator.GetWorkspaceHealthReport();
-        StatusMessage = _healthReport.IsHealthy ? "工作区规则链已就绪" : "工作区仍有待处理项";
-        LastResultSummary = "等待操作";
-
-        RefreshHealthPresentation();
+        RefreshHealth();
     }
 
-    [ObservableProperty]
-    private string repositoryRoot = string.Empty;
+    public ObservableCollection<string> AvailableSubjectPacks { get; }
+    public ObservableCollection<StatusCardViewModel> StatusCards { get; }
+    public ObservableCollection<string> Issues { get; }
 
-    [ObservableProperty]
-    private string bootstrapScriptPath = string.Empty;
-
-    [ObservableProperty]
-    private string checkScriptPath = string.Empty;
-
-    [ObservableProperty]
-    private string workspaceSummary = string.Empty;
-
-    [ObservableProperty]
-    private string statusMessage = string.Empty;
-
-    [ObservableProperty]
-    private string lastResultSummary = string.Empty;
-
-    [ObservableProperty]
-    private string activityLog = string.Empty;
-
+    [ObservableProperty] private string repositoryRoot = string.Empty;
+    [ObservableProperty] private string workspaceSummary = string.Empty;
+    [ObservableProperty] private string bootstrapScriptPath = string.Empty;
+    [ObservableProperty] private string checkScriptPath = string.Empty;
+    [ObservableProperty] private string statusMessage = string.Empty;
+    [ObservableProperty] private string lastResultSummary = "等待操作";
+    [ObservableProperty] private string activityLog = string.Empty;
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     private string selectedAnswerMarkdownPath = string.Empty;
-
+    [ObservableProperty] private string selectedOutputPdfPath = string.Empty;
+    [ObservableProperty] private string selectedSubjectPack = "junior-physics-answer";
+    [ObservableProperty] private string selectedProfile = "classroom";
+    [ObservableProperty] private bool keepReviewArtifacts = true;
     [ObservableProperty]
-    private string selectedOutputPdfPath = string.Empty;
-
-    [ObservableProperty]
-    private string selectedSubjectPack = "junior-physics-answer";
-
-    [ObservableProperty]
-    private string selectedProfile = "classroom";
-
-    [ObservableProperty]
-    private bool keepReviewArtifacts = true;
-
-    [ObservableProperty]
-    private string lastOutputPdfPath = string.Empty;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
-    [NotifyCanExecuteChangedFor(nameof(AttachDeliveryDecisionAggregateCommand))]
-    [NotifyCanExecuteChangedFor(nameof(VerifyDeliveryDecisionAggregateAttachmentCommand))]
-    private string lastDeliveryManifestPath = string.Empty;
-
-    [ObservableProperty]
-    private string lastReviewDirectoryPath = string.Empty;
-
-    [ObservableProperty]
-    private string lastSnapshotId = string.Empty;
-
-    [ObservableProperty]
-    private string lastDeliverySubjectPack = string.Empty;
-
-    [ObservableProperty]
-    private string lastDeliveryProfile = string.Empty;
-
-    [ObservableProperty]
-    private string lastDeliverySnapshotPath = string.Empty;
-
-    [ObservableProperty]
-    private string lastDeliverySnapshotVersion = string.Empty;
-
-    [ObservableProperty]
-    private string lastReviewLifecycleState = string.Empty;
-
-    [ObservableProperty]
-    private string lastVisualReviewStatus = string.Empty;
-
-    [ObservableProperty]
-    private string lastTrustStatus = string.Empty;
-
-    [ObservableProperty]
-    private string lastAggregateVerificationStatus = "未验证";
-
-    [ObservableProperty]
-    private string lastAggregateManifestResultSha256 = string.Empty;
-
-    [ObservableProperty]
-    private string lastVisualDecisionPath = string.Empty;
-
-    [ObservableProperty]
-    private string lastDiagnosticsBundlePath = string.Empty;
-
-    [ObservableProperty]
-    private string lastDiagnosticsManifestPath = string.Empty;
-
-    [ObservableProperty]
-    private string reviewQueueProjectionStatus = "未投影";
-
-    [ObservableProperty]
-    private int needsHumanLabelCount;
-
-    [ObservableProperty]
-    private int highRiskApprovalCount;
-
-    [ObservableProperty]
-    private int truthNeedsReviewCount;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(OpenSelectedReviewQueueSourceCommand))]
-    private ReviewQueueItem? selectedReviewQueueItem;
-
-    public ObservableCollection<StatusCardViewModel> StatusCards { get; }
-
-    public ObservableCollection<string> Issues { get; }
-
-    public ObservableCollection<string> AvailableSubjectPacks { get; }
-
-    public ObservableCollection<ReviewQueueItem> ReviewQueueItems { get; }
-
-    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
     [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
-    [NotifyCanExecuteChangedFor(nameof(BrowseAnswerMarkdownCommand))]
-    [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
-    [NotifyCanExecuteChangedFor(nameof(AttachVisualDecisionCommand))]
-    [NotifyCanExecuteChangedFor(nameof(AttachDeliveryDecisionAggregateCommand))]
-    [NotifyCanExecuteChangedFor(nameof(VerifyDeliveryDecisionAggregateAttachmentCommand))]
-    [NotifyCanExecuteChangedFor(nameof(ProjectReviewQueueCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenSelectedReviewQueueSourceCommand))]
     private bool isBusy;
+    [ObservableProperty] private string lastOutputPdfPath = string.Empty;
+    [ObservableProperty] private string lastDeliveryManifestPath = string.Empty;
+    [ObservableProperty] private string lastReviewDirectoryPath = string.Empty;
+    [ObservableProperty] private string lastSnapshotId = string.Empty;
+    [ObservableProperty] private string lastDeliverySnapshotPath = string.Empty;
+    [ObservableProperty] private string lastDeliverySnapshotVersion = string.Empty;
+    [ObservableProperty] private string lastReviewLifecycleState = string.Empty;
 
-    private bool CanRunActions() => !IsBusy;
+    private bool CanDeliver() => !IsBusy && File.Exists(SelectedAnswerMarkdownPath);
+    private bool CanRunToolchain() => !IsBusy;
 
-    private bool CanDeliver() => !IsBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
-
-    private bool CanAttachVisualDecision()
-    {
-        return !IsBusy && File.Exists(LastDeliveryManifestPath);
-    }
-
-    private bool CanVerifyDeliveryDecisionAggregateAttachment()
-    {
-        return !IsBusy && File.Exists(LastDeliveryManifestPath);
-    }
-
-    private bool CanAttachDeliveryDecisionAggregate()
-    {
-        return !IsBusy && File.Exists(LastDeliveryManifestPath);
-    }
-
-    private bool CanOpenSelectedReviewQueueSource()
-    {
-        return !IsBusy && SelectedReviewQueueItem is not null;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
+    [RelayCommand]
     private void BrowseAnswerMarkdown()
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "选择参考答案 Markdown",
-            Filter = "Markdown 文件 (*.md)|*.md",
-            InitialDirectory = Directory.Exists(Path.Combine(RepositoryRoot, "样例交付"))
-                ? Path.Combine(RepositoryRoot, "样例交付")
-                : RepositoryRoot
+            Title = "选择答案 Markdown",
+            Filter = "Markdown (*.md)|*.md|所有文件 (*.*)|*.*"
         };
-
         if (dialog.ShowDialog() == true)
         {
             SelectedAnswerMarkdownPath = dialog.FileName;
-            SelectedOutputPdfPath = Path.ChangeExtension(dialog.FileName, ".pdf");
+            if (string.IsNullOrWhiteSpace(SelectedOutputPdfPath))
+            {
+                SelectedOutputPdfPath = Path.ChangeExtension(dialog.FileName, ".pdf");
+            }
         }
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private async Task BootstrapAsync()
-    {
-        await RunToolchainScriptAsync("初始化工具链", ct => _toolchainOrchestrator.RunBootstrapAsync(ct));
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private async Task CheckAsync()
-    {
-        await RunToolchainScriptAsync("执行体检", ct => _toolchainOrchestrator.RunCheckAsync(ct));
     }
 
     [RelayCommand(CanExecute = nameof(CanDeliver))]
     private async Task DeliverAsync()
     {
-        IsBusy = true;
-        StatusMessage = "执行答案交付中...";
-        AppendSectionTitle("执行答案交付");
-
-        try
+        await RunAsync("正在生成排版答案 PDF...", async () =>
         {
-            var request = new AnswerDeliveryRequest(
-                SelectedAnswerMarkdownPath,
-                string.IsNullOrWhiteSpace(SelectedOutputPdfPath) ? null : SelectedOutputPdfPath,
-                string.IsNullOrWhiteSpace(SelectedProfile) ? "classroom" : SelectedProfile,
-                KeepReviewArtifacts,
-                string.IsNullOrWhiteSpace(SelectedSubjectPack) ? null : SelectedSubjectPack);
-
-            var (execution, delivery) = await _toolchainOrchestrator.RunDeliverAsync(request);
-            AppendExecution("答案交付", execution);
-
-            if (delivery is not null)
+            var (execution, delivery) = await _toolchainOrchestrator.RunDeliverAsync(
+                new AnswerDeliveryRequest(
+                    SelectedAnswerMarkdownPath,
+                    string.IsNullOrWhiteSpace(SelectedOutputPdfPath) ? null : SelectedOutputPdfPath,
+                    SelectedProfile,
+                    KeepReviewArtifacts,
+                    SelectedSubjectPack));
+            ApplyExecution(execution);
+            if (!execution.Succeeded || delivery is null)
             {
-                ApplyDeliveryState(delivery);
-
-                AppendLine(string.Empty);
-                AppendLine("交付产物:");
-                AppendLine($"- PDF: {delivery.OutputPdfPath}");
-                AppendLine($"- Delivery Manifest: {delivery.DeliveryManifestPath}");
-                AppendLine($"- Review Directory: {delivery.ReviewDirectoryPath}");
-                AppendLine($"- Subject Pack: {delivery.SubjectPack}");
-                AppendLine($"- Profile: {delivery.Profile}");
-                AppendLine($"- Snapshot: {delivery.SnapshotId ?? "未知"}");
-                AppendLine($"- Snapshot Path: {delivery.SnapshotPath}");
-                AppendLine($"- Snapshot Version: {delivery.SnapshotVersion ?? "未知"}");
-                AppendLine($"- Review Lifecycle: {LastReviewLifecycleState}");
-                AppendLine($"- Visual Review: {LastVisualReviewStatus}");
-                AppendLine($"- Trusted: {LastTrustStatus}");
-                AppendLine($"- Visual Decision: {(string.IsNullOrWhiteSpace(LastVisualDecisionPath) ? "未关联" : LastVisualDecisionPath)}");
-            }
-
-            StatusMessage = execution.Succeeded ? "答案交付完成" : "答案交付失败";
-            LastResultSummary = $"答案交付 | 退出码 {execution.ExitCode} | {execution.Duration.TotalSeconds:0.0}s";
-            RefreshHealthPresentation(appendLog: false);
-        }
-        catch (Exception ex)
-        {
-            AppendLine(ex.Message);
-            StatusMessage = "答案交付异常";
-            LastResultSummary = ex.Message;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    [RelayCommand(CanExecute = nameof(CanAttachVisualDecision))]
-    private async Task AttachVisualDecisionAsync(string? decisionPath)
-    {
-        if (string.IsNullOrWhiteSpace(decisionPath))
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = "选择 DecisionRecord",
-                Filter = "JSON 文件 (*.json)|*.json",
-                InitialDirectory = Directory.Exists(LastReviewDirectoryPath)
-                    ? LastReviewDirectoryPath
-                    : Path.GetDirectoryName(LastDeliveryManifestPath)
-            };
-
-            if (dialog.ShowDialog() != true)
-            {
+                StatusMessage = "答案交付失败";
                 return;
             }
 
-            decisionPath = dialog.FileName;
-        }
-
-        IsBusy = true;
-        StatusMessage = "关联视觉决策中...";
-        AppendSectionTitle("关联视觉决策");
-
-        try
-        {
-            var result = await _toolchainOrchestrator.AttachVisualDecisionAsync(
-                new VisualDecisionAttachmentRequest(LastDeliveryManifestPath, decisionPath));
-            AppendExecution("关联视觉决策", result.Execution);
-
-            if (result.Delivery is not null)
-            {
-                ApplyDeliveryState(result.Delivery);
-            }
-
-            StatusMessage = result.Execution.Succeeded && result.Delivery is not null
-                ? "视觉决策已关联"
-                : "视觉决策关联失败";
-            LastResultSummary = $"关联视觉决策 | 退出码 {result.Execution.ExitCode} | {result.Execution.Duration.TotalSeconds:0.0}s";
-        }
-        catch (Exception ex)
-        {
-            AppendLine(ex.Message);
-            StatusMessage = "视觉决策关联异常";
-            LastResultSummary = ex.Message;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+            LastOutputPdfPath = delivery.OutputPdfPath;
+            LastDeliveryManifestPath = delivery.DeliveryManifestPath;
+            LastReviewDirectoryPath = delivery.ReviewDirectoryPath;
+            LastSnapshotId = delivery.SnapshotId ?? string.Empty;
+            LastDeliverySnapshotPath = delivery.SnapshotPath;
+            LastDeliverySnapshotVersion = delivery.SnapshotVersion ?? string.Empty;
+            LastReviewLifecycleState = delivery.ReviewLifecycleState ?? string.Empty;
+            StatusMessage = "答案交付完成";
+        });
     }
 
-    [RelayCommand(CanExecute = nameof(CanVerifyDeliveryDecisionAggregateAttachment))]
-    private async Task VerifyDeliveryDecisionAggregateAttachmentAsync()
+    [RelayCommand(CanExecute = nameof(CanRunToolchain))]
+    private async Task BootstrapAsync()
     {
-        IsBusy = true;
-        StatusMessage = "重验交付聚合凭据中...";
-        LastVisualReviewStatus = "未裁定";
-        LastTrustStatus = "未可信";
-        LastAggregateVerificationStatus = "验证中";
-        LastAggregateManifestResultSha256 = string.Empty;
-        AppendSectionTitle("重验交付聚合凭据");
-
-        try
-        {
-            var result = await _toolchainOrchestrator.VerifyDeliveryDecisionAggregateAttachmentAsync(
-                new DeliveryDecisionAggregateAttachmentVerificationRequest(LastDeliveryManifestPath));
-            AppendExecution("重验交付聚合凭据", result.Execution);
-
-            if (result.Execution.Succeeded
-                && result.Verification is not null
-                && result.Delivery is not null)
-            {
-                ApplyDeliveryState(result.Delivery);
-                LastAggregateVerificationStatus = "已验证";
-                LastAggregateManifestResultSha256 = result.Verification.ManifestResultSha256;
-                StatusMessage = "交付聚合凭据已验证";
-            }
-            else
-            {
-                LastAggregateVerificationStatus = "验证失败";
-                StatusMessage = "交付聚合凭据验证失败";
-            }
-
-            LastResultSummary =
-                $"重验交付聚合凭据 | 退出码 {result.Execution.ExitCode} | {result.Execution.Duration.TotalSeconds:0.0}s";
-        }
-        catch (Exception ex)
-        {
-            AppendLine(ex.Message);
-            LastAggregateVerificationStatus = "验证异常";
-            StatusMessage = "交付聚合凭据验证异常";
-            LastResultSummary = ex.Message;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        await RunToolchainAsync("正在安装或修复工具链...", _toolchainOrchestrator.RunBootstrapAsync);
     }
 
-    [RelayCommand(CanExecute = nameof(CanAttachDeliveryDecisionAggregate))]
-    private async Task AttachDeliveryDecisionAggregateAsync(string? aggregatePath)
+    [RelayCommand(CanExecute = nameof(CanRunToolchain))]
+    private async Task CheckAsync()
     {
-        if (string.IsNullOrWhiteSpace(aggregatePath))
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = "选择 DeliveryDecisionAggregate",
-                Filter = "JSON 文件 (*.json)|*.json",
-                InitialDirectory = Directory.Exists(LastReviewDirectoryPath)
-                    ? LastReviewDirectoryPath
-                    : Path.GetDirectoryName(LastDeliveryManifestPath)
-            };
-
-            if (dialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            aggregatePath = dialog.FileName;
-        }
-
-        IsBusy = true;
-        StatusMessage = "关联并重验交付聚合凭据中...";
-        LastVisualReviewStatus = "未裁定";
-        LastTrustStatus = "未可信";
-        LastAggregateVerificationStatus = "验证中";
-        LastAggregateManifestResultSha256 = string.Empty;
-        AppendSectionTitle("关联并重验交付聚合凭据");
-
-        try
-        {
-            var result = await _toolchainOrchestrator.AttachDeliveryDecisionAggregateAsync(
-                new DeliveryDecisionAggregateAttachmentRequest(
-                    LastDeliveryManifestPath,
-                    aggregatePath));
-            AppendExecution("关联交付聚合凭据", result.AttachmentExecution);
-
-            if (result.Verification is not null)
-            {
-                AppendExecution("重验交付聚合凭据", result.Verification.Execution);
-            }
-
-            if (result.Succeeded)
-            {
-                ApplyDeliveryState(result.Verification!.Delivery!);
-                LastAggregateVerificationStatus = "已验证";
-                LastAggregateManifestResultSha256 =
-                    result.Verification.Verification!.ManifestResultSha256;
-                StatusMessage = "交付聚合凭据已关联并验证";
-            }
-            else
-            {
-                LastAggregateVerificationStatus = result.AttachmentExecution.Succeeded
-                    ? "验证失败"
-                    : "附着失败";
-                StatusMessage = result.AttachmentExecution.Succeeded
-                    ? "交付聚合凭据关联后验证失败"
-                    : "交付聚合凭据关联失败";
-            }
-
-            var verificationExitCode = result.Verification?.Execution.ExitCode.ToString() ?? "N/A";
-            LastResultSummary =
-                $"关联交付聚合凭据 | 附着退出码 {result.AttachmentExecution.ExitCode} | 重验退出码 {verificationExitCode}";
-        }
-        catch (Exception ex)
-        {
-            AppendLine(ex.Message);
-            LastAggregateVerificationStatus = "附着异常";
-            StatusMessage = "交付聚合凭据关联异常";
-            LastResultSummary = ex.Message;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        await RunToolchainAsync("正在执行主链体检...", _toolchainOrchestrator.RunCheckAsync);
     }
 
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private async Task ProjectReviewQueueAsync(string[]? artifactPaths)
-    {
-        if (artifactPaths is null || artifactPaths.Length == 0)
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = "选择复核来源 JSON",
-                Filter = "JSON 文件 (*.json)|*.json",
-                Multiselect = true,
-                InitialDirectory = Directory.Exists(LastReviewDirectoryPath)
-                    ? LastReviewDirectoryPath
-                    : RepositoryRoot
-            };
-            if (dialog.ShowDialog() != true)
-            {
-                return;
-            }
-            artifactPaths = dialog.FileNames;
-        }
+    [RelayCommand] private void OpenLastOutputPdf() => OpenPath(LastOutputPdfPath);
+    [RelayCommand] private void OpenLastDeliveryManifest() => OpenPath(LastDeliveryManifestPath);
+    [RelayCommand] private void OpenLastReviewDirectory() => OpenPath(LastReviewDirectoryPath);
 
-        IsBusy = true;
-        ClearReviewQueueProjection("投影中");
-        StatusMessage = "投影复核队列中...";
-        AppendSectionTitle("投影复核队列");
-        try
-        {
-            var result = await _toolchainOrchestrator.ProjectReviewQueueAsync(
-                new ReviewQueueProjectionRequest(artifactPaths));
-            AppendExecution("投影复核队列", result.Execution);
-            if (!result.Execution.Succeeded || result.Projection is null)
-            {
-                ReviewQueueProjectionStatus = "投影失败";
-                StatusMessage = "复核队列投影失败";
-                return;
-            }
-
-            var projection = result.Projection;
-            if (!projection.Succeeded)
-            {
-                ReviewQueueProjectionStatus = "来源被拒绝";
-                StatusMessage = "复核队列来源未通过验证";
-                foreach (var rejected in projection.RejectedSources)
-                {
-                    AppendLine($"- rejected: {rejected.SourcePath} | {rejected.Reason}");
-                }
-                return;
-            }
-
-            foreach (var item in projection.Items)
-            {
-                ReviewQueueItems.Add(item);
-            }
-            NeedsHumanLabelCount = projection.NeedsHumanLabelCount;
-            HighRiskApprovalCount = projection.HighRiskApprovalCount;
-            TruthNeedsReviewCount = projection.TruthNeedsReviewCount;
-            ReviewQueueProjectionStatus = "本地已验证投影";
-            StatusMessage = "复核队列投影完成";
-            LastResultSummary =
-                $"复核队列 | 人工标注 {NeedsHumanLabelCount} | 高风险审批 {HighRiskApprovalCount} | 真值复核 {TruthNeedsReviewCount}";
-        }
-        catch (Exception ex)
-        {
-            AppendLine(ex.Message);
-            ReviewQueueProjectionStatus = "投影异常";
-            StatusMessage = "复核队列投影异常";
-            LastResultSummary = ex.Message;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    [RelayCommand(CanExecute = nameof(CanOpenSelectedReviewQueueSource))]
-    private void OpenSelectedReviewQueueSource()
-    {
-        OpenPath(SelectedReviewQueueItem?.SourcePath ?? string.Empty);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private void OpenLastOutputPdf()
-    {
-        OpenPath(LastOutputPdfPath);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private void OpenLastDeliveryManifest()
-    {
-        OpenPath(LastDeliveryManifestPath);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private void OpenLastReviewDirectory()
-    {
-        OpenPath(LastReviewDirectoryPath);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private void OpenLastVisualDecision()
-    {
-        OpenPath(LastVisualDecisionPath);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private void OpenLastDiagnosticsBundle()
-    {
-        OpenPath(LastDiagnosticsBundlePath);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private void OpenLastDiagnosticsManifest()
-    {
-        OpenPath(LastDiagnosticsManifestPath);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunActions))]
-    private void ExportDiagnostics()
-    {
-        try
-        {
-            var result = _workspaceDiagnosticsExporter.Export(new WorkspaceDiagnosticsExportRequest(
-                RepositoryRoot,
-                _healthReport,
-                LastOutputPdfPath,
-                LastDeliveryManifestPath,
-                LastReviewDirectoryPath,
-                LastSnapshotId));
-
-            LastDiagnosticsBundlePath = result.BundleDirectoryPath;
-            LastDiagnosticsManifestPath = result.ManifestPath;
-
-            AppendLine($"已导出诊断包: {result.BundleDirectoryPath}");
-            AppendLine($"诊断清单: {result.ManifestPath}");
-            LastResultSummary = $"诊断包已导出 | {result.FileCount} 个产物";
-        }
-        catch (Exception ex)
-        {
-            AppendLine(ex.Message);
-            LastResultSummary = ex.Message;
-        }
-    }
-
-    private async Task RunToolchainScriptAsync(
-        string title,
+    private async Task RunToolchainAsync(
+        string message,
         Func<CancellationToken, Task<ToolchainExecutionResult>> action)
     {
-        IsBusy = true;
-        StatusMessage = $"{title} 进行中...";
-        AppendSectionTitle(title);
-
-        try
+        await RunAsync(message, async () =>
         {
             var result = await action(CancellationToken.None);
-            AppendExecution(title, result);
-            StatusMessage = result.Succeeded ? $"{title} 完成" : $"{title} 失败";
-            LastResultSummary = $"{title} | 退出码 {result.ExitCode} | {result.Duration.TotalSeconds:0.0}s";
-            RefreshHealthPresentation(appendLog: false);
+            ApplyExecution(result);
+            StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
+            RefreshHealth();
+        });
+    }
+
+    private async Task RunAsync(string message, Func<Task> action)
+    {
+        IsBusy = true;
+        StatusMessage = message;
+        try
+        {
+            await action();
         }
         catch (Exception ex)
         {
-            AppendLine(ex.Message);
-            StatusMessage = $"{title} 异常";
-            LastResultSummary = ex.Message;
+            StatusMessage = "执行失败";
+            AppendLog(ex.ToString());
         }
         finally
         {
@@ -646,162 +173,48 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    private void RefreshHealthPresentation(bool appendLog = true)
+    private void ApplyExecution(ToolchainExecutionResult result)
     {
-        _healthReport = _toolchainOrchestrator.GetWorkspaceHealthReport();
+        LastResultSummary = $"{result.Kind}: exit {result.ExitCode}, {result.Duration.TotalSeconds:F1}s";
+        AppendLog(result.Output);
+    }
 
-        StatusCards.Clear();
-        StatusCards.Add(new StatusCardViewModel(
-            "主 Subject Pack",
-            _healthReport.PrimarySubjectPack ?? "未知",
-            $"当前交付与诊断默认上下文：{_healthReport.PrimarySubjectPack ?? "未知"}",
-            !string.IsNullOrWhiteSpace(_healthReport.PrimarySubjectPack)));
-        StatusCards.Add(new StatusCardViewModel(
-            "Subject Pack 列表",
-            _healthReport.SubjectPacks.Count.ToString(),
-            string.Join(" / ", _healthReport.SubjectPacks),
-            _healthReport.SubjectPacks.Count > 0));
-        StatusCards.Add(new StatusCardViewModel(
-            "最新规范",
-            _healthReport.LatestProductionSpecVersion ?? "未知",
-            $"资产版本 {_healthReport.AssetVersion ?? "未知"}",
-            _healthReport.LatestProductionSpecVersion == _healthReport.AssetVersion));
-        StatusCards.Add(new StatusCardViewModel(
-            "默认快照",
-            _healthReport.SnapshotExists ? (_healthReport.SnapshotVersion ?? "未知") : "缺失",
-            _healthReport.SnapshotExists
-                ? $"配置 {_healthReport.SnapshotProfile ?? "未知"}"
-                : "尚未生成 classroom 快照",
-            _healthReport.SnapshotExists));
-        StatusCards.Add(new StatusCardViewModel(
-            "固定回归",
-            _healthReport.EvalExists ? (_healthReport.EvalOk ? "通过" : "失败") : "缺失",
-            _healthReport.EvalExists ? $"共 {_healthReport.EvalCaseCount} 组" : "尚未生成 latest.json",
-            _healthReport.EvalExists && _healthReport.EvalOk));
-        StatusCards.Add(new StatusCardViewModel(
-            "受控插图",
-            _healthReport.GraphicsExists ? "实验性已检测" : "未启用",
-            _healthReport.GraphicsSummary ?? "受控插图实验链未启用。",
-            true));
-
+    private void RefreshHealth()
+    {
+        var health = _toolchainOrchestrator.GetWorkspaceHealthReport();
+        StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : "主链仍有待处理项";
         Issues.Clear();
-        foreach (var issue in _healthReport.Issues)
+        foreach (var issue in health.Issues)
         {
             Issues.Add(issue);
         }
-
-        if (!appendLog)
-        {
-            return;
-        }
-
-        AppendLine("工作区已加载。");
-        AppendLine($"仓库根目录: {RepositoryRoot}");
-        AppendLine($"Bootstrap 脚本: {BootstrapScriptPath}");
-        AppendLine($"Check 脚本: {CheckScriptPath}");
-        AppendLine($"工作区状态: {WorkspaceSummary}");
-        AppendLine($"主 Subject Pack: {_healthReport.PrimarySubjectPack ?? "未知"}");
-        AppendLine($"Subject Pack 列表: {string.Join(", ", _healthReport.SubjectPacks)}");
-        AppendLine($"规范 / 资产: {_healthReport.LatestProductionSpecVersion ?? "未知"} / {_healthReport.AssetVersion ?? "未知"}");
-        AppendLine($"Snapshot 路径: {_healthReport.SnapshotPath}");
-        AppendLine($"快照: {(_healthReport.SnapshotExists ? $"{_healthReport.SnapshotVersion} / {_healthReport.SnapshotProfile}" : "缺失")}");
-        AppendLine($"回归: {(_healthReport.EvalExists ? $"{(_healthReport.EvalOk ? "通过" : "失败")} / {_healthReport.EvalCaseCount} 组" : "缺失")}");
-        AppendLine($"受控插图: {_healthReport.GraphicsSummary ?? "未启用"}");
-
-        if (_healthReport.Issues.Count > 0)
-        {
-            AppendLine("待处理项:");
-            foreach (var issue in _healthReport.Issues)
-            {
-                AppendLine($"- {issue}");
-            }
-        }
-    }
-
-    private void ApplyDeliveryState(AnswerDeliveryResult delivery)
-    {
-        LastOutputPdfPath = delivery.OutputPdfPath;
-        LastDeliveryManifestPath = delivery.DeliveryManifestPath;
-        LastReviewDirectoryPath = delivery.ReviewDirectoryPath;
-        LastSnapshotId = delivery.SnapshotId ?? string.Empty;
-        LastDeliverySubjectPack = delivery.SubjectPack;
-        LastDeliveryProfile = delivery.Profile;
-        LastDeliverySnapshotPath = delivery.SnapshotPath;
-        LastDeliverySnapshotVersion = delivery.SnapshotVersion ?? string.Empty;
-        LastReviewLifecycleState = delivery.ReviewLifecycleState ?? "unknown";
-        LastVisualReviewStatus = delivery.VisualReviewPassed switch
-        {
-            true => "通过",
-            false => "未通过",
-            null => "未裁定"
-        };
-        LastTrustStatus = delivery.Trusted ? "可信" : "未可信";
-        LastVisualDecisionPath = delivery.VisualDecisionPath ?? string.Empty;
-        LastAggregateVerificationStatus = "未验证";
-        LastAggregateManifestResultSha256 = string.Empty;
-    }
-
-    private void ClearReviewQueueProjection(string status)
-    {
-        ReviewQueueItems.Clear();
-        SelectedReviewQueueItem = null;
-        NeedsHumanLabelCount = 0;
-        HighRiskApprovalCount = 0;
-        TruthNeedsReviewCount = 0;
-        ReviewQueueProjectionStatus = status;
-    }
-
-    private void AppendExecution(string title, ToolchainExecutionResult result)
-    {
-        AppendLine($"脚本: {result.ScriptPath}");
-        AppendLine($"退出码: {result.ExitCode}");
-        AppendLine($"耗时: {result.Duration.TotalSeconds:0.0}s");
-
-        var output = result.Output.Trim();
-        if (!string.IsNullOrWhiteSpace(output))
-        {
-            AppendLine(string.Empty);
-            AppendLine(output);
-        }
-
-        if (!result.Succeeded)
-        {
-            AppendLine(string.Empty);
-            AppendLine($"{title} 未成功完成。");
-        }
-    }
-
-    private void AppendSectionTitle(string title)
-    {
-        AppendLine(string.Empty);
-        AppendLine($"=== {title} ===");
+        StatusCards.Clear();
+        StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现", health.SubjectPacks.Count > 0));
+        StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath, health.SnapshotExists));
+        StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases", health.EvalOk));
+        StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现", health.AssetVersion == health.LatestProductionSpecVersion));
     }
 
     private void OpenPath(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
-            AppendLine("没有可打开的产物路径。");
+            StatusMessage = "没有可打开的路径";
             return;
         }
-
-        if (_pathOpener.TryOpenPath(path, out var errorMessage))
+        if (!_pathOpener.TryOpenPath(path, out var error))
         {
-            AppendLine($"已打开: {path}");
-            return;
+            StatusMessage = error ?? "无法打开路径";
         }
-
-        AppendLine(errorMessage ?? $"无法打开: {path}");
     }
 
-    private void AppendLine(string line)
+    private void AppendLog(string text)
     {
-        if (_activityLog.Length > 0)
+        if (string.IsNullOrWhiteSpace(text))
         {
-            _activityLog.AppendLine();
+            return;
         }
-
-        _activityLog.Append(line);
+        _activityLog.AppendLine(text.Trim());
         ActivityLog = _activityLog.ToString();
     }
 }

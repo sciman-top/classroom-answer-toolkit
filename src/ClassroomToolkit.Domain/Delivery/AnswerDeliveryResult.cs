@@ -12,10 +12,4 @@ public sealed record AnswerDeliveryResult(
     string? SnapshotVersion)
 {
     public string? ReviewLifecycleState { get; init; }
-
-    public string? VisualDecisionPath { get; init; }
-
-    public bool? VisualReviewPassed { get; init; }
-
-    public bool Trusted { get; init; }
 }

@@ -15,6 +15,7 @@ const ALLOWED_AI_KINDS = new Set(["openai_compatible"]);
 const ALLOWED_IMAGE_KINDS = new Set(["openai_compatible_image", "openai_compatible_image_only"]);
 const ALLOWED_TEXT_SURFACES = new Set(["responses", "chat_completions"]);
 const ALLOWED_IMAGE_SURFACES = new Set(["responses", "images"]);
+const ALLOWED_REASONING_EFFORTS = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
 
 function usage() {
   return [
@@ -212,6 +213,7 @@ function readAiProvider(env, role, canonicalPrefix, legacyPrefix) {
     apiKey: get(env, `${prefix}_API_KEY`),
     textModel: model,
     visionModel,
+    reasoningEffort: get(env, `${prefix}_REASONING_EFFORT`).toLowerCase(),
     textSurface: normalizeSurface(get(env, `${prefix}_TEXT_SURFACE`) || "responses"),
     visionSurface: normalizeSurface(get(env, `${prefix}_VISION_SURFACE`) || "responses")
   };
@@ -301,6 +303,9 @@ function validateProvider(provider, options, errors, warnings) {
     validateRequired(provider.visionModel, `${label}: vision model`, errors);
     validateSurface(provider.textSurface, ALLOWED_TEXT_SURFACES, `${label}: text surface`, errors);
     validateSurface(provider.visionSurface, ALLOWED_TEXT_SURFACES, `${label}: vision surface`, errors);
+    if (provider.reasoningEffort.length > 0 && !ALLOWED_REASONING_EFFORTS.has(provider.reasoningEffort)) {
+      errors.push(`${label}: reasoning effort must be one of ${[...ALLOWED_REASONING_EFFORTS].join(", ")}.`);
+    }
     return;
   }
 
@@ -378,6 +383,7 @@ export function summarizeProvider(provider) {
       ...base,
       textModel: provider.textModel,
       visionModel: provider.visionModel,
+      reasoningEffort: provider.reasoningEffort || null,
       textSurface: provider.textSurface,
       visionSurface: provider.visionSurface
     };
@@ -399,7 +405,7 @@ function printHumanSummary(options, config, validation, liveResults = []) {
   for (const provider of config.providers) {
     const summary = summarizeProvider(provider);
     if (summary.lane === "ai") {
-      console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, ${summary.baseUrl}, text=${summary.textModel}, vision=${summary.visionModel}, key=${summary.apiKey}`);
+      console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, ${summary.baseUrl}, text=${summary.textModel}, vision=${summary.visionModel}, reasoning=${summary.reasoningEffort ?? "default"}, key=${summary.apiKey}`);
     } else {
       console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, ${summary.baseUrl}, model=${summary.model}, surface=${summary.surface}, key=${summary.apiKey}`);
     }

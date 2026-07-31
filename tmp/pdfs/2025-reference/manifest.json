@@ -1,0 +1,47 @@
+{
+  "inputPath": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2025广州中考（答案）.pdf",
+  "outputDir": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference",
+  "generatedAt": "2026-07-31T13:57:12.411Z",
+  "renderer": "pdfjs-dist + local Chrome/Edge via Playwright",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "scale": 3,
+  "requestedPages": "all",
+  "selectedPages": [
+    1,
+    2,
+    3
+  ],
+  "pageCount": 3,
+  "pages": [
+    {
+      "pageNumber": 1,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference\\2025广州中考（答案）.page-001.png",
+      "width": 1786,
+      "height": 2526,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference\\2025广州中考（答案）.page-001.text-layer.txt",
+      "textLayerChars": 124
+    },
+    {
+      "pageNumber": 2,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference\\2025广州中考（答案）.page-002.png",
+      "width": 1786,
+      "height": 2526,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference\\2025广州中考（答案）.page-002.text-layer.txt",
+      "textLayerChars": 631
+    },
+    {
+      "pageNumber": 3,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference\\2025广州中考（答案）.page-003.png",
+      "width": 1786,
+      "height": 2526,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference\\2025广州中考（答案）.page-003.text-layer.txt",
+      "textLayerChars": 233
+    }
+  ],
+  "ocrProvider": null,
+  "ocrProviderVersion": null,
+  "ocrLanguage": null,
+  "ocrStatus": "not-requested",
+  "fingerprint": "df245b7dc55a42419fa87e718277d3de",
+  "reviewHtmlPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2025-reference\\review.html"
+}

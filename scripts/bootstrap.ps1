@@ -162,7 +162,6 @@ Assert-DotNetSdk
 Assert-Browser
 Install-NodeDependencies
 Compile-RuleSnapshots
-Write-Host "Skipping tools/answer-graphics bootstrap; this experimental toolchain is installed on demand."
 Install-PythonOcrEnv
 
 Write-Host "Bootstrap complete."

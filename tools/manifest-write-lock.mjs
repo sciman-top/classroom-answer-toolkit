@@ -74,7 +74,9 @@ function createLock(lockPath, owner) {
   } catch (error) {
     if (handle !== undefined) {
       fs.closeSync(handle);
-      fs.rmSync(lockPath, { force: true });
+      if (fs.existsSync(lockPath)) {
+        fs.unlinkSync(lockPath);
+      }
     }
     if (error?.code === "EEXIST") {
       throw new Error(`Delivery manifest write lock is unavailable: ${lockPath}`, { cause: error });
@@ -107,7 +109,7 @@ function removeOwnedLock(lockPath, token) {
   try {
     const owner = JSON.parse(fs.readFileSync(lockPath, "utf8"));
     if (owner?.token === token) {
-      fs.rmSync(lockPath, { force: true });
+      fs.unlinkSync(lockPath);
     }
   } catch {
     // A missing or replaced lock is never removed by this owner.

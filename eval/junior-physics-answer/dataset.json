@@ -156,6 +156,17 @@
         "math",
         "hard-gate"
       ]
+    },
+    {
+      "id": "cjk-math-punctuation",
+      "input": "cases/cjk-math-punctuation.md",
+      "expected": "cases/cjk-math-punctuation.expected.json",
+      "tags": [
+        "validator",
+        "math",
+        "hard-gate",
+        "katex"
+      ]
     }
   ]
 }

@@ -1,117 +1,35 @@
 # Product PRD
 
-## 1. 产品目标
+## 产品目标
 
-Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一个 Windows-first、本地优先的 K12 试卷参考答案工作站。
+教师提供一份试卷 PDF，系统生成内容完整、公式正确、适合课堂展示和打印的参考答案 Markdown/PDF。若同时提供权威参考答案，系统应逐题比对、修正候选答案并保留差异报告。
 
-它要解决的核心问题是：把试卷材料、学科规范、视觉风险、交付渲染、人工复核和后续反馈收敛到同一条可验证链路里，让参考答案交付既可自动化推进，又不会在高风险图题上失控。
+## 非目标
 
-## 2. 目标用户
+- 不建设题库、知识图谱、标签库或试卷归档系统。
+- 不为合成样例维护优化飞轮、审批队列或复杂证据对象。
+- 不把单次 AI 盲答、provider HTTP 200 或 PDF 成功渲染解释为答案正确。
+- 不让 WPF 桌面层复制 Node 工具链的业务逻辑。
 
-- 一线教师：需要把试卷材料转成适合课堂投屏、打印与归档的参考答案。
-- 教研或助教人员：需要对答案、图题、格式和交付结果做复核、抽检和修订。
-- 工程与提示词维护者：需要在规范高频变化、学科扩展和错例回流下持续维护系统。
+## 用户主流程
 
-## 3. 核心使用场景
+1. 选择原卷 PDF。
+2. 系统把整卷渲染为有序高清页面图。
+3. 使用当前 subject-pack 完整提示词生成答案 Markdown 候选。
+4. 如提供参考答案 PDF，执行逐题复核与候选校正；否则明确标记需人工复核。
+5. 校验题号覆盖、答案格式、LaTeX、单位与排版约束。
+6. 生成 PDF、review 页图和 delivery manifest。
+7. 用户查看或打印最终交付物。
 
-### 场景 A：已有答案 Markdown 的本地交付
+## 验收标准
 
-用户已经有答案 Markdown，希望快速渲染成 PDF，并附带 review 页图与交付状态。
+- 原卷路径可位于任意用户资料目录，不要求迁移或入库。
+- 默认初中物理运行规范为 v8.14，运行时可证明 prompt 路径、版本和 SHA-256。
+- 生成结果必须是完整 Markdown 正文，不含代码围栏或过程说明。
+- renderer 必须在中文路径上稳定生成 Markdown、PDF 和 manifest。
+- 固定 eval 覆盖选择题行、公式、仪表读数、图号绑定、必要推导和多图排版。
+- 有参考答案时，差异必须可追踪到题号；未决差异不得静默放行。
 
-### 场景 B：样例卷端到端验收
+## 当前边界
 
-维护者使用样例卷、参考答案和候选答案跑自动验收飞轮，定位错因、生成反馈记录和优化候选。
-
-### 场景 C：高风险视觉题复核
-
-用户或维护者对图题、仪表读数、函数图、电路图等高风险题目查看视觉证据、判断是否需要人工复核或降级。
-
-视觉复核不只看整页截图，而是查看 `questionRef -> figureRef -> cropRef -> evidenceRef` 的证据链，以及 Track A / B / C 的候选、冲突点和疑点原因。
-
-### 场景 D：规范演化与多学科扩展
-
-维护者在学段学科规则持续变化时，更新源规范、汇编生成物、结构化资产和评测集，并验证对既有主线无回退。
-
-## 4. 问题定义
-
-当前项目的底层工程骨架已经成熟，但产品层还有三个关键闭环未完全打通：
-
-- 规范治理：高频变化仍缺少可机器化的版本治理、影响分析与兼容窗口。
-- 反馈闭环：教室反馈、自动验收结果和优化候选还没有完整的结构化闭环。
-- 视觉降错：视觉证据、双轨比对和高风险题复核还没有真正进入运行时工作流。
-
-## 5. 产品范围
-
-### 当前主承诺
-
-- 本地优先的参考答案交付工作站。
-- 以 `subject-pack + snapshot + compiled spec + eval` 为核心资产模型。
-- 初中物理为当前最完整主线；高中物理为模板包；初中数学为实验支架。
-- `answer.md -> PDF/review` 交付链持续可用。
-- 通过样例飞轮、反馈链和视觉证据逐步把产品层做实。
-- 终局目标是自动解题工作站：`原题 -> 证据 -> 候选答案 -> 风险决策 -> review -> 可信交付`。
-- 终局渲染目标是 Typst 主渲染；当前运行时仍保持 Playwright / Chromium，直到 renderer parity gate 通过。
-
-### 当前不承诺
-
-- 高风险图题全自动且默认可信放行。
-- 自动基于题图生成作图题答案图。
-- Prompt prose 自动优化直接进入生产。
-- 在 P1 交付 Word 原生结构化解析主链。
-
-## 6. 非目标
-
-- 不把项目做成云优先 SaaS 平台。
-- 不在当前阶段承诺跨全部学科、全部学段一次性通吃。
-- 不为了样例数量很小的阶段，提前建设复杂的自动答案剥离系统。
-- 不在文档层平行维护第二套根目录总纲。
-
-## 7. 成功指标
-
-- 高风险题误放行率持续下降，且保留明确的 review/downgrade 出口。
-- 题号/图号绑定成功率可被稳定统计。
-- 反馈结构化成功率和自动回放通过率可被稳定统计。
-- 指标必须按 `candidateSourceType` 分桶，不能只报总分。
-- 样例飞轮可以在不依赖手工口头判断的前提下产出可信优化信号。
-
-## 8. 验收边界
-
-- 文档与规划真值统一落在 `docs/strategy/`。
-- 规范真值统一落在 `prompts/specs/`。
-- 当前成熟主链仍然是 `answer.md -> PDF/review`。
-- `原题 -> answer.md` 是新增主链，应作为独立工程能力建设。
-- GEN-003 只用 provider-neutral 合同和明确标记的 deterministic `synthetic_fixture` 验证生成到飞轮的仓内闭环；它不是 live 模型能力或 WPF workflow。
-- VISION-010 只对 committed structure/OCR diagnostic authorities 做穷举几何测量；它不选择 OCR-region 匹配，不构成 layout semantics、FigureUnderstanding 或 Track B。
-- VISION-011 只用 renderer 源码显式声明的 synthetic text/bbox 作为 generator-declared truth，诊断三份固定 fixture 的 exact-text OCR 漏检与误检；它不是人工 truth、真实 OCR benchmark 或 OCR acceptance。
-- VISION-012 只用同一 generator-declared truth 诊断 VISION-008 heuristic text-region candidate 对 fully-visible label 的空间覆盖；它不识别文字、不选择 OCR-region association，也不构成 layout semantics 或 Track B acceptance。
-- VISION-013 以透明标记的 `ai_agent` 对公开 synthetic crop 建立 hash-bound machine review receipt，VISION-015 将覆盖面扩为四份；`synthetic_fixture_equivalent` 只允许它替代本切片的合成样本视觉检查，`humanReviewed=false`，不得写成 `humanApproved`、真实数据验收、delivery trust 或 live acceptance。
-- VISION-016 只把独立声明的 `measurement_reading` 角色投影到 VISION-011/012/014 已共同证明的唯一 truth/OCR/candidate association 上；recognized text 只来自绑定 OCR observation，不构成 layout、FigureUnderstanding、Track B、答案或 trust authority。
-- 高风险视觉题的新增主链必须先经过视觉证据编译器，形成 `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`，不得从整页图直接跳到可信答案。
-- Typst 主渲染属于终局迁移目标；未通过 parity gate 前，不得把当前运行时描述为 Typst 已上线。
-- 自动验收与优化候选只能在门禁通过、数据边界允许、真值可靠时推进。
-
-## 9. 数据边界
-
-- 默认本地优先，`egressPolicy.allowCloud=false`。
-- `restricted` 数据默认不得出本机。
-- 真实卷面、学生信息、教研材料优先按 `restricted` 处理。
-- 若高风险题需要云兜底，必须显式启用、显式记录、显式可审计。
-
-## 10. 人工参与边界
-
-人工不是默认主链，但始终保留三类明确入口：
-
-- `needs_human_label`：反馈解析置信不足。
-- `high_risk_approval`：高风险优化候选需要审批。
-- `truth_needs_review`：参考答案抽取不可靠、答案泄漏未解决或真值本身存疑。
-
-其中视觉证据链缺失、双轨冲突、图号绑定不稳或高风险图题人工批准，统一归入 `high_risk_approval`，不新增第四类人工队列。
-
-人工参与的目标不是替代自动化，而是在高风险处作为明确、可追溯的兜底边界。
-
-## 11. 与其他文档的关系
-
-- 终态蓝图：见 [architecture-and-end-state.md](./architecture-and-end-state.md)
-- 权威实施规格：见 [final-implementation-baseline.md](./final-implementation-baseline.md)
-- 阶段路线图：见 [implementation-roadmap.md](./implementation-roadmap.md)
-- 执行清单：见 [execution-backlog.md](./execution-backlog.md)
+2025 广州中考已经证明真实原卷可以生成候选并完成排版交付，但两轮 `gpt-5.5` 盲答均存在严重语义错误。当前可用生产流程仍是“AI 候选 + 参考答案或教师复核 + 校正后交付”。

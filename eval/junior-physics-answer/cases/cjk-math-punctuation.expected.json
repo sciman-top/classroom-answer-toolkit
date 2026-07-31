@@ -1,0 +1,16 @@
+{
+  "caseId": "cjk-math-punctuation",
+  "profiles": {
+    "classroom": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    },
+    "compact": {
+      "shouldPass": false,
+      "maxWarnings": 0
+    }
+  },
+  "notes": [
+    "Direct CJK punctuation in a LaTeX math fence must fail before KaTeX rendering."
+  ]
+}

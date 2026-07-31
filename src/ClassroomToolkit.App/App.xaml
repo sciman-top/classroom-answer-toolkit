@@ -3,19 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <Style TargetType="Button">
-            <Setter Property="Padding" Value="16,10" />
-            <Setter Property="Margin" Value="0,0,12,0" />
-            <Setter Property="Background" Value="#1565C0" />
+            <Setter Property="Padding" Value="14,9" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="Background" Value="#176B87" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
         <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="12" />
+            <Setter Property="Padding" Value="10" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Background" Value="#0B1220" />
-            <Setter Property="Foreground" Value="#E2E8F0" />
+            <Setter Property="BorderBrush" Value="#BFC9CA" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="#17202A" />
         </Style>
     </Application.Resources>
 </Application>

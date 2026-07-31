@@ -12,8 +12,6 @@ public sealed record WorkspaceHealthReport(
     bool EvalExists,
     bool EvalOk,
     int EvalCaseCount,
-    bool GraphicsExists,
-    string? GraphicsSummary,
     string Summary,
     IReadOnlyList<string> Issues)
 {

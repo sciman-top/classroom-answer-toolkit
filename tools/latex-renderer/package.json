@@ -9,6 +9,8 @@
     "eval:answer": "node eval-answer-fixtures.mjs",
     "eval:math": "node eval-answer-fixtures.mjs --subject-pack math-answer",
     "render": "node render-md-latex.mjs",
+    "test:output-path": "node --test pdf-output-path.test.mjs",
+    "test:render": "node --test render-md-latex.test.mjs",
     "review-source-pdf": "node review-source-pdf.mjs",
     "smoke": "node smoke-test.mjs",
     "validate:answer": "node validate-answer-markdown.mjs",

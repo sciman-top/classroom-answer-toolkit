@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { makeRenderTempHtmlPath } from "./pdf-output-path.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -160,13 +161,6 @@ function makeDeliveryManifestPath(pdfPath) {
   return path.resolve(
     path.dirname(pdfPath),
     `${path.basename(pdfPath, path.extname(pdfPath))}.delivery-manifest.json`
-  );
-}
-
-function makeRenderTempHtmlPath(pdfPath) {
-  return path.resolve(
-    path.dirname(pdfPath),
-    `.${path.basename(pdfPath, ".pdf")}.render.html`
   );
 }
 

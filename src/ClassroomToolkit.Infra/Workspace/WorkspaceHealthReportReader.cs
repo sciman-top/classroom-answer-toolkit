@@ -24,14 +24,12 @@ public sealed class WorkspaceHealthReportReader
         var manifestPath = subjectPack?.ManifestPath ?? Path.Combine(_repositoryRoot, "prompts", "junior-physics-answer", "manifest.json");
         var configPath = subjectPack?.ConfigPath ?? Path.Combine(_repositoryRoot, "prompts", "junior-physics-answer", "config.json");
         var evalResultsPath = subjectPack?.EvalResultsPath ?? Path.Combine(_repositoryRoot, "eval", "junior-physics-answer", "results", "latest.json");
-        var graphicsPath = Path.Combine(_repositoryRoot, ".answer-graphics");
 
         var latestVersion = FindLatestProductionSpecVersion(manifestPath);
         var manifestVersion = ReadManifestVersion(manifestPath);
         var snapshotPath = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath, manifestPath);
         var snapshotStatus = ReadSnapshotStatus(snapshotPath);
         var evalStatus = ReadEvalStatus(evalResultsPath);
-        var graphicsStatus = ReadGraphicsStatus(graphicsPath);
 
         var issues = new List<string>();
 
@@ -78,8 +76,6 @@ public sealed class WorkspaceHealthReportReader
             EvalExists: evalStatus.Exists,
             EvalOk: evalStatus.Ok,
             EvalCaseCount: evalStatus.CaseCount,
-            GraphicsExists: graphicsStatus.Exists,
-            GraphicsSummary: graphicsStatus.Summary,
             Summary: summary,
             Issues: issues);
     }
@@ -180,26 +176,6 @@ public sealed class WorkspaceHealthReportReader
         var ok = root.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
 
         return (true, ok, assetVersion, caseCount);
-    }
-
-    private static (bool Exists, bool HasPreview, string Summary) ReadGraphicsStatus(string graphicsPath)
-    {
-        if (!Directory.Exists(graphicsPath))
-        {
-            return (false, false, "受控插图实验链未启用；默认主交付链不依赖该能力。");
-        }
-
-        var previewExists = File.Exists(Path.Combine(graphicsPath, "answer-graphic-preview.svg"))
-            || File.Exists(Path.Combine(graphicsPath, "placed-answer-graphic.json"));
-
-        var artifactExists = File.Exists(Path.Combine(graphicsPath, "answer-graphic-artifact.json"));
-        var placedExists = File.Exists(Path.Combine(graphicsPath, "placed-answer-graphic.json"));
-
-        var summary = previewExists
-            ? $"已检测到受控插图产物（实验性）{(artifactExists ? "，包含 artifact" : string.Empty)}{(placedExists ? "，包含 placement 记录" : string.Empty)}。"
-            : "发现受控插图目录，但产物不完整；该能力为实验性，不影响默认主交付链。";
-
-        return (true, previewExists, summary);
     }
 
     private sealed class VersionComparer : IComparer<string>

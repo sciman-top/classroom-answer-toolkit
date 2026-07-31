@@ -1,194 +1,83 @@
 # Classroom Answer Toolkit
 
-面向中小学试卷参考答案的生成、校验、渲染与交付工具链。
-Windows-first toolkit for generating, validating, and rendering K12 exam answer sheets to Markdown, LaTeX, and PDF.
+本项目只解决一件事：把试卷生成的答案交付为符合课堂排版要求的 Markdown 和 PDF。
 
-## 项目定位 / Positioning
+主链：
 
-Classroom Answer Toolkit 是一个以 Windows 本地环境为主的教育内容交付工具链，目标是把试卷参考答案内容生成、校验并渲染为适合课堂投屏、打印分发和归档复用的 Markdown、LaTeX 与 PDF 文件。
+```text
+试卷 PDF
+  -> 页面图
+  -> v8.14 完整提示词 + AI 作答
+  -> 可选：参考答案 PDF 复核与校正
+  -> Markdown 规则校验
+  -> PDF 排版
+  -> review 页图与 delivery manifest
+```
 
-This project provides a local Windows workflow for generating, validating, and rendering exam answer deliverables for classroom display, printing, and reuse.
+本项目不是题库系统，不负责试卷入库、标签治理、知识图谱或样例飞轮。原卷与参考答案可以保留在用户自己的资料目录中；运行脚本接受任意明确路径，不要求把资料迁入项目资产结构。
 
-## 先读哪里 / Where To Read First
+## 当前状态
 
-- 规划与实施真值入口：[docs/strategy/README.md](./docs/strategy/README.md)
-- 产品 PRD：[docs/strategy/product-prd.md](./docs/strategy/product-prd.md)
-- 权威实施规格：[docs/strategy/final-implementation-baseline.md](./docs/strategy/final-implementation-baseline.md)
+- 初中物理运行提示词：`prompts/junior-physics-answer/spec.md`，版本 `v8.14`。
+- 已真实跑通 2025 广州中考原卷到 Markdown/PDF 的完整链路。
+- 单次整卷盲答仍可能在视觉题、接线题和多小问覆盖上出错，不能未经参考答案或人工复核直接声明可信。
+- 2025 实跑交付位于 `正式交付/2025广州中考/`，原卷目录 `广州物理中考试卷/` 保持为用户资料，不纳入仓库资产治理。
 
-## 当前能力 / Capabilities
+## 最短运行
 
-- 学科规则与运行配置使用 `subject-pack` 组织。
-- 答案 Markdown 在渲染前执行格式与 LaTeX 基线校验。
-- PDF 渲染保留真实数学公式输出，而不是降级为普通文本。
-- 支持源 PDF 与答案 PDF 的页面审阅图生成。
-- 已落地视觉证据编译器契约层 schema 和最小离线 `DecisionRecord` 编译器，用于表达 `questionRef -> figureRef -> cropRef -> evidenceRef`、三轨候选、风险分类和 review/trust 决策。
-- 已落地离线 `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` 编译器、受控 aggregate manifest 附着和 preimage/result receipt；WPF 可由用户显式选择本地 aggregate，附着成功后立即 source-aware 重验，并只投影与 `manifestResultSha256` 绑定的时间点状态。
-- 已把 QQ 重链路经验移植为阶段化视觉证据产物：`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 通过 `TrackResult.stageArtifactRefs` 接入，并新增 `unsafe_shortcut_fail` fail-closed 样例。
-- 已落地可选 AI 网关配置校验入口、文本请求主备切换和显式视觉 TrackResult 探针；云外发默认关闭，真实密钥只保留在本地 `.env`。
-- 已用 VISION-007 renderer 的显式文字/坐标声明建立四份 public synthetic fixture 的 OCR diagnostic：前三份保留既有漏检/误检结果，新增 `junior-readable-measurement` 形成一份 exact-text 正向诊断；这仍不构成人工 truth、真实 OCR benchmark 或 OCR acceptance。
-- 已为四份公开 synthetic 2x crop 建立机器等效视觉复核 receipt：AI 复核只在 `synthetic_fixture_diagnostic` 范围内等效人工检查，身份始终记录为 `reviewerKind=ai_agent`、`humanReviewed=false`，不构成人类身份、delivery trust 或 live acceptance。
-- 已在 VISION-008/009/010 authority 上建立 deterministic OCR-region association policy diagnostic：当前四份 canonical fixtures 诚实报告两例 unavailable、一例 unmatched、一例 matched；正向结果仅证明 public synthetic diagnostic plumbing，不构成 OCR correctness、真实 association benchmark、layout semantics 或 Track B。
-- 已以独立声明和 VISION-011/012/014 精确证据三角建立一份 deterministic semantic-role projection：仅 `junior-readable-measurement` 被投影为 `measurement_reading`，识别文本只取自绑定 OCR observation；该结果不是 FigureUnderstanding、TrackResult、答案或交付信任。
-- WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；还可对用户显式选择且通过 source-aware 重验的本地 review artifact 做三类只读队列投影。审批生成、lifecycle 回写和原题生成主链仍未接入。
-- 已落地自动解题工作站终局计划与 Typst 主渲染迁移计划；当前运行时仍保持 Playwright / Chromium。
-- 支持实验性的受控插图插入链路，可把用户提供或人工复核后的答案图块插入 PDF。
-- WPF 桌面应用提供本地工具链入口和工作区诊断。
-
-English summary:
-
-- Subject policies and runtime profiles are organized as `subject-pack` assets.
-- Answer Markdown is validated before rendering.
-- PDF output keeps real LaTeX math rendering.
-- Source PDFs and rendered answers can be reviewed through generated page images.
-- Visual-evidence compiler schemas and a minimal offline `DecisionRecord` compiler define evidence chains, track results, risk labels, and review/trust decisions.
-- An offline `DeliveryQuestionCoverage -> DeliveryDecisionAggregate` compiler verifies byte hashes, snapshot binding, sample-package question inventory, and per-question decisions. A controlled CLI can attach that aggregate with a preimage/result receipt; WPF can explicitly attach a local aggregate, immediately reverify it, and project only a hash-bound point-in-time result, while ordinary WPF reads, diagnostics, and headless consumers remain fail-closed.
-- QQ heavy-chain lessons are now mapped into staged visual artifacts: `VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` are referenced through `TrackResult.stageArtifactRefs`, with an `unsafe_shortcut_fail` fail-closed fixture.
-- Optional AI gateway config validation, text failover, and explicit vision TrackResult probes are available; cloud egress is disabled by default and real keys stay in local `.env`.
-- After a delivery, WPF can project the latest manifest's review lifecycle, visual-review, and trust state and use a fail-closed tool to attach, refresh, and open a local JSON `DecisionRecord`. It can also build a read-only three-lane queue from explicitly selected, source-reverified local review artifacts. Approval generation, lifecycle write-back, and source-question generation remain open.
-- The final auto-solving workstation and Typst primary-renderer migration plans are documented; the current runtime remains Playwright / Chromium.
-- Experimental controlled-graphic helpers can place reviewed answer graphics into PDFs.
-- The WPF app provides a local toolchain entry point and workspace diagnostics.
-
-## 当前范围 / Current Scope
-
-- `junior-physics-answer`: 当前主线，面向初中物理试卷参考答案。
-- `senior-physics-answer`: 已落盘的高中物理模板包，用于后续扩展与回归接入。
-- `math-answer`: 实验性第二学科支架，用于验证平台契约不依赖单一物理学科。
-
-内部解决方案、项目名和命名空间暂时仍使用 `ClassroomToolkit`。对外展示名统一为 `Classroom Answer Toolkit`。
-
-The internal solution, project names, and namespaces still use `ClassroomToolkit`. The repository-facing name is `Classroom Answer Toolkit`.
-
-## 目录结构 / Repository Layout
-
-- `src/`: WPF 应用与 .NET 编排层。
-- `scripts/`: 初始化、自检、发布和打包脚本。
-- `prompts/`: 学科资产、规则、配置、清单和 schema。
-- `prompts/specs/`: 人类可读规范真值区，含分层源规范、装配清单与自动生成产物。
-- `样例交付/`: 回归验证、演示和冒烟测试使用的样例题卷与交付物。
-- `正式交付/`: 面向真实生产交付的题卷工作区。
-- `docs/strategy/`: 平台化路线、执行路线图与视觉降错专项方案。
-- `docs/adr/`: 关键决策记录。
-- `tools/latex-renderer/`: Markdown、LaTeX、PDF 渲染、审阅与交付工具链。
-- `tools/ai-gateway/`: 可选 AI 网关配置校验与显式 live 探针入口。
-- `tools/visual-evidence/`: 视觉证据 `DecisionRecord`、交付级 coverage/aggregate 离线编译、受控 manifest 附着与 fail-closed 合同测试。
-- `tools/sample-flywheel/`: 合成样例的 index/package 准入、plumbing/scoring 门禁、`SampleRunRecord` 编译、fixture/teacher-text `FeedbackParseResult` 归因，以及独立 teacher ingestion/replay diagnostic report；当前 scoring 只做 SHA-256 exact-diff。
-- `tools/answer-graphics/`: 实验性受控插图工具链，不是默认主交付链。
-- `tools/ocr/`: 面向低质量扫描件和批量处理的本地 OCR 路径。
-- `tools/visual-ocr-diagnostics/`: 对 generator-declared synthetic text truth 与 canonical OCR observations 做本地、确定性、禁云诊断。
-- `tools/visual-text-region-diagnostics/`: 对同一 synthetic truth 与 canonical heuristic text-region candidates 做本地、确定性、禁云空间覆盖诊断。
-- `tools/visual-machine-review/`: 校验 synthetic crop 的机器视觉复核 receipt、上游 raw-byte/pixel/dimension authority、已披露限制和 fail-closed 状态边界。
-- `tools/visual-ocr-region-association/`: 对 canonical text-region/OCR/spatial authority 应用双向唯一 positive-area association policy，并按学科报告 matched/unmatched/ambiguous/unavailable。
-- `eval/`: 固定评测数据集、视觉基线和回归结果。
-- `tests/`: xUnit 与 FluentAssertions 测试。
-
-## 环境要求 / Requirements
-
-- Windows
-- .NET SDK `10.0.301`
-- Node.js and npm
-- Python `3.12+`
-- Edge, Chrome, or Chromium
-
-## 快速开始 / Quick Start
-
-在仓库根目录执行：
+从原卷直接生成并排版：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
-powershell -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-live-answer-workflow.ps1 `
+  -SourcePdf "广州物理中考试卷/2025广州中考.pdf" `
+  -ReferencePdf "广州物理中考试卷/2025广州中考（答案）.pdf" `
+  -OutputDirectory "正式交付/2025广州中考" `
+  -KeepReview
+```
+
+只对已有答案 Markdown 做校验和 PDF 交付：
+
+```powershell
+npm --prefix tools/latex-renderer run deliver -- `
+  "正式交付/2025广州中考/2025广州中考参考答案.md" `
+  "正式交付/2025广州中考/2025广州中考参考答案.pdf" `
+  --subject-pack junior-physics-answer `
+  --profile classroom `
+  --keep-review
+```
+
+live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不存储密钥。
+
+## 核心目录
+
+- `prompts/specs/`：人类规范真源；compiled 文件由 assembler 生成。
+- `prompts/junior-physics-answer/`：v8.14 运行提示词、规则、排版 profile 和 manifest。
+- `tools/ai-gateway/`：显式云出网的答案生成请求。
+- `tools/rule-compiler/`：subject-pack、规则和 snapshot 编译与校验。
+- `tools/latex-renderer/`：Markdown 校验、PDF 渲染、review 页图和交付 manifest。
+- `scripts/run-live-answer-workflow.ps1`：真实原卷主链入口。
+- `src/`：WPF 桌面入口，只承载主链操作和状态展示。
+- `eval/*-answer/`：答案内容和排版的固定回归。
+
+## 验证
+
+固定顺序：
+
+```powershell
 dotnet build ClassroomToolkit.sln -c Debug
 dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug
-dotnet run --project src/ClassroomToolkit.App/ClassroomToolkit.App.csproj
+npm --prefix tools/rule-compiler run validate:assets
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1
 ```
 
-## 常用命令 / Common Workflows
+`scripts/bootstrap.ps1` 会安装依赖，只用于环境初始化，不是日常门禁。
 
-答案 Markdown 准备好后，执行交付渲染：
+## 可信边界
 
-```powershell
-npm --prefix tools/latex-renderer run deliver -- "<answer.md>"
-npm --prefix tools/latex-renderer run deliver -- "<answer.md>" --profile compact
-npm --prefix tools/latex-renderer run deliver -- "<answer.md>" --subject-pack senior-physics-answer
-```
+`delivery-manifest.json` 证明的是指定 snapshot、Markdown、PDF 和 review 产物之间的交付关系，不证明答案语义必然正确。答案可信需要满足以下至少一项：
 
-兼容说明：第一阶段仍接受旧包名 `physics-answer`，运行时会自动映射到 `junior-physics-answer`。
+- 与权威参考答案逐题比对并完成校正；
+- 由教师逐题复核；
+- 后续自动比对能力给出可审计差异，并由规则或人工处理未决项。
 
-执行本地主链冒烟检查：
-
-```powershell
-npm --prefix tools/latex-renderer run smoke
-```
-
-校验可选 AI 网关配置，不会发起网络请求：
-
-```powershell
-npm --prefix tools/ai-gateway run validate:config -- --config-env-file .env.example --allow-missing-secrets
-npm --prefix tools/ai-gateway run validate:config
-npm --prefix tools/ai-gateway run test:vision
-npm --prefix tools/visual-evidence run test:decision
-npm --prefix tools/visual-evidence run test:aggregate
-npm --prefix tools/visual-evidence run compile:aggregate -- --manifest "<delivery-manifest.json>" --coverage "<delivery-question-coverage.json>" --decision "<decision-record.json>" --out "<delivery-decision-aggregate.json>"
-npm --prefix tools/visual-evidence run attach:decision -- --manifest "<delivery-manifest.json>" --decision "<decision-record.json>"
-npm --prefix tools/visual-evidence run attach:aggregate -- --manifest "<delivery-manifest.json>" --aggregate "<delivery-decision-aggregate.json>"
-npm --prefix tools/visual-evidence run verify:aggregate-attachment -- --manifest "<delivery-manifest.json>"
-npm --prefix tools/sample-flywheel test
-npm --prefix tools/sample-flywheel run compile:run -- --sample-id "<sample-id>" --run-mode scoring --candidate "<indexed-negative-candidate.json>" --truth-extraction-status ok --input-answer-leakage none --iteration 1 --out "<sample-run-record.json>"
-npm --prefix tools/sample-flywheel run compile:feedback -- --run "<sample-run-record.json>" --created-at "<canonical-utc-timestamp>" --out "<feedback-parse-result.json>"
-```
-
-显式开启云外发后，可用合成短文本验证主备请求级切换：
-
-```powershell
-$env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
-npm --prefix tools/ai-gateway run request:text -- --allow-cloud-egress --prompt "Return exactly OK."
-npm --prefix tools/ai-gateway run request:text -- --allow-cloud-egress --prompt "Return exactly OK." --force-primary-failure
-Remove-Item Env:\CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
-```
-
-显式开启云外发后，可用合成图片验证主备视觉请求级切换；该探针只验收 provider 图片理解入口和 `TrackResult` 结构化输出，不代表主答题流程已集成：
-
-```powershell
-$env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
-npm --prefix tools/ai-gateway run request:vision -- --allow-cloud-egress --synthetic-image --provider primary
-npm --prefix tools/ai-gateway run request:vision -- --allow-cloud-egress --synthetic-image --provider fallback
-npm --prefix tools/ai-gateway run request:vision -- --allow-cloud-egress --synthetic-image --force-primary-failure
-Remove-Item Env:\CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
-```
-
-实验性受控插图链路如需单独验证，再运行：
-
-```powershell
-npm --prefix tools/answer-graphics run smoke
-```
-
-## 迁移到另一台电脑 / Move To Another PC
-
-推荐通过 GitHub 拉取仓库，再在新电脑重建本地依赖：
-
-```powershell
-git clone https://github.com/sciman-top/classroom-answer-toolkit.git
-cd classroom-answer-toolkit
-powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
-powershell -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1
-dotnet build ClassroomToolkit.sln -c Debug
-```
-
-`node_modules/`、`tools/ocr/.venv/`、`artifacts/`、`.snapshot-cache/` 等目录属于本地依赖或生成物，不需要提交到仓库。
-
-## 状态 / Status
-
-当前最完整的链路是初中物理参考答案生成与渲染。多学段/多学科支持已经在资产层、规范层和契约层展开，但产品层仍在演进中。
-当前最成熟的交付主链仍是 `answer.md -> PDF/review`。项目正在按“飞轮先行、生成主链后接、视觉双轨后落地”的路线推进。
-样例飞轮现已具备完全合成 fixture 的可执行准入、记账与反馈归因闭环：`样例交付/index.json` 是不可覆盖的 canonical authority，并通过 `subjectPack / packageRef / packageSha256` 绑定唯一 structured package，通过 `candidateBindings` 绑定 negative-candidate descriptor bytes；hash-bound 样例资产由 `.gitattributes` 固定 LF。package 与内部引用必须留在对应 canonical root。`plumbing` 不产优化信号，`scoring` 要求显式 candidate/truth/leakage 状态并受 fail-closed 门禁约束；current-authority-valid、non-exact fixture-labelled scoring run 可编译 auto feedback，canonical public synthetic teacher text 可经有限显式词典投影为 parsed 或 `needs_human_label`。独立 ingestion diagnostic 统计结构化率与分流分布，独立 replay diagnostic 统计当前 parser 对冻结 expected result raw bytes 的回放兼容率。输出通过仓内有限 shape validator、compiler semantic invariants 和当前 canonical authority bytes 重验，不代表完整 Draft 2020-12、真实教师自由文本理解、任意归档 authority 或语义答案评分；teacher diagnostics 不进入 candidate readiness，`optimizationCandidateRefs` 仍为空，不构成优化候选或灰度放行。
-视觉降错本轮已进入契约层并具备最小离线决策编译：`NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord` 已纳入 schema 与资产校验，`VisualInputBundle / GroundingSnapshot / SolutionSnapshot / ConsistencyReport` 已作为阶段产物落盘，双轨一致但证据缺失和直接跳答案缺 grounding 的样例都可由运行时代码推导为 `trusted=false`；真正的双轨/三轨运行时和局部高清 crop 仍是后续工程。
-四份公开 synthetic crop 另有 generator-declared text truth 与独立 OCR diagnostic report：原 math/senior fixture 保留漏检，原 junior fixture 保留误检，新增 junior readable measurement fixture 形成 exact-text 正向诊断。该结果只说明 committed synthetic fixture 上的 repo-side diagnostics，不是人工标注、真实 OCR 质量、layout semantics、Track B 或 live acceptance。
-同四份 synthetic crop 已由 AI 完成可追溯的机器视觉复核，并在该 synthetic diagnostic scope 内作为等效人工检查；canonical receipt 仍明确 `humanReviewed=false`、`humanIdentityDisposition=not_claimed`，不会投影 delivery trust、WPF workflow 或 live acceptance，也不验证 readiness controls 或产生 `OptimizationCandidate`。
-同一 authority 的 OCR-region association diagnostic 当前输出 math/senior unavailable、原 junior instrument unmatched、新 junior readable measurement matched。总计一份 canonical synthetic match、两份 OCR observations，association rate 为 `0.5`；这只证明双向唯一 positive-area policy 可由真实链路产出正向结果，不能升级为真实 OCR/region/association precision 或 recall、layout/Track B、workflow 或 live acceptance。
-在该正向 case 上，独立 `VisualSyntheticSemanticDeclaration` 只声明 `truth-label-001` 的角色为 `measurement_reading`；projector 仅当 VISION-011 的 exact-text OCR match、VISION-012 的 unique positive-overlap candidate 与 VISION-014 的唯一 association 形成同一证据三角时输出 recognized text `12`。它不推断数值/单位、layout、FigureUnderstanding、问题绑定、Track B 或答案，也不改变 controls、eligibility、WPF、gateway 或 live acceptance 状态。
-WPF 当前完成最新交付的 review/trust 投影、本地题目级 `DecisionRecord` 的受控附着、本地 aggregate 的显式附着后立即重验，以及 `needs_human_label / high_risk_approval / truth_needs_review` 三类本地只读队列投影。队列只消费用户显式选择且通过 canonical path、raw-byte SHA-256 与既有 source-aware verifier 重验的 artifact；任一 rejected source 会清空本次投影。该入口不生成 aggregate/审批、不推进 lifecycle、不修改 trust；这不等于视觉网关已接入默认答题流程，也不等于完整 workflow 或 live acceptance 已完成。
-离线 delivery aggregate 已能对合成 `sample-package` inventory、snapshot/input/manifest bytes 和逐题决策做完整覆盖证明，并记录 aggregate attach 的可重验 hash chain；它仍不代表真实试卷全题识别、WPF workflow integration 或 live acceptance。
-自动解题工作站和 Typst 主渲染已作为终局计划落盘；Typst 未通过 parity gate 前，默认交付链仍是 Playwright / Chromium。
-自动基于题图生成作图题答案图不再作为本项目的主需求；当前只保留“受控插图插入 PDF”的实验性底座。
-
-The junior-high physics answer workflow is currently the most complete path. Multi-subject support exists at the asset and contract level, while product-level coverage is still evolving.
+继续扩写 100 KB 级主提示词不是当前主要优化方向。优先级是参考答案复核、局部高清题图、遗漏检测和真实试卷回归。

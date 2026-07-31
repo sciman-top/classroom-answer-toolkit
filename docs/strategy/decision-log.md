@@ -1,5 +1,13 @@
 # Decision Log
 
+## D-035 回归答案生成与排版主链
+
+- 日期：2026-07-31
+- 决定：项目不再建设题库治理、sample flywheel、synthetic visual diagnostics、visual-evidence aggregate trust、review queue、synthetic answer generator 或实验 answer-graphics CLI；删除对应代码、schema、eval、WPF 入口和 active strategy。
+- 原因：2025 广州中考真实运行证明，决定交付价值的是原卷作答、参考答案复核、内容校正和 PDF 排版。已删除模块均未进入真实主链，却使门禁耗时、契约数量和维护面急剧增加。
+- 保留：v8.14 提示词、subject-pack、AI gateway、rule compiler、latex renderer、真实 eval、最小 WPF 和历史审计记录。
+- 后续：优先实现可选参考答案复核和视觉错题局部高清校验，不以新治理对象替代真实效果。
+
 ## D-001 规范真值区
 
 - 决定：人类规范统一落在 `prompts/specs/`

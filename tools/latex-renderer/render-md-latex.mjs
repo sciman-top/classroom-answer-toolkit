@@ -4,6 +4,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
+import {
+  commitBrowserPdfOutput,
+  makeBrowserPdfOutputPath,
+  makeRenderTempHtmlPath
+} from "./pdf-output-path.mjs";
 import { loadRenderProfile } from "./render-profiles.mjs";
 import { getDefaultSubjectPack, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -158,7 +163,7 @@ function replaceMath(markdown) {
   text = text.replace(/\\\[([\s\S]+?)\\\]/g, (_match, tex) =>
     stashMath(tex, true)
   );
-  text = text.replace(/(^|[^\\])\$([^\n$]+?)\$/g, (_match, prefix, tex) =>
+  text = text.replace(/(^|[^\\])\$([\s\S]+?)\$/g, (_match, prefix, tex) =>
     `${prefix}${stashMath(tex, false)}`
   );
   return text;
@@ -352,22 +357,24 @@ ${body}
 </body>
 </html>`;
 
-const tempHtmlPath = path.join(
-  path.dirname(outputPath),
-  `.${path.basename(outputPath, ".pdf")}.render.html`
-);
+const tempHtmlPath = makeRenderTempHtmlPath(outputPath);
 fs.writeFileSync(tempHtmlPath, html, "utf8");
 
 const browser = await chromium.launch({
   executablePath: browserPath,
   headless: true
 });
+const browserPdfOutputPath = makeBrowserPdfOutputPath(outputPath);
+if (fs.existsSync(browserPdfOutputPath)) {
+  fs.unlinkSync(browserPdfOutputPath);
+}
 
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 1600 } });
   await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: "load" });
   await page.pdf({
-    path: outputPath,
+    // Chromium on Windows can native-crash when its PDF path has a non-ASCII file name.
+    path: browserPdfOutputPath,
     format: renderProfile.page.size,
     printBackground: true,
     margin: {
@@ -379,7 +386,11 @@ try {
   });
 } finally {
   await browser.close();
-  fs.rmSync(tempHtmlPath, { force: true });
+  if (fs.existsSync(tempHtmlPath)) {
+    fs.unlinkSync(tempHtmlPath);
+  }
 }
+
+commitBrowserPdfOutput(browserPdfOutputPath, outputPath);
 
 console.log(outputPath);

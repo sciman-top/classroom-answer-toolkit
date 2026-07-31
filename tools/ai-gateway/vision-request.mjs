@@ -353,6 +353,7 @@ function buildVisionRequestBody(provider, options) {
   if (provider.visionSurface === "chat_completions") {
     return {
       model: provider.visionModel,
+      ...(provider.reasoningEffort ? { reasoning_effort: provider.reasoningEffort } : {}),
       messages: [
         {
           role: "user",
@@ -378,6 +379,7 @@ function buildVisionRequestBody(provider, options) {
 
   return {
     model: provider.visionModel,
+    ...(provider.reasoningEffort ? { reasoning: { effort: provider.reasoningEffort } } : {}),
     input: [
       {
         role: "user",

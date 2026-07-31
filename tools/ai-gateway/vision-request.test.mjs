@@ -22,6 +22,7 @@ function createConfig() {
         apiKey: "primary-key",
         textModel: "gpt-5",
         visionModel: "gpt-5",
+        reasoningEffort: "medium",
         textSurface: "chat_completions",
         visionSurface: "chat_completions"
       },
@@ -34,6 +35,7 @@ function createConfig() {
         apiKey: "fallback-key",
         textModel: "gpt-5",
         visionModel: "gpt-5",
+        reasoningEffort: "medium",
         textSurface: "chat_completions",
         visionSurface: "chat_completions"
       }
@@ -122,6 +124,7 @@ test("vision failover retries a primary gateway failure and validates fallback T
     assert.equal(result.attempts[0].retryable, true);
     assert.match(calls[1].body.messages[0].content[1].image_url.url, /^data:image\/png;base64,/);
     assert.equal(calls[1].body.response_format.type, "json_schema");
+    assert.equal(calls[1].body.reasoning_effort, "medium");
     assert.equal(calls[1].body.response_format.json_schema.name, "track_result");
     assert.equal(calls[1].body.response_format.json_schema.schema.$schema, undefined);
     assert.equal(calls[1].body.response_format.json_schema.schema.$id, undefined);
@@ -198,6 +201,7 @@ test("responses vision surface sends input_image and json_schema format", async 
     assert.equal(requestBody.input[0].content[1].type, "input_image");
     assert.equal(requestBody.text.format.type, "json_schema");
     assert.equal(requestBody.text.format.name, "track_result");
+    assert.deepEqual(requestBody.reasoning, { effort: "medium" });
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(tempDir, { recursive: true, force: true });
