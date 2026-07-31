@@ -118,6 +118,11 @@ Assert-CommandSuccess { npm --prefix tools/visual-scale-lattice test } "Visual s
 Write-Host "visual scale lattice canonical fixtures:"
 Assert-CommandSuccess { npm --prefix tools/visual-scale-lattice run validate:fixtures } "Visual scale lattice canonical fixture validation failed."
 
+Write-Host "DOCX page normalization contract tests:"
+Assert-CommandSuccess { npm --prefix tools/docx-page-normalizer test } "DOCX page normalization contract tests failed."
+Write-Host "DOCX page normalization canonical fixtures:"
+Assert-CommandSuccess { npm --prefix tools/docx-page-normalizer run validate:fixtures } "DOCX page normalization canonical fixture validation failed."
+
 Write-Host "visual structure extraction contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-structure-extractor test

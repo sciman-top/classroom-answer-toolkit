@@ -469,6 +469,16 @@
 - blocks: VISION-008, VISION-024
 - done_definition: 仓内可从 current declaration/component/structure bytes 确定性重算 relative scale lattice 与 pointer index 11；只证明 public synthetic relative geometry plumbing，不构成物理量/单位/读数/答案理解、自动 scale detection、Track/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
 
+### task_id: VISION-026
+
+- goal: 建立首个严格受限的 public synthetic image-backed DOCX 到 `NormalizedPage` 编译闭环
+- inputs: 一份 canonical 单页/单内部 PNG DOCX、预期 PNG raw-byte/decoded-pixel hash、既有 `NormalizedPage` contract
+- changes: 新增 request/result schema、stdlib OPC/OOXML local adapter、canonical DOCX/result/page fixtures；只准入 `image_backed_single_page_only`，拒绝正文、额外段落、表格、OMML、显式分页、多图、重复/外部/linked image relationship、错误 content type 与不安全包结构；external atomic output；纳入 assets/hotspot
+- verification: exact package/image/page/hash/provenance、package count/size/path、body/relationship/content-type negative cases、positive-state escalation、canonical replay、existing/repository/junction output、staged tamper、input snapshot、DOCX render visual QA、external runtime probe 与完整固定门禁
+- rollback: 回滚 VISION-026 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-025 authorities 与 `4e9e309`
+- blocks: VISION-020
+- done_definition: 仓内可从 canonical public synthetic 单图型 DOCX 确定性提取一页 hash-bound `NormalizedPage`；只证明 repo-side adapter plumbing，不构成普通 Word layout reconstruction、真实文档 fidelity、OCR/layout/Track、workflow/gateway/workstation 或 live acceptance，controls not verified、`eligible=false`，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

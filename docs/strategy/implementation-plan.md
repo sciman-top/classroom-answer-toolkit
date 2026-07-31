@@ -184,6 +184,7 @@
 - VISION-023 explicit synthetic region semantics；独立 declaration 分别声明 reading block 与 scale baseline，并把 VISION-021 proposal、VISION-022 1x/2x crop bytes 编译为两份有限 VisualRegion；不执行推断或 question/Track/answer 绑定
 - VISION-024 explicit synthetic component semantics；将 current instrument-scale line candidates 显式分组为一组 pointer edge pair 与五组 major-tick edge pairs，保持 scale interpretation/reading/FigureUnderstanding/Track/answer 未生成
 - VISION-025 synthetic relative scale lattice；独立声明 major/minor tick 槽位与 5 subdivisions/major interval，runtime 用 doubled-pixel integer geometry 推导 pointer relative subdivision index 11，physical quantity/unit/answer 保持未生成
+- VISION-026 image-backed DOCX page normalization；只准入一份 public synthetic、单页、单内部 PNG 的 canonical DOCX，使用 stdlib OPC/OOXML 关系解析提取原图并输出 hash-bound `NormalizedPage`，普通 Word layout reconstruction 保持未实现
 
 ### 涉及文件面
 
@@ -192,6 +193,7 @@
 - `tools/visual-preprocessor/`
 - `tools/visual-structure-extractor/`
 - `tools/visual-spatial-observer/`
+- `tools/docx-page-normalizer/`
 - `tools/visual-ocr-diagnostics/`
 - `tools/visual-text-region-diagnostics/`
 - `tools/visual-machine-review/`
@@ -307,6 +309,7 @@
 - 不把 VISION-023 的 explicit synthetic declaration 冒充自动分类质量、通用 axis/table/tick/legend/component 理解、题目绑定、FigureUnderstanding、Track/answer authority 或 live acceptance
 - 不把 VISION-024 edge grouping 冒充自动 tick/pointer 检测、scale range/division/reading 理解、FigureUnderstanding、Track/answer authority 或 live acceptance
 - 不把 VISION-025 relative subdivision index `11` 写成带单位数值、物理读数、题目答案、自动 scale understanding、Track/answer authority 或 live acceptance
+- 不把 VISION-026 单图型 canonical DOCX 提取冒充普通段落/表格/OMML/多页布局重建、通用 Word 支持、OCR/layout/Track、默认 workflow、gateway/workstation verification 或 live acceptance
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项

@@ -412,7 +412,7 @@ P1 对 Word 的处理固定为：
 - `parseMode=degraded`
 - 作为 `L3/degraded truth` 统计
 
-在原生 `docx -> NormalizedPage` 落地前，Word 不计入 L2 成功指标。
+VISION-026 的 `image_backed_single_page_only` synthetic 适配器只提取 canonical DOCX 的唯一内部 PNG，不重建 Word layout，因此不改变上述 P1/L2 口径。普通段落、表格、OMML 与多页原生 `docx -> NormalizedPage` 落地并通过真实文档验收前，Word 不计入 L2 成功指标。
 
 ### 答案泄漏
 
@@ -622,6 +622,14 @@ P1 样例集默认人工拆分题面/答案：
 - inclusive bbox center 全部转为 doubled-pixel integers；canonical major spacing=`240/2=120 px`、subdivision spacing=`48/2=24 px`，15 个可见 minor ticks 偏差均为 `1/2 px`，pointer center 精确落在 origin 后第 11 个 subdivision。
 - result 固定 `physicalQuantity=null / unit=null / scaleInterpretationDisposition=relative_lattice_only / readingDisposition=relative_index_only / physicalReadingDisposition=not_generated / questionBindingDisposition=not_established / trackDisposition=not_integrated / answerDisposition=not_generated`。
 - 本切片只证明 explicit synthetic lattice compilation 与 relative geometry derivation；index `11` 不是带单位数值、物理读数或答案，也不证明自动 tick/scale detection、通用量具理解、完整 FigureUnderstanding、review approval、delivery trust、WPF/gateway/workstation 或 live acceptance。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 不变，不生成 `OptimizationCandidate`。
+
+### VISION-026 image-backed DOCX page normalization 边界
+
+- request raw-byte 绑定一份 public synthetic canonical DOCX、预期内部 PNG raw-byte/decoded-pixel SHA-256、560x360 pixels、96 DPI、128 entries 与 10 MiB uncompressed package limits；固定 `egressPolicy.allowCloud=false`。
+- local stdlib runtime 解析 OPC ZIP、`[Content_Types].xml`、`word/document.xml` 与 document relationships，只准入一个 image paragraph、一个 section declaration、一个唯一内部 `image/png` relationship，并提取原 PNG 为一页 `NormalizedPage`。
+- duplicate/noncanonical/unsafe package entries、正文、额外段落、表格、OMML、显式分页、多 drawing/blip/inline、重复 relationship id、额外/外部/linked image relationship、错误 content type、source/hash/schema/path/staged-output/input-snapshot 或正向 trust 漂移全部 fail closed；external runtime 只写仓外新目录并原子 promotion。
+- result 固定 `layoutDisposition=not_reconstructed / bodyTextDisposition=not_extracted / tableDisposition=not_supported / ommlDisposition=not_supported / trackDisposition=not_integrated / answerDisposition=not_generated / requiresHumanReview=true / acceptanceDisposition=not_accepted`。
+- 本切片只证明 repo-side synthetic 单图型 DOCX 提取，不证明普通 Word layout reconstruction、真实文档 fidelity、OCR/layout/Track、review approval、delivery trust、WPF workflow、gateway/workstation verification 或 live acceptance。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 不变，不生成 `OptimizationCandidate`。
 
 ### Track 定义
 

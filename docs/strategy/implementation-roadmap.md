@@ -54,7 +54,8 @@
 - 再以 VISION-023 由独立 public synthetic declaration 将 proposals/crops 投影为有限 reading/scale-baseline VisualRegion；不执行像素分类、通用 axis/table/tick/legend 语义、question binding、Track 或答案生成
 - 再以 VISION-024 由独立 declaration 对 `junior-instrument-scale` 的 current line candidates 显式分组一组 pointer 与五组 major ticks；不推断量程、分度值、读数、FigureUnderstanding 或答案
 - 再以 VISION-025 由独立 scale-lattice declaration 绑定 VISION-024/008 geometry，确定性推导 relative subdivision index 11；不把该索引冒充物理量、单位、读数或答案
-- Word 原生 `docx -> NormalizedPage`
+- 再以 VISION-026 仅对 public synthetic `image_backed_single_page_only` DOCX 解析 OPC/OOXML 并提取唯一内部 PNG 为一页 `NormalizedPage`；普通 Word layout reconstruction 继续开放
+- 扩展并验证普通段落、表格、OMML、多页与真实 Word 文档的原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 
 ## P3：研究项

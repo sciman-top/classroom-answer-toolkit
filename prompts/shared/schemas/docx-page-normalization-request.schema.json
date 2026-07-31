@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/docx-page-normalization-request/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "DocxPageNormalizationRequest",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind", "dataClassification", "sourceDocument", "adapterProfile", "expectedPageImage", "packageLimits", "egressPolicy", "requestedAt"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "docx-page-normalization-request" },
+    "requestId": { "const": "junior-image-backed-page-normalization" },
+    "subjectPack": { "const": "junior-physics-answer" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "dataClassification": { "$ref": "#/$defs/dataClassification" },
+    "sourceDocument": { "$ref": "#/$defs/source" },
+    "adapterProfile": { "const": "image_backed_single_page_only" },
+    "expectedPageImage": { "$ref": "#/$defs/image" },
+    "packageLimits": { "type": "object", "required": ["maxEntryCount", "maxUncompressedBytes"], "properties": { "maxEntryCount": { "const": 128 }, "maxUncompressedBytes": { "const": 10485760 } }, "additionalProperties": false },
+    "egressPolicy": { "type": "object", "required": ["allowCloud"], "properties": { "allowCloud": { "const": false } }, "additionalProperties": false },
+    "requestedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "dataClassification": { "type": "object", "required": ["level", "containsPersonalData"], "properties": { "level": { "const": "public" }, "containsPersonalData": { "const": false } }, "additionalProperties": false },
+    "source": { "type": "object", "required": ["artifactRef", "rawByteSha256", "sourceKind"], "properties": { "artifactRef": { "const": "junior-image-backed-page.docx" }, "rawByteSha256": { "$ref": "#/$defs/sha" }, "sourceKind": { "const": "docx" } }, "additionalProperties": false },
+    "size": { "type": "object", "required": ["width", "height"], "properties": { "width": { "const": 560 }, "height": { "const": 360 } }, "additionalProperties": false },
+    "image": { "type": "object", "required": ["rawByteSha256", "decodedRgbPixelSha256", "pixelSize", "dpi"], "properties": { "rawByteSha256": { "$ref": "#/$defs/sha" }, "decodedRgbPixelSha256": { "$ref": "#/$defs/sha" }, "pixelSize": { "$ref": "#/$defs/size" }, "dpi": { "const": 96 } }, "additionalProperties": false }
+  },
+  "additionalProperties": false
+}
