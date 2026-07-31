@@ -412,6 +412,16 @@
 - blocks: VISION-007, VISION-019
 - done_definition: 仓内可从 current public synthetic source 确定性生成一份具有透视/旋转/噪声的 capture，并检测、校正、重放一份 hash-bound `NormalizedPage`；canonical `regionRefs=[]` 且固定 human review required、not accepted、controls not verified、`eligible=false`，只证明 repo-side synthetic page-normalization plumbing，不构成自动区域检测、真实照片质量、OCR/layout/semantic correctness、Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
 
+### task_id: VISION-021
+
+- goal: 在 VISION-020 稳定 normalized coordinate authority 上建立首个 provider-neutral automatic region proposal runtime
+- inputs: VISION-020 normalization result 与 normalized PNG current raw bytes、既有 OpenCV/Pillow local runtime
+- changes: 新增 `VisualRegionProposalRequest / Result` schema 和 deterministic local proposer；固定 page inset/threshold/3x3 close/8-connectivity/min-area/padding/max-count/order，从 560x360 normalized page 输出 `heuristicOnly` content-block candidates 与 diagnostic-only overlay；候选不复用 semantic `VisualRegion.regionType`；external atomic overlay+result runtime 在 promotion 前重验 staging 与 upstream snapshots；纳入 assets 与 hotspot
+- verification: exact two candidates/field inventory/bbox-area-coverage、empty page、policy/upstream hash、noncanonical request、existing/repository/junction output、staging tamper、canonical byte-exact replay、schema、overlay visual inspection 与完整固定顺序项目门禁
+- rollback: 回滚 VISION-021 atomic commit，删除本切片 schema/tool/canonical artifacts/EOL/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-020 authorities 与 commits `c291f9d`/`9c0d4f5`/`c09886b`/`26f1238`、`.env`、local environments、gateway、delivery/review、readiness、WPF、flywheel 与 prior samples
+- blocks: VISION-020
+- done_definition: 仓内可从 current VISION-020 normalized bytes 确定性重算两个 nonsemantic content-block proposals 与一份 diagnostic overlay；canonical 固定 `heuristicOnly / semanticDisposition=not_inferred / visualRegionDisposition=not_generated / controls=not_verified / eligible=false`，只证明 repo-side synthetic automatic proposal plumbing，不构成 region precision/recall、question/figure/text/axis/table 语义、`VisualRegion` authority、OCR/Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

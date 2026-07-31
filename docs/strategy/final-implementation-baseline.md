@@ -586,6 +586,14 @@ P1 样例集默认人工拆分题面/答案：
 - external runtime 仅写入仓外新目录，在 atomic directory promotion 前重验 staged PNG/result bytes 与 canonical request/capture snapshots；focused tests 不重写 canonical authority，显式 materialization 与验证分离。
 - canonical `regionRefs=[]`，human review required、not accepted、controls not verified、`eligible=false`；本切片不做自动题区/图区/表格/公式/axis/tick/legend/component proposal 或语义，不接 OCR/Track/WPF/gateway，不构成 workstation/live acceptance，`ReadinessControlReceipt=unattested_local_record` 不变，不生成 `OptimizationCandidate`。
 
+### VISION-021 synthetic automatic region proposal 边界
+
+- `VisualRegionProposalRequest` raw-byte 绑定 VISION-020 normalization result 与 normalized PNG，固定 `synthetic_fixture/public`、560x360 page authority、empty `regionRefs`、8px inset、foreground threshold 180、3x3 close、8-connectivity、min area 20、8px padding、max 16 candidates 与 `allowCloud=false`。
+- runtime 输出按 top-to-bottom/left-to-right 排序的 `RegionProposalCandidate[]`，记录 source/padded bbox、foreground/bbox area、coverage 与 boundary contact；canonical 恰有 `(254,147,53,65)` 和 `(89,255,386,26)` 两个 candidate。
+- candidate 固定 `proposalKind=content_block_candidate / heuristicOnly=true`，不复用 `VisualRegion.regionType`，不允许 question/figure/text/formula/table/axis/scale/legend 等语义字段；uniform overlay 固定 `diagnostic_only`。
+- external runtime 仅写入仓外新目录，在 atomic directory promotion 前重验 staged overlay/result bytes 与 canonical request/upstream snapshots；empty/excess candidate inventory、policy/hash/path drift 均 fail closed。
+- canonical 固定 `semanticDisposition=not_inferred / visualRegionDisposition=not_generated / requiresHumanReview=true / not_accepted / controls=not_verified / eligible=false`；本切片不证明 region precision/recall，不生成 local high-res crop，不接 OCR/Track/WPF/gateway，不构成 workstation/live acceptance，`ReadinessControlReceipt=unattested_local_record` 不变，不生成 `OptimizationCandidate`。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

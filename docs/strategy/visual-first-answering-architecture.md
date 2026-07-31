@@ -37,6 +37,7 @@
 - `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
 - `tools/track-orchestrator/track-orchestrator.mjs`：从 current raw bytes 准入 Track A/B/C，分别记录 candidate comparison、track degradation、Track C 与全源 blockers，并只调用上述 DecisionRecord compiler；当前 canonical inputs 全部为 public synthetic。
 - `tools/visual-page-normalizer/visual_page_normalizer.py`：从一份 VISION-007-derived public synthetic capture 检测 page quadrilateral，执行 perspective/orientation correction 与 median denoise，并输出 hash-bound `NormalizedPage + PNG`；当前 `regionRefs=[]`，不提供自动区域或 OCR/layout authority。
+- `tools/visual-region-proposer/visual_region_proposer.py`：绑定 VISION-020 normalized result/PNG，输出 nonsemantic `heuristicOnly` content-block candidates 与 diagnostic overlay；不生成 `VisualRegion`，不提供 question/figure/text/axis/table 等分类 authority。
 - `tools/visual-evidence/attach-decision.mjs`：校验本地 `DecisionRecord` 与 delivery manifest，把本次写入的直接前像原子刷新到 rollback backup 后，再原子附着 `visualDecisionRef / visualReviewPassed / trusted`；不生成审批、不推进 lifecycle。
 - `tools/visual-evidence/delivery-decision-aggregate.mjs`：基于原始 bytes SHA-256、snapshot/input/manifest、sample-package inventory 和逐题 DecisionRecord 编译交付级 aggregate；只生成离线证据，不修改 manifest。
 - `tools/visual-evidence/attach-delivery-decision-aggregate.mjs`：重验 aggregate 对应的 manifest preimage，在共享 manifest 写锁内固定全部绑定源的 bytes 快照，写 receipt 与 backup 后、最终替换前再次核对，再原子附着 delivery-level trust；不推进 lifecycle。

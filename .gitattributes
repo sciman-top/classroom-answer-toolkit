@@ -18,5 +18,7 @@ eval/ocr-layout-solver/**/*.json text eol=lf
 eval/synthetic-track-validator/**/*.json text eol=lf
 eval/track-orchestration/**/*.json text eol=lf
 eval/visual-page-normalization/**/*.json text eol=lf
+eval/visual-region-proposal/**/*.json text eol=lf
 tools/visual-page-normalizer/**/*.py text eol=lf
+tools/visual-region-proposer/**/*.py text eol=lf
 tools/visual-preprocessor/**/*.py text eol=lf

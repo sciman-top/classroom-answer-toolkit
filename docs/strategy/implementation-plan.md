@@ -179,6 +179,7 @@
 - VISION-018 synthetic Track C validator；独立重载 question/bundle/projection/solver-request/Track B 五份 raw-byte authority，输出七项 consistency checks、ConsistencyReport 与固定 review-required 的 `rule_validator` TrackResult
 - VISION-019 synthetic Track A/B/C orchestration；准入 independent A/B/C current bytes，正交报告 comparison/degradation/Track C/source blockers，并复用 canonical DecisionRecord compiler
 - VISION-020 synthetic captured-page normalization；在自动 region proposal 前检测固定透视/旋转/噪声 capture 的 page quadrilateral，输出 hash-bound 560x360 `NormalizedPage` 与 PNG，保持 `regionRefs=[]`
+- VISION-021 synthetic automatic region proposal；绑定 VISION-020 current result/PNG，在 normalized coordinates 输出 `heuristicOnly` content-block candidates 与 diagnostic overlay，不生成 semantic `VisualRegion`
 
 ### 涉及文件面
 
@@ -221,6 +222,9 @@
 - `prompts/shared/schemas/visual-page-normalization-*.schema.json`
 - `tools/visual-page-normalizer/`
 - `eval/visual-page-normalization/`
+- `prompts/shared/schemas/visual-region-proposal-*.schema.json`
+- `tools/visual-region-proposer/`
+- `eval/visual-region-proposal/`
 - evidence / review 文档与运行产物
 
 ### 完成定义
@@ -240,6 +244,7 @@
 - current VISION-016/017 五份 raw-byte authority 可确定性重算七项 synthetic Track C check、一份 ConsistencyReport 与一份 `rule_validator` TrackResult；checks pass 只证明有限一致性，不能冒充真实 grounding、Track orchestration、答案批准、DecisionRecord trust 或 workflow/live acceptance
 - current public synthetic question/bundle 与 independent Track A/B/C bytes 可由真实 runtime 准入、比较、降级并交给 canonical DecisionRecord compiler；它只证明 repo-side orchestration plumbing，不能冒充 provider execution、答案批准、WPF/gateway/workstation 或 live acceptance
 - current VISION-007 source 可确定性生成带透视/旋转/噪声的 public synthetic capture，并检测/校正/重放一份 560x360 `NormalizedPage`；它只证明 page-normalization plumbing，`regionRefs=[]`，不能冒充自动 region、真实照片质量、OCR/layout/semantic/Track 或 workflow/live acceptance
+- current VISION-020 normalized bytes 可确定性重算两个 nonsemantic content-block proposals 与 diagnostic overlay；它只证明 automatic proposal plumbing，不能冒充 question/figure/text/axis/table semantics、`VisualRegion`、region benchmark、OCR/Track 或 workflow/live acceptance
 
 ### 验证方式
 
@@ -261,6 +266,7 @@
 - synthetic Track C request/ConsistencyReport/TrackResult schema、五输入 hash/provenance、七项 pass/blocking mutation、review disposition、atomic directory output、path/junction rejection与 canonical replay 验证
 - Track orchestration request/report/DecisionRecord schema、A/B agreement/conflict、missing A/C degradation、Track C/source blocker、required-set/source/hash/question/path/junction 与 atomic two-output canonical replay 验证
 - page normalization request/result schema、capture/request/output raw-byte 与 pixel hash、quadrilateral/area/orientation/corrections/provenance、no-page/policy drift、path/junction、staging tamper、input snapshot 与 atomic PNG+result canonical replay 验证
+- region proposal request/result schema、normalization/result/PNG hash、exact candidate fields/order/bounds/area/coverage、empty/excess inventory、policy/path/junction、staging/input snapshot 与 atomic overlay+result canonical replay 验证
 
 ### 禁止扩张点
 
@@ -278,6 +284,7 @@
 - 不把七项 synthetic Track C pass、`groundingSufficient=true` 或 deterministic confidence 冒充真实题目 grounding、solver correctness、三轨编排、review approval、delivery trust 或 live acceptance
 - 不把 synthetic Track A/B agreement、Track C pass、`orchestrationStatus=complete` 或已生成 DecisionRecord 冒充真实 provider orchestration、答案正确、review approval、workflow integrated 或 live acceptance
 - 不把一份 synthetic captured-page detection/normalization 冒充自动题区/图区检测、真实拍照鲁棒性、OCR/layout/图元语义、Track input、WPF workflow 或 live acceptance
+- 不把 heuristic content-block proposal 或 diagnostic overlay 冒充 `VisualRegion`、题区/图区/文字/公式/表格/axis/scale/legend 分类、真实 region 质量、OCR/Track input 或 live acceptance
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项
