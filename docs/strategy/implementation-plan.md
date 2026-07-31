@@ -118,6 +118,7 @@
 ### 输出
 
 - provider-neutral、严格 schema 化的 `AnswerGenerationRequest / AnswerGenerationResult`
+- GEN-004 provider-backed runtime：绑定 public problem 与 subject-pack spec，复用 text gateway/failover，三层 cloud-egress 授权后只写仓外新目录，固定 pending review/untrusted/not integrated
 - 明确标记 `synthetic_fixture` 且 `liveProvider=false` 的确定性本地 generator
 - request/result/candidate raw bytes 的 SHA-256 与 canonical provenance 绑定
 - 三个脱敏 `generated` 类型候选接入飞轮
@@ -149,6 +150,7 @@
 
 - 不在这一阶段把生成主链与交付主链揉成一条黑盒链
 - 不接 WPF、不启 cloud egress、不使用真实试卷、不生成 `OptimizationCandidate`
+- 不把 local mock provider tests 冒充 live gateway verification、答案质量、review approval、WPF 默认工作流或 live acceptance
 - deterministic fixture 不冒充真实模型或 historical candidate，不提升本地 receipt authority
 
 ## P2：双轨视觉与原生输入

@@ -35,10 +35,11 @@
 29. [visual-component-semantics-runtime-plan.md](./visual-component-semantics-runtime-plan.md)
 30. [visual-scale-lattice-runtime-plan.md](./visual-scale-lattice-runtime-plan.md)
 31. [docx-page-normalization-runtime-plan.md](./docx-page-normalization-runtime-plan.md)
-32. [implementation-roadmap.md](./implementation-roadmap.md)
-33. [implementation-plan.md](./implementation-plan.md)
-34. [execution-backlog.md](./execution-backlog.md)
-35. [decision-log.md](./decision-log.md)
+32. [provider-answer-generation-runtime-plan.md](./provider-answer-generation-runtime-plan.md)
+33. [implementation-roadmap.md](./implementation-roadmap.md)
+34. [implementation-plan.md](./implementation-plan.md)
+35. [execution-backlog.md](./execution-backlog.md)
+36. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 

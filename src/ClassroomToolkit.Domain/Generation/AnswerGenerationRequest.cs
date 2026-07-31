@@ -5,4 +5,6 @@ public sealed record AnswerGenerationRequest(
     string SubjectPack,
     string ProblemArtifactRef,
     string ProblemArtifactSha256,
-    AnswerGenerationDataClassification DataClassification);
+    AnswerGenerationDataClassification DataClassification,
+    AnswerGenerationInstructionAuthority? InstructionAuthority = null,
+    AnswerGenerationEgressPolicy? EgressPolicy = null);

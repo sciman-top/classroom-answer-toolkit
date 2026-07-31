@@ -9,4 +9,5 @@ public sealed record AnswerGenerationResult(
     string RawAnswerSha256,
     AnswerGenerationDataClassification DataClassification,
     AnswerGenerationProvenance Provenance,
-    string StopReason);
+    string StopReason,
+    AnswerGenerationDisposition? GenerationDisposition = null);

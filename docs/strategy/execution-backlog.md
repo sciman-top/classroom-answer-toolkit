@@ -217,6 +217,16 @@
 - blocks: GEN-001, GEN-002, FLYWHEEL-006
 - done_definition: 仓内可从 provider-neutral request 通过明确标记的 deterministic `synthetic_fixture` 生成三个 hash-bound 候选，并闭环进入 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 的 generated 桶；不生成 `OptimizationCandidate`，不接 WPF，不开启 cloud egress，不使用真实试卷，不宣称 live gateway verified、workflow integrated 或 live accepted
 
+### task_id: GEN-004
+
+- goal: 建立从 hash-bound public problem/spec 到仓外 `answer.md` 候选的受控 model-provider runtime
+- inputs: GEN-003 provider-neutral contracts、current subject-pack spec、AI text gateway/failover、显式 public problem workspace
+- changes: additive 扩展 request instruction/egress authority、result provider/disposition provenance 与 .NET domain；新增 provider generator，要求 request/CLI/gateway 三层 cloud-egress 授权，只准入 public data，重验 problem/spec/config snapshots，支持 Responses/Chat Completions 与 retryable failover，原子写仓外 `answer.md + result.json`；固定 pending review/untrusted/not integrated
+- verification: local mocked provider payload/max tokens/failover、旧 synthetic fixtures byte-exact、schema/domain、missing egress/restricted/hash/output/input-drift/provider-disposition negative cases、assets/hotspot 与完整固定门禁
+- rollback: 回滚 GEN-004 atomic commit；删除 provider runtime/tests/strategy/evidence，恢复 additive schema/domain/gateway max-token 接口；保留 GEN-003 canonical fixtures、`.env` 与仓外用户输出
+- blocks: GEN-003
+- done_definition: 仓内具备显式执行的 provider-backed answer generation runtime，并能生成固定待复核的仓外候选；只证明 repo-side provider plumbing，不构成真实 provider/live gateway verified、答案正确、review approval、WPF default workflow、workstation/live accepted，不生成 `OptimizationCandidate`
+
 ## Epic VISION：视觉双轨与 evidence
 
 ### task_id: VISION-001

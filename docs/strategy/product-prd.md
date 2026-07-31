@@ -81,6 +81,7 @@ Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一�
 - 当前成熟主链仍然是 `answer.md -> PDF/review`。
 - `原题 -> answer.md` 是新增主链，应作为独立工程能力建设。
 - GEN-003 只用 provider-neutral 合同和明确标记的 deterministic `synthetic_fixture` 验证生成到飞轮的仓内闭环；它不是 live 模型能力或 WPF workflow。
+- GEN-004 建立显式执行的 model-provider generation runtime，以 hash-bound public problem/spec、request/CLI/gateway 三层 cloud-egress 授权和仓外原子输出生成 `answer.md` 候选；本轮 local mock 只证明 provider request/failover plumbing，候选固定 pending review/untrusted，不构成 live gateway verification、WPF 默认 workflow、答案正确或 live acceptance。
 - VISION-010 只对 committed structure/OCR diagnostic authorities 做穷举几何测量；它不选择 OCR-region 匹配，不构成 layout semantics、FigureUnderstanding 或 Track B。
 - VISION-011 只用 renderer 源码显式声明的 synthetic text/bbox 作为 generator-declared truth，诊断三份固定 fixture 的 exact-text OCR 漏检与误检；它不是人工 truth、真实 OCR benchmark 或 OCR acceptance。
 - VISION-012 只用同一 generator-declared truth 诊断 VISION-008 heuristic text-region candidate 对 fully-visible label 的空间覆盖；它不识别文字、不选择 OCR-region association，也不构成 layout semantics 或 Track B acceptance。

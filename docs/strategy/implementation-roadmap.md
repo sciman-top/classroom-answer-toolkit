@@ -22,6 +22,7 @@
 - 接入用户显式选择、raw-byte-bound、source-aware 重验的 WPF 三类 review queue 只读投影；rejected source 使整次投影 fail closed，且不产生审批或 trust 写回
 - 接入样例真值面、负样本、反馈链与 Track A
 - 以 GEN-003 provider-neutral schema、明确标记的 deterministic `synthetic_fixture`、三个 hash-bound generated candidates 接入飞轮；当前只证明 repo-side contract plumbing，controls 仍未验证且 workflow/live acceptance 后接
+- 以 GEN-004 接通显式执行的 model-provider runtime；三层出网授权、public-only、spec/problem hash binding、仓外原子输出和 pending-review disposition 全部 fail closed，WPF 默认流程与 live gateway acceptance 后接
 - 以 FLYWHEEL-007 将 raw diagnostic bucket 与 release-qualified bucket 分离；synthetic fixture 只保留 `diagnostic_only` provenance，不得贡献非扰动放行门槛
 - 以 FLYWHEEL-008 用公开 synthetic teacher text 跑通确定性显式词典解析与 `needs_human_label` 分流；真实教师数据、开放域语义解析和 readiness 判错接入后接
 - 以 FLYWHEEL-009 从 canonical synthetic teacher authority 独立统计结构化率、人工分流率和归因分布；该诊断面不接 candidate readiness、qualification 或 eligibility

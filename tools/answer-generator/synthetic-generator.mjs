@@ -108,6 +108,23 @@ export function validateAnswerGenerationResultShape(result) {
     && result.provenance.liveProvider !== false) {
     throw new Error("AnswerGenerationResult synthetic_fixture provenance must be non-live.");
   }
+  if (result?.provenance?.providerKind === "model_provider") {
+    const expectedDisposition = {
+      reviewRequired: true,
+      trusted: false,
+      acceptanceDisposition: "pending_review",
+      workflowDisposition: "not_integrated"
+    };
+    if (result.provenance.liveProvider !== true
+      || result.provenance.cloudEgress !== true
+      || !["responses", "chat_completions"].includes(result.provenance.providerSurface)
+      || !Number.isInteger(result.provenance.attemptCount)
+      || result.provenance.attemptCount < 1
+      || !isDeepStrictEqual(result.generationDisposition, expectedDisposition)
+      || result.stopReason !== "provider_generated_pending_review") {
+      throw new Error("AnswerGenerationResult model_provider provenance must remain live, cloud-recorded, and pending review.");
+    }
+  }
   return result;
 }
 

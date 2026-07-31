@@ -384,6 +384,9 @@ attestation 或等价 authority。
 ### 答案生成合同与 GEN-003 边界
 
 - `AnswerGenerationRequest / AnswerGenerationResult` 是 provider-neutral 生成合同，位于 `ClassroomToolkit.Domain.Generation` 和 `prompts/shared/schemas/`；不得复用或嵌入 `AnswerDeliveryRequest` 的 PDF/profile/review 字段。
+- GEN-004 model-provider runtime 要求 `instructionAuthority` 绑定 `prompts/<subject-pack>/spec.md` current bytes，且只准入 `dataClassification.level=public`；request、CLI 与 gateway 三层 cloud-egress 授权缺一即阻断。
+- provider candidate/result 只写 workspace 与 repository authority 之外的新目录，并在 request/problem/spec/config snapshots 未漂移时原子 promotion；result 固定 `liveProvider=true / cloudEgress=true / pending_review / trusted=false / workflowDisposition=not_integrated`。
+- 本轮仅用 local mock 验证 Responses/Chat Completions payload、retryable failover 与负向边界；没有真实凭据或 provider observation，不构成 gateway verified、答案质量、review approval、workflow integrated、workstation accepted 或 live accepted。
 - 首个 generator 只允许仓内三个完全合成的 `synthetic_fixture`，输出必须固定 `liveProvider=false`，不得把确定性模板描述为真实模型输出或 historical sample。
 - generation request、result、candidate 原始 UTF-8 bytes、generated descriptor、sample package 与 flat index 逐层以 SHA-256 绑定；路径 containment、schema、deterministic recompile 或任一 hash 漂移都 fail closed。
 - generated 候选仍需满足 scoring 的 truth/leakage 条件，并沿既有 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 进入独立桶。
