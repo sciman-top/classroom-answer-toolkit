@@ -35,13 +35,21 @@
 
 - `tools/ai-gateway/vision-request.mjs`：显式 Track A 视觉探针，返回并校验 `TrackResult`。
 - `tools/visual-evidence/decision-record.mjs`：读取 `ProblemEvidenceBundle + TrackResult[]`，生成并校验 `DecisionRecord`。
+- `tools/track-orchestrator/track-orchestrator.mjs`：从 current raw bytes 准入 Track A/B/C，分别记录 candidate comparison、track degradation、Track C 与全源 blockers，并只调用上述 DecisionRecord compiler；当前 canonical inputs 全部为 public synthetic。
+- `tools/visual-page-normalizer/visual_page_normalizer.py`：从一份 VISION-007-derived public synthetic capture 检测 page quadrilateral，执行 perspective/orientation correction 与 median denoise，并输出 hash-bound `NormalizedPage + PNG`；当前 `regionRefs=[]`，不提供自动区域或 OCR/layout authority。
+- `tools/visual-region-proposer/visual_region_proposer.py`：绑定 VISION-020 normalized result/PNG，输出 nonsemantic `heuristicOnly` content-block candidates 与 diagnostic overlay；不生成 `VisualRegion`，不提供 question/figure/text/axis/table 等分类 authority。
+- `tools/visual-local-cropper/visual_local_cropper.py`：把 admitted proposals 编译为 1x/2x hash-bound local crops；2x 仅确定性放大，不恢复细节或赋予语义。
+- `tools/visual-region-semantics/visual_region_semantics.py`：只把独立 public synthetic declaration 编译到 current proposal/crop authority，形成有限 reading/scale-baseline VisualRegion；不从像素、文件名、OCR、题干或答案推断语义，不建立 question/Track/answer/trust authority。
+- `tools/visual-component-semantics/visual_component_semantics.py`：只把独立 public synthetic declaration 编译到 current instrument-scale structure/crop authority，形成一组 pointer 与五组 major-tick edge groups；不推断量程、分度值、数值、读数、FigureUnderstanding 或 Track/answer authority。
+- `tools/visual-scale-lattice/visual_scale_lattice.py`：绑定独立 public synthetic lattice declaration、VISION-024 components 与 VISION-008 regions，以 doubled-pixel geometry 推导 relative subdivision index；physical quantity/unit 保持 null，不建立题目、Track、答案或 trust authority。
+- `tools/docx-page-normalizer/docx_page_normalizer.py`：只解析一份 canonical public synthetic `image_backed_single_page_only` DOCX 的 OPC/OOXML 关系并提取唯一内部 PNG 为一页 hash-bound `NormalizedPage`；不重建普通 Word layout，不建立 OCR/layout/Track/answer/trust authority。
 - `tools/visual-evidence/attach-decision.mjs`：校验本地 `DecisionRecord` 与 delivery manifest，把本次写入的直接前像原子刷新到 rollback backup 后，再原子附着 `visualDecisionRef / visualReviewPassed / trusted`；不生成审批、不推进 lifecycle。
 - `tools/visual-evidence/delivery-decision-aggregate.mjs`：基于原始 bytes SHA-256、snapshot/input/manifest、sample-package inventory 和逐题 DecisionRecord 编译交付级 aggregate；只生成离线证据，不修改 manifest。
 - `tools/visual-evidence/attach-delivery-decision-aggregate.mjs`：重验 aggregate 对应的 manifest preimage，在共享 manifest 写锁内固定全部绑定源的 bytes 快照，写 receipt 与 backup 后、最终替换前再次核对，再原子附着 delivery-level trust；不推进 lifecycle。
 - `eval/visual-evidence/`：保存双轨一致但证据链缺失、不安全捷径绕过 grounding 仍 fail-closed 的回归样例。
 - WPF 交付入口：一次答案交付后投影 delivery manifest 的 `review.lifecycle / visualDecisionRef / visualReviewPassed / trusted`，允许选择本地 JSON 题目决策或 delivery aggregate 交给上述受控工具附着；aggregate 附着成功后立即 source-aware 重验，只有同批 manifest bytes 匹配 receipt hash 才投影正向时间点状态。
 
-该闭环证明 `TrackResult -> DecisionRecord -> delivery manifest -> WPF refresh` 的受控合同路径可以运行，但不等于局部高清 crop、OCR/layout 抽取、WPF review 队列、审批生成/回写或默认主答题流程已经产品化。
+该闭环证明 synthetic `TrackResult[] -> orchestration report + DecisionRecord -> delivery manifest -> WPF refresh` 的各段受控合同路径可以运行，但这些段尚未接成默认工作流，也不等于真实 provider Track A/B/C、生产局部高清/OCR/layout、审批生成/回写或默认主答题流程已经产品化。
 
 ### QQ 重链路可移植映射
 

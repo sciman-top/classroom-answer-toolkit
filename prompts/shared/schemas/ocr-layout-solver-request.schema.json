@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/ocr-layout-solver-request/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "OcrLayoutSolverRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind",
+    "requestArtifactRef", "question", "evidenceBundle", "semanticProjection",
+    "expectedInterpretation", "solverPolicySha256", "dispositions", "requestedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "ocr-layout-solver-request" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "subjectPack": { "const": "junior-physics-answer" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "requestArtifactRef": { "type": "string", "minLength": 1 },
+    "question": { "$ref": "#/$defs/questionArtifact" },
+    "evidenceBundle": { "$ref": "#/$defs/evidenceArtifact" },
+    "semanticProjection": { "$ref": "#/$defs/projectionArtifact" },
+    "expectedInterpretation": {
+      "type": "object",
+      "required": ["quantityKind", "semanticRole", "unitId", "unitSymbol", "numericGrammar"],
+      "properties": {
+        "quantityKind": { "const": "length" },
+        "semanticRole": { "const": "measurement_reading" },
+        "unitId": { "const": "centimetre" },
+        "unitSymbol": { "const": "cm" },
+        "numericGrammar": { "const": "ascii_decimal" }
+      },
+      "additionalProperties": false
+    },
+    "solverPolicySha256": { "$ref": "#/$defs/sha256" },
+    "dispositions": { "$ref": "#/$defs/dispositions" },
+    "requestedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "artifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "questionArtifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "questionId", "questionRef"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "questionId": { "type": "string", "minLength": 1 },
+        "questionRef": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "evidenceArtifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "evidenceBundleId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "evidenceBundleId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "projectionArtifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId", "projectionId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "requestId": { "type": "string", "minLength": 1 },
+        "projectionId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "diagnosticScope", "requiresHumanReview", "acceptanceDisposition",
+        "controlsDisposition", "eligible", "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "diagnosticScope": { "const": "public_synthetic_ocr_layout_solver" },
+        "requiresHumanReview": { "const": true },
+        "acceptanceDisposition": { "const": "not_accepted" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false },
+        "optimizationCandidateRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

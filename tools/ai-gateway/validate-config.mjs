@@ -512,7 +512,8 @@ export async function requestTextWithFailover(config, options) {
       ? forcedRetryableFailure(provider)
       : await callTextProvider(provider, {
         prompt: options.prompt,
-        timeoutMs: options.timeoutMs
+        timeoutMs: options.timeoutMs,
+        maxOutputTokens: options.maxOutputTokens
       });
 
     attempts.push(attempt);
@@ -587,7 +588,7 @@ export async function callTextProvider(provider, options) {
         "Accept": "application/json, text/event-stream",
         "User-Agent": "classroom-answer-toolkit-ai-gateway-probe/1.0"
       },
-      body: JSON.stringify(buildTextRequestBody(provider, options.prompt))
+      body: JSON.stringify(buildTextRequestBody(provider, options.prompt, options.maxOutputTokens))
     });
 
     const bodyText = await response.text();
@@ -634,21 +635,22 @@ function joinUrl(baseUrl, endpointPath) {
   return `${baseUrl.replace(/\/+$/, "")}/${endpointPath}`;
 }
 
-function buildTextRequestBody(provider, prompt) {
+function buildTextRequestBody(provider, prompt, requestedMaxOutputTokens) {
+  const maxOutputTokens = Number.isInteger(requestedMaxOutputTokens) ? requestedMaxOutputTokens : 8;
   if (provider.textSurface === "chat_completions") {
     return {
       model: provider.textModel,
       messages: [
         { role: "user", content: prompt }
       ],
-      max_tokens: 8
+      max_tokens: maxOutputTokens
     };
   }
 
   return {
     model: provider.textModel,
     input: prompt,
-    max_output_tokens: 8
+    max_output_tokens: maxOutputTokens
   };
 }
 

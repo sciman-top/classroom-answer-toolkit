@@ -620,6 +620,12 @@ def materialize_fixtures(fixture_root: Path = CANONICAL_ROOT) -> int:
 
 def canonical_output_path(output_dir: Path) -> Path:
     absolute = Path(os.path.abspath(os.fspath(output_dir)))
+    try:
+        absolute.relative_to(REPO_ROOT)
+    except ValueError:
+        pass
+    else:
+        raise ValueError("Runtime output directory must be outside the repository root.")
     parent = absolute.parent.resolve(strict=True)
     output = parent / absolute.name
     try:

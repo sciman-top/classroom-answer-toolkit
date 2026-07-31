@@ -1,5 +1,13 @@
 # Execution Backlog
 
+## 状态判定协议
+
+- 本文件中的 task 默认是执行定义，不因出现 `done_definition` 就自动视为完成。
+- `repo-side done` 必须同时由当前 Git revision 可达的实现、对应 `docs/change-evidence/` 记录和该记录中的完整固定门禁证明；缺任一项均保持未完成或待核。
+- `workflow integrated / gateway verified / workstation accepted / live accepted` 是独立状态，不得由 schema、synthetic fixture、repo gate、candidate、`pending_review` 或本地 unattested receipt 推导。
+- `ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 在受权 attestation 与合法数据/凭据出现前保持 fail closed。
+- 产品核心精简后，REVIEW lifecycle/approval/trust writeback、queue ownership/persistence、额外 synthetic visual/optimization/renderer 研究任务均为 `frozen`，不是默认待办；恢复须满足 `product-core-simplification.md` 的真实使用证据条件。
+
 ## Epic DOC：文档真值收口
 
 ### task_id: DOC-001
@@ -210,6 +218,26 @@
 - blocks: GEN-001, GEN-002, FLYWHEEL-006
 - done_definition: 仓内可从 provider-neutral request 通过明确标记的 deterministic `synthetic_fixture` 生成三个 hash-bound 候选，并闭环进入 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 的 generated 桶；不生成 `OptimizationCandidate`，不接 WPF，不开启 cloud egress，不使用真实试卷，不宣称 live gateway verified、workflow integrated 或 live accepted
 
+### task_id: GEN-004
+
+- goal: 建立从 hash-bound public problem/spec 到仓外 `answer.md` 候选的受控 model-provider runtime
+- inputs: GEN-003 provider-neutral contracts、current subject-pack spec、AI text gateway/failover、显式 public problem workspace
+- changes: additive 扩展 request instruction/egress authority、result provider/disposition provenance 与 .NET domain；新增 provider generator，要求 request/CLI/gateway 三层 cloud-egress 授权，只准入 public data，重验 problem/spec/config snapshots，支持 Responses/Chat Completions 与 retryable failover，原子写仓外 `answer.md + result.json`；固定 pending review/untrusted/not integrated
+- verification: local mocked provider payload/max tokens/failover、旧 synthetic fixtures byte-exact、schema/domain、missing egress/restricted/hash/output/input-drift/provider-disposition negative cases、assets/hotspot 与完整固定门禁
+- rollback: 回滚 GEN-004 atomic commit；删除 provider runtime/tests/strategy/evidence，恢复 additive schema/domain/gateway max-token 接口；保留 GEN-003 canonical fixtures、`.env` 与仓外用户输出
+- blocks: GEN-003
+- done_definition: 仓内具备显式执行的 provider-backed answer generation runtime，并能生成固定待复核的仓外候选；只证明 repo-side provider plumbing，不构成真实 provider/live gateway verified、答案正确、review approval、WPF default workflow、workstation/live accepted，不生成 `OptimizationCandidate`
+
+### task_id: GEN-005
+
+- goal: 把 GEN-004 受控 provider runtime 接入 WPF，并保持生成、交付、review/trust 三个动作边界可审计
+- inputs: GEN-004 provider runtime、`ProviderAnswerGenerationExecutionRequest/Result`、现有 `answer.md -> PDF/review` WPF 交付入口
+- changes: 新增 WPF request/workspace/config/仓外新目录选择与显式 cloud-egress consent；浏览/准备不 dispatch，Generate command 才调用 orchestrator；orchestrator 启动前验证 consent/path/bounds，退出后重验 request/candidate hash、identity、provider provenance 与 pending-review disposition；成功只回填现有答案/subject-pack 输入，交付仍需独立命令
+- verification: 缺失 consent 零 dispatch、中文/空格路径、参数顺序、provider failure、tampered result、stale generated state、生成与交付分离、AutomationId/XAML contract、原生 WPF UI Automation 观察与完整固定门禁
+- rollback: 回滚 GEN-005 atomic commit；删除 additive domain/application/orchestrator/ViewModel/XAML/tests/strategy/evidence，保留 GEN-004 runtime、`.env` 与任何仓外用户输出
+- blocks: GEN-004, REVIEW-002
+- done_definition: WPF 可显式调用 provider 生成并把固定 pending-review/untrusted 候选送入既有交付输入，且不会自动交付或提升 trust；只证明 repo-side workflow integrated，不构成真实 gateway verified、答案正确、review approval、workstation/live accepted，不生成 `OptimizationCandidate`
+
 ## Epic VISION：视觉双轨与 evidence
 
 ### task_id: VISION-001
@@ -371,6 +399,106 @@
 - rollback: 先回滚 VISION-016 evidence，再回滚 docs/integration/canonical/runtime/schema/design commits；删除本切片 tool/eval/schema/validator/hotspot/strategy 增量，保留 VISION-007 至 VISION-015 authority、`.env`、OCR 环境、gateway、delivery/review、readiness、flywheel 与 canonical sample authority
 - blocks: VISION-011, VISION-012, VISION-014, VISION-015
 - done_definition: 仓内可从 current canonical bytes 确定性重算一份显式 `measurement_reading` projection，且角色和 recognized text 来源独立；只证明 public synthetic semantic projection plumbing，不构成数值/单位理解、layout semantics、FigureUnderstanding、ProblemEvidenceBundle、TrackResult、answer candidate、solver result、delivery trust、WPF/workflow、gateway live 或 real-data/live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
+
+### task_id: VISION-017
+
+- goal: 建立首份由独立 public synthetic question/evidence authority 和 VISION-016 projection 驱动的 deterministic `ocr_layout_solver` TrackResult
+- inputs: VISION-016 `measurement_reading / recognizedText=12` projection、独立 question identity/crop/quantity/unit authority、现有 `ProblemEvidenceBundle / TrackResult` canonical contracts
+- changes: 新增 `VisualSyntheticQuestion` 与 `OcrLayoutSolverRequest` schema、question/evidence/request/Track B canonical artifacts 和 local deterministic compiler；ProblemEvidenceBundle 显式绑定 question/projection raw bytes；TrackResult 独立记录 question binding、quantity/unit interpretation、solver/candidate provenance 和 blocking review disposition；纳入 assets 与 hotspot
+- verification: positive `12 cm` provenance、question bytes、unit token、numeric grammar、semantic role、bundle/request/hash/crop binding、canonical byte-exact replay、fixed canonical request、external atomic output 与 repository-output rejection均 fail closed；完整固定顺序项目门禁
+- rollback: 先回滚 VISION-017 evidence，再回滚 strategy/integration/canonical/schema/runtime/tests；删除本切片 schema/tool/eval/validator/hotspot/strategy 增量，保留 VISION-007 至 VISION-016 authority、`.env`、OCR 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
+- blocks: VISION-016
+- done_definition: 仓内可从 current canonical bytes 确定性重算一份 question-bound、quantity/unit-source-separated、provenance-complete 的 synthetic Track B candidate，且固定 `review_required / trusted=false / controls=not_verified / eligible=false`；只证明 repo-side synthetic solver plumbing，不构成通用 question/quantity/unit understanding、Track C、DecisionRecord acceptance、真实答案质量、WPF workflow、gateway live、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
+
+### task_id: VISION-018
+
+- goal: 建立首份独立消费 VISION-016/017 current authority 的 deterministic synthetic Track C validator
+- inputs: VISION-017 question、ProblemEvidenceBundle、OCR layout solver request、Track B 与 VISION-016 semantic projection 五份 raw-byte authority，现有 `ConsistencyReport / TrackResult` contracts
+- changes: 新增 `SyntheticTrackValidatorRequest` schema、七项 fixed check policy、request/ConsistencyReport/Track C canonical artifacts 与 local deterministic compiler；semantic mismatch 形成 blocking findings，stale hash/path/junction/output drift fail closed；纳入 assets 与 hotspot
+- verification: question/evidence、quantity/unit、numeric/answer format、semantic/solver provenance、review boundary 的 pass/blocking mutations，request hash drift、3 artifact byte-exact replay、external atomic directory、existing/repository/junction output rejection；完整固定顺序项目门禁
+- rollback: 先回滚 VISION-018 evidence，再回滚本切片 strategy/integration/canonical/schema/runtime/tests；保留 VISION-007 至 VISION-017 authorities 与 commit `c291f9d`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
+- blocks: VISION-017
+- done_definition: 仓内可从五份 current raw-byte authority 确定性重算七项 synthetic Track C consistency checks、一份 ConsistencyReport 与一份 `rule_validator` TrackResult；canonical checks pass 仍固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side limited consistency validation，不构成真实 grounding、Track orchestration、DecisionRecord acceptance、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
+
+### task_id: VISION-019
+
+- goal: 建立首个实际消费 independent Track A/B/C source artifacts、复用 canonical DecisionRecord compiler 的 provider-neutral synthetic orchestration runtime
+- inputs: VISION-017 question/ProblemEvidenceBundle/Track B、VISION-018 Track C、同 question 的独立 public synthetic Track A、现有 `TrackResult / DecisionRecord` contracts
+- changes: 新增 `TrackOrchestrationRequest / Report` schema、raw-byte/path/type/question/bundle source admission、fixed A/B/C inventory、A/B normalized comparison、独立 complete/degraded 与 Track C/source-blocking 投影、external atomic report+DecisionRecord runtime；DecisionRecord compiler 增加 required-track evidence-loss 输入并导出同一 normalization helper；纳入 hotspot
+- verification: three-track agreement、A/B conflict、missing A、missing C while agreement、Track C blocking、source hash/question/duplicate/required-set shrink drift、4 artifact byte-exact replay、external request、existing/repository/junction output rejection；完整固定顺序项目门禁
+- rollback: 先回滚 VISION-019 evidence，再回滚本切片 strategy/hotspot/canonical/schema/runtime/tests 与 DecisionRecord additive hook；保留 VISION-007 至 VISION-018 authorities、commits `c291f9d`/`9c0d4f5`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
+- blocks: VISION-017, VISION-018
+- done_definition: 仓内可从 current raw bytes 准入一组 public synthetic Track A/B/C，独立报告 candidate agreement/conflict、track degradation、Track C 与全源 blocking findings，并通过既有 compiler 生成 fail-closed DecisionRecord；canonical result 固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side orchestration/evidence-compiler runtime，不构成真实 provider Track A/B/C、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
+
+### task_id: VISION-020
+
+- goal: 在自动区域提议前建立首个 provider-neutral、确定性的 public synthetic captured-page normalization authority
+- inputs: VISION-007 `junior-readable-measurement.source.png` current raw bytes、既有 `NormalizedPage` schema、local OpenCV/Pillow runtime
+- changes: 新增 `VisualPageNormalizationRequest / Result` schema 和 deterministic local normalizer；从固定透视、旋转、噪声的 720x540 synthetic capture 检测最大外部凸四边形，透视/方向校正并 median denoise 到 560x360；绑定 request/capture/output raw-byte 与 decoded-pixel hash、geometry/corrections/engine provenance；external atomic PNG+result runtime 在 promotion 前重验 staging 与 canonical input snapshots；focused tests 只读 canonical authority；纳入 assets 与 hotspot
+- verification: positive page detection、no-page/policy/capture drift、noncanonical request、canonical byte-exact replay、existing/repository/junction output、staging tamper、schema、visual capture/normalized inspection 与完整固定顺序项目门禁
+- rollback: 回滚 VISION-020 atomic commit，删除本切片 schema/tool/canonical artifacts/EOL/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-019 authorities 与 commits `c291f9d`/`9c0d4f5`/`c09886b`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 prior samples
+- blocks: VISION-007, VISION-019
+- done_definition: 仓内可从 current public synthetic source 确定性生成一份具有透视/旋转/噪声的 capture，并检测、校正、重放一份 hash-bound `NormalizedPage`；canonical `regionRefs=[]` 且固定 human review required、not accepted、controls not verified、`eligible=false`，只证明 repo-side synthetic page-normalization plumbing，不构成自动区域检测、真实照片质量、OCR/layout/semantic correctness、Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
+
+### task_id: VISION-021
+
+- goal: 在 VISION-020 稳定 normalized coordinate authority 上建立首个 provider-neutral automatic region proposal runtime
+- inputs: VISION-020 normalization result 与 normalized PNG current raw bytes、既有 OpenCV/Pillow local runtime
+- changes: 新增 `VisualRegionProposalRequest / Result` schema 和 deterministic local proposer；固定 page inset/threshold/3x3 close/8-connectivity/min-area/padding/max-count/order，从 560x360 normalized page 输出 `heuristicOnly` content-block candidates 与 diagnostic-only overlay；候选不复用 semantic `VisualRegion.regionType`；external atomic overlay+result runtime 在 promotion 前重验 staging 与 upstream snapshots；纳入 assets 与 hotspot
+- verification: exact two candidates/field inventory/bbox-area-coverage、empty page、policy/upstream hash、noncanonical request、existing/repository/junction output、staging tamper、canonical byte-exact replay、schema、overlay visual inspection 与完整固定顺序项目门禁
+- rollback: 回滚 VISION-021 atomic commit，删除本切片 schema/tool/canonical artifacts/EOL/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-020 authorities 与 commits `c291f9d`/`9c0d4f5`/`c09886b`/`26f1238`、`.env`、local environments、gateway、delivery/review、readiness、WPF、flywheel 与 prior samples
+- blocks: VISION-020
+- done_definition: 仓内可从 current VISION-020 normalized bytes 确定性重算两个 nonsemantic content-block proposals 与一份 diagnostic overlay；canonical 固定 `heuristicOnly / semanticDisposition=not_inferred / visualRegionDisposition=not_generated / controls=not_verified / eligible=false`，只证明 repo-side synthetic automatic proposal plumbing，不构成 region precision/recall、question/figure/text/axis/table 语义、`VisualRegion` authority、OCR/Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
+
+### task_id: VISION-022
+
+- goal: 从 VISION-021 admitted nonsemantic proposals 确定性生成 1x/2x local crops
+- inputs: VISION-021 result 与 VISION-020 normalized PNG current bytes
+- changes: 新增 local-crop request/result schema、runtime 与四张 proposal-bound PNG；1x pixel-preserving、2x nearest；external atomic five-output bundle；纳入 assets/hotspot
+- verification: proposal/hash/bbox/scale/dimensions/pixel/replay/path/junction/tamper 与完整固定门禁
+- rollback: 回滚 VISION-022 atomic commit，保留 VISION-007 至 VISION-021 与 `4c302bb`
+- blocks: VISION-021
+- done_definition: 两个 proposals 各生成 1x/2x hash-bound crops；仅证明 synthetic local crop plumbing，不构成细节恢复、semantic `VisualRegion`、OCR/Track/workflow/live acceptance，controls not verified、`eligible=false`
+
+### task_id: VISION-023
+
+- goal: 由独立 public synthetic declaration 建立首个 proposal/crop-bound 的有限 VisualRegion 语义编译闭环
+- inputs: VISION-021 proposal result、VISION-022 local-crop result 与四份 actual crop bytes、既有 `VisualRegion` contract
+- changes: 新增 declaration/request/result schema、deterministic local compiler 和两份有限 region semantics；只声明 reading block 与 scale baseline，固定 inference 未执行、question binding 未建立、Track 未集成、answer 未生成；external atomic result runtime；纳入 assets/hotspot
+- verification: exact two regions、proposal/bbox/1x/2x crop raw-byte/pixel/dimension/interpolation binding、crossed/duplicate/missing refs、unsupported role/type、trust escalation、canonical replay、existing/repository/junction output、staging tamper、完整固定门禁
+- rollback: 回滚 VISION-023 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-022 authorities 与 `da7e6c6`
+- blocks: VISION-021, VISION-022
+- done_definition: 仓内可从 current declaration/proposal/crop bytes 确定性重算两份有限 VisualRegion；只证明 explicit synthetic semantics compilation，不构成自动分类、通用 axis/table/tick/legend 理解、question binding、FigureUnderstanding、OCR/Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
+
+### task_id: VISION-024
+
+- goal: 由独立 public synthetic declaration 建立首个 structure/crop-bound 的有限刻度组件语义编译闭环
+- inputs: VISION-008 `junior-instrument-scale` current structure result、VISION-007 current preprocessing result 与 actual 2x crop、独立 component declaration
+- changes: 新增 declaration/request/result schema、deterministic local compiler 和六份有限 component semantics；只显式声明一组 pointer edge pair 与五组 major-tick edge pairs，固定 inference 未执行、scale interpretation/reading/FigureUnderstanding 未生成、question/Track/answer 未绑定；external atomic result runtime；纳入 assets/hotspot
+- verification: exact component/type/order/pair inventory、structure/preprocessing/crop raw-byte/pixel/dimension binding、candidate uniqueness/segment geometry/computed bbox、crossed/duplicate/unsupported declaration、trust escalation、canonical replay、existing/repository/junction output、staged tamper、input snapshot 与完整固定门禁
+- rollback: 回滚 VISION-024 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-023 authorities 与 `3f5136b`
+- blocks: VISION-007, VISION-008, VISION-023
+- done_definition: 仓内可从 current declaration/structure/preprocessing/crop bytes 确定性重算一组 pointer 与五组 major ticks；只证明 explicit synthetic component grouping compilation，不构成自动检测、量程/分度值/数值/读数理解、FigureUnderstanding、Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
+
+### task_id: VISION-025
+
+- goal: 在 VISION-024 component authority 上建立首个 relative-only synthetic scale-lattice 编译闭环
+- inputs: VISION-024 current component result、VISION-008 current structure result、独立 scale-lattice declaration
+- changes: 新增 declaration/request/result schema、deterministic doubled-pixel compiler；声明 major/minor tick slot inventory 与 5 subdivisions/major interval，runtime 重验 geometry 并推导 pointer relative subdivision index；physical quantity/unit/answer 固定未生成；external atomic result runtime；纳入 assets/hotspot
+- verification: exact major/minor/source inventory、regular spacing、half-pixel tolerance、pointer index derivation、physical-null/trust escalation、source hash、canonical replay、existing/repository/junction output、staged tamper、input snapshot 与完整固定门禁
+- rollback: 回滚 VISION-025 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-024 authorities 与 `c7bc7b2`
+- blocks: VISION-008, VISION-024
+- done_definition: 仓内可从 current declaration/component/structure bytes 确定性重算 relative scale lattice 与 pointer index 11；只证明 public synthetic relative geometry plumbing，不构成物理量/单位/读数/答案理解、自动 scale detection、Track/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
+
+### task_id: VISION-026
+
+- goal: 建立首个严格受限的 public synthetic image-backed DOCX 到 `NormalizedPage` 编译闭环
+- inputs: 一份 canonical 单页/单内部 PNG DOCX、预期 PNG raw-byte/decoded-pixel hash、既有 `NormalizedPage` contract
+- changes: 新增 request/result schema、stdlib OPC/OOXML local adapter、canonical DOCX/result/page fixtures；只准入 `image_backed_single_page_only`，拒绝正文、额外段落、表格、OMML、显式分页、多图、重复/外部/linked image relationship、错误 content type 与不安全包结构；external atomic output；纳入 assets/hotspot
+- verification: exact package/image/page/hash/provenance、package count/size/path、body/relationship/content-type negative cases、positive-state escalation、canonical replay、existing/repository/junction output、staged tamper、input snapshot、DOCX render visual QA、external runtime probe 与完整固定门禁
+- rollback: 回滚 VISION-026 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-025 authorities 与 `4e9e309`
+- blocks: VISION-020
+- done_definition: 仓内可从 canonical public synthetic 单图型 DOCX 确定性提取一页 hash-bound `NormalizedPage`；只证明 repo-side adapter plumbing，不构成普通 Word layout reconstruction、真实文档 fidelity、OCR/layout/Track、workflow/gateway/workstation 或 live acceptance，controls not verified、`eligible=false`，不生成 `OptimizationCandidate`
 
 ## Epic WORKSTATION：自动解题工作站终局
 

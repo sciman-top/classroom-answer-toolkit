@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-component-semantics-request",
+  "requestId": "junior-instrument-scale-component-semantics",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "containsPersonalData": false
+  },
+  "componentDeclaration": {
+    "artifactRef": "junior-instrument-scale.visual-synthetic-component-semantics-declaration.json",
+    "rawByteSha256": "bea25d2f28b7c9ac75edf357c41181a75b72dbccfad62b6e63f6a929ebd5d76d",
+    "declarationId": "junior-instrument-scale-component-semantics-declaration"
+  },
+  "structureExtractionResult": {
+    "artifactRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
+    "rawByteSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027",
+    "requestId": "junior-instrument-scale"
+  },
+  "preprocessingResult": {
+    "artifactRef": "eval/visual-preprocessing/cases/junior-instrument-scale.visual-preprocessing-result.json",
+    "rawByteSha256": "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b",
+    "requestId": "junior-instrument-scale"
+  },
+  "crop": {
+    "artifactRef": "eval/visual-preprocessing/cases/junior-instrument-scale.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "70577ca429dbc6afd5b2ecf536fe4712001bfddd961f9a041b103dca5fb8bb40",
+    "decodedRgbPixelSha256": "4efe1386d15ea467781942982c77f2c6a38968509c79e72878eacf53fc711e30",
+    "pixelSize": {
+      "width": 580,
+      "height": 210
+    }
+  },
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-31T13:00:00Z"
+}

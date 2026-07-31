@@ -65,7 +65,10 @@
         },
         "providerId": { "type": "string", "minLength": 1 },
         "providerVersion": { "type": "string", "minLength": 1 },
-        "liveProvider": { "type": "boolean" }
+        "liveProvider": { "type": "boolean" },
+        "providerSurface": { "type": "string", "enum": ["responses", "chat_completions"] },
+        "attemptCount": { "type": "integer", "minimum": 1 },
+        "cloudEgress": { "type": "boolean" }
       },
       "allOf": [
         {
@@ -82,6 +85,17 @@
           }
         }
       ],
+      "additionalProperties": false
+    },
+    "generationDisposition": {
+      "type": "object",
+      "required": ["reviewRequired", "trusted", "acceptanceDisposition", "workflowDisposition"],
+      "properties": {
+        "reviewRequired": { "const": true },
+        "trusted": { "const": false },
+        "acceptanceDisposition": { "const": "pending_review" },
+        "workflowDisposition": { "const": "not_integrated" }
+      },
       "additionalProperties": false
     },
     "stopReason": { "type": "string", "minLength": 1 }

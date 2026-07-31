@@ -19,6 +19,8 @@ public sealed class AnswerGenerationContractTests
 
         Assert.Contains("ProblemArtifactRef", generationProperties);
         Assert.Contains("ProblemArtifactSha256", generationProperties);
+        Assert.Contains("InstructionAuthority", generationProperties);
+        Assert.Contains("EgressPolicy", generationProperties);
         Assert.DoesNotContain("AnswerMarkdownPath", generationProperties);
         Assert.DoesNotContain("OutputPdfPath", generationProperties);
         Assert.DoesNotContain("Profile", generationProperties);
@@ -51,5 +53,28 @@ public sealed class AnswerGenerationContractTests
         Assert.Equal("synthetic_fixture", result.Provenance.ProviderKind);
         Assert.False(result.Provenance.LiveProvider);
         Assert.Equal("public", result.DataClassification.Level);
+    }
+
+    [Fact]
+    public void ProviderResultCarriesFailClosedReviewDisposition()
+    {
+        var result = new AnswerGenerationResult(
+            RequestId: "provider-linear-equation",
+            SubjectPack: "math-answer",
+            SourceRequestSha256: new string('a', 64),
+            AnswerMarkdown: "`x = 4`\n",
+            CandidateArtifactRef: "answer.md",
+            RawAnswerSha256: new string('b', 64),
+            DataClassification: new AnswerGenerationDataClassification("public", "Public problem."),
+            Provenance: new AnswerGenerationProvenance(
+                "model_provider", "fallback_1", "model-b", true, "chat_completions", 2, true),
+            StopReason: "provider_generated_pending_review",
+            GenerationDisposition: new AnswerGenerationDisposition(true, false, "pending_review", "not_integrated"));
+
+        Assert.True(result.Provenance.LiveProvider);
+        Assert.True(result.Provenance.CloudEgress);
+        Assert.NotNull(result.GenerationDisposition);
+        Assert.True(result.GenerationDisposition.ReviewRequired);
+        Assert.False(result.GenerationDisposition.Trusted);
     }
 }

@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/track-orchestration-report/v1.json",
+  "compatibility": {
+    "forward": "additive",
+    "backward": "additive"
+  },
+  "title": "TrackOrchestrationReport",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "orchestrationReportId",
+    "requestRef",
+    "requestSha256",
+    "questionBinding",
+    "evidenceBundleBinding",
+    "sourceTracks",
+    "expectedTrackTypes",
+    "presentTrackTypes",
+    "missingTrackTypes",
+    "orchestrationStatus",
+    "comparison",
+    "trackCDisposition",
+    "sourceBlockingFindingRefs",
+    "decisionCompiler",
+    "dispositions",
+    "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "track-orchestration-report" },
+    "orchestrationReportId": { "type": "string", "minLength": 1 },
+    "requestRef": { "type": "string", "minLength": 1 },
+    "requestSha256": { "$ref": "#/$defs/sha256" },
+    "questionBinding": { "$ref": "#/$defs/admittedBinding" },
+    "evidenceBundleBinding": { "$ref": "#/$defs/admittedBinding" },
+    "sourceTracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "trackType",
+          "trackResultId",
+          "artifactRef",
+          "rawByteSha256",
+          "admissionStatus",
+          "normalizedCandidate",
+          "blockingFindingCount"
+        ],
+        "properties": {
+          "trackType": { "$ref": "#/$defs/trackType" },
+          "trackResultId": { "type": "string", "minLength": 1 },
+          "artifactRef": { "type": "string", "minLength": 1 },
+          "rawByteSha256": { "$ref": "#/$defs/sha256" },
+          "admissionStatus": { "const": "admitted" },
+          "normalizedCandidate": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ]
+          },
+          "blockingFindingCount": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "expectedTrackTypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/trackType" }
+    },
+    "presentTrackTypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/trackType" }
+    },
+    "missingTrackTypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/trackType" }
+    },
+    "orchestrationStatus": {
+      "enum": ["complete", "degraded"]
+    },
+    "comparison": {
+      "type": "object",
+      "required": ["status", "candidateTrackTypes", "conflictRefs"],
+      "properties": {
+        "status": {
+          "enum": ["agreement", "conflict", "not_comparable"]
+        },
+        "normalizedCandidate": { "type": "string" },
+        "candidateTrackTypes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/trackType" }
+        },
+        "conflictRefs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "trackCDisposition": {
+      "type": "object",
+      "required": ["status", "blockingFindingRefs"],
+      "properties": {
+        "status": { "enum": ["pass", "blocking", "missing"] },
+        "blockingFindingRefs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "sourceBlockingFindingRefs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "decisionCompiler": {
+      "type": "object",
+      "required": [
+        "implementationRef",
+        "decisionRecordRef",
+        "decisionRecordSha256",
+        "decision",
+        "trusted"
+      ],
+      "properties": {
+        "implementationRef": { "const": "tools/visual-evidence/decision-record.mjs" },
+        "decisionRecordRef": { "type": "string", "minLength": 1 },
+        "decisionRecordSha256": { "$ref": "#/$defs/sha256" },
+        "decision": { "type": "string" },
+        "trusted": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "scope",
+        "orchestrationDisposition",
+        "requiresHumanReview",
+        "deliveryTrustDisposition",
+        "controlsDisposition",
+        "eligible",
+        "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "scope": { "const": "public_synthetic_track_orchestration" },
+        "orchestrationDisposition": { "const": "orchestrated_not_accepted" },
+        "requiresHumanReview": { "const": true },
+        "deliveryTrustDisposition": { "const": "not_projected" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false },
+        "optimizationCandidateRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    },
+    "generatedAt": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "trackType": {
+      "type": "string",
+      "enum": ["vlm_direct", "ocr_layout_solver", "rule_validator"]
+    },
+    "admittedBinding": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "admissionStatus"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "admissionStatus": { "const": "admitted" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,11 @@
+{
+  "name": "classroom-toolkit-ocr-layout-solver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "materialize:fixtures": "node ocr-layout-solver.mjs materialize",
+    "validate:fixtures": "node ocr-layout-solver.mjs validate",
+    "test": "node --test ocr-layout-solver.test.mjs"
+  }
+}

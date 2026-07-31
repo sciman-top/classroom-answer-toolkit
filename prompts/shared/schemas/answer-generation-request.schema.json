@@ -40,6 +40,21 @@
     },
     "dataClassification": {
       "$ref": "./data-classification.schema.json"
+    },
+    "instructionAuthority": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "egressPolicy": {
+      "type": "object",
+      "required": ["allowCloud"],
+      "properties": { "allowCloud": { "type": "boolean" } },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

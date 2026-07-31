@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/synthetic-track-validator-request/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "SyntheticTrackValidatorRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind",
+    "requestArtifactRef", "inputs", "outputs", "expectedCheckIds",
+    "validatorPolicySha256", "dispositions", "requestedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "synthetic-track-validator-request" },
+    "requestId": { "const": "junior-readable-measurement-synthetic-track-validator" },
+    "subjectPack": { "const": "junior-physics-answer" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "requestArtifactRef": { "type": "string", "minLength": 1 },
+    "inputs": {
+      "type": "object",
+      "required": ["question", "evidenceBundle", "semanticProjection", "solverRequest", "trackB"],
+      "properties": {
+        "question": { "$ref": "#/$defs/question" },
+        "evidenceBundle": { "$ref": "#/$defs/evidenceBundle" },
+        "semanticProjection": { "$ref": "#/$defs/projection" },
+        "solverRequest": { "$ref": "#/$defs/solverRequest" },
+        "trackB": { "$ref": "#/$defs/trackResult" }
+      },
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["consistencyReportRef", "trackResultRef"],
+      "properties": {
+        "consistencyReportRef": { "type": "string", "minLength": 1 },
+        "trackResultRef": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "expectedCheckIds": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "question_binding_exact" },
+        { "const": "quantity_binding_exact" },
+        { "const": "unit_binding_exact" },
+        { "const": "numeric_format_valid" },
+        { "const": "answer_format_exact" },
+        { "const": "semantic_evidence_exact" },
+        { "const": "review_boundary_preserved" }
+      ],
+      "items": false,
+      "minItems": 7,
+      "maxItems": 7
+    },
+    "validatorPolicySha256": { "$ref": "#/$defs/sha256" },
+    "dispositions": { "$ref": "#/$defs/dispositions" },
+    "requestedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "artifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "question": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        {
+          "type": "object",
+          "required": ["questionId", "questionRef"],
+          "properties": {
+            "questionId": { "type": "string", "minLength": 1 },
+            "questionRef": { "type": "string", "minLength": 1 }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "evidenceBundle": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        {
+          "type": "object",
+          "required": ["evidenceBundleId"],
+          "properties": { "evidenceBundleId": { "type": "string", "minLength": 1 } }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "projection": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        {
+          "type": "object",
+          "required": ["requestId", "projectionId"],
+          "properties": {
+            "requestId": { "type": "string", "minLength": 1 },
+            "projectionId": { "type": "string", "minLength": 1 }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "solverRequest": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        {
+          "type": "object",
+          "required": ["requestId"],
+          "properties": { "requestId": { "type": "string", "minLength": 1 } }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "trackResult": {
+      "allOf": [
+        { "$ref": "#/$defs/artifact" },
+        {
+          "type": "object",
+          "required": ["trackResultId"],
+          "properties": { "trackResultId": { "type": "string", "minLength": 1 } }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "validationScope", "requiresHumanReview", "acceptanceDisposition",
+        "controlsDisposition", "eligible", "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "validationScope": { "const": "public_synthetic_track_c_validator" },
+        "requiresHumanReview": { "const": true },
+        "acceptanceDisposition": { "const": "not_accepted" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false },
+        "optimizationCandidateRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -6,6 +6,7 @@
   "scripts": {
     "materialize:fixtures": "node synthetic-generator.mjs --materialize",
     "validate:fixtures": "node synthetic-generator.mjs --validate",
-    "test": "node --test synthetic-generator.test.mjs"
+    "test": "node --test *.test.mjs",
+    "generate:provider": "node provider-generator.mjs"
   }
 }

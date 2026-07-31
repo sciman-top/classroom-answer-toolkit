@@ -20,3 +20,16 @@ npm --prefix tools/answer-generator run validate:fixtures
 
 `materialize:fixtures` is a repository-maintenance command for regenerating the
 three committed synthetic outputs. It is not a live generation entry point.
+
+`provider-generator.mjs` is the separate GEN-004 model-provider runtime. It requires public data,
+hash-bound subject-pack instructions, request-level `egressPolicy.allowCloud=true`, the runtime
+`--allow-cloud-egress` flag, and gateway-level cloud egress. It writes `answer.md` and a fail-closed
+result to a new external directory. Output remains `pending_review`, `trusted=false`, and
+`workflowDisposition=not_integrated`.
+
+```powershell
+npm --prefix tools/answer-generator run generate:provider -- --request <request.json> --workspace-root <root> --out <new-directory> --allow-cloud-egress
+```
+
+This command can cause real network egress. Tests mock Responses and Chat Completions and do not
+establish live gateway acceptance.

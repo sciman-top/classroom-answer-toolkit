@@ -1,0 +1,281 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-component-semantics-result",
+  "requestId": "junior-instrument-scale-component-semantics",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "sourceRequestSha256": "f4c756efb999bd3e14f1d14b4d783f20c480d5946d4a9aca279db9a7632c70e2",
+  "componentDeclaration": {
+    "artifactRef": "junior-instrument-scale.visual-synthetic-component-semantics-declaration.json",
+    "rawByteSha256": "bea25d2f28b7c9ac75edf357c41181a75b72dbccfad62b6e63f6a929ebd5d76d",
+    "declarationId": "junior-instrument-scale-component-semantics-declaration"
+  },
+  "structureExtractionResult": {
+    "artifactRef": "eval/visual-structure-extraction/cases/junior-instrument-scale.visual-structure-extraction-result.json",
+    "rawByteSha256": "e0e1e989dd3109790c842557cf4054f5beb3d450963a72217675b91f06ffa027",
+    "requestId": "junior-instrument-scale"
+  },
+  "preprocessingResult": {
+    "artifactRef": "eval/visual-preprocessing/cases/junior-instrument-scale.visual-preprocessing-result.json",
+    "rawByteSha256": "da5c7d84dabde7dc55df2a04a6441274b1f8616fdf8f653b68f6b00f2c2cb01b",
+    "requestId": "junior-instrument-scale"
+  },
+  "crop": {
+    "artifactRef": "eval/visual-preprocessing/cases/junior-instrument-scale.crop-2x.png",
+    "scale": 2,
+    "rawByteSha256": "70577ca429dbc6afd5b2ecf536fe4712001bfddd961f9a041b103dca5fb8bb40",
+    "decodedRgbPixelSha256": "4efe1386d15ea467781942982c77f2c6a38968509c79e72878eacf53fc711e30",
+    "pixelSize": {
+      "width": 580,
+      "height": 210
+    }
+  },
+  "coordinateSpace": "crop_pixel",
+  "components": [
+    {
+      "componentRef": "scale-component-001",
+      "componentType": "pointer_indicator",
+      "componentOrder": 0,
+      "candidateKind": "line_segment_candidate_pair",
+      "candidateRefs": [
+        "line-007",
+        "line-008"
+      ],
+      "segments": [
+        {
+          "candidateId": "line-007",
+          "x1": 307,
+          "y1": 60,
+          "x2": 307,
+          "y2": 174,
+          "lengthSquared": 12996
+        },
+        {
+          "candidateId": "line-008",
+          "x1": 299,
+          "y1": 61,
+          "x2": 299,
+          "y2": 174,
+          "lengthSquared": 12769
+        }
+      ],
+      "bbox": {
+        "x": 299,
+        "y": 60,
+        "width": 9,
+        "height": 115,
+        "coordinateSpace": "crop_pixel"
+      },
+      "classificationBasis": "explicit_synthetic_component_semantics_declaration"
+    },
+    {
+      "componentRef": "scale-component-002",
+      "componentType": "major_tick_mark",
+      "componentOrder": 1,
+      "candidateKind": "line_segment_candidate_pair",
+      "candidateRefs": [
+        "line-009",
+        "line-014"
+      ],
+      "segments": [
+        {
+          "candidateId": "line-009",
+          "x1": 41,
+          "y1": 98,
+          "x2": 41,
+          "y2": 154,
+          "lengthSquared": 3136
+        },
+        {
+          "candidateId": "line-014",
+          "x1": 37,
+          "y1": 99,
+          "x2": 37,
+          "y2": 154,
+          "lengthSquared": 3025
+        }
+      ],
+      "bbox": {
+        "x": 37,
+        "y": 98,
+        "width": 5,
+        "height": 57,
+        "coordinateSpace": "crop_pixel"
+      },
+      "classificationBasis": "explicit_synthetic_component_semantics_declaration"
+    },
+    {
+      "componentRef": "scale-component-003",
+      "componentType": "major_tick_mark",
+      "componentOrder": 2,
+      "candidateKind": "line_segment_candidate_pair",
+      "candidateRefs": [
+        "line-010",
+        "line-015"
+      ],
+      "segments": [
+        {
+          "candidateId": "line-010",
+          "x1": 161,
+          "y1": 98,
+          "x2": 161,
+          "y2": 155,
+          "lengthSquared": 3249
+        },
+        {
+          "candidateId": "line-015",
+          "x1": 157,
+          "y1": 99,
+          "x2": 157,
+          "y2": 154,
+          "lengthSquared": 3025
+        }
+      ],
+      "bbox": {
+        "x": 157,
+        "y": 98,
+        "width": 5,
+        "height": 58,
+        "coordinateSpace": "crop_pixel"
+      },
+      "classificationBasis": "explicit_synthetic_component_semantics_declaration"
+    },
+    {
+      "componentRef": "scale-component-004",
+      "componentType": "major_tick_mark",
+      "componentOrder": 3,
+      "candidateKind": "line_segment_candidate_pair",
+      "candidateRefs": [
+        "line-011",
+        "line-016"
+      ],
+      "segments": [
+        {
+          "candidateId": "line-011",
+          "x1": 281,
+          "y1": 98,
+          "x2": 281,
+          "y2": 155,
+          "lengthSquared": 3249
+        },
+        {
+          "candidateId": "line-016",
+          "x1": 277,
+          "y1": 99,
+          "x2": 277,
+          "y2": 154,
+          "lengthSquared": 3025
+        }
+      ],
+      "bbox": {
+        "x": 277,
+        "y": 98,
+        "width": 5,
+        "height": 58,
+        "coordinateSpace": "crop_pixel"
+      },
+      "classificationBasis": "explicit_synthetic_component_semantics_declaration"
+    },
+    {
+      "componentRef": "scale-component-005",
+      "componentType": "major_tick_mark",
+      "componentOrder": 4,
+      "candidateKind": "line_segment_candidate_pair",
+      "candidateRefs": [
+        "line-012",
+        "line-017"
+      ],
+      "segments": [
+        {
+          "candidateId": "line-012",
+          "x1": 401,
+          "y1": 98,
+          "x2": 401,
+          "y2": 155,
+          "lengthSquared": 3249
+        },
+        {
+          "candidateId": "line-017",
+          "x1": 397,
+          "y1": 99,
+          "x2": 397,
+          "y2": 154,
+          "lengthSquared": 3025
+        }
+      ],
+      "bbox": {
+        "x": 397,
+        "y": 98,
+        "width": 5,
+        "height": 58,
+        "coordinateSpace": "crop_pixel"
+      },
+      "classificationBasis": "explicit_synthetic_component_semantics_declaration"
+    },
+    {
+      "componentRef": "scale-component-006",
+      "componentType": "major_tick_mark",
+      "componentOrder": 5,
+      "candidateKind": "line_segment_candidate_pair",
+      "candidateRefs": [
+        "line-013",
+        "line-018"
+      ],
+      "segments": [
+        {
+          "candidateId": "line-013",
+          "x1": 521,
+          "y1": 98,
+          "x2": 521,
+          "y2": 154,
+          "lengthSquared": 3136
+        },
+        {
+          "candidateId": "line-018",
+          "x1": 517,
+          "y1": 99,
+          "x2": 517,
+          "y2": 154,
+          "lengthSquared": 3025
+        }
+      ],
+      "bbox": {
+        "x": 517,
+        "y": 98,
+        "width": 5,
+        "height": 57,
+        "coordinateSpace": "crop_pixel"
+      },
+      "classificationBasis": "explicit_synthetic_component_semantics_declaration"
+    }
+  ],
+  "summary": {
+    "componentCount": 6,
+    "pointerCount": 1,
+    "majorTickCount": 5
+  },
+  "engineProvenance": {
+    "engineKind": "local_runtime",
+    "engineId": "deterministic-explicit-component-semantics-compiler",
+    "engineVersion": "1.0.0",
+    "inferencePerformed": false,
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "dispositions": {
+    "semanticDisposition": "explicit_declared",
+    "inferenceDisposition": "not_performed",
+    "figureUnderstandingDisposition": "not_generated",
+    "scaleInterpretationDisposition": "not_established",
+    "readingDisposition": "not_generated",
+    "questionBindingDisposition": "not_established",
+    "trackDisposition": "not_integrated",
+    "answerDisposition": "not_generated",
+    "requiresHumanReview": true,
+    "acceptanceDisposition": "not_accepted",
+    "controlsDisposition": "not_verified",
+    "eligible": false,
+    "optimizationCandidateRefs": []
+  },
+  "generatedAt": "2026-07-31T13:00:00Z"
+}

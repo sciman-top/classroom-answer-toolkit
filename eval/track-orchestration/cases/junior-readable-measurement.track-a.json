@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-a-junior-readable-measurement-synthetic",
+  "evidenceBundleRef": "veb-junior-readable-measurement-synthetic-track-b",
+  "trackType": "vlm_direct",
+  "candidateSourceType": "generated",
+  "answerCandidate": "12 cm",
+  "confidence": 1,
+  "visualDetailMode": "not_applicable",
+  "requestedVisualDetailMode": "not_applicable",
+  "providerVisualDetailMode": "not_applicable",
+  "acceptanceTier": "repo_side_synthetic_diagnostic",
+  "questionBinding": {
+    "status": "exact",
+    "questionId": "synthetic-question-junior-readable-measurement-001",
+    "questionRef": "SYN-JP-MEAS-001",
+    "questionAuthoritySha256": "cce460567cdd14067f4c6b6ad58c43cc5f88e8d14af8518a707bed38076015ef",
+    "evidenceBundleRef": "veb-junior-readable-measurement-synthetic-track-b"
+  },
+  "interpretation": {
+    "quantityKind": "length",
+    "numericValue": "12",
+    "unitId": "centimetre",
+    "unitSymbol": "cm",
+    "semanticRole": "measurement_reading",
+    "interpretationMode": "explicit_public_synthetic_track_a_declaration"
+  },
+  "syntheticTrackProvenance": {
+    "authorityKind": "independent_public_synthetic_track_a",
+    "questionAuthoritySha256": "cce460567cdd14067f4c6b6ad58c43cc5f88e8d14af8518a707bed38076015ef",
+    "evidenceBundleSha256": "9d29c3e2f54b9e2a39541be6baaa6d373458cd5b913d11a5bf558b33052ba5b6",
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "visibleEvidenceSummary": "Independent public synthetic Track A candidate for orchestration plumbing.",
+  "evidenceRefs": [
+    "junior-readable-measurement.crop-2x.png",
+    "semantic-projection-001"
+  ],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [],
+  "validatorFindings": [],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": [
+      "synthetic_track_a_requires_review",
+      "acceptance_tier_unverified"
+    ]
+  },
+  "reviewDisposition": {
+    "status": "review_required",
+    "reasonCodes": [
+      "synthetic_track_a_requires_review",
+      "acceptance_tier_unverified"
+    ],
+    "humanApproved": false,
+    "trusted": false,
+    "visualReviewPassed": null,
+    "controlsDisposition": "not_verified",
+    "eligible": false,
+    "optimizationCandidateRefs": []
+  },
+  "generatedAt": "2026-07-30T04:00:00Z"
+}

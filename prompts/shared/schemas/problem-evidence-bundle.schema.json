@@ -112,6 +112,28 @@
       },
       "additionalProperties": true
     },
+    "questionBinding": {
+      "type": "object",
+      "required": ["status", "questionAuthorityRef", "questionAuthoritySha256"],
+      "properties": {
+        "status": { "enum": ["stable", "ambiguous", "missing"] },
+        "questionAuthorityRef": { "type": "string" },
+        "questionAuthoritySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "semanticEvidence": {
+      "type": "object",
+      "required": ["projectionResultRef", "projectionResultSha256", "projectionId", "semanticRole"],
+      "properties": {
+        "projectionResultRef": { "type": "string" },
+        "projectionResultSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "projectionId": { "type": "string" },
+        "semanticRole": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "risk": {
       "type": "object",
       "required": [

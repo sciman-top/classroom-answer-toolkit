@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "track-result",
+  "trackResultId": "track-c-junior-readable-measurement-synthetic",
+  "evidenceBundleRef": "veb-junior-readable-measurement-synthetic-track-b",
+  "trackType": "rule_validator",
+  "candidateSourceType": "generated",
+  "answerCandidate": "validated: 12 cm",
+  "confidence": 1,
+  "visualDetailMode": "not_applicable",
+  "requestedVisualDetailMode": "not_applicable",
+  "providerVisualDetailMode": "not_applicable",
+  "acceptanceTier": "repo_side_synthetic_diagnostic",
+  "stageArtifactRefs": {
+    "consistencyReportRef": "eval/synthetic-track-validator/cases/junior-readable-measurement.consistency-report.json",
+    "sourceTrackResultRef": "eval/ocr-layout-solver/cases/junior-readable-measurement.track-b.json",
+    "validatorRequestRef": "eval/synthetic-track-validator/cases/junior-readable-measurement.synthetic-track-validator-request.json"
+  },
+  "questionBinding": {
+    "status": "exact",
+    "questionId": "synthetic-question-junior-readable-measurement-001",
+    "questionRef": "SYN-JP-MEAS-001",
+    "questionAuthoritySha256": "cce460567cdd14067f4c6b6ad58c43cc5f88e8d14af8518a707bed38076015ef",
+    "evidenceBundleRef": "veb-junior-readable-measurement-synthetic-track-b"
+  },
+  "validatorProvenance": {
+    "engineKind": "deterministic_rule_validator",
+    "engineId": "synthetic-track-validator",
+    "engineVersion": "1.0.0",
+    "liveProvider": false,
+    "cloudEgress": false,
+    "sourceRequestSha256": "09d889ebecbe5960e68b40b4c860fd6ee5b8a4b1bb16634597ffc82368bf7ca4",
+    "questionAuthoritySha256": "cce460567cdd14067f4c6b6ad58c43cc5f88e8d14af8518a707bed38076015ef",
+    "evidenceBundleSha256": "9d29c3e2f54b9e2a39541be6baaa6d373458cd5b913d11a5bf558b33052ba5b6",
+    "semanticProjectionSha256": "f7c84424a4248a9e7a9bf6d3c9ea17278202579f6d0b2c665bfaf08028b9bfe7",
+    "solverRequestSha256": "1f6a53d356894c104c96b80faeace428da3c2c30d6eb2557e5615adbfc0ec3f1",
+    "sourceTrackResultSha256": "39771dc7d5efc1088b34d0f0b408fca15538139fb5d3798c19047c9119844589",
+    "validatorPolicySha256": "31f94fe5b118154dd97d71feaedf2bb659bf998c7ee63581277ec7d406c63f51"
+  },
+  "visibleEvidenceSummary": "Seven synthetic Track C checks passed; acceptance remains unverified and review is required.",
+  "evidenceRefs": [
+    "veb-junior-readable-measurement-synthetic-track-b",
+    "semantic-projection-001",
+    "track-b-junior-readable-measurement-synthetic",
+    "consistency-junior-readable-measurement-synthetic-track-c"
+  ],
+  "conflictRefs": [],
+  "missingEvidenceRefs": [],
+  "validatorFindings": [],
+  "risk": {
+    "level": "high",
+    "reviewRequired": true,
+    "reasons": [
+      "synthetic_track_c_requires_review",
+      "acceptance_tier_unverified"
+    ]
+  },
+  "reviewDisposition": {
+    "status": "review_required",
+    "reasonCodes": [
+      "synthetic_track_c_requires_review",
+      "acceptance_tier_unverified"
+    ],
+    "humanApproved": false,
+    "trusted": false,
+    "visualReviewPassed": null,
+    "controlsDisposition": "not_verified",
+    "eligible": false,
+    "optimizationCandidateRefs": []
+  },
+  "generatedAt": "2026-07-30T02:00:01Z"
+}

@@ -50,12 +50,42 @@ test("shared result contract admits a provider-neutral live result shape", () =>
       providerKind: "model_provider",
       providerId: "configured-text-provider",
       providerVersion: "api-contract-v1",
-      liveProvider: true
+      liveProvider: true,
+      providerSurface: "responses",
+      attemptCount: 1,
+      cloudEgress: true
     },
-    stopReason: "generation_completed"
+    generationDisposition: {
+      reviewRequired: true,
+      trusted: false,
+      acceptanceDisposition: "pending_review",
+      workflowDisposition: "not_integrated"
+    },
+    stopReason: "provider_generated_pending_review"
   };
 
   assert.equal(validateAnswerGenerationResultShape(liveShape), liveShape);
+});
+
+test("shared result contract rejects provider output without fail-closed review disposition", () => {
+  const synthetic = compileSyntheticGeneration(
+    path.join(requestRoot, "synthetic-arithmetic-slip.answer-generation-request.json")).result;
+  const candidate = {
+    ...synthetic,
+    provenance: {
+      providerKind: "model_provider",
+      providerId: "configured-text-provider",
+      providerVersion: "api-contract-v1",
+      liveProvider: true,
+      providerSurface: "responses",
+      attemptCount: 1,
+      cloudEgress: true
+    },
+    stopReason: "provider_generated_pending_review"
+  };
+  assert.throws(
+    () => validateAnswerGenerationResultShape(candidate),
+    /must remain live, cloud-recorded, and pending review/);
 });
 
 test("shared result contract rejects contradictory live synthetic provenance", () => {

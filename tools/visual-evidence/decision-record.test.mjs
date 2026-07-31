@@ -188,3 +188,27 @@ test("compileDecisionRecord does not infer OCR image conflict from negated free 
   assert.equal(decisionRecord.decisionReasons.includes("ocr_image_conflict"), false);
   assert.deepEqual(validateDecisionRecord(decisionRecord), []);
 });
+
+test("compileDecisionRecord fails closed when orchestration requires a missing track type", () => {
+  const evidenceBundle = readCaseJson("dual-track-match-evidence-missing.problem-evidence-bundle.json");
+  evidenceBundle.cropRefs = ["crop-12"];
+  evidenceBundle.binding = { status: "stable", confidence: 1 };
+  evidenceBundle.risk = { level: "low", categories: [], reviewRequired: false };
+  const trackResult = readCaseJson("dual-track-match-evidence-missing.track-a.json");
+  trackResult.evidenceRefs = ["crop-12"];
+  trackResult.missingEvidenceRefs = [];
+  trackResult.risk = { level: "low", reviewRequired: false };
+
+  const decisionRecord = compileDecisionRecord({
+    evidenceBundle,
+    trackResults: [trackResult],
+    requiredTrackTypes: ["vlm_direct", "ocr_layout_solver", "rule_validator"],
+    generatedAt: "2026-07-30T04:00:00Z",
+    humanApproved: true
+  });
+
+  assert.equal(decisionRecord.decision, "review_required");
+  assert.equal(decisionRecord.trusted, false);
+  assert.ok(decisionRecord.decisionReasons.includes("evidence_chain_missing"));
+  assert.deepEqual(validateDecisionRecord(decisionRecord), []);
+});

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "decision-record",
+  "decisionId": "decision-junior-readable-measurement-synthetic-track-b",
+  "subjectPack": "junior-physics-answer",
+  "questionId": "synthetic-question-junior-readable-measurement-001",
+  "questionRef": "SYN-JP-MEAS-001",
+  "normalizedQuestionRef": "junior-physics-answer:synthetic-question-junior-readable-measurement-001",
+  "evidenceBundleRef": "veb-junior-readable-measurement-synthetic-track-b",
+  "trackResultRefs": [
+    "track-a-junior-readable-measurement-synthetic",
+    "track-b-junior-readable-measurement-synthetic",
+    "track-c-junior-readable-measurement-synthetic"
+  ],
+  "decision": "review_required",
+  "answer": "review required: visual evidence chain is not fully approved",
+  "trusted": false,
+  "visualReviewPassed": null,
+  "reviewRequired": true,
+  "reviewQueue": "high_risk_approval",
+  "risk": {
+    "level": "high",
+    "categories": [
+      "instrument_reading"
+    ]
+  },
+  "decisionReasons": [
+    "dual_track_match",
+    "evidence_chain_complete",
+    "high_risk_visual",
+    "rule_validator_failed",
+    "acceptance_tier_unverified",
+    "review_pending"
+  ],
+  "conflictRefs": [],
+  "feedbackRefs": [],
+  "statusProjection": {
+    "visualReviewPassed": null,
+    "trusted": false
+  },
+  "generatedAt": "2026-07-30T04:00:02Z"
+}

@@ -85,6 +85,91 @@
       },
       "additionalProperties": true
     },
+    "questionBinding": {
+      "type": "object",
+      "required": ["status", "questionId", "questionRef", "questionAuthoritySha256", "evidenceBundleRef"],
+      "properties": {
+        "status": { "enum": ["exact", "ambiguous", "missing"] },
+        "questionId": { "type": "string" },
+        "questionRef": { "type": "string" },
+        "questionAuthoritySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "evidenceBundleRef": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "interpretation": {
+      "type": "object",
+      "required": ["quantityKind", "numericValue", "unitId", "unitSymbol", "semanticRole", "interpretationMode"],
+      "properties": {
+        "quantityKind": { "type": "string" },
+        "numericValue": { "type": "string" },
+        "unitId": { "type": "string" },
+        "unitSymbol": { "type": "string" },
+        "semanticRole": { "type": "string" },
+        "interpretationMode": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "answerCandidateProvenance": {
+      "type": "object",
+      "required": [
+        "sourceType", "sourceRequestSha256", "questionAuthoritySha256",
+        "evidenceBundleSha256", "semanticProjectionSha256", "solverPolicySha256"
+      ],
+      "additionalProperties": true
+    },
+    "solverProvenance": {
+      "type": "object",
+      "required": ["engineKind", "engineId", "engineVersion", "liveProvider", "cloudEgress"],
+      "additionalProperties": true
+    },
+    "validatorProvenance": {
+      "type": "object",
+      "required": [
+        "engineKind", "engineId", "engineVersion", "liveProvider", "cloudEgress",
+        "sourceRequestSha256", "questionAuthoritySha256", "evidenceBundleSha256",
+        "semanticProjectionSha256", "solverRequestSha256", "sourceTrackResultSha256",
+        "validatorPolicySha256"
+      ],
+      "properties": {
+        "engineKind": { "const": "deterministic_rule_validator" },
+        "engineId": { "const": "synthetic-track-validator" },
+        "engineVersion": { "const": "1.0.0" },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false },
+        "sourceRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "questionAuthoritySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "evidenceBundleSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "semanticProjectionSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "solverRequestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "sourceTrackResultSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "validatorPolicySha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": true
+    },
+    "reviewDisposition": {
+      "type": "object",
+      "required": [
+        "status", "reasonCodes", "humanApproved", "trusted", "visualReviewPassed",
+        "controlsDisposition", "eligible", "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "status": { "enum": ["review_required", "accepted"] },
+        "reasonCodes": { "type": "array", "items": { "type": "string" } },
+        "humanApproved": { "type": "boolean" },
+        "trusted": { "type": "boolean" },
+        "visualReviewPassed": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "controlsDisposition": { "type": "string" },
+        "eligible": { "type": "boolean" },
+        "optimizationCandidateRefs": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
     "visibleEvidenceSummary": { "type": "string" },
     "evidenceRefs": {
       "type": "array",

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-region-proposal-request/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualRegionProposalRequest",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind",
+    "dataClassification", "normalizationResult", "normalizedArtifact",
+    "proposalPolicy", "egressPolicy", "requestedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-region-proposal-request" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "subjectPack": { "const": "junior-physics-answer" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "dataClassification": {
+      "type": "object",
+      "required": ["level", "containsPersonalData"],
+      "properties": {
+        "level": { "const": "public" },
+        "containsPersonalData": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "normalizationResult": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId", "pageId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "requestId": { "type": "string", "minLength": 1 },
+        "pageId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "normalizedArtifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "decodedRgbPixelSha256": { "$ref": "#/$defs/sha256" },
+        "pixelSize": { "$ref": "#/$defs/pixelSize" }
+      },
+      "additionalProperties": false
+    },
+    "proposalPolicy": {
+      "type": "object",
+      "required": [
+        "foregroundThreshold", "pageInset", "morphologicalClose", "connectivity",
+        "minimumForegroundArea", "proposalPadding", "maximumCandidateCount", "ordering"
+      ],
+      "properties": {
+        "foregroundThreshold": { "const": 180 },
+        "pageInset": { "const": 8 },
+        "morphologicalClose": {
+          "type": "object",
+          "required": ["kernelWidth", "kernelHeight"],
+          "properties": { "kernelWidth": { "const": 3 }, "kernelHeight": { "const": 3 } },
+          "additionalProperties": false
+        },
+        "connectivity": { "const": 8 },
+        "minimumForegroundArea": { "const": 20 },
+        "proposalPadding": { "const": 8 },
+        "maximumCandidateCount": { "const": 16 },
+        "ordering": { "const": "top_to_bottom_left_to_right" }
+      },
+      "additionalProperties": false
+    },
+    "egressPolicy": {
+      "type": "object",
+      "required": ["allowCloud"],
+      "properties": { "allowCloud": { "const": false } },
+      "additionalProperties": false
+    },
+    "requestedAt": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "pixelSize": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
