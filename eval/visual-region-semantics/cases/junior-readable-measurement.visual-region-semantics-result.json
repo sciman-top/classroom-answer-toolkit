@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-region-semantics-result",
+  "requestId": "junior-readable-measurement-region-semantics",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "sourceRequestSha256": "8e47a46712ab26d84d0825572b56ca9f9c7f13e16d7e897f27f786e1f5618288",
+  "semanticDeclaration": {
+    "artifactRef": "junior-readable-measurement.visual-synthetic-region-semantics-declaration.json",
+    "rawByteSha256": "7f12eee134acde820830343d0e630dcdc0d6fb29f58c35bf5ba5fefd62e85fe7",
+    "declarationId": "junior-readable-measurement-region-semantics-declaration"
+  },
+  "regionProposalResult": {
+    "artifactRef": "eval/visual-region-proposal/cases/junior-readable-measurement.visual-region-proposal-result.json",
+    "rawByteSha256": "9597538175dd97686b1358de2515159c468cdafc62bf0ce71c49a8385bb319d4",
+    "requestId": "junior-readable-measurement-region-proposal",
+    "proposalRefs": [
+      "content-block-001",
+      "content-block-002"
+    ]
+  },
+  "localCropResult": {
+    "artifactRef": "eval/visual-local-crops/cases/junior-readable-measurement.visual-local-crop-result.json",
+    "rawByteSha256": "162d96d1ca4e15282e16d159853459c4843475f972d9045b99d80706acac506d",
+    "requestId": "junior-readable-measurement-local-crops",
+    "proposalRefs": [
+      "content-block-001",
+      "content-block-002"
+    ]
+  },
+  "pageAuthority": {
+    "pageId": "junior-readable-measurement-normalized-page-1",
+    "coordinateSpace": "normalized_page_pixel",
+    "normalizedArtifact": {
+      "artifactRef": "eval/visual-page-normalization/cases/junior-readable-measurement.normalized.png",
+      "rawByteSha256": "1ae505c96799bd36f5b18bc02aea8ab2560890b3d27989c6282b94c2c5ca8dd8",
+      "decodedRgbPixelSha256": "4cfa63971d77ae3c8777784f72c6f5fec995e12871d5dc48674c2db2689100bd",
+      "pixelSize": {
+        "width": 560,
+        "height": 360
+      }
+    }
+  },
+  "regionSemantics": [
+    {
+      "declarationRef": "region-semantic-declaration-001",
+      "proposalRef": "content-block-001",
+      "proposalKind": "content_block_candidate",
+      "semanticRole": "measurement_reading",
+      "componentKind": "recognized_value_component",
+      "classificationBasis": "explicit_synthetic_region_semantics_declaration",
+      "visualRegion": {
+        "schemaVersion": "1.0",
+        "kind": "visual-region",
+        "regionId": "junior-readable-measurement-text-region-001",
+        "pageId": "junior-readable-measurement-normalized-page-1",
+        "regionType": "text_area",
+        "bbox": {
+          "x": 254,
+          "y": 147,
+          "width": 53,
+          "height": 65,
+          "coordinateSpace": "page_pixel"
+        },
+        "cropRef": "eval/visual-local-crops/cases/junior-readable-measurement.content-block-001.crop-2x.png",
+        "qualityFlags": [],
+        "generatedAt": "2026-07-31T12:00:00Z"
+      },
+      "cropBindings": [
+        {
+          "scale": 1,
+          "artifactRef": "eval/visual-local-crops/cases/junior-readable-measurement.content-block-001.crop-1x.png",
+          "rawByteSha256": "4dff334d2665967a8046bc8f8ab52eed4e37fd141ec17b0196e1ee36e413d2fd",
+          "decodedRgbPixelSha256": "b9b8a6ec8b00950d6383c6868082ef908ef2ea166a846e7621aef494955d5044",
+          "pixelSize": {
+            "width": 53,
+            "height": 65
+          },
+          "interpolation": "pixel_preserving"
+        },
+        {
+          "scale": 2,
+          "artifactRef": "eval/visual-local-crops/cases/junior-readable-measurement.content-block-001.crop-2x.png",
+          "rawByteSha256": "74032b57c9538e94618f3a4b252b1e9dca9c93262e7fd5da16a9128f9ee82bca",
+          "decodedRgbPixelSha256": "0927721bada4aee9312f766eac3c8c2a9db756c53f087b7f76307a17498f0913",
+          "pixelSize": {
+            "width": 106,
+            "height": 130
+          },
+          "interpolation": "nearest"
+        }
+      ]
+    },
+    {
+      "declarationRef": "region-semantic-declaration-002",
+      "proposalRef": "content-block-002",
+      "proposalKind": "content_block_candidate",
+      "semanticRole": "measurement_scale_baseline",
+      "componentKind": "scale_baseline_component",
+      "classificationBasis": "explicit_synthetic_region_semantics_declaration",
+      "visualRegion": {
+        "schemaVersion": "1.0",
+        "kind": "visual-region",
+        "regionId": "junior-readable-measurement-scale-region-001",
+        "pageId": "junior-readable-measurement-normalized-page-1",
+        "regionType": "scale_area",
+        "bbox": {
+          "x": 89,
+          "y": 255,
+          "width": 386,
+          "height": 26,
+          "coordinateSpace": "page_pixel"
+        },
+        "cropRef": "eval/visual-local-crops/cases/junior-readable-measurement.content-block-002.crop-2x.png",
+        "qualityFlags": [],
+        "generatedAt": "2026-07-31T12:00:00Z"
+      },
+      "cropBindings": [
+        {
+          "scale": 1,
+          "artifactRef": "eval/visual-local-crops/cases/junior-readable-measurement.content-block-002.crop-1x.png",
+          "rawByteSha256": "b7ed3fa9c4b1e264b5f7b401eb83ea4a6fb78beacdda8606395c3b69f1f38796",
+          "decodedRgbPixelSha256": "13f56367571a98c6ce8828e19d0ccc8c8a280bb2d0565e655096613a12f0edde",
+          "pixelSize": {
+            "width": 386,
+            "height": 26
+          },
+          "interpolation": "pixel_preserving"
+        },
+        {
+          "scale": 2,
+          "artifactRef": "eval/visual-local-crops/cases/junior-readable-measurement.content-block-002.crop-2x.png",
+          "rawByteSha256": "939b3a7b754c993f46d18c40020880a21ad414f89623b2fd95ed5a1f064aff7d",
+          "decodedRgbPixelSha256": "e57498e5c79a74dd0bdf4a48488386ec969797d8919c4038263ba36156e34d81",
+          "pixelSize": {
+            "width": 772,
+            "height": 52
+          },
+          "interpolation": "nearest"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "proposalCount": 2,
+    "declaredRegionCount": 2,
+    "unclassifiedProposalRefs": []
+  },
+  "engineProvenance": {
+    "engineKind": "local_runtime",
+    "engineId": "deterministic-explicit-region-semantics-compiler",
+    "engineVersion": "1.0.0",
+    "inferencePerformed": false,
+    "liveProvider": false,
+    "cloudEgress": false
+  },
+  "dispositions": {
+    "semanticDisposition": "explicit_declared",
+    "visualRegionDisposition": "generated_from_explicit_synthetic_declaration",
+    "inferenceDisposition": "not_performed",
+    "questionBindingDisposition": "not_established",
+    "trackDisposition": "not_integrated",
+    "answerDisposition": "not_generated",
+    "requiresHumanReview": true,
+    "acceptanceDisposition": "not_accepted",
+    "controlsDisposition": "not_verified",
+    "eligible": false,
+    "optimizationCandidateRefs": []
+  },
+  "generatedAt": "2026-07-31T12:00:00Z"
+}

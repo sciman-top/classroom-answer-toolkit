@@ -29,6 +29,7 @@ This project provides a local Windows workflow for generating, validating, and r
 - 已为四份公开 synthetic 2x crop 建立机器等效视觉复核 receipt：AI 复核只在 `synthetic_fixture_diagnostic` 范围内等效人工检查，身份始终记录为 `reviewerKind=ai_agent`、`humanReviewed=false`，不构成人类身份、delivery trust 或 live acceptance。
 - 已在 VISION-008/009/010 authority 上建立 deterministic OCR-region association policy diagnostic：当前四份 canonical fixtures 诚实报告两例 unavailable、一例 unmatched、一例 matched；正向结果仅证明 public synthetic diagnostic plumbing，不构成 OCR correctness、真实 association benchmark、layout semantics 或 Track B。
 - 已以独立声明和 VISION-011/012/014 精确证据三角建立一份 deterministic semantic-role projection：仅 `junior-readable-measurement` 被投影为 `measurement_reading`，识别文本只取自绑定 OCR observation；该结果不是 FigureUnderstanding、TrackResult、答案或交付信任。
+- 已以独立 public synthetic declaration 把 VISION-021 两个 heuristic proposals 与 VISION-022 四份 crops 投影为有限 `text_area / measurement_reading` 和 `scale_area / measurement_scale_baseline` VisualRegion；该编译器不做像素、题意、答案或通用图元推断，结果保持待复核、未接受、未接 Track/WPF/live。
 - WPF 已能在一次答案交付后投影最新 delivery manifest 的 review lifecycle、视觉复核和 trust 状态，并通过 fail-closed 工具附着、刷新和打开本地 JSON `DecisionRecord`；还可对用户显式选择且通过 source-aware 重验的本地 review artifact 做三类只读队列投影。审批生成、lifecycle 回写和原题生成主链仍未接入。
 - 已落地自动解题工作站终局计划与 Typst 主渲染迁移计划；当前运行时仍保持 Playwright / Chromium。
 - 支持实验性的受控插图插入链路，可把用户提供或人工复核后的答案图块插入 PDF。
@@ -79,6 +80,7 @@ The internal solution, project names, and namespaces still use `ClassroomToolkit
 - `tools/visual-text-region-diagnostics/`: 对同一 synthetic truth 与 canonical heuristic text-region candidates 做本地、确定性、禁云空间覆盖诊断。
 - `tools/visual-machine-review/`: 校验 synthetic crop 的机器视觉复核 receipt、上游 raw-byte/pixel/dimension authority、已披露限制和 fail-closed 状态边界。
 - `tools/visual-ocr-region-association/`: 对 canonical text-region/OCR/spatial authority 应用双向唯一 positive-area association policy，并按学科报告 matched/unmatched/ambiguous/unavailable。
+- `tools/visual-region-semantics/`: 只从独立 synthetic declaration、VISION-021 proposal 和 VISION-022 crop bytes 编译有限 VisualRegion 语义，不执行通用分类或题目绑定。
 - `tools/ocr-layout-solver/`: 把一份 public synthetic question 与 VISION-016 projection 绑定为固定 review-required 的 Track B candidate。
 - `tools/synthetic-track-validator/`: 对 canonical Track B 的 question/quantity/unit/format/provenance/review 边界执行七项 deterministic Track C 检查；通过不等于批准或 trust。
 - `eval/`: 固定评测数据集、视觉基线和回归结果。
@@ -136,6 +138,7 @@ npm --prefix tools/visual-evidence run attach:aggregate -- --manifest "<delivery
 npm --prefix tools/visual-evidence run verify:aggregate-attachment -- --manifest "<delivery-manifest.json>"
 npm --prefix tools/ocr-layout-solver test
 npm --prefix tools/synthetic-track-validator test
+npm --prefix tools/visual-region-semantics test
 npm --prefix tools/sample-flywheel test
 npm --prefix tools/sample-flywheel run compile:run -- --sample-id "<sample-id>" --run-mode scoring --candidate "<indexed-negative-candidate.json>" --truth-extraction-status ok --input-answer-leakage none --iteration 1 --out "<sample-run-record.json>"
 npm --prefix tools/sample-flywheel run compile:feedback -- --run "<sample-run-record.json>" --created-at "<canonical-utc-timestamp>" --out "<feedback-parse-result.json>"

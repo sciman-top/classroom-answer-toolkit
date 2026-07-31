@@ -1,5 +1,12 @@
 # Execution Backlog
 
+## 状态判定协议
+
+- 本文件中的 task 默认是执行定义，不因出现 `done_definition` 就自动视为完成。
+- `repo-side done` 必须同时由当前 Git revision 可达的实现、对应 `docs/change-evidence/` 记录和该记录中的完整固定门禁证明；缺任一项均保持未完成或待核。
+- `workflow integrated / gateway verified / workstation accepted / live accepted` 是独立状态，不得由 schema、synthetic fixture、repo gate、candidate、`pending_review` 或本地 unattested receipt 推导。
+- `ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 在受权 attestation 与合法数据/凭据出现前保持 fail closed。
+
 ## Epic DOC：文档真值收口
 
 ### task_id: DOC-001
@@ -431,6 +438,16 @@
 - rollback: 回滚 VISION-022 atomic commit，保留 VISION-007 至 VISION-021 与 `4c302bb`
 - blocks: VISION-021
 - done_definition: 两个 proposals 各生成 1x/2x hash-bound crops；仅证明 synthetic local crop plumbing，不构成细节恢复、semantic `VisualRegion`、OCR/Track/workflow/live acceptance，controls not verified、`eligible=false`
+
+### task_id: VISION-023
+
+- goal: 由独立 public synthetic declaration 建立首个 proposal/crop-bound 的有限 VisualRegion 语义编译闭环
+- inputs: VISION-021 proposal result、VISION-022 local-crop result 与四份 actual crop bytes、既有 `VisualRegion` contract
+- changes: 新增 declaration/request/result schema、deterministic local compiler 和两份有限 region semantics；只声明 reading block 与 scale baseline，固定 inference 未执行、question binding 未建立、Track 未集成、answer 未生成；external atomic result runtime；纳入 assets/hotspot
+- verification: exact two regions、proposal/bbox/1x/2x crop raw-byte/pixel/dimension/interpolation binding、crossed/duplicate/missing refs、unsupported role/type、trust escalation、canonical replay、existing/repository/junction output、staging tamper、完整固定门禁
+- rollback: 回滚 VISION-023 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-022 authorities 与 `da7e6c6`
+- blocks: VISION-021, VISION-022
+- done_definition: 仓内可从 current declaration/proposal/crop bytes 确定性重算两份有限 VisualRegion；只证明 explicit synthetic semantics compilation，不构成自动分类、通用 axis/table/tick/legend 理解、question binding、FigureUnderstanding、OCR/Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
 
 ## Epic WORKSTATION：自动解题工作站终局
 

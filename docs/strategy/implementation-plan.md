@@ -181,6 +181,7 @@
 - VISION-020 synthetic captured-page normalization；在自动 region proposal 前检测固定透视/旋转/噪声 capture 的 page quadrilateral，输出 hash-bound 560x360 `NormalizedPage` 与 PNG，保持 `regionRefs=[]`
 - VISION-021 synthetic automatic region proposal；绑定 VISION-020 current result/PNG，在 normalized coordinates 输出 `heuristicOnly` content-block candidates 与 diagnostic overlay，不生成 semantic `VisualRegion`
 - VISION-022 synthetic local crops；每个 admitted proposal 生成 1x/2x hash-bound crops，保持 nonsemantic/nonintegrated
+- VISION-023 explicit synthetic region semantics；独立 declaration 分别声明 reading block 与 scale baseline，并把 VISION-021 proposal、VISION-022 1x/2x crop bytes 编译为两份有限 VisualRegion；不执行推断或 question/Track/answer 绑定
 
 ### 涉及文件面
 
@@ -226,6 +227,9 @@
 - `prompts/shared/schemas/visual-region-proposal-*.schema.json`
 - `tools/visual-region-proposer/`
 - `eval/visual-region-proposal/`
+- `prompts/shared/schemas/visual-*-region-semantics-*.schema.json`
+- `tools/visual-region-semantics/`
+- `eval/visual-region-semantics/`
 - evidence / review 文档与运行产物
 
 ### 完成定义
@@ -246,6 +250,7 @@
 - current public synthetic question/bundle 与 independent Track A/B/C bytes 可由真实 runtime 准入、比较、降级并交给 canonical DecisionRecord compiler；它只证明 repo-side orchestration plumbing，不能冒充 provider execution、答案批准、WPF/gateway/workstation 或 live acceptance
 - current VISION-007 source 可确定性生成带透视/旋转/噪声的 public synthetic capture，并检测/校正/重放一份 560x360 `NormalizedPage`；它只证明 page-normalization plumbing，`regionRefs=[]`，不能冒充自动 region、真实照片质量、OCR/layout/semantic/Track 或 workflow/live acceptance
 - current VISION-020 normalized bytes 可确定性重算两个 nonsemantic content-block proposals 与 diagnostic overlay；它只证明 automatic proposal plumbing，不能冒充 question/figure/text/axis/table semantics、`VisualRegion`、region benchmark、OCR/Track 或 workflow/live acceptance
+- 独立 region-semantics declaration、current proposal bytes 和四份 crop bytes 可确定性重算两份有限 VisualRegion；`explicit_declared` 不等于像素分类、通用图元理解、question binding、FigureUnderstanding、Track input、答案或 trust authority
 
 ### 验证方式
 
@@ -268,6 +273,7 @@
 - Track orchestration request/report/DecisionRecord schema、A/B agreement/conflict、missing A/C degradation、Track C/source blocker、required-set/source/hash/question/path/junction 与 atomic two-output canonical replay 验证
 - page normalization request/result schema、capture/request/output raw-byte 与 pixel hash、quadrilateral/area/orientation/corrections/provenance、no-page/policy drift、path/junction、staging tamper、input snapshot 与 atomic PNG+result canonical replay 验证
 - region proposal request/result schema、normalization/result/PNG hash、exact candidate fields/order/bounds/area/coverage、empty/excess inventory、policy/path/junction、staging/input snapshot 与 atomic overlay+result canonical replay 验证
+- region semantics declaration/request/result schema、proposal/crop raw-byte/pixel/bbox/scale coverage、交叉引用、重复/缺失声明、unsupported role/type、trust escalation、path/junction、staging/input snapshot 与 atomic result replay 验证
 
 ### 禁止扩张点
 
@@ -286,6 +292,7 @@
 - 不把 synthetic Track A/B agreement、Track C pass、`orchestrationStatus=complete` 或已生成 DecisionRecord 冒充真实 provider orchestration、答案正确、review approval、workflow integrated 或 live acceptance
 - 不把一份 synthetic captured-page detection/normalization 冒充自动题区/图区检测、真实拍照鲁棒性、OCR/layout/图元语义、Track input、WPF workflow 或 live acceptance
 - 不把 heuristic content-block proposal 或 diagnostic overlay 冒充 `VisualRegion`、题区/图区/文字/公式/表格/axis/scale/legend 分类、真实 region 质量、OCR/Track input 或 live acceptance
+- 不把 VISION-023 的 explicit synthetic declaration 冒充自动分类质量、通用 axis/table/tick/legend/component 理解、题目绑定、FigureUnderstanding、Track/answer authority 或 live acceptance
 - 不接 WPF/gateway/trust/readiness/optimizer，不开启 cloud egress，不生成 `OptimizationCandidate`
 
 ## P3：研究项

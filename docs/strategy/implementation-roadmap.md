@@ -45,6 +45,13 @@
 - 再以 VISION-014 对 VISION-010 exhaustive measurements 应用双向唯一、正交面积 association policy；原三份 frozen authority 诚实输出两例 unavailable 与一例 unmatched，正向/歧义先以非权威 policy 回归验证
 - 再以 VISION-015 新增一份独立准入的公开 synthetic fixture，在不改写前三份 source/crop 与 case request/result authority 的前提下完整重放 VISION-007 至 VISION-014，并仅当 OCR exact truth、text-region coverage、positive-area geometry 与双向唯一 policy 同时成立时形成一个 canonical positive association；renderer-bound truth 合法重签，结果仍不构成真实 association benchmark、layout semantics 或 Track B
 - 再以 VISION-016 为该正向 case 增加独立 `measurement_reading` declaration，并只在 VISION-011/012/014 形成精确唯一 evidence triangle 时投影角色和绑定 OCR text；该诊断不推断数值/单位/layout，不创建 FigureUnderstanding、Track B、答案、trust 或 live authority
+- 再以 VISION-017 将独立 public synthetic question、ProblemEvidenceBundle 与 VISION-016 projection 编译为固定 review-required 的 `ocr_layout_solver` Track B；quantity/unit 仅来自题干显式 authority
+- 再以 VISION-018 重验 VISION-016/017 五份 current bytes，执行七项 deterministic Track C consistency checks；pass 只代表有限一致性，不构成答案批准或 trust
+- 再以 VISION-019 实际准入 public synthetic Track A/B/C，正交输出 agreement/conflict、complete/degraded、Track C/source blockers，并复用 canonical DecisionRecord compiler
+- 再以 VISION-020 从 current synthetic source 生成透视/旋转/噪声 capture，检测并校正为 hash-bound 560x360 `NormalizedPage`，保持 `regionRefs=[]`
+- 再以 VISION-021 从 normalized bytes 自动提出两个 `heuristicOnly` content-block candidates；不复用 semantic `VisualRegion`
+- 再以 VISION-022 为两个 proposals 各生成 1x pixel-preserving 与 2x nearest crops；2x 不代表细节恢复或 OCR 改善
+- 再以 VISION-023 由独立 public synthetic declaration 将 proposals/crops 投影为有限 reading/scale-baseline VisualRegion；不执行像素分类、通用 axis/table/tick/legend 语义、question binding、Track 或答案生成
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 

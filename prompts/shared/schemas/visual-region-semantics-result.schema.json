@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-region-semantics-result/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualRegionSemanticsResult",
+  "type": "object",
+  "required": [
+    "schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind", "sourceRequestSha256",
+    "semanticDeclaration", "regionProposalResult", "localCropResult", "pageAuthority",
+    "regionSemantics", "summary", "engineProvenance", "dispositions", "generatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "visual-region-semantics-result" },
+    "requestId": { "const": "junior-readable-measurement-region-semantics" },
+    "subjectPack": { "const": "junior-physics-answer" },
+    "fixtureKind": { "const": "synthetic_fixture" },
+    "sourceRequestSha256": { "$ref": "#/$defs/sha256" },
+    "semanticDeclaration": { "$ref": "#/$defs/artifactBinding" },
+    "regionProposalResult": { "$ref": "#/$defs/upstreamBinding" },
+    "localCropResult": { "$ref": "#/$defs/upstreamBinding" },
+    "pageAuthority": {
+      "type": "object",
+      "required": ["pageId", "coordinateSpace", "normalizedArtifact"],
+      "properties": {
+        "pageId": { "const": "junior-readable-measurement-normalized-page-1" },
+        "coordinateSpace": { "const": "normalized_page_pixel" },
+        "normalizedArtifact": { "$ref": "#/$defs/imageArtifact" }
+      },
+      "additionalProperties": false
+    },
+    "regionSemantics": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/regionSemantic" }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["proposalCount", "declaredRegionCount", "unclassifiedProposalRefs"],
+      "properties": {
+        "proposalCount": { "const": 2 },
+        "declaredRegionCount": { "const": 2 },
+        "unclassifiedProposalRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    },
+    "engineProvenance": {
+      "type": "object",
+      "required": [
+        "engineKind", "engineId", "engineVersion", "inferencePerformed", "liveProvider", "cloudEgress"
+      ],
+      "properties": {
+        "engineKind": { "const": "local_runtime" },
+        "engineId": { "const": "deterministic-explicit-region-semantics-compiler" },
+        "engineVersion": { "const": "1.0.0" },
+        "inferencePerformed": { "const": false },
+        "liveProvider": { "const": false },
+        "cloudEgress": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "dispositions": {
+      "type": "object",
+      "required": [
+        "semanticDisposition", "visualRegionDisposition", "inferenceDisposition",
+        "questionBindingDisposition", "trackDisposition", "answerDisposition",
+        "requiresHumanReview", "acceptanceDisposition", "controlsDisposition", "eligible",
+        "optimizationCandidateRefs"
+      ],
+      "properties": {
+        "semanticDisposition": { "const": "explicit_declared" },
+        "visualRegionDisposition": { "const": "generated_from_explicit_synthetic_declaration" },
+        "inferenceDisposition": { "const": "not_performed" },
+        "questionBindingDisposition": { "const": "not_established" },
+        "trackDisposition": { "const": "not_integrated" },
+        "answerDisposition": { "const": "not_generated" },
+        "requiresHumanReview": { "const": true },
+        "acceptanceDisposition": { "const": "not_accepted" },
+        "controlsDisposition": { "const": "not_verified" },
+        "eligible": { "const": false },
+        "optimizationCandidateRefs": { "type": "array", "maxItems": 0 }
+      },
+      "additionalProperties": false
+    },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "pixelSize": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "bbox": {
+      "type": "object",
+      "required": ["x", "y", "width", "height", "coordinateSpace"],
+      "properties": {
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "coordinateSpace": { "const": "page_pixel" }
+      },
+      "additionalProperties": false
+    },
+    "artifactBinding": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "declarationId"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "declarationId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "upstreamBinding": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "requestId", "proposalRefs"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "requestId": { "type": "string", "minLength": 1 },
+        "proposalRefs": { "type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "imageArtifact": {
+      "type": "object",
+      "required": ["artifactRef", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"],
+      "properties": {
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "decodedRgbPixelSha256": { "$ref": "#/$defs/sha256" },
+        "pixelSize": { "$ref": "#/$defs/pixelSize" }
+      },
+      "additionalProperties": false
+    },
+    "cropBinding": {
+      "type": "object",
+      "required": [
+        "scale", "artifactRef", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize", "interpolation"
+      ],
+      "properties": {
+        "scale": { "enum": [1, 2] },
+        "artifactRef": { "type": "string", "minLength": 1 },
+        "rawByteSha256": { "$ref": "#/$defs/sha256" },
+        "decodedRgbPixelSha256": { "$ref": "#/$defs/sha256" },
+        "pixelSize": { "$ref": "#/$defs/pixelSize" },
+        "interpolation": { "enum": ["pixel_preserving", "nearest"] }
+      },
+      "additionalProperties": false
+    },
+    "visualRegion": {
+      "type": "object",
+      "required": [
+        "schemaVersion", "kind", "regionId", "pageId", "regionType", "bbox", "cropRef",
+        "qualityFlags", "generatedAt"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "kind": { "const": "visual-region" },
+        "regionId": { "type": "string", "minLength": 1 },
+        "pageId": { "const": "junior-readable-measurement-normalized-page-1" },
+        "regionType": { "enum": ["text_area", "scale_area"] },
+        "bbox": { "$ref": "#/$defs/bbox" },
+        "cropRef": { "type": "string", "minLength": 1 },
+        "qualityFlags": { "type": "array", "maxItems": 0 },
+        "generatedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "regionSemantic": {
+      "type": "object",
+      "required": [
+        "declarationRef", "proposalRef", "proposalKind", "semanticRole", "componentKind",
+        "classificationBasis", "visualRegion", "cropBindings"
+      ],
+      "properties": {
+        "declarationRef": { "pattern": "^region-semantic-declaration-[0-9]{3}$" },
+        "proposalRef": { "pattern": "^content-block-[0-9]{3}$" },
+        "proposalKind": { "const": "content_block_candidate" },
+        "semanticRole": { "enum": ["measurement_reading", "measurement_scale_baseline"] },
+        "componentKind": { "enum": ["recognized_value_component", "scale_baseline_component"] },
+        "classificationBasis": { "const": "explicit_synthetic_region_semantics_declaration" },
+        "visualRegion": { "$ref": "#/$defs/visualRegion" },
+        "cropBindings": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/cropBinding" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

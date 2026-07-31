@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "visual-region-semantics-request",
+  "requestId": "junior-readable-measurement-region-semantics",
+  "subjectPack": "junior-physics-answer",
+  "fixtureKind": "synthetic_fixture",
+  "dataClassification": {
+    "level": "public",
+    "containsPersonalData": false
+  },
+  "semanticDeclaration": {
+    "artifactRef": "junior-readable-measurement.visual-synthetic-region-semantics-declaration.json",
+    "rawByteSha256": "7f12eee134acde820830343d0e630dcdc0d6fb29f58c35bf5ba5fefd62e85fe7",
+    "declarationId": "junior-readable-measurement-region-semantics-declaration"
+  },
+  "regionProposalResult": {
+    "artifactRef": "eval/visual-region-proposal/cases/junior-readable-measurement.visual-region-proposal-result.json",
+    "rawByteSha256": "9597538175dd97686b1358de2515159c468cdafc62bf0ce71c49a8385bb319d4",
+    "requestId": "junior-readable-measurement-region-proposal",
+    "proposalRefs": [
+      "content-block-001",
+      "content-block-002"
+    ]
+  },
+  "localCropResult": {
+    "artifactRef": "eval/visual-local-crops/cases/junior-readable-measurement.visual-local-crop-result.json",
+    "rawByteSha256": "162d96d1ca4e15282e16d159853459c4843475f972d9045b99d80706acac506d",
+    "requestId": "junior-readable-measurement-local-crops",
+    "proposalRefs": [
+      "content-block-001",
+      "content-block-002"
+    ]
+  },
+  "egressPolicy": {
+    "allowCloud": false
+  },
+  "requestedAt": "2026-07-31T12:00:00Z"
+}

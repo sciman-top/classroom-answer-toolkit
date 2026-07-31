@@ -594,11 +594,20 @@ P1 样例集默认人工拆分题面/答案：
 - external runtime 仅写入仓外新目录，在 atomic directory promotion 前重验 staged overlay/result bytes 与 canonical request/upstream snapshots；empty/excess candidate inventory、policy/hash/path drift 均 fail closed。
 - canonical 固定 `semanticDisposition=not_inferred / visualRegionDisposition=not_generated / requiresHumanReview=true / not_accepted / controls=not_verified / eligible=false`；本切片不证明 region precision/recall，不生成 local high-res crop，不接 OCR/Track/WPF/gateway，不构成 workstation/live acceptance，`ReadinessControlReceipt=unattested_local_record` 不变，不生成 `OptimizationCandidate`。
 
-### Track 定义
+### VISION-022 synthetic local crop 边界
 
-VISION-022 在 VISION-021 proposal 上生成 1x pixel-preserving 与 2x nearest crops；所有 artifacts
-绑定 proposal/bbox/hash/pixels/dimensions，固定 nonsemantic/not integrated。2x 不证明细节恢复或
-OCR 改善，不生成 `VisualRegion`，controls=`not_verified`、`eligible=false`。
+- VISION-022 在 VISION-021 proposal 上生成 1x pixel-preserving 与 2x nearest crops；所有 artifacts 绑定 proposal/bbox/hash/pixels/dimensions，固定 nonsemantic/not integrated。
+- 2x 是 nearest enlargement，不证明细节恢复或 OCR 改善，不生成 `VisualRegion`，controls=`not_verified`、`eligible=false`。
+
+### VISION-023 explicit synthetic region semantics 边界
+
+- `VisualSyntheticRegionSemanticsDeclaration` 是唯一语义 authority；它独立声明 `content-block-001 -> text_area / measurement_reading / recognized_value_component` 与 `content-block-002 -> scale_area / measurement_scale_baseline / scale_baseline_component`。runtime 禁止从像素、文件名、OCR、题干或答案反推这些字段。
+- request raw-byte 绑定 declaration、VISION-021 proposal result 与 VISION-022 local-crop result；runtime 逐项重验 proposal kind/bbox、1x/2x crop actual bytes、decoded RGB pixel SHA-256、dimensions、interpolation 与 exact proposal coverage。
+- result 生成两份 generic-shape `VisualRegion`，但 `classificationBasis=explicit_synthetic_region_semantics_declaration / inferenceDisposition=not_performed / questionBindingDisposition=not_established / trackDisposition=not_integrated / answerDisposition=not_generated`。
+- crossed/duplicate/missing proposal refs、unsupported role/type/component、stale crop hash/bbox、schema/path/alias/staged-output/input-snapshot 或正向 trust 漂移均 fail closed；external runtime 只写仓外新目录并原子 promotion。
+- 本切片只证明 explicit synthetic semantics compilation，不证明自动 region classification、真实图元质量、通用 axis/table/tick/legend/component understanding、FigureUnderstanding、question binding、OCR 改善、Track input、答案正确、review approval、delivery trust、WPF/gateway/workstation 或 live acceptance。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 不变，不生成 `OptimizationCandidate`。
+
+### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。
 - Track B：OCR / layout / 图元抽取 / 结构化证据后再求解。

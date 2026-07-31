@@ -27,10 +27,15 @@
 21. [visual-semantic-projection-implementation-plan.md](./visual-semantic-projection-implementation-plan.md)
 22. [synthetic-ocr-layout-solver-runtime-plan.md](./synthetic-ocr-layout-solver-runtime-plan.md)
 23. [synthetic-track-validator-runtime-plan.md](./synthetic-track-validator-runtime-plan.md)
-24. [implementation-roadmap.md](./implementation-roadmap.md)
-25. [implementation-plan.md](./implementation-plan.md)
-26. [execution-backlog.md](./execution-backlog.md)
-27. [decision-log.md](./decision-log.md)
+24. [synthetic-track-orchestration-runtime-plan.md](./synthetic-track-orchestration-runtime-plan.md)
+25. [visual-page-normalization-runtime-plan.md](./visual-page-normalization-runtime-plan.md)
+26. [visual-region-proposal-runtime-plan.md](./visual-region-proposal-runtime-plan.md)
+27. [visual-local-crop-runtime-plan.md](./visual-local-crop-runtime-plan.md)
+28. [visual-region-semantics-runtime-plan.md](./visual-region-semantics-runtime-plan.md)
+29. [implementation-roadmap.md](./implementation-roadmap.md)
+30. [implementation-plan.md](./implementation-plan.md)
+31. [execution-backlog.md](./execution-backlog.md)
+32. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 

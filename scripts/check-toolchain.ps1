@@ -103,6 +103,11 @@ Assert-CommandSuccess { npm --prefix tools/visual-local-cropper test } "Visual l
 Write-Host "visual local crop canonical fixtures:"
 Assert-CommandSuccess { npm --prefix tools/visual-local-cropper run validate:fixtures } "Visual local crop canonical fixture validation failed."
 
+Write-Host "visual region semantics contract tests:"
+Assert-CommandSuccess { npm --prefix tools/visual-region-semantics test } "Visual region semantics contract tests failed."
+Write-Host "visual region semantics canonical fixtures:"
+Assert-CommandSuccess { npm --prefix tools/visual-region-semantics run validate:fixtures } "Visual region semantics canonical fixture validation failed."
+
 Write-Host "visual structure extraction contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-structure-extractor test
