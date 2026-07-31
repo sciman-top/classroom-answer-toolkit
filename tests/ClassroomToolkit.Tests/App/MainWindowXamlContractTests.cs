@@ -20,13 +20,16 @@ public sealed class MainWindowXamlContractTests
     }
 
     [Fact]
-    public void ReviewQueue_DisplaysSourcePath_AndRawByteSha256()
+    public void DefaultWorkflow_HidesDeveloperReviewQueueSurface()
     {
         var xaml = ReadMainWindowXaml();
 
-        xaml.Should().Contain("DisplayMemberBinding=\"{Binding SourcePath}\"");
-        xaml.Should().Contain("DisplayMemberBinding=\"{Binding SourceSha256}\"");
-        xaml.Should().Contain("Header=\"Raw-byte SHA-256\"");
+        xaml.Should().NotContain("Command=\"{Binding ProjectReviewQueueCommand}\"");
+        xaml.Should().NotContain("Command=\"{Binding AttachVisualDecisionCommand}\"");
+        xaml.Should().NotContain("Command=\"{Binding AttachDeliveryDecisionAggregateCommand}\"");
+        xaml.Should().NotContain("Command=\"{Binding VerifyDeliveryDecisionAggregateAttachmentCommand}\"");
+        xaml.Should().Contain("Command=\"{Binding GenerateProviderAnswerCommand}\"");
+        xaml.Should().Contain("Command=\"{Binding DeliverCommand}\"");
     }
 
     private static string ReadMainWindowXaml()

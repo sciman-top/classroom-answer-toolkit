@@ -6,6 +6,7 @@
 - `repo-side done` 必须同时由当前 Git revision 可达的实现、对应 `docs/change-evidence/` 记录和该记录中的完整固定门禁证明；缺任一项均保持未完成或待核。
 - `workflow integrated / gateway verified / workstation accepted / live accepted` 是独立状态，不得由 schema、synthetic fixture、repo gate、candidate、`pending_review` 或本地 unattested receipt 推导。
 - `ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 在受权 attestation 与合法数据/凭据出现前保持 fail closed。
+- 产品核心精简后，REVIEW lifecycle/approval/trust writeback、queue ownership/persistence、额外 synthetic visual/optimization/renderer 研究任务均为 `frozen`，不是默认待办；恢复须满足 `product-core-simplification.md` 的真实使用证据条件。
 
 ## Epic DOC：文档真值收口
 

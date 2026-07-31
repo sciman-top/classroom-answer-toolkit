@@ -1,5 +1,11 @@
 # Implementation Plan
 
+## 当前执行约束
+
+从本版本起，默认实施只服务 `题目 → answer.md → PDF/review → 人工判断`。review lifecycle
+writeback、approval/trust 写回、队列持久化及新的 synthetic/治理扩张全部冻结；它们仅在真实用户
+流程、明确 owner、合法 corpus、可量化验收目标和更窄方案不可行时重新进入计划。
+
 ## 目标
 
 把最终基线按可执行 slice 拆成工程实施计划，使实现者能沿着 `P0 -> P1 -> P2 -> P3` 顺序推进，而不重新解释需求边界。

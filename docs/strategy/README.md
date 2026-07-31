@@ -1,55 +1,39 @@
 # Strategy Docs
 
-本目录是本仓规划、PRD、终态蓝图、实施规格、路线图、实施计划与执行清单的唯一真值入口。
+本目录是本仓产品、实施与证据策略真值入口。当前以课堂答案交付为中心，不把 synthetic
+诊断、review 治理或未来研究路线当作默认产品能力。
 
-## authoritative 阅读顺序
+## 当前只读这些
 
-1. [product-prd.md](./product-prd.md)
-2. [architecture-and-end-state.md](./architecture-and-end-state.md)
-3. [final-implementation-baseline.md](./final-implementation-baseline.md)
-4. [auto-solving-workstation-final-plan.md](./auto-solving-workstation-final-plan.md)
-5. [visual-first-answering-architecture.md](./visual-first-answering-architecture.md)
-6. [qq-heavy-visual-chain-transfer-plan.md](./qq-heavy-visual-chain-transfer-plan.md)
-7. [ai-gateway-config.md](./ai-gateway-config.md)
-8. [typst-primary-renderer-plan.md](./typst-primary-renderer-plan.md)
-9. [spec-evolution-adaptation-plan.md](./spec-evolution-adaptation-plan.md)
-10. [visual-preprocessing-runtime-plan.md](./visual-preprocessing-runtime-plan.md)
-11. [visual-structure-extraction-runtime-plan.md](./visual-structure-extraction-runtime-plan.md)
-12. [visual-ocr-observation-runtime-plan.md](./visual-ocr-observation-runtime-plan.md)
-13. [visual-spatial-observation-runtime-plan.md](./visual-spatial-observation-runtime-plan.md)
-14. [visual-ocr-diagnostic-runtime-plan.md](./visual-ocr-diagnostic-runtime-plan.md)
-15. [visual-text-region-diagnostic-runtime-plan.md](./visual-text-region-diagnostic-runtime-plan.md)
-16. [visual-machine-review-runtime-plan.md](./visual-machine-review-runtime-plan.md)
-17. [visual-ocr-region-association-runtime-plan.md](./visual-ocr-region-association-runtime-plan.md)
-18. [visual-positive-association-runtime-plan.md](./visual-positive-association-runtime-plan.md)
-19. [visual-positive-association-implementation-plan.md](./visual-positive-association-implementation-plan.md)
-20. [visual-semantic-projection-runtime-plan.md](./visual-semantic-projection-runtime-plan.md)
-21. [visual-semantic-projection-implementation-plan.md](./visual-semantic-projection-implementation-plan.md)
-22. [synthetic-ocr-layout-solver-runtime-plan.md](./synthetic-ocr-layout-solver-runtime-plan.md)
-23. [synthetic-track-validator-runtime-plan.md](./synthetic-track-validator-runtime-plan.md)
-24. [synthetic-track-orchestration-runtime-plan.md](./synthetic-track-orchestration-runtime-plan.md)
-25. [visual-page-normalization-runtime-plan.md](./visual-page-normalization-runtime-plan.md)
-26. [visual-region-proposal-runtime-plan.md](./visual-region-proposal-runtime-plan.md)
-27. [visual-local-crop-runtime-plan.md](./visual-local-crop-runtime-plan.md)
-28. [visual-region-semantics-runtime-plan.md](./visual-region-semantics-runtime-plan.md)
-29. [visual-component-semantics-runtime-plan.md](./visual-component-semantics-runtime-plan.md)
-30. [visual-scale-lattice-runtime-plan.md](./visual-scale-lattice-runtime-plan.md)
-31. [docx-page-normalization-runtime-plan.md](./docx-page-normalization-runtime-plan.md)
-32. [provider-answer-generation-runtime-plan.md](./provider-answer-generation-runtime-plan.md)
-33. [provider-answer-generation-wpf-workflow-plan.md](./provider-answer-generation-wpf-workflow-plan.md)
-33. [implementation-roadmap.md](./implementation-roadmap.md)
-34. [implementation-plan.md](./implementation-plan.md)
-35. [execution-backlog.md](./execution-backlog.md)
-36. [decision-log.md](./decision-log.md)
+1. [product-prd.md](./product-prd.md)：产品范围与非承诺。
+2. [product-core-simplification.md](./product-core-simplification.md)：当前核心、冻结面与重新启用条件。
+3. [final-implementation-baseline.md](./final-implementation-baseline.md)：仍有效的合同和 fail-closed 边界。
+4. [implementation-roadmap.md](./implementation-roadmap.md)：按真实验证驱动的下一步。
+5. [implementation-plan.md](./implementation-plan.md)：实施顺序和验证标准。
+6. [execution-backlog.md](./execution-backlog.md)：任务状态与明确 blocker。
+7. [provider-answer-generation-wpf-workflow-plan.md](./provider-answer-generation-wpf-workflow-plan.md)：当前新主链的受控 WPF 合同。
 
-## 专项文档
+## 核心产品路径
 
-- [multi-stage-physics-system-plan.md](./multi-stage-physics-system-plan.md)
-- [junior-senior-physics-migration-plan.md](./junior-senior-physics-migration-plan.md)
+`公开/已脱敏题目 → 显式 provider generation → answer.md → PDF/review → 人工判断`
+
+默认 WPF 只承载这条路径及工具链恢复。云外发、交付和人工判断必须分别显式触发；默认
+`pending_review / trusted=false` 不会因本地测试或 synthetic evidence 自动升级。
+
+## 冻结的支持面
+
+以下文档与工具保留为兼容、回归、取证或未来实验依据，但不进入默认阅读顺序、教师界面或
+近期开发承诺：视觉 synthetic runtime plans、aggregate/DecisionRecord 写操作、review queue
+投影、优化飞轮、Typst、复杂 OCR/Word 重建和多 VLM 研究。重新启用必须先满足
+`product-core-simplification.md` 中的真实使用证据条件。
+
+冻结索引仍保留：[ai-gateway-config.md](./ai-gateway-config.md)、
+[auto-solving-workstation-final-plan.md](./auto-solving-workstation-final-plan.md)、
+[typst-primary-renderer-plan.md](./typst-primary-renderer-plan.md)；它们不是当前默认路线。
 
 ## 使用规则
 
-1. 新的路线图、实施计划、任务清单、最终版方案，只更新本目录文件。
-2. 根目录旧规划文档只保留跳转说明，不再维护正文策略。
-3. `prompts/specs/` 是规范真值区，`docs/strategy/` 是规划与执行真值区，二者边界不可混写。
-4. AI 或工程师接手前，优先阅读本文件、`product-prd.md`、`final-implementation-baseline.md`、`execution-backlog.md` 与对应 subject-pack 的 compiled 规范。
+1. 新的核心产品改动必须更新本文件列出的核心真值面和 `docs/change-evidence/`。
+2. `prompts/specs/` 是规范真值区，`docs/strategy/` 是产品与执行真值区；生成物仍不得手改。
+3. 不因 schema、synthetic fixture、repo gate 或 pending review 宣称 gateway verified、workstation accepted 或 live accepted。
+4. 恢复冻结路线前，先记录真实用户需求、输入数据、owner、验收指标和回滚边界。

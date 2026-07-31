@@ -48,6 +48,7 @@ Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一�
 - 以 `subject-pack + snapshot + compiled spec + eval` 为核心资产模型。
 - 初中物理为当前最完整主线；高中物理为模板包；初中数学为实验支架。
 - `answer.md -> PDF/review` 交付链持续可用。
+- 默认桌面工作流收束为 `公开/已脱敏题目 -> 显式生成 -> answer.md -> PDF/review -> 人工判断`；review lifecycle writeback、审批、trust 写回和队列运营不是当前产品承诺。
 - 通过样例飞轮、反馈链和视觉证据逐步把产品层做实。
 - 终局目标是自动解题工作站：`原题 -> 证据 -> 候选答案 -> 风险决策 -> review -> 可信交付`。
 - 终局渲染目标是 Typst 主渲染；当前运行时仍保持 Playwright / Chromium，直到 renderer parity gate 通过。

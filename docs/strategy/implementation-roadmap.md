@@ -1,5 +1,15 @@
 # Implementation Roadmap
 
+## 当前产品核心与冻结规则
+
+近期只推进 `公开/已脱敏题目 → 显式生成 → answer.md → PDF/review → 人工判断` 的真实验证。
+review lifecycle writeback、approval/trust 写回、队列 ownership/persistence、更多 synthetic visual
+切片、优化飞轮、通用 DOCX、Typst 和多 VLM 均冻结，不因已有 schema 或本地 fixture 自动恢复。
+恢复条件见 [product-core-simplification.md](./product-core-simplification.md)。
+
+下一项开发不是再造控制面，而是在具备合法数据和凭据时完成一次可审计的真实工作站验收；缺少
+该条件时只维护当前核心路径和回归，不扩张功能面。
+
 ## P0：文档契约与 schema 真值面收口
 
 - 新增 `product-prd.md`、`final-implementation-baseline.md`、`implementation-plan.md`
