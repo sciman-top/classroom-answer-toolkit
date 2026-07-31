@@ -32,10 +32,11 @@
 26. [visual-region-proposal-runtime-plan.md](./visual-region-proposal-runtime-plan.md)
 27. [visual-local-crop-runtime-plan.md](./visual-local-crop-runtime-plan.md)
 28. [visual-region-semantics-runtime-plan.md](./visual-region-semantics-runtime-plan.md)
-29. [implementation-roadmap.md](./implementation-roadmap.md)
-30. [implementation-plan.md](./implementation-plan.md)
-31. [execution-backlog.md](./execution-backlog.md)
-32. [decision-log.md](./decision-log.md)
+29. [visual-component-semantics-runtime-plan.md](./visual-component-semantics-runtime-plan.md)
+30. [implementation-roadmap.md](./implementation-roadmap.md)
+31. [implementation-plan.md](./implementation-plan.md)
+32. [execution-backlog.md](./execution-backlog.md)
+33. [decision-log.md](./decision-log.md)
 
 ## 专项文档
 

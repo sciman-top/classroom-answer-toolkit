@@ -108,6 +108,11 @@ Assert-CommandSuccess { npm --prefix tools/visual-region-semantics test } "Visua
 Write-Host "visual region semantics canonical fixtures:"
 Assert-CommandSuccess { npm --prefix tools/visual-region-semantics run validate:fixtures } "Visual region semantics canonical fixture validation failed."
 
+Write-Host "visual component semantics contract tests:"
+Assert-CommandSuccess { npm --prefix tools/visual-component-semantics test } "Visual component semantics contract tests failed."
+Write-Host "visual component semantics canonical fixtures:"
+Assert-CommandSuccess { npm --prefix tools/visual-component-semantics run validate:fixtures } "Visual component semantics canonical fixture validation failed."
+
 Write-Host "visual structure extraction contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-structure-extractor test

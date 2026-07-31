@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://classroom-toolkit.dev/schemas/visual-component-semantics-result/v1.json",
+  "compatibility": { "forward": "additive", "backward": "additive" },
+  "title": "VisualComponentSemanticsResult",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "requestId", "subjectPack", "fixtureKind", "sourceRequestSha256", "componentDeclaration", "structureExtractionResult", "preprocessingResult", "crop", "coordinateSpace", "components", "summary", "engineProvenance", "dispositions", "generatedAt"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" }, "kind": { "const": "visual-component-semantics-result" },
+    "requestId": { "const": "junior-instrument-scale-component-semantics" },
+    "subjectPack": { "const": "junior-physics-answer" }, "fixtureKind": { "const": "synthetic_fixture" },
+    "sourceRequestSha256": { "$ref": "#/$defs/sha" },
+    "componentDeclaration": { "$ref": "#/$defs/declaration" },
+    "structureExtractionResult": { "$ref": "#/$defs/artifact" },
+    "preprocessingResult": { "$ref": "#/$defs/artifact" },
+    "crop": { "$ref": "#/$defs/crop" }, "coordinateSpace": { "const": "crop_pixel" },
+    "components": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "$ref": "#/$defs/component" } },
+    "summary": { "type": "object", "required": ["componentCount", "pointerCount", "majorTickCount"], "properties": { "componentCount": { "const": 6 }, "pointerCount": { "const": 1 }, "majorTickCount": { "const": 5 } }, "additionalProperties": false },
+    "engineProvenance": { "type": "object", "required": ["engineKind", "engineId", "engineVersion", "inferencePerformed", "liveProvider", "cloudEgress"], "properties": { "engineKind": { "const": "local_runtime" }, "engineId": { "const": "deterministic-explicit-component-semantics-compiler" }, "engineVersion": { "const": "1.0.0" }, "inferencePerformed": { "const": false }, "liveProvider": { "const": false }, "cloudEgress": { "const": false } }, "additionalProperties": false },
+    "dispositions": { "$ref": "#/$defs/dispositions" },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "artifact": { "type": "object", "required": ["artifactRef", "rawByteSha256", "requestId"], "properties": { "artifactRef": { "type": "string" }, "rawByteSha256": { "$ref": "#/$defs/sha" }, "requestId": { "const": "junior-instrument-scale" } }, "additionalProperties": false },
+    "declaration": { "type": "object", "required": ["artifactRef", "rawByteSha256", "declarationId"], "properties": { "artifactRef": { "type": "string" }, "rawByteSha256": { "$ref": "#/$defs/sha" }, "declarationId": { "type": "string" } }, "additionalProperties": false },
+    "size": { "type": "object", "required": ["width", "height"], "properties": { "width": { "const": 580 }, "height": { "const": 210 } }, "additionalProperties": false },
+    "crop": { "type": "object", "required": ["artifactRef", "scale", "rawByteSha256", "decodedRgbPixelSha256", "pixelSize"], "properties": { "artifactRef": { "type": "string" }, "scale": { "const": 2 }, "rawByteSha256": { "$ref": "#/$defs/sha" }, "decodedRgbPixelSha256": { "$ref": "#/$defs/sha" }, "pixelSize": { "$ref": "#/$defs/size" } }, "additionalProperties": false },
+    "segment": { "type": "object", "required": ["candidateId", "x1", "y1", "x2", "y2", "lengthSquared"], "properties": { "candidateId": { "pattern": "^line-[0-9]{3}$" }, "x1": { "type": "integer" }, "y1": { "type": "integer" }, "x2": { "type": "integer" }, "y2": { "type": "integer" }, "lengthSquared": { "type": "integer", "minimum": 1 } }, "additionalProperties": false },
+    "bbox": { "type": "object", "required": ["x", "y", "width", "height", "coordinateSpace"], "properties": { "x": { "type": "integer", "minimum": 0 }, "y": { "type": "integer", "minimum": 0 }, "width": { "type": "integer", "minimum": 1 }, "height": { "type": "integer", "minimum": 1 }, "coordinateSpace": { "const": "crop_pixel" } }, "additionalProperties": false },
+    "component": { "type": "object", "required": ["componentRef", "componentType", "componentOrder", "candidateKind", "candidateRefs", "segments", "bbox", "classificationBasis"], "properties": { "componentRef": { "pattern": "^scale-component-[0-9]{3}$" }, "componentType": { "enum": ["pointer_indicator", "major_tick_mark"] }, "componentOrder": { "type": "integer", "minimum": 0, "maximum": 5 }, "candidateKind": { "const": "line_segment_candidate_pair" }, "candidateRefs": { "type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": { "type": "string" } }, "segments": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/segment" } }, "bbox": { "$ref": "#/$defs/bbox" }, "classificationBasis": { "const": "explicit_synthetic_component_semantics_declaration" } }, "additionalProperties": false },
+    "dispositions": { "type": "object", "required": ["semanticDisposition", "inferenceDisposition", "figureUnderstandingDisposition", "scaleInterpretationDisposition", "readingDisposition", "questionBindingDisposition", "trackDisposition", "answerDisposition", "requiresHumanReview", "acceptanceDisposition", "controlsDisposition", "eligible", "optimizationCandidateRefs"], "properties": { "semanticDisposition": { "const": "explicit_declared" }, "inferenceDisposition": { "const": "not_performed" }, "figureUnderstandingDisposition": { "const": "not_generated" }, "scaleInterpretationDisposition": { "const": "not_established" }, "readingDisposition": { "const": "not_generated" }, "questionBindingDisposition": { "const": "not_established" }, "trackDisposition": { "const": "not_integrated" }, "answerDisposition": { "const": "not_generated" }, "requiresHumanReview": { "const": true }, "acceptanceDisposition": { "const": "not_accepted" }, "controlsDisposition": { "const": "not_verified" }, "eligible": { "const": false }, "optimizationCandidateRefs": { "type": "array", "maxItems": 0 } }, "additionalProperties": false }
+  },
+  "additionalProperties": false
+}

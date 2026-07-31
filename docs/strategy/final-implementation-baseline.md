@@ -607,6 +607,14 @@ P1 样例集默认人工拆分题面/答案：
 - crossed/duplicate/missing proposal refs、unsupported role/type/component、stale crop hash/bbox、schema/path/alias/staged-output/input-snapshot 或正向 trust 漂移均 fail closed；external runtime 只写仓外新目录并原子 promotion。
 - 本切片只证明 explicit synthetic semantics compilation，不证明自动 region classification、真实图元质量、通用 axis/table/tick/legend/component understanding、FigureUnderstanding、question binding、OCR 改善、Track input、答案正确、review approval、delivery trust、WPF/gateway/workstation 或 live acceptance。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 不变，不生成 `OptimizationCandidate`。
 
+### VISION-024 explicit synthetic component semantics 边界
+
+- `VisualSyntheticComponentSemanticsDeclaration` 是唯一 component-type authority；它只把 current `junior-instrument-scale` line candidates 显式分组为 `line-007 + line-008 -> pointer_indicator` 和五组 `major_tick_mark` edge pairs。runtime 禁止从像素、几何、文件名、OCR、题干或答案推断 component type。
+- request raw-byte 绑定 declaration、VISION-008 current structure result、VISION-007 current preprocessing result 与 actual 2x crop；runtime 重验 structure/preprocessing/crop bytes、decoded RGB pixel SHA-256、dimensions、candidate identity、segment geometry、pair uniqueness 与 computed bbox。
+- result 固定 `semanticDisposition=explicit_declared / inferenceDisposition=not_performed / figureUnderstandingDisposition=not_generated / scaleInterpretationDisposition=not_established / readingDisposition=not_generated / questionBindingDisposition=not_established / trackDisposition=not_integrated / answerDisposition=not_generated`。
+- crossed/duplicate/unsupported declaration、stale source/hash/segment geometry、schema/path/staged-output/input-snapshot 或正向 trust 漂移均 fail closed；external runtime 只写仓外新目录并原子 promotion。
+- 本切片只证明 explicit synthetic component grouping compilation，不证明自动 tick/pointer detection、量程、分度值、数值或读数理解、FigureUnderstanding、Track input、答案正确、review approval、delivery trust、WPF/gateway/workstation 或 live acceptance。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 不变，不生成 `OptimizationCandidate`。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

@@ -449,6 +449,16 @@
 - blocks: VISION-021, VISION-022
 - done_definition: 仓内可从 current declaration/proposal/crop bytes 确定性重算两份有限 VisualRegion；只证明 explicit synthetic semantics compilation，不构成自动分类、通用 axis/table/tick/legend 理解、question binding、FigureUnderstanding、OCR/Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
 
+### task_id: VISION-024
+
+- goal: 由独立 public synthetic declaration 建立首个 structure/crop-bound 的有限刻度组件语义编译闭环
+- inputs: VISION-008 `junior-instrument-scale` current structure result、VISION-007 current preprocessing result 与 actual 2x crop、独立 component declaration
+- changes: 新增 declaration/request/result schema、deterministic local compiler 和六份有限 component semantics；只显式声明一组 pointer edge pair 与五组 major-tick edge pairs，固定 inference 未执行、scale interpretation/reading/FigureUnderstanding 未生成、question/Track/answer 未绑定；external atomic result runtime；纳入 assets/hotspot
+- verification: exact component/type/order/pair inventory、structure/preprocessing/crop raw-byte/pixel/dimension binding、candidate uniqueness/segment geometry/computed bbox、crossed/duplicate/unsupported declaration、trust escalation、canonical replay、existing/repository/junction output、staged tamper、input snapshot 与完整固定门禁
+- rollback: 回滚 VISION-024 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-023 authorities 与 `3f5136b`
+- blocks: VISION-007, VISION-008, VISION-023
+- done_definition: 仓内可从 current declaration/structure/preprocessing/crop bytes 确定性重算一组 pointer 与五组 major ticks；只证明 explicit synthetic component grouping compilation，不构成自动检测、量程/分度值/数值/读数理解、FigureUnderstanding、Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

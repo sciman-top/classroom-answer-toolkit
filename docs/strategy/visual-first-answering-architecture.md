@@ -40,6 +40,7 @@
 - `tools/visual-region-proposer/visual_region_proposer.py`：绑定 VISION-020 normalized result/PNG，输出 nonsemantic `heuristicOnly` content-block candidates 与 diagnostic overlay；不生成 `VisualRegion`，不提供 question/figure/text/axis/table 等分类 authority。
 - `tools/visual-local-cropper/visual_local_cropper.py`：把 admitted proposals 编译为 1x/2x hash-bound local crops；2x 仅确定性放大，不恢复细节或赋予语义。
 - `tools/visual-region-semantics/visual_region_semantics.py`：只把独立 public synthetic declaration 编译到 current proposal/crop authority，形成有限 reading/scale-baseline VisualRegion；不从像素、文件名、OCR、题干或答案推断语义，不建立 question/Track/answer/trust authority。
+- `tools/visual-component-semantics/visual_component_semantics.py`：只把独立 public synthetic declaration 编译到 current instrument-scale structure/crop authority，形成一组 pointer 与五组 major-tick edge groups；不推断量程、分度值、数值、读数、FigureUnderstanding 或 Track/answer authority。
 - `tools/visual-evidence/attach-decision.mjs`：校验本地 `DecisionRecord` 与 delivery manifest，把本次写入的直接前像原子刷新到 rollback backup 后，再原子附着 `visualDecisionRef / visualReviewPassed / trusted`；不生成审批、不推进 lifecycle。
 - `tools/visual-evidence/delivery-decision-aggregate.mjs`：基于原始 bytes SHA-256、snapshot/input/manifest、sample-package inventory 和逐题 DecisionRecord 编译交付级 aggregate；只生成离线证据，不修改 manifest。
 - `tools/visual-evidence/attach-delivery-decision-aggregate.mjs`：重验 aggregate 对应的 manifest preimage，在共享 manifest 写锁内固定全部绑定源的 bytes 快照，写 receipt 与 backup 后、最终替换前再次核对，再原子附着 delivery-level trust；不推进 lifecycle。
