@@ -94,6 +94,7 @@ Classroom Answer Toolkit 的目标不是做“提示词仓库”，而是做一�
 - VISION-022 为每个 VISION-021 proposal 生成 1x pixel-preserving 与 2x nearest local crops；2x 不代表恢复细节，不构成 semantic `VisualRegion`、OCR 改善、Track/workflow 或 live acceptance。
 - VISION-023 只用独立 public synthetic declaration 把两个 VISION-021 proposals 与四份 VISION-022 crop bytes 投影为有限 `text_area / measurement_reading` 和 `scale_area / measurement_scale_baseline` VisualRegion；编译器不从像素、文件名、OCR、题干或答案推断语义，不建立 question binding、Track input、answer/trust authority、WPF workflow 或 live acceptance。
 - VISION-024 只用独立 public synthetic declaration 将 `junior-instrument-scale` current structure bytes 中的一组 pointer edge pair 和五组 major-tick edge pairs 编译为有限 component semantics；不构成自动 tick/pointer 检测、量程/分度值/读数理解、FigureUnderstanding、Track、答案、trust 或 live authority。
+- VISION-025 只用独立 public synthetic declaration 和 VISION-024/008 geometry 建立相对 scale lattice：5 subdivisions/major interval、120 px major spacing、24 px subdivision spacing，并推导 pointer 位于 origin 后第 11 个 subdivision；`11` 只是无量纲相对索引，不是物理读数、单位或答案，不构成自动刻度理解、Track、trust 或 live authority。
 - 高风险视觉题的新增主链必须先经过视觉证据编译器，形成 `NormalizedPage / VisualRegion / ProblemEvidenceBundle / TrackResult / DecisionRecord`，不得从整页图直接跳到可信答案。
 - Typst 主渲染属于终局迁移目标；未通过 parity gate 前，不得把当前运行时描述为 Typst 已上线。
 - 自动验收与优化候选只能在门禁通过、数据边界允许、真值可靠时推进。

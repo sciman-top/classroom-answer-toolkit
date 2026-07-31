@@ -459,6 +459,16 @@
 - blocks: VISION-007, VISION-008, VISION-023
 - done_definition: 仓内可从 current declaration/structure/preprocessing/crop bytes 确定性重算一组 pointer 与五组 major ticks；只证明 explicit synthetic component grouping compilation，不构成自动检测、量程/分度值/数值/读数理解、FigureUnderstanding、Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
 
+### task_id: VISION-025
+
+- goal: 在 VISION-024 component authority 上建立首个 relative-only synthetic scale-lattice 编译闭环
+- inputs: VISION-024 current component result、VISION-008 current structure result、独立 scale-lattice declaration
+- changes: 新增 declaration/request/result schema、deterministic doubled-pixel compiler；声明 major/minor tick slot inventory 与 5 subdivisions/major interval，runtime 重验 geometry 并推导 pointer relative subdivision index；physical quantity/unit/answer 固定未生成；external atomic result runtime；纳入 assets/hotspot
+- verification: exact major/minor/source inventory、regular spacing、half-pixel tolerance、pointer index derivation、physical-null/trust escalation、source hash、canonical replay、existing/repository/junction output、staged tamper、input snapshot 与完整固定门禁
+- rollback: 回滚 VISION-025 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-024 authorities 与 `c7bc7b2`
+- blocks: VISION-008, VISION-024
+- done_definition: 仓内可从 current declaration/component/structure bytes 确定性重算 relative scale lattice 与 pointer index 11；只证明 public synthetic relative geometry plumbing，不构成物理量/单位/读数/答案理解、自动 scale detection、Track/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
+
 ## Epic WORKSTATION：自动解题工作站终局
 
 ### task_id: WORKSTATION-001

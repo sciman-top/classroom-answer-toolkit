@@ -53,6 +53,7 @@
 - 再以 VISION-022 为两个 proposals 各生成 1x pixel-preserving 与 2x nearest crops；2x 不代表细节恢复或 OCR 改善
 - 再以 VISION-023 由独立 public synthetic declaration 将 proposals/crops 投影为有限 reading/scale-baseline VisualRegion；不执行像素分类、通用 axis/table/tick/legend 语义、question binding、Track 或答案生成
 - 再以 VISION-024 由独立 declaration 对 `junior-instrument-scale` 的 current line candidates 显式分组一组 pointer 与五组 major ticks；不推断量程、分度值、读数、FigureUnderstanding 或答案
+- 再以 VISION-025 由独立 scale-lattice declaration 绑定 VISION-024/008 geometry，确定性推导 relative subdivision index 11；不把该索引冒充物理量、单位、读数或答案
 - Word 原生 `docx -> NormalizedPage`
 - 分桶灰度优化
 

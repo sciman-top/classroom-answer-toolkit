@@ -615,6 +615,14 @@ P1 样例集默认人工拆分题面/答案：
 - crossed/duplicate/unsupported declaration、stale source/hash/segment geometry、schema/path/staged-output/input-snapshot 或正向 trust 漂移均 fail closed；external runtime 只写仓外新目录并原子 promotion。
 - 本切片只证明 explicit synthetic component grouping compilation，不证明自动 tick/pointer detection、量程、分度值、数值或读数理解、FigureUnderstanding、Track input、答案正确、review approval、delivery trust、WPF/gateway/workstation 或 live acceptance。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 不变，不生成 `OptimizationCandidate`。
 
+### VISION-025 synthetic relative scale lattice 边界
+
+- `VisualSyntheticScaleLatticeDeclaration` 独立声明 horizontal axis、VISION-024 pointer/major component refs、5 subdivisions/major interval、15 个 VISION-008 minor-region 槽位和 doubled-pixel tolerance 1；declaration 不包含 pointer 的期望 index、物理量、单位或答案。
+- request raw-byte 绑定 declaration、VISION-024 component result 与 VISION-008 structure result；runtime 重验 current bytes、major component 顺序、minor region identity/bbox、规则间距、slot uniqueness 和 input snapshots。
+- inclusive bbox center 全部转为 doubled-pixel integers；canonical major spacing=`240/2=120 px`、subdivision spacing=`48/2=24 px`，15 个可见 minor ticks 偏差均为 `1/2 px`，pointer center 精确落在 origin 后第 11 个 subdivision。
+- result 固定 `physicalQuantity=null / unit=null / scaleInterpretationDisposition=relative_lattice_only / readingDisposition=relative_index_only / physicalReadingDisposition=not_generated / questionBindingDisposition=not_established / trackDisposition=not_integrated / answerDisposition=not_generated`。
+- 本切片只证明 explicit synthetic lattice compilation 与 relative geometry derivation；index `11` 不是带单位数值、物理读数或答案，也不证明自动 tick/scale detection、通用量具理解、完整 FigureUnderstanding、review approval、delivery trust、WPF/gateway/workstation 或 live acceptance。`ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 不变，不生成 `OptimizationCandidate`。
+
 ### Track 定义
 
 - Track A：多模态视觉直答，使用原页图和局部高清 crop。

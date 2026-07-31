@@ -1,0 +1,10 @@
+{
+  "name": "classroom-toolkit-visual-scale-lattice",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "python -m unittest -v test_visual_scale_lattice.py",
+    "materialize:fixtures": "python visual_scale_lattice.py --materialize-fixtures",
+    "validate:fixtures": "python visual_scale_lattice.py --validate-fixtures"
+  }
+}

@@ -113,6 +113,11 @@ Assert-CommandSuccess { npm --prefix tools/visual-component-semantics test } "Vi
 Write-Host "visual component semantics canonical fixtures:"
 Assert-CommandSuccess { npm --prefix tools/visual-component-semantics run validate:fixtures } "Visual component semantics canonical fixture validation failed."
 
+Write-Host "visual scale lattice contract tests:"
+Assert-CommandSuccess { npm --prefix tools/visual-scale-lattice test } "Visual scale lattice contract tests failed."
+Write-Host "visual scale lattice canonical fixtures:"
+Assert-CommandSuccess { npm --prefix tools/visual-scale-lattice run validate:fixtures } "Visual scale lattice canonical fixture validation failed."
+
 Write-Host "visual structure extraction contract tests:"
 Assert-CommandSuccess {
     npm --prefix tools/visual-structure-extractor test
