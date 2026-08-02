@@ -116,15 +116,6 @@ if ([string]::IsNullOrWhiteSpace([string]$smokeReport.smoke.snapshotPath)) {
     throw "Published smoke report missing smoke.snapshotPath."
 }
 
-if ([string]::IsNullOrWhiteSpace([string]$smokeReport.diagnostics.manifestPath)) {
-    throw "Published smoke report missing diagnostics.manifestPath."
-}
-
-$diagnosticManifestPath = [string]$smokeReport.diagnostics.manifestPath
-if (-not (Test-Path -LiteralPath $diagnosticManifestPath)) {
-    throw "Published smoke diagnostics manifest not found: $diagnosticManifestPath"
-}
-
 Remove-Item -LiteralPath $stageDir -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $stageDir | Out-Null
 New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
@@ -178,9 +169,7 @@ $packagePath = Join-Path $packageDir "ClassroomToolkit.App_$Version.msix"
 $evidenceDir = Join-Path $packageDir "release-evidence"
 New-Item -ItemType Directory -Path $evidenceDir -Force | Out-Null
 $evidenceSmokeReportPath = Join-Path $evidenceDir ("ClassroomToolkit.App_{0}.smoke-report.json" -f $Version)
-$evidenceDiagnosticManifestPath = Join-Path $evidenceDir ("ClassroomToolkit.App_{0}.diagnostic-manifest.json" -f $Version)
 Copy-Item -LiteralPath $smokeReportPath -Destination $evidenceSmokeReportPath -Force
-Copy-Item -LiteralPath $diagnosticManifestPath -Destination $evidenceDiagnosticManifestPath -Force
 
 if ($makeAppxPath) {
     & $makeAppxPath pack /d $stageDir /p $packagePath /overwrite

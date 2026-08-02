@@ -46,15 +46,17 @@ export function lineDiff(before, after) {
 }
 
 export function buildDiffReport(beforePath, afterPath) {
-  const before = normalize(fs.readFileSync(beforePath, "utf8"));
-  const after = normalize(fs.readFileSync(afterPath, "utf8"));
+  const beforeBytes = fs.readFileSync(beforePath);
+  const afterBytes = fs.readFileSync(afterPath);
+  const before = normalize(beforeBytes.toString("utf8"));
+  const after = normalize(afterBytes.toString("utf8"));
   const diff = lineDiff(before, after);
   const changed = before !== after;
   return `# 答案自动复核文本差异报告\n\n` +
     `- 盲答候选：\`${beforePath}\`\n` +
-    `- 候选 SHA-256：\`${sha256(before)}\`\n` +
+    `- 候选 SHA-256：\`${sha256(beforeBytes)}\`\n` +
     `- 校正答案：\`${afterPath}\`\n` +
-    `- 校正 SHA-256：\`${sha256(after)}\`\n` +
+    `- 校正 SHA-256：\`${sha256(afterBytes)}\`\n` +
     `- 结果：${changed ? "检测到文本变更" : "文本一致"}\n` +
     `- 新增行：${diff.added}\n` +
     `- 删除行：${diff.removed}\n\n` +

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "real-paper-eval-baseline",
+  "id": "guangzhou-physics-2025",
+  "year": 2025,
+  "subjectPack": "junior-physics-answer",
+  "targetQuestions": [8, 11, 12, 17, 18],
+  "authority": {
+    "sourceExam": {
+      "path": "广州物理中考试卷/2025广州中考.pdf",
+      "sha256": "26c8aabc95cd2ffa67ed2ea873f13c9f2cb15d8e576ca2e4d4281f00f63e0fbe"
+    },
+    "referenceAnswer": {
+      "path": "广州物理中考试卷/2025广州中考（答案）.pdf",
+      "sha256": "214bf640b640e4a0260380779942eb39cdaada8d86be39ef1befae36ce77b91d"
+    }
+  },
+  "stages": {
+    "blind": {
+      "status": "evaluated",
+      "artifact": {
+        "path": "正式交付/2025广州中考-GPT56Sol-medium-修复后实跑/2025广州中考盲答候选.md",
+        "sha256": "c6dfeb3a4ac240e675f8d142a3d6cdd2025996306203815148727f60050a18d9"
+      },
+      "cases": { "8": "fail", "11": "fail", "12": "fail", "17": "fail", "18": "fail" }
+    },
+    "visualAudit": {
+      "status": "not_run",
+      "artifact": null,
+      "cases": { "8": "not_evaluated", "11": "not_evaluated", "12": "not_evaluated", "17": "not_evaluated", "18": "not_evaluated" }
+    },
+    "referenceReview": {
+      "status": "evaluated",
+      "artifact": {
+        "path": "正式交付/2025广州中考-GPT56Sol-medium-修复后实跑/2025广州中考参考答案.md",
+        "sha256": "78275489329062c3b4662d94e29e71bffce545055ec5fa88ad94abdb5338e251"
+      },
+      "cases": { "8": "pass", "11": "pass", "12": "pass", "17": "pass", "18": "pass" }
+    }
+  },
+  "evidenceRef": "docs/change-evidence/20260731-live-2025-answer-workflow.md",
+  "teacherAccepted": false
+}

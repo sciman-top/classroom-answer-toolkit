@@ -1,10 +1,11 @@
 # Acceptance Checklist
 
-This checklist distills the most important runtime gates from the current v8.14 production spec.
+This checklist distills the most important runtime gates from the current v8.15 production spec.
 
 ## Hard gates
 
 - Final deliverables keep only answer `.md` and answer `.pdf`.
+- Model output is complete answer Markdown, never internal JSON, evidence objects, or analysis prose.
 - Classroom-display answer is the default output posture.
 - Math must be rendered by a true LaTeX-capable path.
 - Display formulas are left-aligned.

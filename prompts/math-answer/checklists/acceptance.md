@@ -5,6 +5,7 @@ This checklist captures the current minimum runtime contract for the experimenta
 ## Hard gates
 
 - Final deliverables keep only answer `.md` and answer `.pdf`.
+- Model output is complete answer Markdown, never internal JSON, evidence objects, or analysis prose.
 - Classroom-display answer is the default output posture.
 - Math must render through a true LaTeX-capable path.
 - Display formulas stay left-aligned.

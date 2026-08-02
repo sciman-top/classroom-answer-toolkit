@@ -132,7 +132,7 @@ Current checks focus on the most common hard failures:
 - unbalanced LaTeX dollar signs
 - overly long plain-text lines as warnings
 
-These automated checks are derived from the current v8.14 production spec and
+These automated checks are derived from the current v8.15 production spec and
 now anchor to structured assets under `prompts/junior-physics-answer/` plus fixed eval
 cases under `eval/junior-physics-answer/`.
 

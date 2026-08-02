@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "suiteId": "math-answer",
   "subjectPack": "math-answer",
-  "assetVersion": "v0.1",
+  "assetVersion": "v0.2",
   "visualBaselines": [
     "baselines/visual/linear-equation-smoke.classroom.page-001.png",
     "baselines/visual/linear-equation-smoke.compact.page-001.png",

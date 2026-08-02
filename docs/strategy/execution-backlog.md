@@ -1,649 +1,148 @@
-# Execution Backlog
-
-## 状态判定协议
-
-- 本文件中的 task 默认是执行定义，不因出现 `done_definition` 就自动视为完成。
-- `repo-side done` 必须同时由当前 Git revision 可达的实现、对应 `docs/change-evidence/` 记录和该记录中的完整固定门禁证明；缺任一项均保持未完成或待核。
-- `workflow integrated / gateway verified / workstation accepted / live accepted` 是独立状态，不得由 schema、synthetic fixture、repo gate、candidate、`pending_review` 或本地 unattested receipt 推导。
-- `ReadinessControlReceipt=unattested_local_record`、controls=`not_verified`、`eligible=false` 在受权 attestation 与合法数据/凭据出现前保持 fail closed。
-- 产品核心精简后，REVIEW lifecycle/approval/trust writeback、queue ownership/persistence、额外 synthetic visual/optimization/renderer 研究任务均为 `frozen`，不是默认待办；恢复须满足 `product-core-simplification.md` 的真实使用证据条件。
-
-## Epic DOC：文档真值收口
-
-### task_id: DOC-001
-
-- goal: 新增产品 PRD、最终实施基线和实施计划
-- inputs: `docs/strategy/` 现有文档、产品评审结论
-- changes: 新增 `product-prd.md`、`final-implementation-baseline.md`、`implementation-plan.md`
-- verification: 三个文件存在，阅读顺序与职责边界清楚
-- rollback: 删除新增文件并恢复旧入口说明
-- blocks: 无
-- done_definition: 仓内出现单一的产品/实现/执行三层真值面
-
-### task_id: DOC-002
-
-- goal: 收口 `docs/strategy/README.md` 为唯一规划入口
-- inputs: `docs/strategy/` 全部 authoritative 文档
-- changes: 重写 README，固定阅读顺序与使用规则
-- verification: README 可直接引导新接手者定位全部真值文档
-- rollback: 恢复旧 README
-- blocks: DOC-001
-- done_definition: 根目录不再承担规划正文入口
-
-### task_id: DOC-003
-
-- goal: 同步根目录跳转壳与 archive 说明
-- inputs: 根目录旧规划壳、`docs/archive/README.md`
-- changes: 更新根目录跳转壳、archive 边界说明
-- verification: 根目录不再出现新的长规划正文
-- rollback: 恢复旧壳文件
-- blocks: DOC-002
-- done_definition: 外部入口不会再误导到历史正文
-
-## Epic SPEC：schema 与规范治理
-
-### task_id: SPEC-001
-
-- goal: 固定高频变化规范治理终态
-- inputs: `prompts/specs/README.md`、`assemblies/`、现有 schema
-- changes: 更新 `spec-evolution-adaptation-plan.md` 与 `prompts/specs/README.md`
-- verification: 规范真值区与规划真值区边界一致
-- rollback: 恢复原文档
-- blocks: DOC-001
-- done_definition: `$id`、compatibility、impact analysis、回滚口径被文档化
-
-### task_id: SPEC-002
-
-- goal: 定义样例真值面 schema 集
-- inputs: `样例交付/`、现有 schema 面、飞轮设计
-- changes: 在实施基线中固定 `sample-package / sample-index / negative-candidate / sample-run-record`
-- verification: 字段形状、候选来源、配对入口清楚
-- rollback: 恢复旧方案口径
-- blocks: SPEC-001
-- done_definition: 样例真值面不再依赖口头约定
-
-## Epic SAMPLE：样例真值面与负样本
-
-### task_id: SAMPLE-001
-
-- goal: 固定 structured 样例包与 flat index 边界
-- inputs: `样例交付/` 现状、飞轮输入需求
-- changes: 在实施基线与 roadmap 中固定 `structured/` 与 `index.json` 角色
-- verification: flat scoring 只能通过 `index.json` 入场
-- rollback: 恢复旧“自动发现文件”口径
-- blocks: SPEC-002
-- done_definition: 样例配对真值入口唯一
-
-### task_id: SAMPLE-002
-
-- goal: 固定负样本来源与验收门槛
-- inputs: 4 份参考答案 Markdown、历史候选、扰动负样本规则
-- changes: 在 backlog 与实施基线中定义 `perturbed_negative / historical_candidate / generated`
-- verification: 分桶门槛与验收口径一致
-- rollback: 恢复旧总量指标口径
-- blocks: SAMPLE-001
-- done_definition: synthetic 负样本不再能单独推动放行
-
-## Epic FLYWHEEL：sample-run / feedback / optimization plumbing
-
-### task_id: FLYWHEEL-001
-
-- goal: 固定 `runMode` 与 scoring 准入
-- inputs: 样例飞轮设计、反馈链设计
-- changes: 在实施基线中明确 `plumbing / scoring`、三条 scoring 准入条件
-- verification: `OptimizationCandidate` 只允许来自 scoring
-- rollback: 恢复旧含糊口径
-- blocks: SAMPLE-002
-- done_definition: 飞轮能区分“跑流程”和“产可信优化信号”
-
-### task_id: FLYWHEEL-002
-
-- goal: 固定反馈归因模型
-- inputs: 9 类根因、自动反馈与教师反馈双入口
-- changes: 在实施基线与决策日志中明确 `primaryErrorType + contributingErrorTypes[] + confidence`
-- verification: `feedback-record` 和负样本字段口径一致
-- rollback: 恢复单一 `errorType` 口径
-- blocks: FLYWHEEL-001
-- done_definition: 根因不再被压扁成单点错误
-
-### task_id: FLYWHEEL-003
-
-- goal: 建立首个可执行 `sample-index -> admission -> SampleRunRecord` 合成飞轮闭环
-- inputs: `sample-index / sample-package / negative-candidate / sample-run-record` schema、scoring 三条准入条件、完全合成 math fixture
-- changes: 新增 `tools/sample-flywheel` 编译器与合同测试；`样例交付/index.json` 是不可覆盖的 canonical authority，并以 `subjectPack / packageRef / packageSha256` 唯一绑定 structured package、以 `candidateBindings` 绑定 negative-candidate descriptor path/hash；sample/subject ID 必须是单一 kebab-case 路径段；hash-bound 样例资产固定 LF；index/package/artifact 引用经 realpath 后必须留在各自 root；所有 run 显式提供 truth/leakage 状态；plumbing 不产 diff/优化信号；scoring 只允许已索引的 `historical_candidate / generated / perturbed_negative`，要求 truth extraction 为 ok 且 leakage 非 unresolved，并记录 authority hashes、descriptor hash、SHA-256 exact-diff 与 fixture 标注根因；输出通过仓内有限 shape validator、compiler semantic invariants 与 current canonical authority bytes 重验；assets gate 遍历全部 canonical index entries，并校验每个 descriptor 到 package negative artifact 与 indexed truth 的关系；纳入 hotspot
-- verification: 一轮 plumbing、一轮 perturbed-negative scoring；missing/low-confidence truth、missing/unresolved leakage、placeholder/unlisted candidate、authority override、path escape、malformed semantics 与 output alias 拒绝；CLI sibling-temp 输出；完整项目门禁
-- rollback: 删除 `tools/sample-flywheel`、完全合成 `样例交付` fixture、assets/hotspot 接入和本任务 strategy/evidence 修改
-- blocks: FLYWHEEL-002, SAMPLE-001
-- done_definition: 仓内可执行并验证一轮不产优化信号的 plumbing 和一轮受门禁的合成 scoring；当前只证明 current canonical authority、exact-diff 与预标注记账，不宣称任意归档 authority 验真、语义判题、OptimizationCandidate、灰度放行、真实样例或 live acceptance
-
-### task_id: FLYWHEEL-004
-
-- goal: 建立首个可执行 `scoring SampleRunRecord -> FeedbackParseResult` 合成反馈归因闭环
-- inputs: FLYWHEEL-003 current-authority-valid scoring run、9 类反馈根因、hash-bound fixture severity/confidence
-- changes: 新增 `feedback-parse-result` schema 与离线 parser；只接受 non-exact synthetic fixture scoring；结果绑定 source run bytes 和 index/package/descriptor hashes；生成一个 `auto_collected feedback-record`；createdAt 显式输入；optimization refs 强制为空；纳入 assets 与 hotspot
-- verification: fixture 归因成功；plumbing、exact/authority/attribution 漂移、非法时间、direct/hardlink output alias 拒绝；完整项目门禁
-- rollback: 回滚 FLYWHEEL-004 commit；手工 CLI 输出需独立盘点清理
-- blocks: FLYWHEEL-003
-- done_definition: 仓内可从一个受控合成 scoring run 生成 source-byte-bound feedback parse result；不宣称教师自由文本解析、语义评分、OptimizationCandidate、灰度、WPF、云或 live acceptance
-
-### task_id: FLYWHEEL-005
-
-- goal: 建立首个 fail-closed 分桶优化准入评估闭环
-- inputs: FLYWHEEL-003 scoring runs、FLYWHEEL-004 feedback results、D-010 分桶门槛、canonical expected-case inventory
-- changes: 新增 hash-bound canonical case inventory、readiness input/report schema 与离线 compiler；inventory 绑定 current descriptor path/hash 并按 sample+descriptor 去重，runtime input 必须完整覆盖且不得复用 run；缺 run/feedback 的 expected-error case 仍进入召回分母；固定输出 perturbed/historical/generated 三桶；无 receipt 时 toolchain/restricted egress 只能 not_verified；从 inventory 投影 truth/leakage/missing-run 阻断；optimization refs 强制为空；纳入 assets 与 hotspot
-- verification: 当前完全合成 fixture 输出 perturbed recall=1、historical/generated n=0 且 unavailable、eligible=false；missing run/feedback 降低召回；重复 evaluation unit、input omission、自报正向 control、hash/current-authority/computed-field/path/alias 漂移拒绝；完整项目门禁
-- rollback: 回滚 FLYWHEEL-005 commit；手工 CLI 输出需独立盘点清理
-- blocks: FLYWHEEL-004
-- done_definition: 仓内可从完整 case 清单诚实计算分桶 readiness 并在样本或控制条件不足时拒绝准入；不生成 OptimizationCandidate，不宣称灰度、WPF workflow integration、云网关验证或 live acceptance
-
-### task_id: FLYWHEEL-006
-
-- goal: 建立 readiness 可重验但不具正向 authority 的本地 control receipt 诊断面
-- inputs: FLYWHEEL-005 readiness controls、固定项目门禁顺序、AI gateway 双重 cloud-egress opt-in
-- changes: 新增 ReadinessControlReceipt schema/runner/verifier；仅从 clean HEAD 在仓外空目录无 shell 执行固定六 gate并设置 timeout，强制关闭本仓 gateway cloud opt-in，记录 ordered logs/hash 与前后 source revision/clean 状态；readiness 绑定 receipt bytes 并重验当前 clean revision，但只投影 unattested_local_record，controls 保持 not_verified
-- verification: 完整/缺失/乱序/失败 gate，log drift/path escape/hardlink，source drift/dirty tree，timeout/启动错误，partial receipt ref，手写 receipt 不能提升 controls，symlink ancestor 输出逃逸拒绝；真实 clean-HEAD runner；完整项目门禁
-- rollback: 回滚 FLYWHEEL-006 实现提交；仓外 runtime receipt/log 独立盘点删除，不修改 `.env` 或 canonical samples
-- blocks: FLYWHEEL-005
-- done_definition: readiness 能消费一次本地、hash-bound、当前 clean revision 的诊断 receipt，但 toolchain/egress controls 仍为 not_verified 且 eligibility 保持 fail-closed；该 receipt 不具 runner provenance，不证明宿主或子进程无网络活动，不运行 live probes，不生成 OptimizationCandidate，不授权灰度/WPF/live acceptance
-
-### task_id: FLYWHEEL-007
-
-- goal: 将候选的原始诊断统计与 release qualification 分离，阻止 deterministic `synthetic_fixture` 在未来 controls 获得正向 authority 后被误计为非扰动放行样本
-- inputs: FLYWHEEL-006 fail-closed readiness、GEN-003 generated provenance、D-010 分桶门槛、current canonical candidate authority
-- changes: 新增共享 `ReleaseQualification` 合同；scoring `SampleRunRecord` 从 current canonical descriptor 与 generation result 派生 qualification，perturbed negative 固定为 `not_applicable`，generated synthetic 固定为 hash-bound `diagnostic_only`，未认证非扰动来源固定为 `unverified`；inventory、run、report 逐层绑定并重验 qualification；readiness 同时保留 raw 与 qualified 指标，非扰动 eligibility 只读取 qualified count/recall
-- verification: 三个 generated synthetic fixture 仍独立报告 raw `n=3/recall=1`，但 qualified `n=0/recall=unavailable`；qualification、generation evidence、inventory、run 或 report computed field 漂移均 fail closed；reason code 固定为 `non_perturbed_qualified_sample_count_insufficient`；controls 仍 `not_verified`、`eligible=false`、所有 optimization refs 为空；完整固定顺序项目门禁与 gateway config validation
-- rollback: 回滚 FLYWHEEL-007 实现提交，恢复本切片前 schema、run/feedback/inventory/input/report raw-byte hash 链；不得修改 `.env`、仓外 receipt、live provider 或 cloud-egress 配置
-- blocks: FLYWHEEL-006, GEN-003
-- done_definition: 仓内 generated 诊断样本可继续证明 plumbing/recall，但不能贡献 release-qualified 非扰动门槛；本切片不生成 `qualified` authority 或 `OptimizationCandidate`，不接 WPF，不开启 cloud egress，不运行 live provider，不宣称 gateway live verified、workflow integrated 或 live accepted
-
-### task_id: FLYWHEEL-008
-
-- goal: 建立首个公开 synthetic 教师文本反馈到 `FeedbackParseResult` 的确定性、fail-closed 归因闭环
-- inputs: FLYWHEEL-004 source-run-byte authority、FLYWHEEL-007 v2 run authority、9 类根因、4 档 severity、`needs_human_label` 人工队列边界
-- changes: 新增 `TeacherFeedbackSubmission` 合同、hash-bound canonical fixture inventory 和只接受 inventory-admitted `fixtureKind=synthetic_fixture / dataClassification.level=public` 的本地 parser；固定显式短语词典，唯一非否定根因且唯一 severity 才生成 `source=teacher_input` feedback record，否则输出 `needs_human_label`、空 records 与稳定 reason code；input/result 绑定 current scoring run 与原始 bytes SHA-256；`FeedbackParseResult` 升级 v2 并以 schema `oneOf` 阻断不可能字段组合；readiness 仅迁移既有 auto-collected feedback hash，不把 teacher parse result 接入判错统计；纳入 assets 与 hotspot
-- verification: reasoning/medium 与 format/low 两条公开 synthetic 文本可确定性解析；多根因、缺根因、重复 severity、显式否定、非 public/non-synthetic、非 canonical inventory input、run/input/hash/path/output alias、junction ancestor、computed field 与 schema 状态组合漂移均 fail closed 或进入 `needs_human_label`；所有 optimization refs 为空；完整固定顺序项目门禁
-- rollback: 回滚 FLYWHEEL-008 提交；删除 teacher feedback schema/tool/eval fixtures，恢复 v1 feedback result schema、既有 auto feedback artifacts、readiness input hashes/report；不得修改 `.env`、仓外 receipt、真实教师数据、live provider 或 cloud-egress 配置
-- blocks: FLYWHEEL-004, FLYWHEEL-007
-- done_definition: 仓内能把三份公开 synthetic 教师文本分别稳定投影为两个 parsed feedback record 和一个 `needs_human_label` 结果；不声称开放域语义理解，不消费真实教师/学生数据，不接 readiness 判错统计、WPF 或云，不生成 `OptimizationCandidate`，不宣称 workflow integrated 或 live accepted
-
-### task_id: FLYWHEEL-009
-
-- goal: 建立 canonical synthetic teacher feedback 的独立诊断统计闭环，使结构化率、人工分流率和归因分布可被稳定重算
-- inputs: FLYWHEEL-008 canonical teacher fixture inventory、三份 hash-bound `FeedbackParseResult`、9 类根因、4 档 severity、5 类人工分流 reason code
-- changes: 新增 provider-neutral `TeacherFeedbackDiagnosticReport` schema/compiler；逐项重验 inventory/result raw-byte SHA-256 与 FLYWHEEL-008 semantic authority；输出完整 result bindings、parsed/needs-human-label 计数和比率、固定顺序 error/severity/reason 分布；CLI 只允许写入仓外非 authority 路径；将 committed report 纳入 assets semantic recompile；与 candidate readiness 完全分离
-- verification: 当前三份 fixture 稳定报告 total=3、parsed=2、needsHumanLabel=1、structuredRate=0.666667、humanLabelRate=0.333333；reasoning/format 与 medium/low 各 1，ambiguous_error_signal=1；inventory/result/report/computed field/path/output alias 漂移 fail closed，仓内 readiness 等 canonical assets 不能作为输出且 bytes 不变；optimization refs 为空；完整固定顺序项目门禁
-- rollback: 回滚 FLYWHEEL-009 提交；删除 diagnostic report schema/compiler/fixture 和对应 assets/README/策略增量；不得回滚 FLYWHEEL-008 teacher parsing authority，不得修改 readiness、`.env`、仓外 receipt、WPF、真实数据或 cloud-egress 配置
-- blocks: FLYWHEEL-008
-- done_definition: 仓内能从 canonical synthetic teacher feedback authority 确定性生成并重验一个独立诊断报告；该报告只衡量受控 fixture 的解析分流，不贡献 candidate recall、release qualification、controls、eligibility 或 `OptimizationCandidate`，不宣称真实教师反馈效果、workflow integrated 或 live accepted
-
-### task_id: FLYWHEEL-010
-
-- goal: 建立 canonical synthetic teacher feedback 的独立自动回放通过率统计闭环
-- inputs: FLYWHEEL-008 canonical teacher fixture inventory/submission/expected result authority、当前确定性 teacher parser、PRD 自动回放通过率指标
-- changes: 新增 provider-neutral `TeacherFeedbackReplayDiagnosticReport` schema/compiler；在 expected authority 的 schema/hash/path/coverage 完整性通过后逐 fixture 重放 parser，以稳定 JSON raw bytes 比较 expected/replayed result；逐项绑定 submission、expected result 与 replayed result SHA-256，统计 passed/failed/passRate；CLI 只允许写入仓外非 authority 路径；committed replay report 纳入 assets semantic recompile；与 ingestion diagnostic 和 candidate readiness 完全分离
-- verification: 当前三份 fixture 稳定报告 total=3、passed=3、failed=0、passRate=1；submission/expected/replayed/inventory/report/computed field/path/output alias 漂移 fail closed，仓内 canonical assets 不能作为输出且 bytes 不变；合法 expected/replayed bytes 不一致只能投影为 failed，不能升级 authority；optimization refs 为空；完整固定顺序项目门禁
-- rollback: 回滚 FLYWHEEL-010 提交；删除 replay report schema/compiler/fixture 和对应 parser export、assets/README/策略增量；不得回滚 FLYWHEEL-008/009 authority，不得修改 readiness、`.env`、仓外 receipt、WPF、真实数据或 cloud-egress 配置
-- blocks: FLYWHEEL-008, FLYWHEEL-009
-- done_definition: 仓内能从 canonical synthetic teacher feedback authority 确定性重放并重验一个独立 replay diagnostic report；该报告只衡量受控 fixture 的 byte-exact replay compatibility，不贡献 ingestion structured rate、candidate recall、release qualification、controls、eligibility 或 `OptimizationCandidate`，不宣称真实教师反馈效果、workflow integrated 或 live accepted
-
-## Epic GEN：答案生成主链
-
-### task_id: GEN-001
-
-- goal: 固定“生成主链与交付链分离”
-- inputs: 当前 `answer.md -> PDF/review` 真相、飞轮输入源抽象
-- changes: 在 PRD、终态蓝图、实施基线与决策日志中写明两条主链边界
-- verification: 所有文档都不再把生成主链藏在 `deliver` 里
-- rollback: 恢复旧含混叙述
-- blocks: DOC-001
-- done_definition: 生成主链成为独立 slice，而不是隐含能力
-
-### task_id: GEN-002
-
-- goal: 固定 P1 飞轮先行、生成主链后接
-- inputs: 飞轮优先级决策
-- changes: 在 roadmap、implementation plan、decision log 中写明生成主链接入时点
-- verification: P1 顺序一致
-- rollback: 恢复旧排序
-- blocks: GEN-001, FLYWHEEL-001
-- done_definition: 飞轮不会因生成主链未就绪而被阻塞
-
-### task_id: GEN-003
-
-- goal: 建立 provider-neutral、与交付链严格分离的首个确定性合成答案生成闭环，并让 `generated` 桶进入现有飞轮统计
-- inputs: GEN-001/GEN-002 边界、FLYWHEEL-003 到 FLYWHEEL-006 canonical authority 与 fail-closed readiness、完全合成 math fixture
-- changes: 新增 `AnswerGenerationRequest / AnswerGenerationResult` schema 与 `ClassroomToolkit.Domain.Generation` 合同；新增只支持三个仓内 `synthetic_fixture` 的确定性本地 generator；request/result/candidate raw bytes 以 SHA-256 和 provenance 绑定到 generated negative-candidate descriptor、sample package 与 canonical index；生成三个脱敏 generated run/feedback 并纳入 readiness inventory/report；assets/hotspot 重验生成物
-- verification: generation request 禁止 delivery 字段且结构化输出通过 schema；三个 fixture 可确定性复现并拒绝 problem/request/result/candidate/path/hash 漂移；generated scoring、feedback、bucket 独立统计为 `n=3`；controls 保持 `not_verified`、`eligible=false`、所有 optimization refs 为空；完整固定顺序项目门禁与 gateway config validation
-- rollback: 回滚 GEN-003 提交；删除本切片 generation schema/domain/tool/eval/generated canonical artifacts，恢复本切片前 sample package/index 与 readiness fixture；不得修改 `.env`、仓外 receipt 或 live provider 配置
-- blocks: GEN-001, GEN-002, FLYWHEEL-006
-- done_definition: 仓内可从 provider-neutral request 通过明确标记的 deterministic `synthetic_fixture` 生成三个 hash-bound 候选，并闭环进入 `SampleRunRecord -> FeedbackParseResult -> OptimizationReadinessReport` 的 generated 桶；不生成 `OptimizationCandidate`，不接 WPF，不开启 cloud egress，不使用真实试卷，不宣称 live gateway verified、workflow integrated 或 live accepted
-
-### task_id: GEN-004
-
-- goal: 建立从 hash-bound public problem/spec 到仓外 `answer.md` 候选的受控 model-provider runtime
-- inputs: GEN-003 provider-neutral contracts、current subject-pack spec、AI text gateway/failover、显式 public problem workspace
-- changes: additive 扩展 request instruction/egress authority、result provider/disposition provenance 与 .NET domain；新增 provider generator，要求 request/CLI/gateway 三层 cloud-egress 授权，只准入 public data，重验 problem/spec/config snapshots，支持 Responses/Chat Completions 与 retryable failover，原子写仓外 `answer.md + result.json`；固定 pending review/untrusted/not integrated
-- verification: local mocked provider payload/max tokens/failover、旧 synthetic fixtures byte-exact、schema/domain、missing egress/restricted/hash/output/input-drift/provider-disposition negative cases、assets/hotspot 与完整固定门禁
-- rollback: 回滚 GEN-004 atomic commit；删除 provider runtime/tests/strategy/evidence，恢复 additive schema/domain/gateway max-token 接口；保留 GEN-003 canonical fixtures、`.env` 与仓外用户输出
-- blocks: GEN-003
-- done_definition: 仓内具备显式执行的 provider-backed answer generation runtime，并能生成固定待复核的仓外候选；只证明 repo-side provider plumbing，不构成真实 provider/live gateway verified、答案正确、review approval、WPF default workflow、workstation/live accepted，不生成 `OptimizationCandidate`
-
-### task_id: GEN-005
-
-- goal: 把 GEN-004 受控 provider runtime 接入 WPF，并保持生成、交付、review/trust 三个动作边界可审计
-- inputs: GEN-004 provider runtime、`ProviderAnswerGenerationExecutionRequest/Result`、现有 `answer.md -> PDF/review` WPF 交付入口
-- changes: 新增 WPF request/workspace/config/仓外新目录选择与显式 cloud-egress consent；浏览/准备不 dispatch，Generate command 才调用 orchestrator；orchestrator 启动前验证 consent/path/bounds，退出后重验 request/candidate hash、identity、provider provenance 与 pending-review disposition；成功只回填现有答案/subject-pack 输入，交付仍需独立命令
-- verification: 缺失 consent 零 dispatch、中文/空格路径、参数顺序、provider failure、tampered result、stale generated state、生成与交付分离、AutomationId/XAML contract、原生 WPF UI Automation 观察与完整固定门禁
-- rollback: 回滚 GEN-005 atomic commit；删除 additive domain/application/orchestrator/ViewModel/XAML/tests/strategy/evidence，保留 GEN-004 runtime、`.env` 与任何仓外用户输出
-- blocks: GEN-004, REVIEW-002
-- done_definition: WPF 可显式调用 provider 生成并把固定 pending-review/untrusted 候选送入既有交付输入，且不会自动交付或提升 trust；只证明 repo-side workflow integrated，不构成真实 gateway verified、答案正确、review approval、workstation/live accepted，不生成 `OptimizationCandidate`
-
-## Epic VISION：视觉双轨与 evidence
-
-### task_id: VISION-001
-
-- goal: 固定视觉对象与 Track A / Track B 口径
-- inputs: 视觉专项设计、现有 figure schema
-- changes: 重写 `visual-first-answering-architecture.md`
-- verification: 聚合层与既有 schema 的关系清楚
-- rollback: 恢复旧文档
-- blocks: DOC-001
-- done_definition: 视觉专项不再只有原则，没有对象模型
-
-### task_id: VISION-002
-
-- goal: 固定 Word / 图片 / PDF 输入边界
-- inputs: 输入适配讨论结论
-- changes: 在实施基线、roadmap、专项文档中写明 P1 Word degraded-supported、P2 原生解析
-- verification: 所有文档对 Word 的 P1 边界一致
-- rollback: 恢复旧乐观口径
-- blocks: VISION-001
-- done_definition: P1 不因 Word 原生解析而膨胀
-
-### task_id: VISION-003
-
-- goal: 落地视觉证据编译器 schema 契约
-- inputs: 视觉专项设计、现有 `problem-figure-asset`、`figure-understanding-result`、review/trust 状态语义
-- changes: 新增 `normalized-page / visual-region / problem-evidence-bundle / track-result / decision-record` schema，并纳入 `validate:assets`
-- verification: 聚焦 contract test 通过，`validate:assets` 校验 schema 元数据通过
-- rollback: 删除新增 schema，恢复 `validate-assets.mjs` 与对应 contract test
-- blocks: VISION-001
-- done_definition: 每个视觉小问都能用 schema 表达 `questionRef -> figureRef -> cropRef -> evidenceRef`、三轨候选、风险分类和 fail-closed 决策
-
-### task_id: VISION-004
-
-- goal: 建立高风险看图错误难例库
-- inputs: VISION-003/005 的 `ProblemEvidenceBundle / TrackResult / DecisionRecord` 合同与离线编译器、三个 subject-pack 的仪表读数/函数图/多图绑定/电路实验规则、完全合成且脱敏的 visual-risk fixture
-- changes: 新增 provider-neutral `VisualRiskCaseInventory / VisualRiskDiagnosticReport` schema 与确定性离线 compiler；建立 6 个明确标记 `synthetic_fixture` 的 canonical cases，每个 subject-pack 各 2 个，覆盖高风险 expected review、稳定或歧义图号/小问绑定、OCR/原图冲突或 validator block；inventory 逐项绑定 evidence/track/expected-decision raw-byte SHA-256，compiler 重放当前 DecisionRecord 并与 expected bytes 比较，再按 subject-pack 独立统计高风险误放行率、正确标疑召回率、图号/小问绑定准确率和 replay 通过率；纳入 `validate:assets` 与 visual-evidence hotspot
-- verification: canonical inventory 的 schema/hash/path/exact coverage 完整且 6/6 replay byte-exact；三个 subject-pack 各自 `falseReleaseRate=0`、`correctFlagRecall=1`、`bindingAccuracy=1`、`replayPassRate=1`；binding unstable 与 OCR/image conflict 产生显式 fail-closed reason；任一 authority hash/path/coverage/report computed field 漂移均阻断；完整固定顺序项目门禁
-- rollback: 回滚 VISION-004 实现提交；删除 visual-risk inventory/report schema、compiler/test/fixtures/report，恢复 DecisionRecord reason 投影、`validate-assets.mjs`、`package.json`、`check-toolchain.ps1`、eval README 与策略/证据增量；不得回滚 VISION-003/005/006、修改 `.env`、WPF、gateway、readiness receipt 或 cloud-egress 配置
-- blocks: VISION-003
-- done_definition: 仓内可从 raw-byte-bound canonical synthetic authority 确定性重放并按 subject-pack 报告高风险视觉误放行、正确标疑和绑定准确率；该诊断只证明 repo-side fixture 合同行为，`optimizationCandidateRefs=[]`、readiness controls 保持 `not_verified`、`eligible=false`，不宣称真实图像/VLM 质量、gateway live verified、workflow integrated 或 live accepted
-
-### task_id: VISION-005
-
-- goal: 建立显式视觉探针与最小 fail-closed 决策编译闭环
-- inputs: `tools/ai-gateway` 文本主备切换、`track-result.schema.json`、`decision-record.schema.json`、`eval/visual-evidence/`
-- changes: 新增 `request:vision` 显式 synthetic 图片探针，新增 `tools/visual-evidence` 离线 `DecisionRecord` 编译器，并纳入 `check-toolchain`
-- verification: `npm --prefix tools/ai-gateway run test:vision`、`npm --prefix tools/visual-evidence run test:decision`、`scripts/check-toolchain.ps1`
-- rollback: 删除 `vision-request.mjs`、`tools/visual-evidence/`、对应 README/strategy 文档和 check-toolchain 接入
-- blocks: VISION-003
-- done_definition: 双轨一致但证据缺失的样例可由运行时代码推导为 `review_required`、`trusted=false`，且视觉 live 探针只作为 gateway verified 边界，不升级为 workflow integrated
-
-### task_id: VISION-006
-
-- goal: 建立交付题目覆盖证明与 delivery-level DecisionRecord 聚合合同
-- inputs: `sample-package.expectedQuestionRefs`、delivery manifest、snapshot/input bytes、题目级 DecisionRecord
-- changes: 新增 `DeliveryQuestionCoverage / DeliveryDecisionAggregate` schema、SHA-256 delivery binding、离线聚合编译器、合成完整覆盖 fixture 和 fail-closed 测试；纳入 `validate:assets` 与 `check-toolchain`
-- verification: visual-evidence aggregate 聚焦测试、静态 fixture 确定性重编译、cross-subject contract、完整项目门禁
-- rollback: 删除两个 schema、aggregate 工具/fixture/测试，回滚 DecisionRecord/ProblemEvidenceBundle 可选 binding、validator/hotspot 和 strategy/evidence 修改
-- blocks: VISION-005, SAMPLE-001
-- done_definition: 对 schema-valid sample-package inventory，仓内可证明 snapshot/input/manifest bytes 与逐题 DecisionRecord 的完整覆盖并生成离线 aggregate；不修改 delivery manifest，不开放 WPF 正向 trust，不宣称真实试卷 inventory 或 live acceptance 已完成
-
-### task_id: VISION-007
-
-- goal: 建立 provider-neutral、显式坐标驱动的首个本地图像预处理与多尺度 crop 闭环
-- inputs: `NormalizedPage / VisualRegion` 合同、三个 subject-pack、现有 `tools/ocr/.venv` OpenCV/Pillow runtime、完全合成且公开的 bitmap fixtures
-- changes: 新增 `VisualPreprocessingRequest / VisualPreprocessingResult / VisualPreprocessingCaseInventory` schema 和确定性本地 runtime；canonical inventory 逐项绑定 source/request/expected result raw-byte SHA-256 与 decoded RGB pixel SHA-256；只接受 integer `page_pixel` bbox、scales `[1,2]`、`synthetic_fixture/public` 和 `allowCloud=false`，原子输出 1x 像素保持 crop、固定插值 2x crop 与 engine provenance；三个 subject-pack 各一份脱敏 synthetic fixture；纳入 assets 与 hotspot
-- verification: 三 case 可 byte/hash-bound 确定性重放；schema/inventory coverage、path containment/physical alias、source/request/output raw-byte hash、decoded-pixel hash、bbox/scale/dimension/interpolation/provenance/computed-field 漂移和仓内输出均 fail closed；完整固定顺序项目门禁
-- rollback: 回滚 VISION-007 实现提交并删除本切片 schema/tool/fixture/expected artifact、validator/hotspot、strategy/evidence 增量；不得修改 `.env`、`tools/ocr/.venv`、gateway、既有 visual authority、readiness receipt 或 canonical sample
-- blocks: VISION-003
-- done_definition: 仓内可从显式 bbox 对三个公开 synthetic bitmap 确定性生成并重验 1x/2x crop；只证明 repo-side preprocessing contract，不做 OCR/layout 语义、自动 region 检测、Track A/B/C 求解、WPF/gateway/trust/readiness/optimizer 集成，controls 保持 `not_verified`、`eligible=false`，不宣称 workflow integrated 或 live accepted
-
-### task_id: VISION-008
-
-- goal: 建立 provider-neutral、只产生非语义候选图元的首个本地结构抽取闭环
-- inputs: VISION-007 committed preprocessing inventory/result 与 2x crop、现有 `VisualRegion / FigureUnderstandingResult / TrackResult` 边界、OpenCV/Pillow runtime
-- changes: 新增 `VisualStructureExtractionRequest / Result / CaseInventory` schema 和 deterministic local extractor；固定 threshold/connected-components/Canny/Hough 参数，输出规范化 `LineSegmentCandidate / ConnectedRegionCandidate / TextRegionCandidate` 与 engine provenance；三学科各一个 canonical case，逐层绑定 preprocessing result、crop、request/result raw bytes 与 decoded pixel hash；固定 `ocrDisposition=not_attempted / semanticDisposition=not_inferred / trackDisposition=not_integrated`；纳入 assets 与 hotspot
-- verification: 三 case 非空且 expected result byte-exact replay；1x/未知 crop、caller inventory、path/alias、source/request/result/pixel hash、algorithm parameter、排序/id/count/computed-field、OCR/semantic/track disposition 漂移 fail closed；完整固定顺序项目门禁
-- rollback: 回滚 VISION-008 实现提交并删除本切片 schema/tool/request/result/inventory、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007 PNG/preprocessing authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
-- blocks: VISION-007
-- done_definition: 仓内能从三个 canonical 2x synthetic crops 确定性生成并重验非语义 line/region/text candidates；只证明 repo-side structural extraction plumbing，不构成 OCR、layout semantics、FigureUnderstandingResult、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-009
-
-- goal: 建立 provider-neutral、明确不作正确性验收的首个本地 OCR observation 闭环
-- inputs: VISION-007 committed preprocessing result 与 scale=2 crop、同 case VISION-008 committed structure result、现有 `tools/ocr/.venv` RapidOCR/ONNX Runtime/OpenCV/Pillow runtime
-- changes: 新增 `VisualOcrObservationRequest / Result / CaseInventory` schema 和 deterministic local observer；冻结 CPython、whole-crop RapidOCR parameters、direct/transitive component versions、三个 CPU execution sessions 与三份 bundled ONNX model raw-byte SHA-256；对已校验 crop bytes 直接 inference，规范化 raw observed text/confidence/quad/order/count，允许零 observation；三学科各一个 canonical case，固定 ground truth unavailable、not evaluated、requires human review、semantic/Track not integrated；纳入 assets 与 hotspot
-- verification: 三 case 在 admitted runtime/model hashes 上 expected result byte-exact replay；caller inventory、非 canonical request、path/alias、preprocessing/crop/structure/request/result/model/config/version hash、positive acceptance/ground-truth/semantic/Track/cloud/live state、ordering/count/computed-field 和仓内输出漂移均 fail closed；完整固定顺序项目门禁
-- rollback: 回滚 VISION-009 实现提交并删除本切片 schema/tool/request/result/inventory、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
-- blocks: VISION-007, VISION-008
-- done_definition: 仓内能诚实记录并重验三个 canonical synthetic crop 的 RapidOCR observation，包括空结果和错误文本；只证明 repo-side OCR observation plumbing，不构成 OCR correctness/acceptance、layout semantics、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-010
-
-- goal: 建立 provider-neutral、明确不作匹配或 layout 推断的首个本地空间 observation 闭环
-- inputs: VISION-008 committed `TextRegionCandidate` results、same-case VISION-009 committed OCR observation results、两者共同绑定的 VISION-007 scale=2 crop
-- changes: 新增 `VisualSpatialObservationRequest / Result / CaseInventory` schema 和 deterministic local observer；穷举 text-region bbox 与 OCR quad 的 axis-aligned geometry，输出规范化 intersection area、双方覆盖率、中心距平方和 geometry-only relation；固定 association 未决定、layout/semantic 未推断、Track 未集成、需人工复核；三个 subject-pack 各一个 canonical case；纳入 assets 与 hotspot
-- verification: 三 case expected result byte-exact replay；Cartesian coverage、排序/舍入、structure/OCR/crop/request/result raw-byte hash、path/alias、bounds、relation/computed fields、positive association/layout/semantic/Track/cloud/live state 和仓内输出漂移均 fail closed；完整固定顺序项目门禁
-- rollback: 回滚 VISION-010 实现提交并删除本切片 schema/tool/request/result/inventory、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
-- blocks: VISION-008, VISION-009
-- done_definition: 仓内能诚实记录并重验三个 canonical synthetic case 的 exhaustive spatial measurements，包括零测量和 disjoint；只证明 repo-side geometry plumbing，不构成 OCR-region matching、layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-011
-
-- goal: 建立 generator-declared synthetic text truth 与首个按 subject-pack 独立统计的 OCR diagnostic 闭环
-- inputs: VISION-007 deterministic renderer 的显式 text/coordinate declarations 与 committed source/crop authority、VISION-009 committed OCR observation results
-- changes: 新增 `VisualSyntheticTextTruth / VisualOcrDiagnosticCaseInventory / VisualOcrDiagnosticReport` schema 和 deterministic local compiler；truth 逐项绑定 renderer/source/crop raw bytes 与 decoded pixel hash，固定 fully-visible/partially-clipped/outside visibility；仅以 exact case-sensitive text + positive bbox intersection 做一对一 diagnostic matching；三个 subject-pack 各一个 canonical case并独立报告 precision/recall availability、false negative/positive 与 unscored partial observations；纳入 assets 与 hotspot
-- verification: 三 case report expected bytes deterministic replay；renderer/source/crop/OCR/truth/inventory/report raw-byte hash、path/alias、visibility/bounds、duplicate labels、matching/order、zero denominator availability、counts/ratios/dispositions、cloud/live/acceptance/layout/semantic/Track positive state 和仓内输出漂移均 fail closed；完整固定顺序项目门禁
-- rollback: 回滚 VISION-011 实现提交并删除本切片 schema/tool/truth/inventory/report、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009/010 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
-- blocks: VISION-007, VISION-009
-- done_definition: 仓内能从 generator-declared synthetic truth 与 canonical OCR observations 确定性报告三个 subject-pack 的 exact-text 漏检/误检诊断；只证明冻结 synthetic fixture diagnostics，不构成人工 truth、真实 OCR benchmark、OCR acceptance、association/layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-012
-
-- goal: 建立 generator-declared synthetic truth 与 heuristic text-region candidate 的首个按 subject-pack 独立统计闭环
-- inputs: VISION-008 committed structure extraction results、VISION-011 committed synthetic text truth 与相同 canonical 2x crop authority
-- changes: 新增 `VisualTextRegionDiagnosticCaseInventory / VisualTextRegionDiagnosticReport` schema 和 deterministic local compiler；只对 fully-visible truth 与 candidate bbox 做 positive-area one-to-one diagnostic matching；partial overlap candidate 记 unscored，outside truth 不保护 candidate，ambiguous repeated overlap fail closed；三个 subject-pack 各一个 canonical case并独立报告 precision/recall availability、false negative/positive 与 unscored candidate；纳入 assets 与 hotspot
-- verification: 三 case report expected bytes deterministic replay；structure/truth/inventory/report/crop raw-byte hash、path/alias、coverage、visibility/bounds、ambiguous matching/order、zero denominator availability、counts/ratios/dispositions、cloud/live/acceptance/OCR/association/layout/semantic/Track positive state、canonical structure 与仓内输出漂移均 fail closed；完整固定顺序项目门禁
-- rollback: 回滚 VISION-012 实现提交并删除本切片 schema/tool/inventory/report、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009/010/011 authority、`.env`、OCR venv、gateway、readiness receipt 或 canonical samples
-- blocks: VISION-008, VISION-011
-- done_definition: 仓内能从 generator-declared synthetic truth 与 canonical heuristic text-region candidates 确定性报告三个 subject-pack 的 spatial proposal 漏检/误检诊断；只证明冻结 synthetic fixture diagnostics，不构成人工 truth、真实 region benchmark、recognized text、OCR-region association、layout semantics、FigureUnderstanding、Track B、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-013
-
-- goal: 建立三份公开 synthetic crop 的透明 machine-equivalent visual review receipt 与按 subject-pack 独立统计闭环
-- inputs: VISION-007 committed preprocessing result、canonical scale=2 crop、当前 AI 直接图像检查与 Windows image-viewer Computer Use observation
-- changes: 新增 `VisualMachineReviewReceipt / CaseInventory / Report` schema 和 deterministic validator/compiler；receipt 固定 `ai_agent / humanReviewed=false / unattested_local_machine_review / synthetic_fixture_equivalent / synthetic_fixture_diagnostic`，记录完整视觉 checks、verdict 与 known limitations；三个 subject-pack 各一个 current receipt；纳入 assets 与 hotspot
-- verification: 三 case report expected bytes deterministic replay；preprocessing/crop/receipt/inventory/report raw-byte hash、decoded pixel hash、dimensions、reviewer/equivalence policy、check coverage、known limitations、computed counts、path/alias/structure、staged output、delivery/WPF/live/trust positive state drift均 fail closed；AI 直接视觉检查和 Windows image-viewer observation；完整固定顺序项目门禁
-- rollback: 回滚 VISION-013 实现提交并删除本切片 schema/tool/inventory/receipt/report、validator/hotspot、strategy/evidence 增量；不得修改 VISION-007/008/009/010/011/012 authority、`.env`、OCR venv、gateway、delivery/review authority、readiness receipt 或 canonical samples
-- blocks: VISION-007, VISION-011, VISION-012
-- done_definition: 仓内能证明三份公开 synthetic crop 已由透明标记的 AI reviewer 完成 hash-bound visual review，并仅在 `synthetic_fixture_diagnostic` 内等效替代人工检查；`humanReviewed=false`，不写 `humanApproved`，不构成真实数据验收、delivery trust、WPF workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-014
-
-- goal: 建立 provider-neutral、确定性、fail-closed 的 synthetic OCR-region association policy diagnostic
-- inputs: VISION-008 committed text-region candidates、VISION-009 committed OCR observations、VISION-010 exhaustive spatial measurements，以及只用于阻断 truth/correctness 提升的 VISION-011 边界
-- changes: 新增 `VisualOcrRegionAssociationRequest / Result / CaseInventory / Report` schema 和 local deterministic compiler；只选择双向唯一、positive-area、non-disjoint measurement，歧义 fail closed；三个 subject-pack 各一个 canonical case，按学科独立统计 matched/unmatched/ambiguous/unavailable；当前 frozen authority 诚实保留 math/senior unavailable、junior unmatched、零 canonical match；正向/歧义只作为非权威 policy 单元回归；纳入 assets 与 hotspot
-- verification: request/result/inventory/report expected bytes deterministic replay；structure/OCR/spatial/crop raw-byte hash、decoded pixel hash/dimension、path/alias/snapshot/Cartesian coverage/staged promotion/computed field/positive layout-semantic-Track-live-cloud state 漂移 fail closed；至少一个 policy-level unique success、一个 canonical empty observation unavailable、一个 policy-level ambiguity conflict fail closed；零分母显式 unavailable；完整固定顺序项目门禁
-- rollback: 回滚 VISION-014 实现提交并删除本切片 schema/tool/request/result/inventory/report、validator/hotspot、README/strategy/evidence 增量；不得修改 VISION-007/008/009/010/011/012/013 authority、`.env`、OCR venv、gateway、delivery/review authority、readiness receipt 或 canonical samples
-- blocks: VISION-008, VISION-009, VISION-010, VISION-011
-- done_definition: 仓内能从 canonical synthetic authority 确定性重算 provider-neutral association policy outcome，并诚实报告两例 unavailable、一例 unmatched、零 matched；仅证明 repo-side policy plumbing，不构成 OCR truth/correctness、真实 association benchmark、layout semantics、FigureUnderstanding、Track B、delivery trust、WPF/workflow 或 live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-015
-
-- goal: 在不改写原三份 source/crop 与 preprocessing/structure/OCR/spatial/association case request/result 的前提下，建立首个具有诚实 canonical 正向 OCR-region association 的公开 synthetic 诊断闭环
-- inputs: VISION-007 deterministic renderer/preprocessing、VISION-008 structure candidates、VISION-009 RapidOCR observation、VISION-010 exhaustive geometry、VISION-011/012 synthetic truth diagnostics、VISION-013 machine review、VISION-014 bidirectional-uniqueness policy
-- changes: 先在仓外临时目录执行 risk-first probe，只有 exact OCR text、唯一 eligible text-region candidate、positive-area overlap 与双向唯一 association 同时成立才扩展八级 canonical authority；新增 fixture 的 source/crop/request/result/inventory/report 全链绑定 canonical path、physical identity、raw-byte SHA-256、upstream bytes 和本地 engine provenance；前三份 source/crop 与 case request/result bytes 保持不变，renderer-bound truth 合法重签；新增 machine review 固定 `ai_agent / humanReviewed=false / synthetic_fixture_diagnostic`；assets/hotspot 重放新增 case
-- verification: probe 前后 tracked tree 一致；两次临时全链 materialization byte-exact；八个 focused package suites/validators；existing unavailable/unmatched cases 不变；positive/disjoint/unavailable/many-to-one/one-to-many、hash/path/alias/TOCTOU/staged-output tamper fail closed；完整固定顺序项目门禁
-- rollback: 先回滚 VISION-015 evidence，再回滚 atomic implementation 和 strategy commits；删除新增 case 与 inventory/report/hotspot/README/strategy 增量，并恢复 renderer-bound truth；保留原三份 source/crop 与 preprocessing/structure/OCR/spatial/association case request/result bytes、`.env`、OCR 环境、gateway、delivery/review、readiness、flywheel 与 canonical sample authority
-- blocks: VISION-007, VISION-008, VISION-009, VISION-010, VISION-011, VISION-012, VISION-013, VISION-014
-- done_definition: 仓内可从 current canonical bytes 确定性重算一个公开 synthetic 正向 association，并保留前三份负向结果；只证明 positive association plumbing，不构成真实 OCR/region/association precision 或 recall、layout/subject semantics、FigureUnderstanding、Track B、delivery trust、WPF/workflow、live gateway 或 real-data acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-016
-
-- goal: 建立首个由独立 declaration 与精确 synthetic evidence triangle 驱动的 semantic-role projection 诊断
-- inputs: VISION-011 `truth-label-001 -> ocr-observation-001` exact-text positive match、VISION-012 `truth-label-001 -> text-region-001` unique positive overlap、VISION-014 `ocr-region-association-001`，以及 VISION-009 绑定 OCR observation text
-- changes: 新增 declaration/request/result/inventory/report schema 与 local deterministic projector；角色只来自 explicit declaration，recognized text 只来自绑定 OCR result；固定 canonical root、raw-byte/hash/crop/path/physical identity/TOCTOU/staged-output 守卫；只准入 `junior-readable-measurement / measurement_reading`；纳入 assets 与 hotspot
-- verification: canonical result/report byte-exact replay；missing/duplicate/crossed truth/observation/candidate/association、unavailable/unmatched/ambiguous、recognized-text source、hash/path/alias/crop/computed-field/disposition、TOCTOU/staged tamper、external atomic output/repository output rejection均 fail closed；完整固定顺序项目门禁
-- rollback: 先回滚 VISION-016 evidence，再回滚 docs/integration/canonical/runtime/schema/design commits；删除本切片 tool/eval/schema/validator/hotspot/strategy 增量，保留 VISION-007 至 VISION-015 authority、`.env`、OCR 环境、gateway、delivery/review、readiness、flywheel 与 canonical sample authority
-- blocks: VISION-011, VISION-012, VISION-014, VISION-015
-- done_definition: 仓内可从 current canonical bytes 确定性重算一份显式 `measurement_reading` projection，且角色和 recognized text 来源独立；只证明 public synthetic semantic projection plumbing，不构成数值/单位理解、layout semantics、FigureUnderstanding、ProblemEvidenceBundle、TrackResult、answer candidate、solver result、delivery trust、WPF/workflow、gateway live 或 real-data/live acceptance，controls 保持 `not_verified`、`eligible=false`，不生成 `OptimizationCandidate`
-
-### task_id: VISION-017
-
-- goal: 建立首份由独立 public synthetic question/evidence authority 和 VISION-016 projection 驱动的 deterministic `ocr_layout_solver` TrackResult
-- inputs: VISION-016 `measurement_reading / recognizedText=12` projection、独立 question identity/crop/quantity/unit authority、现有 `ProblemEvidenceBundle / TrackResult` canonical contracts
-- changes: 新增 `VisualSyntheticQuestion` 与 `OcrLayoutSolverRequest` schema、question/evidence/request/Track B canonical artifacts 和 local deterministic compiler；ProblemEvidenceBundle 显式绑定 question/projection raw bytes；TrackResult 独立记录 question binding、quantity/unit interpretation、solver/candidate provenance 和 blocking review disposition；纳入 assets 与 hotspot
-- verification: positive `12 cm` provenance、question bytes、unit token、numeric grammar、semantic role、bundle/request/hash/crop binding、canonical byte-exact replay、fixed canonical request、external atomic output 与 repository-output rejection均 fail closed；完整固定顺序项目门禁
-- rollback: 先回滚 VISION-017 evidence，再回滚 strategy/integration/canonical/schema/runtime/tests；删除本切片 schema/tool/eval/validator/hotspot/strategy 增量，保留 VISION-007 至 VISION-016 authority、`.env`、OCR 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
-- blocks: VISION-016
-- done_definition: 仓内可从 current canonical bytes 确定性重算一份 question-bound、quantity/unit-source-separated、provenance-complete 的 synthetic Track B candidate，且固定 `review_required / trusted=false / controls=not_verified / eligible=false`；只证明 repo-side synthetic solver plumbing，不构成通用 question/quantity/unit understanding、Track C、DecisionRecord acceptance、真实答案质量、WPF workflow、gateway live、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
-
-### task_id: VISION-018
-
-- goal: 建立首份独立消费 VISION-016/017 current authority 的 deterministic synthetic Track C validator
-- inputs: VISION-017 question、ProblemEvidenceBundle、OCR layout solver request、Track B 与 VISION-016 semantic projection 五份 raw-byte authority，现有 `ConsistencyReport / TrackResult` contracts
-- changes: 新增 `SyntheticTrackValidatorRequest` schema、七项 fixed check policy、request/ConsistencyReport/Track C canonical artifacts 与 local deterministic compiler；semantic mismatch 形成 blocking findings，stale hash/path/junction/output drift fail closed；纳入 assets 与 hotspot
-- verification: question/evidence、quantity/unit、numeric/answer format、semantic/solver provenance、review boundary 的 pass/blocking mutations，request hash drift、3 artifact byte-exact replay、external atomic directory、existing/repository/junction output rejection；完整固定顺序项目门禁
-- rollback: 先回滚 VISION-018 evidence，再回滚本切片 strategy/integration/canonical/schema/runtime/tests；保留 VISION-007 至 VISION-017 authorities 与 commit `c291f9d`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
-- blocks: VISION-017
-- done_definition: 仓内可从五份 current raw-byte authority 确定性重算七项 synthetic Track C consistency checks、一份 ConsistencyReport 与一份 `rule_validator` TrackResult；canonical checks pass 仍固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side limited consistency validation，不构成真实 grounding、Track orchestration、DecisionRecord acceptance、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
-
-### task_id: VISION-019
-
-- goal: 建立首个实际消费 independent Track A/B/C source artifacts、复用 canonical DecisionRecord compiler 的 provider-neutral synthetic orchestration runtime
-- inputs: VISION-017 question/ProblemEvidenceBundle/Track B、VISION-018 Track C、同 question 的独立 public synthetic Track A、现有 `TrackResult / DecisionRecord` contracts
-- changes: 新增 `TrackOrchestrationRequest / Report` schema、raw-byte/path/type/question/bundle source admission、fixed A/B/C inventory、A/B normalized comparison、独立 complete/degraded 与 Track C/source-blocking 投影、external atomic report+DecisionRecord runtime；DecisionRecord compiler 增加 required-track evidence-loss 输入并导出同一 normalization helper；纳入 hotspot
-- verification: three-track agreement、A/B conflict、missing A、missing C while agreement、Track C blocking、source hash/question/duplicate/required-set shrink drift、4 artifact byte-exact replay、external request、existing/repository/junction output rejection；完整固定顺序项目门禁
-- rollback: 先回滚 VISION-019 evidence，再回滚本切片 strategy/hotspot/canonical/schema/runtime/tests 与 DecisionRecord additive hook；保留 VISION-007 至 VISION-018 authorities、commits `c291f9d`/`9c0d4f5`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 canonical samples
-- blocks: VISION-017, VISION-018
-- done_definition: 仓内可从 current raw bytes 准入一组 public synthetic Track A/B/C，独立报告 candidate agreement/conflict、track degradation、Track C 与全源 blocking findings，并通过既有 compiler 生成 fail-closed DecisionRecord；canonical result 固定 `review_required / trusted=false / controls=not_verified / eligible=false`，只证明 repo-side orchestration/evidence-compiler runtime，不构成真实 provider Track A/B/C、答案批准、workflow integrated、gateway verified、workstation accepted 或 live accepted，不生成 `OptimizationCandidate`
-
-### task_id: VISION-020
-
-- goal: 在自动区域提议前建立首个 provider-neutral、确定性的 public synthetic captured-page normalization authority
-- inputs: VISION-007 `junior-readable-measurement.source.png` current raw bytes、既有 `NormalizedPage` schema、local OpenCV/Pillow runtime
-- changes: 新增 `VisualPageNormalizationRequest / Result` schema 和 deterministic local normalizer；从固定透视、旋转、噪声的 720x540 synthetic capture 检测最大外部凸四边形，透视/方向校正并 median denoise 到 560x360；绑定 request/capture/output raw-byte 与 decoded-pixel hash、geometry/corrections/engine provenance；external atomic PNG+result runtime 在 promotion 前重验 staging 与 canonical input snapshots；focused tests 只读 canonical authority；纳入 assets 与 hotspot
-- verification: positive page detection、no-page/policy/capture drift、noncanonical request、canonical byte-exact replay、existing/repository/junction output、staging tamper、schema、visual capture/normalized inspection 与完整固定顺序项目门禁
-- rollback: 回滚 VISION-020 atomic commit，删除本切片 schema/tool/canonical artifacts/EOL/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-019 authorities 与 commits `c291f9d`/`9c0d4f5`/`c09886b`、`.env`、OCR/renderer 环境、gateway、delivery/review、readiness、WPF、flywheel 与 prior samples
-- blocks: VISION-007, VISION-019
-- done_definition: 仓内可从 current public synthetic source 确定性生成一份具有透视/旋转/噪声的 capture，并检测、校正、重放一份 hash-bound `NormalizedPage`；canonical `regionRefs=[]` 且固定 human review required、not accepted、controls not verified、`eligible=false`，只证明 repo-side synthetic page-normalization plumbing，不构成自动区域检测、真实照片质量、OCR/layout/semantic correctness、Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
-
-### task_id: VISION-021
-
-- goal: 在 VISION-020 稳定 normalized coordinate authority 上建立首个 provider-neutral automatic region proposal runtime
-- inputs: VISION-020 normalization result 与 normalized PNG current raw bytes、既有 OpenCV/Pillow local runtime
-- changes: 新增 `VisualRegionProposalRequest / Result` schema 和 deterministic local proposer；固定 page inset/threshold/3x3 close/8-connectivity/min-area/padding/max-count/order，从 560x360 normalized page 输出 `heuristicOnly` content-block candidates 与 diagnostic-only overlay；候选不复用 semantic `VisualRegion.regionType`；external atomic overlay+result runtime 在 promotion 前重验 staging 与 upstream snapshots；纳入 assets 与 hotspot
-- verification: exact two candidates/field inventory/bbox-area-coverage、empty page、policy/upstream hash、noncanonical request、existing/repository/junction output、staging tamper、canonical byte-exact replay、schema、overlay visual inspection 与完整固定顺序项目门禁
-- rollback: 回滚 VISION-021 atomic commit，删除本切片 schema/tool/canonical artifacts/EOL/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-020 authorities 与 commits `c291f9d`/`9c0d4f5`/`c09886b`/`26f1238`、`.env`、local environments、gateway、delivery/review、readiness、WPF、flywheel 与 prior samples
-- blocks: VISION-020
-- done_definition: 仓内可从 current VISION-020 normalized bytes 确定性重算两个 nonsemantic content-block proposals 与一份 diagnostic overlay；canonical 固定 `heuristicOnly / semanticDisposition=not_inferred / visualRegionDisposition=not_generated / controls=not_verified / eligible=false`，只证明 repo-side synthetic automatic proposal plumbing，不构成 region precision/recall、question/figure/text/axis/table 语义、`VisualRegion` authority、OCR/Track/workflow integration、gateway/workstation 或 live acceptance，不生成 `OptimizationCandidate`
-
-### task_id: VISION-022
-
-- goal: 从 VISION-021 admitted nonsemantic proposals 确定性生成 1x/2x local crops
-- inputs: VISION-021 result 与 VISION-020 normalized PNG current bytes
-- changes: 新增 local-crop request/result schema、runtime 与四张 proposal-bound PNG；1x pixel-preserving、2x nearest；external atomic five-output bundle；纳入 assets/hotspot
-- verification: proposal/hash/bbox/scale/dimensions/pixel/replay/path/junction/tamper 与完整固定门禁
-- rollback: 回滚 VISION-022 atomic commit，保留 VISION-007 至 VISION-021 与 `4c302bb`
-- blocks: VISION-021
-- done_definition: 两个 proposals 各生成 1x/2x hash-bound crops；仅证明 synthetic local crop plumbing，不构成细节恢复、semantic `VisualRegion`、OCR/Track/workflow/live acceptance，controls not verified、`eligible=false`
-
-### task_id: VISION-023
-
-- goal: 由独立 public synthetic declaration 建立首个 proposal/crop-bound 的有限 VisualRegion 语义编译闭环
-- inputs: VISION-021 proposal result、VISION-022 local-crop result 与四份 actual crop bytes、既有 `VisualRegion` contract
-- changes: 新增 declaration/request/result schema、deterministic local compiler 和两份有限 region semantics；只声明 reading block 与 scale baseline，固定 inference 未执行、question binding 未建立、Track 未集成、answer 未生成；external atomic result runtime；纳入 assets/hotspot
-- verification: exact two regions、proposal/bbox/1x/2x crop raw-byte/pixel/dimension/interpolation binding、crossed/duplicate/missing refs、unsupported role/type、trust escalation、canonical replay、existing/repository/junction output、staging tamper、完整固定门禁
-- rollback: 回滚 VISION-023 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-022 authorities 与 `da7e6c6`
-- blocks: VISION-021, VISION-022
-- done_definition: 仓内可从 current declaration/proposal/crop bytes 确定性重算两份有限 VisualRegion；只证明 explicit synthetic semantics compilation，不构成自动分类、通用 axis/table/tick/legend 理解、question binding、FigureUnderstanding、OCR/Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
-
-### task_id: VISION-024
-
-- goal: 由独立 public synthetic declaration 建立首个 structure/crop-bound 的有限刻度组件语义编译闭环
-- inputs: VISION-008 `junior-instrument-scale` current structure result、VISION-007 current preprocessing result 与 actual 2x crop、独立 component declaration
-- changes: 新增 declaration/request/result schema、deterministic local compiler 和六份有限 component semantics；只显式声明一组 pointer edge pair 与五组 major-tick edge pairs，固定 inference 未执行、scale interpretation/reading/FigureUnderstanding 未生成、question/Track/answer 未绑定；external atomic result runtime；纳入 assets/hotspot
-- verification: exact component/type/order/pair inventory、structure/preprocessing/crop raw-byte/pixel/dimension binding、candidate uniqueness/segment geometry/computed bbox、crossed/duplicate/unsupported declaration、trust escalation、canonical replay、existing/repository/junction output、staged tamper、input snapshot 与完整固定门禁
-- rollback: 回滚 VISION-024 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-023 authorities 与 `3f5136b`
-- blocks: VISION-007, VISION-008, VISION-023
-- done_definition: 仓内可从 current declaration/structure/preprocessing/crop bytes 确定性重算一组 pointer 与五组 major ticks；只证明 explicit synthetic component grouping compilation，不构成自动检测、量程/分度值/数值/读数理解、FigureUnderstanding、Track/answer/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
-
-### task_id: VISION-025
-
-- goal: 在 VISION-024 component authority 上建立首个 relative-only synthetic scale-lattice 编译闭环
-- inputs: VISION-024 current component result、VISION-008 current structure result、独立 scale-lattice declaration
-- changes: 新增 declaration/request/result schema、deterministic doubled-pixel compiler；声明 major/minor tick slot inventory 与 5 subdivisions/major interval，runtime 重验 geometry 并推导 pointer relative subdivision index；physical quantity/unit/answer 固定未生成；external atomic result runtime；纳入 assets/hotspot
-- verification: exact major/minor/source inventory、regular spacing、half-pixel tolerance、pointer index derivation、physical-null/trust escalation、source hash、canonical replay、existing/repository/junction output、staged tamper、input snapshot 与完整固定门禁
-- rollback: 回滚 VISION-025 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-024 authorities 与 `c7bc7b2`
-- blocks: VISION-008, VISION-024
-- done_definition: 仓内可从 current declaration/component/structure bytes 确定性重算 relative scale lattice 与 pointer index 11；只证明 public synthetic relative geometry plumbing，不构成物理量/单位/读数/答案理解、自动 scale detection、Track/trust/workflow 或 live acceptance，controls not verified、`eligible=false`
-
-### task_id: VISION-026
-
-- goal: 建立首个严格受限的 public synthetic image-backed DOCX 到 `NormalizedPage` 编译闭环
-- inputs: 一份 canonical 单页/单内部 PNG DOCX、预期 PNG raw-byte/decoded-pixel hash、既有 `NormalizedPage` contract
-- changes: 新增 request/result schema、stdlib OPC/OOXML local adapter、canonical DOCX/result/page fixtures；只准入 `image_backed_single_page_only`，拒绝正文、额外段落、表格、OMML、显式分页、多图、重复/外部/linked image relationship、错误 content type 与不安全包结构；external atomic output；纳入 assets/hotspot
-- verification: exact package/image/page/hash/provenance、package count/size/path、body/relationship/content-type negative cases、positive-state escalation、canonical replay、existing/repository/junction output、staged tamper、input snapshot、DOCX render visual QA、external runtime probe 与完整固定门禁
-- rollback: 回滚 VISION-026 atomic commit，删除本切片 schema/tool/canonical artifacts/validator/hotspot/strategy/evidence 增量；保留 VISION-007 至 VISION-025 authorities 与 `4e9e309`
-- blocks: VISION-020
-- done_definition: 仓内可从 canonical public synthetic 单图型 DOCX 确定性提取一页 hash-bound `NormalizedPage`；只证明 repo-side adapter plumbing，不构成普通 Word layout reconstruction、真实文档 fidelity、OCR/layout/Track、workflow/gateway/workstation 或 live acceptance，controls not verified、`eligible=false`，不生成 `OptimizationCandidate`
-
-## Epic WORKSTATION：自动解题工作站终局
-
-### task_id: WORKSTATION-001
-
-- goal: 落地自动解题工作站终局计划
-- inputs: 当前 `answer.md -> PDF/review` 交付链、视觉证据编译器契约、样例飞轮设计
-- changes: 新增 `auto-solving-workstation-final-plan.md`，明确 `原题 -> 证据 -> 候选答案 -> 风险决策 -> review -> 可信交付`
-- verification: contract test 确认 strategy README、终局计划和运行时边界存在
-- rollback: 删除终局计划文件并恢复 strategy README
-- blocks: VISION-003
-- done_definition: 自动解题工作站不再只是会话结论，而是 strategy 真值面的一等入口
-
-## Epic RENDERER：Typst 主渲染迁移
-
-### task_id: RENDERER-001
-
-- goal: 落地 Typst 主渲染目标和迁移边界
-- inputs: 当前 Playwright / Chromium 渲染链、Typst 官方导出/PDF 能力、D-016
-- changes: 新增 `typst-primary-renderer-plan.md` 与 `docs/adr/0006-typst-primary-renderer-target.md`
-- verification: contract test 确认 ADR、迁移计划、`parity gate` 与 `rollback` 边界存在
-- rollback: 恢复 D-016 候选口径，删除 ADR 0006 和迁移计划
-- blocks: WORKSTATION-001
-- done_definition: Typst 被记录为终局主渲染目标，但当前运行时仍明确保持 Chromium
-
-### task_id: RENDERER-002
-
-- goal: 固定 renderer contract 和迁移评测入口
-- inputs: delivery manifest、review 页图、snapshot、现有 Chromium renderer
-- changes: 新增 `renderer-contract.schema.json` 与 `eval/renderer-contract/`
-- verification: `validate:assets` 校验 renderer contract fixture，contract test 确认 current/target renderer 边界
-- rollback: 删除 renderer contract schema、fixture，并恢复 `validate-assets.mjs`
-- blocks: RENDERER-001
-- done_definition: Chromium 与 Typst 后续都必须通过同一 renderer contract，而不是各自返回 PDF 路径
-
-## Epic REVIEW：lifecycle / queues / WPF review
-
-### task_id: REVIEW-001
-
-- goal: 固定 `delivery-manifest` 兼容迁移
-- inputs: 现有 `status` 语义与 diagnostics 读取方式
-- changes: 在实施基线中定义 `review.lifecycle`、`review.feedbackRefs[]`、`review.visualDecisionRef`
-- verification: 兼容迁移与三态语义清楚
-- rollback: 恢复旧口径
-- blocks: DOC-001
-- done_definition: review 状态机不再和 `status` 五布尔混淆
-
-### task_id: REVIEW-002
-
-- goal: 固定三类人工队列
-- inputs: 自动反馈、优化审批、真值存疑三类场景
-- changes: 在 PRD、实施基线、implementation plan 中写明三类队列
-- verification: `needs_human_label / high_risk_approval / truth_needs_review` 定义一致
-- rollback: 恢复旧双队列口径
-- blocks: REVIEW-001
-- done_definition: 真值问题不会被误推进优化队列
-
-### task_id: REVIEW-003
-
-- goal: 将最新交付的 review/trust 状态以只读方式投影到 WPF
-- inputs: `delivery-manifest.review`、`delivery-manifest.status`、既有 WPF 答案交付入口
-- changes: `AnswerDeliveryResult` 增量承载 `review.lifecycle / visualDecisionRef / visualReviewPassed / trusted`，WPF 展示 fail-closed 状态并只允许打开 JSON 决策证据
-- verification: orchestrator 与 MainViewModel 聚焦测试、WPF build、headless smoke、完整项目门禁
-- rollback: 回滚本任务对 Domain / Services / ViewModel / XAML / tests / strategy / evidence 的修改
-- blocks: REVIEW-001, VISION-005
-- done_definition: 一次交付后 WPF 可展示最新 review/trust 投影；缺失状态保持未裁定和未可信，且不宣称完整 review 队列或默认主答题流程已经接入
-
-### task_id: REVIEW-004
-
-- goal: 建立本地 `DecisionRecord -> delivery manifest -> WPF refresh` 受控附着闭环
-- inputs: `decision-record.schema.json`、`delivery-manifest.schema.json`、REVIEW-003 最新交付状态投影
-- changes: `tools/visual-evidence` 校验决策与 manifest、把直接前像刷新到 rollback backup 并原子更新决策引用和 fail-closed 状态；题目级决策禁止正向 trust 提升；.NET orchestrator 调用工具、重读 manifest 并验证后置条件；WPF 仅选择本地 JSON 并刷新状态
-- verification: Node 附着合同测试、orchestrator 与 MainViewModel 聚焦测试、原生 WPF UI Automation 观察、完整项目门禁
-- rollback: 回滚本任务对 visual-evidence / Domain / Application / Services / ViewModel / XAML / tests / strategy / evidence 的修改；已有 manifest 可用 `.before-visual-decision.json` 恢复
-- blocks: REVIEW-003, VISION-005
-- done_definition: WPF 能把已有本地题目级 `DecisionRecord` 交给仓内工具校验和附着，并从更新后的 manifest 刷新 review/trust 投影；该入口不接受 delivery aggregate，不能提升为 trusted；WPF 不生成审批、不推进 lifecycle，且不宣称完整 review 队列或默认主答题流程已经接入
-
-### task_id: REVIEW-005
-
-- goal: 建立 `DeliveryDecisionAggregate -> delivery manifest` 的受控附着与可重验 hash receipt
-- inputs: `DeliveryDecisionAggregate`、其原始 manifest preimage、delivery manifest review/status、attachment receipt
-- changes: 新增 aggregate attachment receipt schema 和本地 attach/verify 工具；附件前重算 aggregate 并要求 preimage bytes 匹配，两个 attach 共用 manifest 写锁，receipt 后替换前复核全源稳定快照，再原子替换 manifest；.NET 消费者在 source-aware verifier 正向投影接入前保持 fail-closed；不推进 lifecycle
-- verification: aggregate attachment 合同测试覆盖成功、幂等、preimage/source 漂移、receipt/backup 篡改、canonical/physical 双锁、hardlink alias 串行化、dangling symlink 拒绝、部分获取/action 异常/token 替换清理、stale-lock 保留；malformed attachment 的 .NET fail-closed 回归；assets/cross-subject/full gates
-- rollback: 用 `<manifest>.before-delivery-decision-aggregate.json` 恢复 preimage，并删除同名 attachment receipt；代码不自动回收 stale lock，仅在确认 owner PID 已死亡、没有 writer 活动且保存锁证据后人工清理 canonical/physical lock；回滚本任务 schema/tool/test/doc 修改
-- blocks: VISION-006, REVIEW-004
-- done_definition: 合成受控 aggregate 可把 trusted projection 写入 manifest，且后续 verifier 能从 manifest、receipt、backup、aggregate 及其绑定源重算稳定 hash chain；WPF/diagnostics/headless 在 source-aware verifier 正向投影接入前保持 fail-closed；不接入 WPF 正向附着、不生成审批、不推进 lifecycle、不宣称 workflow integrated 或 live acceptance
-
-### task_id: REVIEW-006
-
-- goal: 把既有 aggregate attachment source-aware verifier 暴露为显式、只读、强类型的 .NET orchestration 能力
-- inputs: 已附着 delivery manifest 与 `verify:aggregate-attachment` JSON 输出
-- changes: Domain/Application 增加验证请求、结果与强类型凭据；orchestrator 以 `node` 进程直接调用既有 verifier，严格校验输出 kind、请求 manifest 相关性、绝对 artifact paths、attachment id、SHA-256 与正向状态；进程启动、执行或结构化输出失败时不返回验证凭据
-- verification: orchestrator 聚焦测试覆盖成功、进程/启动失败、取消透传、输入拒绝、非 JSON、多 JSON、重复/未知/缺失字段、路径不匹配、hash 非法和非正向状态；真实 `PowerShellProcessRunner -> node -> synthetic fixture` 集成测试；完整项目门禁
-- rollback: 回滚本任务对 Domain / Application / Services / tests / strategy / evidence 的修改；本能力只读，不需要恢复 manifest 或外部数据
-- blocks: REVIEW-005
-- done_definition: .NET 调用方可显式重验已附着 aggregate 并取得与请求 manifest 绑定的强类型凭据；现有 `ReadDeliveryContext`、WPF、diagnostics/headless 仍保持 fail-closed，不自动执行 verifier、不正向投影 trust、不生成审批、不推进 lifecycle、不宣称 workflow integrated 或 live acceptance
-
-### task_id: REVIEW-007
-
-- goal: 将 source-aware aggregate attachment verifier 以显式、只读方式接入 WPF 正向状态投影
-- inputs: REVIEW-006 强类型 verifier、当前 delivery manifest、receipt `manifestResultSha256`
-- changes: verifier 成功后从同一次读取的 manifest bytes 重算 SHA-256，只在匹配 `manifestResultSha256` 时构造正向 `AnswerDeliveryResult`；WPF 增加手动重验命令、验证状态和 verified manifest hash，命令开始或失败时先钳制为未裁定/未可信；普通 deliver、题目级附着、diagnostics、headless 和自动读取不复用旧凭据
-- verification: manifest 漂移拒绝、普通读取 fail-closed、真实 Node integration、MainViewModel 成功/失败/旧状态清理、原生 WPF UI Automation、完整项目门禁
-- rollback: 回滚本任务对 Domain / Services / ViewModel / XAML / tests / strategy / evidence 的修改；本能力只读，不恢复或删除 delivery artifacts
-- blocks: REVIEW-006
-- done_definition: WPF 能由用户显式重验已附着 aggregate，并只投影与 verifier result hash 绑定的时间点状态；不自动验证、不提供 aggregate 附着、不生成审批、不推进 lifecycle，diagnostics/headless 仍 fail-closed，不宣称完整 workflow integrated 或 live acceptance
-
-### task_id: REVIEW-008
-
-- goal: 建立 `DeliveryDecisionAggregate -> delivery manifest -> source-aware reverify -> WPF projection` 受控闭环
-- inputs: REVIEW-005 attach 工具、REVIEW-006 强类型 verifier、REVIEW-007 hash-bound WPF 投影
-- changes: Domain/Application 增加 aggregate 附着请求与结果；orchestrator 以 `node` 直接调用既有 attach CLI，只有附着成功才立即调用 source-aware verifier；WPF 允许用户选择已有本地 aggregate，开始、失败或异常时先钳制旧 review/trust/hash，只有两阶段成功才投影正向状态
-- verification: attach 失败不触发 verifier、附着后重验失败保持 fail-closed、真实 `PowerShellProcessRunner -> node attach -> node verify -> synthetic fixture` 集成测试、MainViewModel 正向/失败/旧状态清理、原生 WPF UI Automation、完整项目门禁
-- rollback: 代码回滚本任务 Domain / Application / Services / ViewModel / XAML / tests / strategy / evidence 修改；对已附着 manifest，先保全当前 manifest/receipt/backup，重验 hash chain，确认当前 manifest hash 仍等于 receipt `manifestResultSha256`，并通过同一 canonical/physical 双锁原子恢复 `<manifest>.before-delivery-decision-aggregate.json` 后再处理 receipt。hash 漂移或锁归属不明时转人工 reconciliation，禁止覆盖后续合法更新；stale lock 仍只允许按 REVIEW-005 人工审计流程清理
-- blocks: REVIEW-007
-- done_definition: WPF 能把已有本地 aggregate 交给既有受控工具附着，并在同一显式动作中立即 source-aware 重验；正向状态绑定当前 `manifestResultSha256`。不生成 aggregate、不生成审批、不推进 lifecycle、不自动验证、不接入原题生成或云网关主流程，不宣称完整 workflow integrated 或 live acceptance
-
-### task_id: REVIEW-009
-
-- goal: 将已有本地 review artifact 以显式、只读、可追踪方式投影为三类 WPF review queue
-- inputs: 用户显式选择的 `FeedbackParseResult / DecisionRecord / DeliveryDecisionAggregate` JSON，既有 schema 与 source-aware verifier，REVIEW-008 的 fail-closed WPF 边界
-- changes: 新增 provider-neutral `ReviewQueueProjectionRequest / ReviewQueueProjectionResult / ReviewQueueItem` 领域合同和本地 projector；逐项绑定 canonical path 与 raw-byte SHA-256，复用既有 verifier 后才按 `humanQueue / reviewQueue` 投影 `needs_human_label / high_risk_approval / truth_needs_review`；未知、损坏、路径别名、hash/source 重验失败进入 rejected sources 并使整次投影 fail closed；WPF 只允许显式多选 JSON、查看计数/来源并打开本地证据
-- verification: 三类队列确定性映射、输入顺序无关、重复/未知/损坏/路径别名/source 漂移 fail closed、空选择不产生结果；orchestrator 与 MainViewModel 聚焦测试、原生 WPF UI Automation 观察、完整固定顺序项目门禁
-- rollback: 回滚 REVIEW-009 对 Domain / Application / Services / ViewModel / XAML / tests / strategy / evidence 的修改；本切片不写来源 artifact、manifest、receipt 或审批，因此无需数据恢复
-- blocks: REVIEW-002, REVIEW-008, FLYWHEEL-008, VISION-006
-- done_definition: WPF 能从用户显式选择且通过本地重验的既有 artifact 只读投影三类队列，并显示 raw-byte hash 与来源路径；投影仅为 `local_verified_projection`，不生成审批、不推进 lifecycle、不修改 trust、不生成 `OptimizationCandidate`，不宣称默认主流程、完整 workflow integrated 或 live accepted
-
-## Epic EVAL：分桶指标与 gate
-
-### task_id: EVAL-001
-
-- goal: 固定 `candidateSourceType` 分桶评测口径
-- inputs: 样例飞轮与灰度放行要求
-- changes: 在实施基线、roadmap、backlog 中明确三桶分桶和阈值
-- verification: 文档不再只报总量指标
-- rollback: 恢复旧总量口径
-- blocks: SAMPLE-002, FLYWHEEL-001
-- done_definition: 分桶放行成为正式门槛
-
-### task_id: EVAL-002
-
-- goal: 固定共同安全网口径
-- inputs: 现有 `check-toolchain` 顺序
-- changes: 在实施基线与 roadmap 中明确完整 gate，而不是单独 golden
-- verification: gate 顺序与职责边界一致
-- rollback: 恢复旧“单前置”口径
-- blocks: REVIEW-001
-- done_definition: schema、assembly、eval、smoke 共同受同一安全网约束
+# Active Execution Backlog
+
+本文件是唯一 active task 真源。旧 62-task backlog 仅从 Git 基线读取：`git show 6cf3904:docs/strategy/execution-backlog.md`。
+
+## Status and execution protocol
+
+- 只有 `status: ready` 的任务可由 AI 自动执行。
+- `blocked` 必须满足全部 unlock 条件后才能改为 ready。
+- `verified` 必须有当前 revision 可达的实现、fresh gate 输出和 evidence。
+- `repo_supported`、`workflow_integrated`、`gateway_verified`、`reference_reviewed`、`teacher_accepted` 独立报告。
+- 所有任务禁止修改 `.env`、用户原卷、未列入 write-set 的正式交付和其他未提交资产。
+
+## TASK PRE-001 — 当前 live workflow 切片收口
+
+- status: verified
+- goal: 独立验证并收口当前 2024 Visual Audit 工作树改动。
+- inputs: 当前 workflow/gateway/renderer/test/README diff 与 `docs/change-evidence/20260801-live-2024-answer-workflow.md`。
+- preconditions: 保留所有用户未跟踪试卷和交付资产；不启动新的架构删除。
+- allowed_write_set: `README.md`, `scripts/run-live-answer-workflow.ps1`, `tools/ai-gateway/answer-*.mjs`, `tools/latex-renderer/review-source-pdf.mjs`, 对应 focused tests 与单份 evidence。
+- forbidden_write_set: frozen tools/schema/WPF、`.env`、用户试卷、其他正式交付。
+- implementation_steps: 核对 diff -> focused tests -> 固定门禁 -> evidence 真值复核 -> 单独 closeout。
+- acceptance_criteria: 当前 diff 可独立解释；blind failure 与 reference-reviewed correctness 分开；没有混入本 backlog 后续删除。
+- verification_commands: `node --test tools/ai-gateway/answer-request.test.mjs tools/ai-gateway/answer-diff-report.test.mjs`; PowerShell parse；固定门禁按可用性执行。
+- evidence_output: `docs/change-evidence/20260801-live-2024-answer-workflow.md`。
+- rollback: 只回滚当前 live workflow diff。
+- dependencies: none
+- truth_boundary: reference-reviewed delivery correct; blind Q16-Q18 unresolved; teacher accepted false。
+- stop_conditions: provider 不稳定或 build SDK 不可用时记录准确边界，不扩建 synthetic/provider/schema 框架。
+
+## TASK SPEC-101 — 生产 spec 去旧证据对象
+
+- status: verified
+- goal: 从 active 三科组合规范移除 frozen 内部证据对象，并固定 Markdown-only 输出。
+- inputs: commons 源规范、三科 assemblies、manifest/config/checklist。
+- allowed_write_set: `prompts/specs/`, `prompts/*-answer/{manifest.json,config.json,spec.md,README.md,checklists/acceptance.md}`, spec verifier/tests。
+- forbidden_write_set: 业务 workflow、provider 配置、用户资产、frozen 工具实现。
+- implementation_steps: 改 commons 源 -> 提升组合版本 -> assembler 重建 -> spec-boundary negative/positive 验证。
+- acceptance_criteria: active spec 无禁用对象名；完整 Markdown 输出、图号绑定、仪表锚点和 fail-closed 语义保留。
+- verification_commands: `npm --prefix tools/spec-assembler run assemble:all -- --check`; `npm --prefix tools/rule-compiler run validate:spec-boundary`; `npm --prefix tools/rule-compiler run validate:assets`。
+- evidence_output: 本切片 final verification；提交前可新增一份精简 change-evidence。
+- rollback: 恢复 commons、assembly 版本、manifest/config/checklist 和 generated outputs。
+- dependencies: none
+- truth_boundary: spec contract only; not live accuracy proof。
+- stop_conditions: 不通过增加提示词长度或新视觉 schema 补偿删除。
+
+## TASK ARCH-101 — 删除 dormant 工具与旧 schema
+
+- status: verified
+- goal: 删除退出主链的工具、仅服务它们的 schema/fixture/package 入口。
+- inputs: Final Implementation Baseline frozen list、引用扫描和当前 gates。
+- allowed_write_set: frozen `tools/` 目录、对应 `prompts/shared/schemas/`、对应 eval/fixture、package scripts、引用测试和策略索引。
+- forbidden_write_set: retained modules、live workflow、用户资产、历史 evidence。
+- implementation_steps: 建立消费者清单 -> 分组删除 -> 每组 focused test -> Full verifier。
+- acceptance_criteria: retained workflow/package/gate 无 frozen 引用；active schema 只覆盖当前产品。
+- verification_commands: `rg` 消费者扫描；build/test；`validate:assets`; Full verifier。
+- evidence_output: 单份 dead-surface-removal evidence。
+- rollback: 按任务提交恢复删除文件，不迁移或覆盖数据。
+- dependencies: SPEC-101
+- truth_boundary: repository cleanup only。
+- stop_conditions: 发现 retained workflow 真实消费者时停止对应目录删除并记录依赖。
+
+## TASK ARCH-102 — 清理 WPF/.NET 死表面
+
+- status: verified
+- goal: 删除空 Interop 和无生产消费者的 ReviewQueue/VisualDecision/DeliveryAggregate DTO 与诊断字段。
+- inputs: solution/project references、生产消费者扫描、WPF/headless tests。
+- allowed_write_set: `ClassroomToolkit.sln`, `src/`, `tests/`, packaging/headless scripts 与相关策略。
+- forbidden_write_set: Node 业务逻辑、用户资产、live provider。
+- implementation_steps: 删除空项目 -> 删除死 DTO -> 清理 diagnostics 字段 -> behavior tests。
+- acceptance_criteria: WPF 仍完成本地答案交付、状态显示和产物打开；不新增替代抽象。
+- verification_commands: build/test；headless smoke；涉及可见 UI 时执行 UI Automation 或人工探针。
+- evidence_output: 单份 WPF dead-surface evidence。
+- rollback: 恢复 solution/project/DTO/diagnostics 变更。
+- dependencies: PRE-001
+- truth_boundary: repo/WPF behavior only; no classroom acceptance claim。
+- stop_conditions: 发现外部兼容消费者或需要启动当前长运行应用时停止并请求授权。
+
+## TASK GATE-101 — Fast/Core/Full 门禁分层
+
+- status: verified
+- goal: 去除重复验证并支持按 Subject Pack 路由。
+- inputs: 当前 `check-toolchain.ps1`、实测耗时和 AGENTS 固定顺序。
+- allowed_write_set: `scripts/check-toolchain.ps1`, gate-focused tests, `README.md`, `AGENTS.md`, strategy gate docs。
+- forbidden_write_set: renderer/AI 业务语义、live provider、用户资产。
+- implementation_steps: 参数和模式 -> step routing -> Subject Pack 过滤 -> 计时摘要 -> docs/tests。
+- acceptance_criteria: Fast/Core/Full 可独立运行；Core 不跑无关学科；Full 保留三科 smoke/eval；输出 executed/skipped/elapsed。
+- verification_commands: 三模式 dry/focused execution；最终 Full verifier。
+- evidence_output: gate-tiering evidence 或 final verification 摘要。
+- rollback: 恢复单一 check-toolchain 脚本和旧文档命令。
+- dependencies: none
+- truth_boundary: verifier ergonomics, not product acceptance。
+- stop_conditions: 不通过降低质量断言或跳过共享变更的 Full gate 达成耗时目标。
+
+## TASK SDK-101 — .NET patch 兼容
+
+- status: verified
+- goal: 保持 .NET 10 feature band，同时允许兼容 patch SDK。
+- allowed_write_set: `global.json`, `scripts/bootstrap.ps1`, SDK contract tests/docs。
+- forbidden_write_set: 系统 SDK、Codex 进程、用户环境变量。
+- implementation_steps: `10.0.300 + latestPatch` -> bootstrap 按 feature band 探测 -> build/test。
+- acceptance_criteria: 仅有 10.0.302 时可 build/test；.NET 8 不被当作项目 SDK。
+- verification_commands: `dotnet --version`; build; test --no-build。
+- evidence_output: SDK compatibility evidence。
+- rollback: 恢复精确 10.0.301 合同。
+- dependencies: GATE-101
+- truth_boundary: workstation build compatibility only。
+- stop_conditions: CI/release 明确要求 10.0.301 字节级复现时先记录冲突再决定。
+
+## TASK TEST-101 — 行为测试再平衡
+
+- status: verified
+- goal: 用 CLI/JSON/manifest/ViewModel 行为替换高价值路径上的源码字符串断言。
+- allowed_write_set: `tests/`, retained tools 的 focused tests、必要测试 seam。
+- forbidden_write_set: 为测试引入通用 UI E2E 平台、生产功能扩张。
+- implementation_steps: 盘点 Contains 合同 -> 按风险替换 -> 保留少量禁止项扫描 -> mutation/red-green 证明。
+- acceptance_criteria: 实现重命名不导致无行为变化失败；删除真实行为会使测试失败。
+- verification_commands: focused tests；build/test；Core verifier。
+- evidence_output: test-rebalancing evidence。
+- rollback: 恢复原合同测试。
+- dependencies: ARCH-101, ARCH-102, GATE-101
+- truth_boundary: automated behavior proof only。
+- stop_conditions: 原生 WPF 可见行为需要启动/操作应用时按技能边界先请求授权。
+
+## TASK EVAL-101 — 2024/2025 真实错题基准
+
+- status: verified
+- goal: 固定真实 authority、输入 hash 和 blind/audit/reference 三阶段结果。
+- initial_cases: 2024 Q5/Q16/Q17/Q18；2025 Q8/Q11/Q12/Q17/Q18。
+- allowed_write_set: real-eval metadata、非敏感 hash/index、eval runner/tests、evidence。
+- forbidden_write_set: 用户原卷内容复制入仓、题库索引、synthetic optimization。
+- acceptance_criteria: 每阶段单独报告；reference 正确不覆盖 blind/audit failure。
+- verification_commands: offline authority validation；显式授权的 live rerun；Core/Full verifier。
+- evidence_output: per-run evidence with hashes and acceptance boundary。
+- rollback: 删除本任务 metadata/runner，不删除用户文件或历史交付。
+- dependencies: PRE-001, GATE-101
+- truth_boundary: real regression evidence; teacher accepted remains separate。
+- stop_conditions: authority 缺失、provider 不稳定或需要暴露用户资产时停止。
+
+## TASK VISION-101 — 有限部件级视觉定位
+
+- status: blocked
+- goal: 针对真实错题建立有限、可验证的部件定位和结构化读数。
+- unlock_conditions: EVAL-101 verified；真实部件标注 authority 可用；provider endpoint 稳定；写明四类对象和预算。
+- allowed_write_set: 解锁后另行评审。
+- forbidden_write_set: 通用 OCR/layout 平台、synthetic 证据链、审批队列、信任聚合系统。
+- truth_boundary: 即使局部读数正确也不自动提升整卷 trusted 或 teacher accepted。
+- stop_conditions: 任一 unlock 条件缺失即保持 blocked。
+- unlock_audit_2026-08-02: EVAL-101 baseline 已建立；真实部件级标注 authority 仍不存在，provider 稳定性也未形成当前证明，四类对象预算未批准，因此继续 blocked。

@@ -24,7 +24,7 @@
 当前固定分层为：
 
 1. `platform/`：平台总则
-2. `commons/`：`K12通用`、`图文定量题通用`、`物理通用`
+2. `commons/`：`K12通用`、`图文定量题通用 v1.1`、`物理通用`
 3. `subjects/`：初中物理、高中物理、初中数学实验支架
 4. `compiled/`：完整版、调用版
 
@@ -37,3 +37,4 @@
 - schema 与策略类规划写在 `docs/strategy/`，不写在源规范正文里。
 - 源规范只改 `platform/`、`commons/`、`subjects/`；generated artifacts 禁手改。
 - 高频变化规范下的影响分析、兼容窗口与回归要求以 strategy 文档为准。
+- active spec 禁止重新引入 frozen 内部证据对象；运行 `npm --prefix tools/rule-compiler run validate:spec-boundary` 验证版本、路径、Markdown-only 合同和禁用术语。

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "real-paper-eval-baseline",
+  "id": "guangzhou-physics-2024",
+  "year": 2024,
+  "subjectPack": "junior-physics-answer",
+  "targetQuestions": [5, 16, 17, 18],
+  "authority": {
+    "sourceExam": {
+      "path": "广州物理中考试卷/2024广州中考.pdf",
+      "sha256": "f6a3a77585343e30722ef5e09cda58795fa752e2d86c74d0dda3c89e159311ef"
+    },
+    "referenceAnswer": {
+      "path": "广州物理中考试卷/2024广州中考（解析版）.pdf",
+      "sha256": "5b588bd2ed97be333da83a1f50031fe7f3adf66c8532506a481c97ed09adda95"
+    }
+  },
+  "stages": {
+    "blind": {
+      "status": "evaluated",
+      "artifact": {
+        "path": "正式交付/2024广州中考-GPT56Sol-medium-视觉审计主链实跑/2024广州中考盲答候选.md",
+        "sha256": "d1734baa9d3c36f4ac4819854c4e3cef0df30ec926d4fa17cc7408fccb5fc898"
+      },
+      "cases": { "5": "pass", "16": "fail", "17": "fail", "18": "fail" }
+    },
+    "visualAudit": {
+      "status": "evaluated",
+      "artifact": {
+        "path": "正式交付/2024广州中考-GPT56Sol-medium-视觉审计主链实跑/2024广州中考视觉审计候选.md",
+        "sha256": "fb16457ecf1198930f08491960e4729fe69c856d9076dc6b51f763b4cc82051f"
+      },
+      "cases": { "5": "pass", "16": "fail", "17": "fail", "18": "fail" }
+    },
+    "referenceReview": {
+      "status": "evaluated",
+      "artifact": {
+        "path": "正式交付/2024广州中考-GPT56Sol-medium-视觉审计主链实跑/2024广州中考参考答案.md",
+        "sha256": "2b516aa4dbe217bcfcc8c2e428b9e983d4e90f11cf30e2c796784b540a22457f"
+      },
+      "cases": { "5": "pass", "16": "pass", "17": "pass", "18": "pass" }
+    }
+  },
+  "evidenceRef": "docs/change-evidence/20260801-live-2024-answer-workflow.md",
+  "teacherAccepted": false
+}

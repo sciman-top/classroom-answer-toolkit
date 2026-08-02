@@ -6,69 +6,67 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class CrossSubjectContractTests
 {
     [Theory]
-    [InlineData("junior-physics-answer")]
-    [InlineData("senior-physics-answer")]
-    [InlineData("math-answer")]
-    public void SubjectPackHasPromptRulesAndEvalDataset(string subjectPack)
+    [InlineData("junior-physics-answer", "v8.15")]
+    [InlineData("senior-physics-answer", "v1.1")]
+    [InlineData("math-answer", "v0.2")]
+    public void SubjectPackManifestDatasetAndMirroredSpecAreAligned(string subjectPack, string expectedVersion)
     {
         var root = FindRepoRoot();
-        var manifestPath = Path.Combine(root, "prompts", subjectPack, "manifest.json");
-        using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
-        var manifest = document.RootElement;
+        var packRoot = Path.Combine(root, "prompts", subjectPack);
+        var manifestPath = Path.Combine(packRoot, "manifest.json");
+        using var manifestDocument = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        var manifest = manifestDocument.RootElement;
 
         manifest.GetProperty("kind").GetString().Should().Be("subject-pack");
-        Directory.Exists(Path.Combine(root, "prompts", subjectPack, "rules")).Should().BeTrue();
-        File.Exists(Path.GetFullPath(Path.Combine(Path.GetDirectoryName(manifestPath)!, manifest.GetProperty("evaluation").GetProperty("dataset").GetString()!))).Should().BeTrue();
-    }
+        manifest.GetProperty("version").GetString().Should().Be(expectedVersion);
+        Directory.Exists(Path.Combine(packRoot, "rules")).Should().BeTrue();
 
-    [Fact]
-    public void JuniorPhysicsUsesV814CompiledPromptAsRuntimeSpec()
-    {
-        var root = FindRepoRoot();
-        var manifestPath = Path.Combine(root, "prompts", "junior-physics-answer", "manifest.json");
-        using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
-        var source = document.RootElement.GetProperty("sourceOfTruth");
-        var humanSpec = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(manifestPath)!, source.GetProperty("humanSpec").GetString()!));
-        var mirroredSpec = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(manifestPath)!, source.GetProperty("mirroredSpec").GetString()!));
+        var datasetPath = Path.GetFullPath(Path.Combine(
+            packRoot,
+            manifest.GetProperty("evaluation").GetProperty("dataset").GetString()!));
+        using var datasetDocument = JsonDocument.Parse(File.ReadAllText(datasetPath));
+        datasetDocument.RootElement.GetProperty("assetVersion").GetString().Should().Be(expectedVersion);
 
-        document.RootElement.GetProperty("version").GetString().Should().Be("v8.14");
+        var source = manifest.GetProperty("sourceOfTruth");
+        var humanSpec = Path.GetFullPath(Path.Combine(packRoot, source.GetProperty("humanSpec").GetString()!));
+        var mirroredSpec = Path.GetFullPath(Path.Combine(packRoot, source.GetProperty("mirroredSpec").GetString()!));
         File.ReadAllBytes(mirroredSpec).Should().Equal(File.ReadAllBytes(humanSpec));
     }
 
     [Fact]
-    public void AssetGateChecksCompiledPromptsAndSnapshots()
+    public void RepositoryUsesCompatibleDotNetFeatureBand()
     {
-        var script = File.ReadAllText(Path.Combine(FindRepoRoot(), "tools", "rule-compiler", "validate-assets.mjs"));
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(FindRepoRoot(), "global.json")));
+        var sdk = document.RootElement.GetProperty("sdk");
 
-        script.Should().Contain("checkAssemblyOutputs");
-        script.Should().Contain("compileResolvedSnapshot");
-        script.Should().Contain("renderer-contract.schema.json");
-        script.Should().NotContain("sample-flywheel");
-        script.Should().NotContain("visual-evidence");
+        sdk.GetProperty("version").GetString().Should().Be("10.0.300");
+        sdk.GetProperty("rollForward").GetString().Should().Be("latestPatch");
+        sdk.GetProperty("allowPrerelease").GetBoolean().Should().BeFalse();
     }
 
     [Fact]
-    public void LiveAnswerGenerationRequiresExplicitCloudEgress()
+    public void FrozenSurfacesAreAbsentFromTheActiveTree()
     {
-        var script = File.ReadAllText(Path.Combine(FindRepoRoot(), "tools", "ai-gateway", "answer-request.mjs"));
+        var root = FindRepoRoot();
+        var removedEntrypoints = new[]
+        {
+            "tools/answer-generator/package.json",
+            "tools/answer-graphics/package.json",
+            "tools/review-queue/package.json",
+            "tools/sample-flywheel/package.json",
+            "tools/track-orchestrator/package.json",
+            "tools/visual-evidence/package.json",
+            "src/ClassroomToolkit.Interop/ClassroomToolkit.Interop.csproj"
+        };
 
-        script.Should().Contain("--allow-cloud-egress");
-        script.Should().Contain("assertLiveEgressAllowed");
-        script.Should().Contain("prompts\", \"junior-physics-answer\", \"spec.md");
-    }
+        removedEntrypoints
+            .Select(path => Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar)))
+            .Should()
+            .OnlyContain(path => !File.Exists(path));
 
-    [Fact]
-    public void ToolchainGateTargetsOnlyAnswerGenerationAndLayoutCore()
-    {
-        var script = File.ReadAllText(Path.Combine(FindRepoRoot(), "scripts", "check-toolchain.ps1"));
-
-        script.Should().Contain("test:answer");
-        script.Should().Contain("validate:assets");
-        script.Should().Contain("latex-renderer run smoke");
-        script.Should().Contain("eval-answer-fixtures.mjs");
-        script.Should().NotContain("sample-flywheel");
-        script.Should().NotContain("visual-evidence");
-        script.Should().NotContain("answer-graphics");
+        Directory.GetFiles(Path.Combine(root, "prompts", "shared", "schemas"), "*.schema.json")
+            .Should()
+            .HaveCount(12);
     }
 
     private static string FindRepoRoot()
@@ -79,6 +77,7 @@ public sealed class CrossSubjectContractTests
             if (File.Exists(Path.Combine(current.FullName, "ClassroomToolkit.sln"))) return current.FullName;
             current = current.Parent;
         }
+
         throw new InvalidOperationException("Repository root not found.");
     }
 }

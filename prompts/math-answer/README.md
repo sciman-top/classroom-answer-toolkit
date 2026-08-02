@@ -5,7 +5,7 @@ junior-math scaffold used to verify that platform contracts are not physics-only
 
 ## Current baseline
 
-- Human-readable compiled spec: `../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.1.md`
+- Human-readable compiled spec: `../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.2.md`
 - Mirrored in-repo prompt spec: `spec.md`
 - Structured runtime config consumed by tools: `config.json`
 - Asset manifest and ownership map: `manifest.json`

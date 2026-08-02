@@ -87,6 +87,20 @@ public sealed class WorkspaceHealthReportReaderTests
         result.Issues.Should().ContainSingle(issue => issue.Contains("最新规范 v11.1", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Read_AddsIssue_WhenEvalVersionDiffersFromAssetVersion()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("junior-physics-answer", "v11.0");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v10.9", ok: true, caseCount: 4);
+
+        var result = new WorkspaceHealthReportReader(workspace.Root).Read();
+
+        result.Issues.Should().ContainSingle(issue => issue.Contains("评测结果版本 v10.9", StringComparison.Ordinal));
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };

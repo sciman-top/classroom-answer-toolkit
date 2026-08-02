@@ -20,9 +20,9 @@ function Get-FirstExistingPath {
     return $null
 }
 
-function Test-DotNetSdkInstalled {
+function Test-DotNetSdkCompatible {
     param(
-        [string]$Version
+        [string]$MinimumVersion
     )
 
     $sdkOutput = & dotnet --list-sdks
@@ -30,20 +30,34 @@ function Test-DotNetSdkInstalled {
         throw "dotnet --list-sdks failed."
     }
 
-    return @($sdkOutput -split [Environment]::NewLine | Where-Object { $_ -match ('^{0}\s+\[' -f [regex]::Escape($Version)) }).Count -gt 0
+    $minimum = [version]$MinimumVersion
+    return @(
+        $sdkOutput -split [Environment]::NewLine |
+            ForEach-Object {
+                if ($_ -match '^(?<version>\d+\.\d+\.\d+)\s+\[') {
+                    [version]$Matches.version
+                }
+            } |
+            Where-Object {
+                $_.Major -eq $minimum.Major -and
+                $_.Minor -eq $minimum.Minor -and
+                $_.Build -ge $minimum.Build -and
+                $_.Build -lt 400
+            }
+    ).Count -gt 0
 }
 
 function Assert-DotNetSdk {
-    if (-not (Test-DotNetSdkInstalled -Version "10.0.301")) {
-        Write-Host "Installing .NET SDK 10.0.301..."
+    if (-not (Test-DotNetSdkCompatible -MinimumVersion "10.0.300")) {
+        Write-Host "Installing a compatible .NET 10.0.3xx SDK..."
         & winget install --id Microsoft.DotNet.SDK.10 --exact --accept-source-agreements --accept-package-agreements --disable-interactivity
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to install Microsoft.DotNet.SDK.10."
         }
     }
 
-    if (-not (Test-DotNetSdkInstalled -Version "10.0.301")) {
-        throw "Expected .NET SDK 10.0.301 was not found after installation."
+    if (-not (Test-DotNetSdkCompatible -MinimumVersion "10.0.300")) {
+        throw "Expected a compatible .NET 10.0.3xx SDK was not found after installation."
     }
 }
 

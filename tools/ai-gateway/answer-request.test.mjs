@@ -54,6 +54,62 @@ test("reference review prompt separates source pages, reference pages, and blind
   }
 });
 
+test("visual audit prompt treats audit images as source evidence rather than reference answers", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-visual-audit-prompt-"));
+  const promptPath = path.join(directory, "spec.md");
+  try {
+    writeFileSync(promptPath, "v8.14 production specification", "utf8");
+    const prompt = buildPrompt(promptPath, {
+      mode: "visual_audit",
+      candidateMarkdown: "# 参考答案\n\n1—5：B、C、C、B、D\n\n17. ④0.16 A。",
+      sourcePageCount: 8,
+      auditImageCount: 8
+    });
+
+    assert.match(prompt, /无参考答案视觉审计任务/);
+    assert.match(prompt, /不是参考答案/);
+    assert.match(prompt, /逐项反证/);
+    assert.match(prompt, /承重绳段/);
+    assert.match(prompt, /实际连接导线的接线柱/);
+    assert.match(prompt, /量程.*分度值.*指针/);
+    assert.match(prompt, /刻度尺.*两端/);
+    assert.match(prompt, /无法可靠判读/);
+    assert.match(prompt, /0\.16 A/);
+    assert.doesNotMatch(prompt, /参考答案是答案取值的权威来源/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("visual findings and merge prompts separate evidence extraction from Markdown rewriting", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-visual-findings-prompt-"));
+  const promptPath = path.join(directory, "spec.md");
+  try {
+    writeFileSync(promptPath, "v8.14 production specification", "utf8");
+    const candidateMarkdown = "# 参考答案\n\n16. n=2。\n\n17. 0.16 A。";
+    const findingsPrompt = buildPrompt(promptPath, {
+      mode: "visual_audit_findings",
+      candidateMarkdown,
+      auditImageCount: 16
+    });
+    const mergePrompt = buildPrompt(promptPath, {
+      mode: "visual_audit_merge",
+      candidateMarkdown,
+      auditFindings: "第16题：n 应为 3。"
+    });
+
+    assert.match(findingsPrompt, /只输出视觉审计发现报告/);
+    assert.match(findingsPrompt, /不得重写整份答案/);
+    assert.match(findingsPrompt, /n=2/);
+    assert.match(mergePrompt, /视觉审计合并任务/);
+    assert.match(mergePrompt, /n 应为 3/);
+    assert.match(mergePrompt, /证据不足.*保留候选原文/);
+    assert.match(mergePrompt, /仅返回修正后的完整 Markdown/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 function createConfig(surface = "responses") {
   return {
     cloudEgressEnabled: true,
@@ -115,6 +171,22 @@ test("responses request sends the full prompt followed by every ordered page ima
       ["input_image", "input_image", "input_image"]
     );
     assert.ok(body.input[0].content.slice(1).every((part) => part.detail === "high"));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("request body records the provider-supported detail mode", () => {
+  const { directory, imagePaths } = createPageImages(1);
+  try {
+    const body = buildAnswerRequestBody(createConfig().providers[0], {
+      prompt: "audit",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 4000
+    });
+
+    assert.equal(body.input[0].content[1].detail, "high");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -198,12 +270,50 @@ test("answer request remains blocked unless config and command both allow cloud 
   }
 });
 
+test("answer request preserves the safe fetch cause in retry diagnostics", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    const error = new TypeError("fetch failed");
+    error.cause = Object.assign(new Error("Connect Timeout Error"), {
+      code: "UND_ERR_CONNECT_TIMEOUT"
+    });
+    throw error;
+  };
+
+  try {
+    const result = await requestAnswerWithFailover(createConfig(), {
+      allowCloudEgress: true,
+      provider: "primary",
+      prompt: "v8.14",
+      imagePaths,
+      visualDetailMode: "high",
+      maxOutputTokens: 16000,
+      timeoutMs: 1000
+    });
+
+    assert.equal(result.ok, false);
+    assert.match(result.attempts[0].error, /UND_ERR_CONNECT_TIMEOUT/);
+    assert.match(result.attempts[0].error, /Connect Timeout Error/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("Markdown normalization removes only one outer code fence", () => {
   assert.equal(
     normalizeAnswerMarkdown("```md\r\n# 答案\r\n\r\n$P=UI$\r\n```\r\n"),
     "# 答案\n\n$P=UI$"
   );
   assert.equal(normalizeAnswerMarkdown("# 答案\n\n正文"), "# 答案\n\n正文");
+});
+
+test("Markdown normalization removes model commentary before the answer heading", () => {
+  assert.equal(
+    normalizeAnswerMarkdown("我正在逐题核对仪表图，避免按惯例作答。# 物理试卷参考答案\n\n1—5：B、C、C、B、C"),
+    "# 物理试卷参考答案\n\n1—5：B、C、C、B、C"
+  );
 });
 
 test("Markdown normalization removes math fences around simple point-label lists", () => {
@@ -222,4 +332,29 @@ test("reference review deterministically overwrites the two ten-question choice 
   assert.equal(reviewed.applied, true);
   assert.match(reviewed.markdown, /1—5：B、A、A、D、A/);
   assert.match(reviewed.markdown, /6—10：C、B、B、D、D/);
+});
+
+test("reference review extracts numbered choices from an explained answer PDF text layer", () => {
+  const referenceText = [
+    "1. 光导纤维原理（ ）A.折射 B.反射【答案】B【解析】利用反射。",
+    "2. 鸟鸣和猫叫（ ）【答案】C【解析】鸟鸣频率高。",
+    "3. 能源分类（ ）【答案】C【解析】风能、水能。",
+    "4. 吸盘所受摩擦力（ ）【答案】B【解析】方向向上。",
+    "5. 回南天玻璃出水（ ）【答案】C【解析】液化放热。",
+    "6. 潜水艇掉深（ ）【答案】A【解析】浮力变小。",
+    "7. 物态变化（ ）【答案】D【解析】略。",
+    "8. 家庭电路故障（ ）【答案】D【解析】略。",
+    "9. 地磅电路（ ）【答案】A【解析】电压表示数变大。",
+    "10. 水塔压强（ ）【答案】D【解析】略。",
+    "11. 非选择题"
+  ].join("\n");
+  const reviewed = applyReferenceChoiceAnswers(
+    "# 物理试卷参考答案\n\n1—5：A、A、A、A、A\n6—10：B、B、B、B、B",
+    referenceText
+  );
+
+  assert.equal(reviewed.applied, true);
+  assert.equal(reviewed.answers, "BCCBCADDAD");
+  assert.match(reviewed.markdown, /1—5：B、C、C、B、C/);
+  assert.match(reviewed.markdown, /6—10：A、D、D、A、D/);
 });

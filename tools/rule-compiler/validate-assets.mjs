@@ -9,6 +9,7 @@ import {
   resolveRepoPath
 } from "./shared.mjs";
 import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./schema-validator.mjs";
+import { assertSpecBoundary } from "./validate-spec-boundary.mjs";
 
 const schemaRoot = resolveRepoPath("prompts/shared/schemas");
 const promptRoot = resolveRepoPath("prompts");
@@ -83,6 +84,8 @@ function main() {
     throw new Error(`Compiled prompt drift:\n${assemblyErrors.join("\n")}`);
   }
 
+  assertSpecBoundary();
+
   const schemaCount = validateSchemas();
   const subjects = subjectPackNames();
   for (const subject of subjects) {
@@ -90,7 +93,7 @@ function main() {
   }
   validateRendererContracts();
 
-  console.log(`Validated ${schemaCount} core schemas, ${subjects.length} subject packs, compiled prompt assemblies, snapshots, and renderer contracts.`);
+  console.log(`Validated ${schemaCount} core schemas, ${subjects.length} subject packs, spec boundaries, compiled prompt assemblies, snapshots, and renderer contracts.`);
 }
 
 try {

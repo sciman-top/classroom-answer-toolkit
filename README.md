@@ -7,7 +7,8 @@
 ```text
 试卷 PDF
   -> 页面图
-  -> v8.14 完整提示词 + AI 作答
+  -> v8.15 完整提示词 + AI 作答
+  -> 4x 题目级左右重叠视窗 + 无参考答案视觉审计
   -> 可选：参考答案 PDF 复核与校正
   -> Markdown 规则校验
   -> PDF 排版
@@ -18,9 +19,10 @@
 
 ## 当前状态
 
-- 初中物理运行提示词：`prompts/junior-physics-answer/spec.md`，版本 `v8.14`。
+- 初中物理运行提示词：`prompts/junior-physics-answer/spec.md`，版本 `v8.15`。
 - 已真实跑通 2025 广州中考原卷到 Markdown/PDF 的完整链路。
-- 单次整卷盲答仍可能在视觉题、接线题和多小问覆盖上出错，不能未经参考答案或人工复核直接声明可信。
+- 默认主链不再把单次整卷盲答直接送去排版：先以 4x 重渲染原卷，按 PDF.js 题号切成每题两个带重叠的高清视窗（续页继承题号）执行独立视觉审计，再进入可选参考答案复核。
+- 局部高清审计能降低滑轮、刻度尺和钩码计数错误，但不能保证消除所有仪表盘歧义；未经参考答案或人工复核仍不得声明答案可信。
 - 2025 实跑交付位于 `正式交付/2025广州中考/`，原卷目录 `广州物理中考试卷/` 保持为用户资料，不纳入仓库资产治理。
 
 ## 最短运行
@@ -34,6 +36,10 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-live-answer-workflow.p
   -OutputDirectory "正式交付/2025广州中考" `
   -KeepReview
 ```
+
+若 Node 直连 AI 网关出现 `UND_ERR_CONNECT_TIMEOUT`，但本机已配置 `HTTP_PROXY`、`HTTPS_PROXY` 或 `ALL_PROXY`，可在同一命令增加 `-UseGatewayProxy`。该开关只在本次工作流进程内启用 Node 环境代理，并仅从本次子进程的 `NO_PROXY` 副本中移除 `.env` 已配置的 AI 网关主机；不会修改持久环境变量。
+
+工作流默认执行视觉审计。只有诊断旧链或明确控制 provider 成本时才使用 `-SkipVisualAudit`；这会恢复单次盲答路径，不能作为可信交付。
 
 只对已有答案 Markdown 做校验和 PDF 交付：
 
@@ -51,7 +57,7 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 ## 核心目录
 
 - `prompts/specs/`：人类规范真源；compiled 文件由 assembler 生成。
-- `prompts/junior-physics-answer/`：v8.14 运行提示词、规则、排版 profile 和 manifest。
+- `prompts/junior-physics-answer/`：v8.15 运行提示词、规则、排版 profile 和 manifest。
 - `tools/ai-gateway/`：显式云出网的答案生成请求。
 - `tools/rule-compiler/`：subject-pack、规则和 snapshot 编译与校验。
 - `tools/latex-renderer/`：Markdown 校验、PDF 渲染、review 页图和交付 manifest。
@@ -65,10 +71,12 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 
 ```powershell
 dotnet build ClassroomToolkit.sln -c Debug
-dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug
+dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build
 npm --prefix tools/rule-compiler run validate:assets
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer
 ```
+
+共享 spec/schema、renderer 或 release 变更使用 `-Mode Full`；只需快速检查 gateway/spec/Unicode 路径时使用 `-Mode Fast`。`Core` 是默认主链体检，不触发无关学科的全量 eval。
 
 `scripts/bootstrap.ps1` 会安装依赖，只用于环境初始化，不是日常门禁。
 

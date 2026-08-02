@@ -40,6 +40,7 @@
 - 新增 compatibility 语义
 - 每个 assembly 必须显式声明输出版本
 - 每个 `subject-pack` 必须能追溯到对应的 `specVersion / snapshotVersion`
+- commons 或 platform 行为变化必须提升所有受影响 assembly 的组合输出版本；不要求未变化的 subject source 伪装成新版本
 
 ### 汇编与编排
 
@@ -57,6 +58,8 @@
 3. `humanSpec` 一律指向 compiled 完整版
 4. 结构化资产与 `snapshot` 分离，不互相替代
 5. 每次规范变化都必须明确受影响层和受影响 `subject-pack`
+6. active spec 不得引用已由最终实施基线冻结的内部对象、工具或工作流
+7. 模型最终输出合同必须明确区分答案 Markdown 与仓内 manifest/diagnostics
 
 ## 5. 治理机制
 
@@ -65,6 +68,7 @@
 - 所有 schema 有 `$id`
 - compatibility 有明确定义
 - 新增 schema 必须接入 `validate:assets`
+- frozen 模块 schema 在消费者清理后必须从 active schema root 删除，不以“可能未来使用”为由永久保留
 
 ### 影响分析
 
@@ -83,9 +87,10 @@ override precedence 与冲突裁决规则必须写清，并与 `assemblies/` 及
 规范变化后至少执行：
 
 1. assembler
-2. `validate-assets`
-3. 对应 `subject-pack` 的 answer eval
-4. 必要时执行视觉基线或样例回放
+2. `validate:spec-boundary`
+3. `validate-assets`
+4. 对应 `subject-pack` 的 Core verifier
+5. shared commons/platform 或跨学科变化执行 Full verifier
 
 若回归失败，允许：
 
@@ -96,11 +101,12 @@ override precedence 与冲突裁决规则必须写清，并与 `assemblies/` 及
 ## 6. 变更流程
 
 1. 修改源规范
-2. 运行 assembler
-3. 必要时同步结构化规则
-4. 运行 `validate-assets`
-5. 运行对应 `subject-pack` 回归
-6. 记录影响分析与回滚点
+2. 提升受影响 assembly 的组合输出版本
+3. 运行 assembler，不手改 generated artifacts
+4. 必要时同步结构化规则、manifest、config 和 acceptance checklist
+5. 运行 `validate:spec-boundary` 与 `validate-assets`
+6. 运行对应 Core 或 Full verifier
+7. 记录影响分析、truth boundary 与回滚点
 
 ## 7. 不做项
 

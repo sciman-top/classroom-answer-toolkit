@@ -22,6 +22,9 @@ Options:
   --prompt-file <path>      Full answer specification; defaults to the active junior-physics spec
   --images-dir <dir>        Directory containing ordered page PNG/JPEG/WebP images
   --candidate-file <path>   Blind answer Markdown to review against a reference answer
+  --audit-images-dir <dir>  High-resolution source crops/pages for a no-reference visual audit; requires --candidate-file
+  --audit-findings-only     Emit visual findings without rewriting the candidate; requires --audit-images-dir
+  --audit-findings-file <path>  Merge a prior visual findings report into the candidate without image input
   --reference-images-dir <dir>  Ordered reference-answer page images; requires --candidate-file
   --reference-text-file <path>  Optional extracted text layer from the same reference PDF
   --image <path>            Add one page image; repeat for multiple pages
@@ -38,6 +41,9 @@ function parseArgs(argv) {
     envFile: path.join(repoRoot, ".env"),
     promptFile: defaultPromptPath,
     imagesDir: null,
+    auditImagesDir: null,
+    auditFindingsOnly: false,
+    auditFindingsFile: null,
     referenceImagesDir: null,
     referenceTextFile: null,
     candidateFile: null,
@@ -82,6 +88,26 @@ function parseArgs(argv) {
     }
     if (arg === "--candidate-file") {
       options.candidateFile = resolveCallerPath(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg === "--audit-images-dir") {
+      options.auditImagesDir = resolveCallerPath(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg.startsWith("--audit-images-dir=")) {
+      options.auditImagesDir = resolveCallerPath(arg.slice("--audit-images-dir=".length));
+      continue;
+    }
+    if (arg === "--audit-findings-only") {
+      options.auditFindingsOnly = true;
+      continue;
+    }
+    if (arg === "--audit-findings-file") {
+      options.auditFindingsFile = resolveCallerPath(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg.startsWith("--audit-findings-file=")) {
+      options.auditFindingsFile = resolveCallerPath(arg.slice("--audit-findings-file=".length));
       continue;
     }
     if (arg.startsWith("--candidate-file=")) {
@@ -160,11 +186,20 @@ function parseArgs(argv) {
   }
 
   validateOptions(options);
-  options.sourceImagePaths = resolveOrderedImages(options);
+  options.sourceImagePaths = options.imagesDir || options.imagePaths.length > 0
+    ? resolveOrderedImages(options)
+    : [];
+  options.auditImagePaths = options.auditImagesDir
+    ? resolveImagesFromDirectory(options.auditImagesDir)
+    : [];
   options.referenceImagePaths = options.referenceImagesDir
     ? resolveImagesFromDirectory(options.referenceImagesDir)
     : [];
-  options.imagePaths = [...options.sourceImagePaths, ...options.referenceImagePaths];
+  options.imagePaths = [
+    ...options.sourceImagePaths,
+    ...options.auditImagePaths,
+    ...options.referenceImagePaths
+  ];
   return options;
 }
 
@@ -179,8 +214,8 @@ function validateOptions(options) {
   if (options.imagesDir && options.imagePaths.length > 0) {
     throw new Error("Use --images-dir or repeated --image values, not both.");
   }
-  if (!options.imagesDir && options.imagePaths.length === 0) {
-    throw new Error("--images-dir or at least one --image is required.");
+  if (!options.imagesDir && options.imagePaths.length === 0 && !options.auditImagesDir && !options.auditFindingsFile) {
+    throw new Error("--images-dir, --audit-images-dir, --audit-findings-file, or at least one --image is required.");
   }
   if (!["primary", "fallback", "all"].includes(options.provider)) {
     throw new Error("--provider must be primary, fallback, or all.");
@@ -194,14 +229,24 @@ function validateOptions(options) {
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
     throw new Error("--timeout-ms must be an integer >= 1000.");
   }
-  if (Boolean(options.candidateFile) !== Boolean(options.referenceImagesDir)) {
-    throw new Error("--candidate-file and --reference-images-dir must be used together.");
+  if ([options.auditImagesDir, options.referenceImagesDir, options.auditFindingsFile].filter(Boolean).length > 1) {
+    throw new Error("--audit-images-dir, --audit-findings-file, and --reference-images-dir are mutually exclusive.");
+  }
+  const candidateMode = Boolean(options.auditImagesDir || options.auditFindingsFile || options.referenceImagesDir);
+  if (Boolean(options.candidateFile) !== candidateMode) {
+    throw new Error("--candidate-file must be used with exactly one of --audit-images-dir or --reference-images-dir.");
   }
   if (options.candidateFile && !fs.existsSync(options.candidateFile)) {
     throw new Error(`Candidate Markdown not found: ${options.candidateFile}`);
   }
-  if (options.referenceTextFile && !options.candidateFile) {
-    throw new Error("--reference-text-file requires --candidate-file.");
+  if (options.auditFindingsOnly && !options.auditImagesDir) {
+    throw new Error("--audit-findings-only requires --audit-images-dir.");
+  }
+  if (options.auditFindingsFile && !fs.existsSync(options.auditFindingsFile)) {
+    throw new Error(`Visual audit findings file not found: ${options.auditFindingsFile}`);
+  }
+  if (options.referenceTextFile && !options.referenceImagesDir) {
+    throw new Error("--reference-text-file requires --reference-images-dir.");
   }
   if (options.referenceTextFile && !fs.existsSync(options.referenceTextFile)) {
     throw new Error(`Reference text file not found: ${options.referenceTextFile}`);
@@ -243,6 +288,33 @@ export function buildPrompt(promptFile, review = {}) {
     throw new Error(`Prompt file not found: ${promptFile}`);
   }
   const specification = fs.readFileSync(promptFile, "utf8").trim();
+  if (review.mode === "visual_audit_findings") {
+    return `${specification}\n\n---\n\n# 无参考答案视觉发现任务\n\n` +
+      `所附 ${review.auditImageCount} 张图片是原始试卷的高分辨率重叠视窗，不是参考答案。` +
+      "请对照第一次盲答候选，逐题独立检查所有选择题和包含滑轮、仪表、刻度尺、弹簧、钩码、电路、光路或方向关系的题目。\n" +
+      "只输出视觉审计发现报告，不得重写整份答案。每项发现必须包含题号、候选结论、可见证据、独立计算或逐段追踪结果、建议修正；没有足够证据时写【视觉证据不足，需复核】。\n" +
+      "选择题逐项反证；滑轮逐段追踪承重绳；仪表先识别实际接线柱再按刻线间隔计数；刻度尺读取两端后相减；钩码逐个计数。\n\n" +
+      `## 第一次盲答候选\n\n${review.candidateMarkdown.trim()}`;
+  }
+  if (review.mode === "visual_audit_merge") {
+    return `${specification}\n\n---\n\n# 视觉审计合并任务\n\n` +
+      "下面给出第一次盲答候选和独立视觉审计发现报告。只应用同时具有明确视觉证据、计算链和“建议修正”的项目；标记为“无需修正”或证据不足的项目必须保留候选原文，不得改写为占位文本或猜测。" +
+      "保持所有题号、小问、公式和 Markdown 结构完整，仅返回修正后的完整 Markdown，不要输出差异说明或代码围栏。\n\n" +
+      `## 视觉审计发现报告\n\n${review.auditFindings.trim()}\n\n` +
+      `## 第一次盲答候选\n\n${review.candidateMarkdown.trim()}`;
+  }
+  if (review.mode === "visual_audit") {
+    return `${specification}\n\n---\n\n# 无参考答案视觉审计任务\n\n` +
+      `所附 ${review.auditImageCount} 张图片是原始试卷的高分辨率页面或局部裁图，不是参考答案，也不包含答案标注。` +
+      "下面给出第一次盲答候选。必须抛开候选结论，依据原卷视觉证据和物理规律逐题独立复算，再返回修正后的完整 Markdown。\n" +
+      "选择题逐项反证每个选项，特别核对物态变化、条件方向和吸放热，不得因候选已给出字母而跳过推理。\n" +
+      "滑轮组必须从绳端沿同一根绳逐段追踪，数出直接支持动滑轮或重物组件的承重绳段，再计算速度、功率和效率。\n" +
+      "指针式仪表必须先逐个追踪实际连接导线的接线柱，据此选择量程；再确认对应数字刻度、分度值、指针格数和读数。小格按相邻刻线之间的间隔计数，零刻线只是边界，不得把零刻线计作第一个小格；双排刻度必须分别读数并核对固定倍率关系。禁止先看指针再猜量程。\n" +
+      "刻度尺和弹簧必须分别读取物体两端刻度后相减；钩码必须逐个计数，并用单个钩码重力交叉校验总拉力。\n" +
+      "凡视觉证据无法可靠判读，必须在对应答案处明确标记【视觉证据不足，需复核】，不得猜测或输出伪确定数值。\n" +
+      "仅返回修正后的完整 Markdown，不要输出审计报告、差异说明、代码围栏或处理过程。\n\n" +
+      `## 第一次盲答候选\n\n${review.candidateMarkdown.trim()}`;
+  }
   const generationTask = `${specification}\n\n---\n\n# 当前真实试卷生成任务\n\n` +
     "所附图片按文件名顺序构成同一份完整试卷。请严格按上述规范独立解答全部题目。\n" +
     "解题前先在内部建立逐题覆盖清单，枚举每个题号、括号小问、圈号小问和每个待填空；" +
@@ -273,10 +345,40 @@ export function normalizeAnswerMarkdown(value) {
   const normalized = String(value ?? "").replace(/\r\n?/g, "\n").trim();
   const match = normalized.match(/^```(?:markdown|md)?\s*\n([\s\S]*?)\n```\s*$/i);
   const unfenced = (match ? match[1] : normalized).trim();
-  return unfenced.replace(/\$([A-D](?:['′])?(?:[、，][A-D](?:['′])?)*)\$/g, "$1");
+  const headingIndex = unfenced.search(/#\s+(?:物理试卷参考答案|参考答案|答案)(?=\s|$)/u);
+  const answerOnly = headingIndex >= 0 ? unfenced.slice(headingIndex) : unfenced;
+  return answerOnly.replace(/\$([A-D](?:['′])?(?:[、，][A-D](?:['′])?)*)\$/g, "$1");
+}
+
+function extractNumberedChoiceAnswers(referenceText) {
+  const text = String(referenceText ?? "").replace(/\r\n?/g, "\n");
+  const markers = [...text.matchAll(/(?<!\d)(10|[1-9])\.\s+/gu)];
+  const answersByQuestion = new Map();
+  for (let index = 0; index < markers.length; index += 1) {
+    const questionNumber = Number(markers[index][1]);
+    const segmentStart = markers[index].index + markers[index][0].length;
+    const segmentEnd = markers[index + 1]?.index ?? text.length;
+    const answer = text.slice(segmentStart, segmentEnd).match(/【\s*答案\s*】\s*([A-D])/iu)?.[1]?.toUpperCase();
+    if (!answer) {
+      continue;
+    }
+    const existing = answersByQuestion.get(questionNumber);
+    if (existing && existing !== answer) {
+      throw new Error(`Reference text contains conflicting answers for choice question ${questionNumber}: ${existing}, ${answer}`);
+    }
+    answersByQuestion.set(questionNumber, answer);
+  }
+  if (Array.from({ length: 10 }, (_, index) => index + 1).every((number) => answersByQuestion.has(number))) {
+    return Array.from({ length: 10 }, (_, index) => answersByQuestion.get(index + 1)).join("");
+  }
+  return null;
 }
 
 function extractTenChoiceAnswers(referenceText) {
+  const numberedAnswers = extractNumberedChoiceAnswers(referenceText);
+  if (numberedAnswers) {
+    return numberedAnswers;
+  }
   const compact = String(referenceText ?? "").toUpperCase().replace(/\s+/g, "");
   const matches = [...compact.matchAll(/(?<![A-Z])([A-D]{5})([A-D]{5})(?![A-Z])/g)]
     .map((match) => `${match[1]}${match[2]}`);
@@ -421,6 +523,18 @@ function summarizeBody(bodyText) {
   }
 }
 
+function summarizeRequestError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const cause = error && typeof error === "object" ? error.cause : null;
+  if (!cause || typeof cause !== "object") {
+    return message;
+  }
+  const causeCode = typeof cause.code === "string" ? cause.code : "";
+  const causeMessage = typeof cause.message === "string" ? cause.message : "";
+  const detail = [causeCode, causeMessage].filter(Boolean).join(": ");
+  return detail ? `${message} (${detail})` : message;
+}
+
 async function callProvider(provider, options) {
   const endpointPath = provider.visionSurface === "chat_completions" ? "chat/completions" : "responses";
   const endpoint = `${provider.baseUrl.replace(/\/+$/, "")}/${endpointPath}`;
@@ -477,7 +591,7 @@ async function callProvider(provider, options) {
       ok: false,
       retryable: true,
       status: null,
-      error: error instanceof Error ? error.message : String(error)
+      error: summarizeRequestError(error)
     };
   } finally {
     clearTimeout(timeout);
@@ -551,9 +665,18 @@ export async function main() {
     throw new Error(loaded.validation.errors.join("; "));
   }
   const prompt = buildPrompt(options.promptFile, options.candidateFile ? {
+    mode: options.auditFindingsOnly
+      ? "visual_audit_findings"
+      : options.auditFindingsFile
+        ? "visual_audit_merge"
+        : options.auditImagesDir
+          ? "visual_audit"
+          : "reference_review",
     candidateMarkdown: fs.readFileSync(options.candidateFile, "utf8"),
+    auditFindings: options.auditFindingsFile ? fs.readFileSync(options.auditFindingsFile, "utf8") : "",
     referenceText: options.referenceTextFile ? fs.readFileSync(options.referenceTextFile, "utf8") : "",
     sourcePageCount: options.sourceImagePaths.length,
+    auditImageCount: options.auditImagePaths.length,
     referencePageCount: options.referenceImagePaths.length
   } : {});
   const result = await requestAnswerWithFailover(loaded.config, { ...options, prompt });
@@ -573,11 +696,24 @@ export async function main() {
     reasoningEffort: result.reasoningEffort,
     promptPath: path.relative(repoRoot, options.promptFile).replace(/\\/g, "/"),
     promptSha256: sha256File(options.promptFile),
-    mode: options.candidateFile ? "reference_review" : "blind_generation",
+    mode: options.auditFindingsOnly
+      ? "visual_audit_findings"
+      : options.auditFindingsFile
+        ? "visual_audit_merge"
+        : options.auditImagesDir
+          ? "visual_audit"
+          : options.candidateFile
+            ? "reference_review"
+            : "blind_generation",
     sourcePageCount: options.sourceImagePaths.length,
+    auditImageCount: options.auditImagePaths.length,
     referencePageCount: options.referenceImagePaths.length,
+    requestedVisualDetailMode: options.visualDetailMode,
+    providerVisualDetailMode: normalizeDetailForProvider(options.visualDetailMode),
     candidatePath: options.candidateFile,
     candidateSha256: options.candidateFile ? sha256File(options.candidateFile) : null,
+    auditFindingsPath: options.auditFindingsFile,
+    auditFindingsSha256: options.auditFindingsFile ? sha256File(options.auditFindingsFile) : null,
     referenceTextPath: options.referenceTextFile,
     referenceTextSha256: options.referenceTextFile ? sha256File(options.referenceTextFile) : null,
     pageCount: options.imagePaths.length,

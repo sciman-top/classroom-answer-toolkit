@@ -6,23 +6,6 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-function Resolve-BundleRelativePath {
-    param(
-        [string]$BaseFilePath,
-        [string]$RelativePath
-    )
-
-    if ([string]::IsNullOrWhiteSpace($RelativePath)) {
-        return $null
-    }
-
-    if ([System.IO.Path]::IsPathRooted($RelativePath)) {
-        return $RelativePath
-    }
-
-    return [System.IO.Path]::GetFullPath((Join-Path (Split-Path -Path $BaseFilePath -Parent) $RelativePath))
-}
-
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot
 
@@ -66,7 +49,7 @@ try {
         }
     }
 
-    foreach ($key in @(
+    $requiredKeys = @(
         "repositoryRoot",
         "workspaceSummary",
         "workspaceHealthy",
@@ -74,96 +57,30 @@ try {
         "primarySubjectPack",
         "subjectPacks",
         "snapshotPath",
-        "diagnosticsBundlePath",
-        "diagnosticsManifestPath",
-        "diagnosticsFileCount")) {
-        $match = [regex]::Match(
-            $smokeText,
-            "^{0}=(.*)$" -f [regex]::Escape($key),
-            [System.Text.RegularExpressions.RegexOptions]::Multiline)
-
-        if (-not $match.Success) {
+        "evalOk",
+        "evalCaseCount")
+    foreach ($key in $requiredKeys) {
+        if (-not $smokeData.ContainsKey($key)) {
             throw "Published app smoke did not report $key."
         }
     }
 
-    $bundleMatch = [regex]::Match($smokeText, '^diagnosticsBundlePath=(.+)$', [System.Text.RegularExpressions.RegexOptions]::Multiline)
-    $manifestMatch = [regex]::Match($smokeText, '^diagnosticsManifestPath=(.+)$', [System.Text.RegularExpressions.RegexOptions]::Multiline)
-
-    $bundlePath = $bundleMatch.Groups[1].Value.Trim()
-    $manifestPath = $manifestMatch.Groups[1].Value.Trim()
-    $subjectPackIndexPath = Join-Path $bundlePath "workspace\subject-packs\index.json"
-
-    if (-not (Test-Path -LiteralPath $bundlePath)) {
-        throw "Diagnostics bundle directory not found: $bundlePath"
+    if (-not [bool]::Parse([string]$smokeData["workspaceHealthy"])) {
+        throw "Published app reported an unhealthy workspace: $($smokeData['healthSummary'])"
+    }
+    if (-not [bool]::Parse([string]$smokeData["evalOk"])) {
+        throw "Published app reported failed evaluation state."
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$smokeData["primarySubjectPack"])) {
+        throw "Published app did not identify a primary subject pack."
     }
 
-    if (-not (Test-Path -LiteralPath $manifestPath)) {
-        throw "Diagnostics manifest not found: $manifestPath"
-    }
-
-    if (-not (Test-Path -LiteralPath $subjectPackIndexPath)) {
-        throw "Diagnostics bundle missing subject-pack index: $subjectPackIndexPath"
-    }
-
-    $diagnosticManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-    if ([string]::IsNullOrWhiteSpace($diagnosticManifest.kind) -or $diagnosticManifest.kind -ne "workspace-diagnostics-bundle") {
-        throw "Diagnostics manifest kind mismatch."
-    }
-
-    if ([string]::IsNullOrWhiteSpace($diagnosticManifest.primarySubjectPack)) {
-        throw "Diagnostics manifest missing primarySubjectPack."
-    }
-
-    $primarySubjectPackManifestPath = Join-Path $bundlePath ("workspace\prompts\{0}\manifest.json" -f [string]$diagnosticManifest.primarySubjectPack)
-    if (-not (Test-Path -LiteralPath $primarySubjectPackManifestPath)) {
-        throw "Diagnostics bundle missing primary subject-pack manifest: $primarySubjectPackManifestPath"
-    }
-
-    $primarySubjectPackManifest = Get-Content -LiteralPath $primarySubjectPackManifestPath -Raw | ConvertFrom-Json
-    if ($null -eq $primarySubjectPackManifest.sourceOfTruth) {
-        throw "Diagnostics primary subject-pack manifest missing sourceOfTruth."
-    }
-
-    $bundledHumanSpecPath = Resolve-BundleRelativePath -BaseFilePath $primarySubjectPackManifestPath -RelativePath ([string]$primarySubjectPackManifest.sourceOfTruth.humanSpec)
-    if ([string]::IsNullOrWhiteSpace($bundledHumanSpecPath) -or -not (Test-Path -LiteralPath $bundledHumanSpecPath)) {
-        throw "Diagnostics bundle missing primary subject-pack humanSpec: $bundledHumanSpecPath"
-    }
-
-    $bundledMirroredSpecPath = Resolve-BundleRelativePath -BaseFilePath $primarySubjectPackManifestPath -RelativePath ([string]$primarySubjectPackManifest.sourceOfTruth.mirroredSpec)
-    if ([string]::IsNullOrWhiteSpace($bundledMirroredSpecPath) -or -not (Test-Path -LiteralPath $bundledMirroredSpecPath)) {
-        throw "Diagnostics bundle missing primary subject-pack mirroredSpec: $bundledMirroredSpecPath"
-    }
-
-    $bundledAcceptanceChecklistPath = Resolve-BundleRelativePath -BaseFilePath $primarySubjectPackManifestPath -RelativePath ([string]$primarySubjectPackManifest.sourceOfTruth.acceptanceChecklist)
-    if ([string]::IsNullOrWhiteSpace($bundledAcceptanceChecklistPath) -or -not (Test-Path -LiteralPath $bundledAcceptanceChecklistPath)) {
-        throw "Diagnostics bundle missing primary subject-pack acceptanceChecklist: $bundledAcceptanceChecklistPath"
-    }
-
-    if ($null -eq $diagnosticManifest.subjectPacks -or $diagnosticManifest.subjectPacks.Count -lt 1) {
-        throw "Diagnostics manifest missing subjectPacks."
-    }
-
-    if ([string]::IsNullOrWhiteSpace($diagnosticManifest.snapshotPath)) {
-        throw "Diagnostics manifest missing snapshotPath."
-    }
-
-    $diagnosticSubjectPacks = @($diagnosticManifest.subjectPacks | ForEach-Object { [string]$_ })
-    $smokeSubjectPacks = @(
-        [string]($smokeData["subjectPacks"]) -split "," |
+    $subjectPacks = @(
+        [string]$smokeData["subjectPacks"] -split "," |
             Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
     )
-
-    if ([string]$smokeData["primarySubjectPack"] -ne [string]$diagnosticManifest.primarySubjectPack) {
-        throw "Smoke stdout primarySubjectPack does not match diagnostics manifest."
-    }
-
-    if ([string]$smokeData["snapshotPath"] -ne [string]$diagnosticManifest.snapshotPath) {
-        throw "Smoke stdout snapshotPath does not match diagnostics manifest."
-    }
-
-    if (($smokeSubjectPacks -join ",") -ne ($diagnosticSubjectPacks -join ",")) {
-        throw "Smoke stdout subjectPacks does not match diagnostics manifest."
+    if ($subjectPacks.Count -lt 1) {
+        throw "Published app did not report any subject packs."
     }
 
     $report = [ordered]@{
@@ -176,48 +93,18 @@ try {
         smoke = [ordered]@{
             repositoryRoot = [string]$smokeData["repositoryRoot"]
             workspaceSummary = [string]$smokeData["workspaceSummary"]
-            workspaceHealthy = [string]$smokeData["workspaceHealthy"]
+            workspaceHealthy = [bool]::Parse([string]$smokeData["workspaceHealthy"])
             healthSummary = [string]$smokeData["healthSummary"]
             primarySubjectPack = [string]$smokeData["primarySubjectPack"]
-            subjectPacks = $smokeSubjectPacks
+            subjectPacks = $subjectPacks
             snapshotPath = [string]$smokeData["snapshotPath"]
-            lastDeliverySubjectPack = [string]$smokeData["lastDeliverySubjectPack"]
-            lastDeliveryProfile = [string]$smokeData["lastDeliveryProfile"]
-            lastSnapshotId = [string]$smokeData["lastSnapshotId"]
-            lastDeliverySnapshotPath = [string]$smokeData["lastDeliverySnapshotPath"]
-            lastDeliverySnapshotVersion = [string]$smokeData["lastDeliverySnapshotVersion"]
-            lastDeliveryInputPath = [string]$smokeData["lastDeliveryInputPath"]
-            lastDeliveryOutputPath = [string]$smokeData["lastDeliveryOutputPath"]
-            lastDeliveryReviewDirectoryPath = [string]$smokeData["lastDeliveryReviewDirectoryPath"]
-            lastDeliveryReviewState = [string]$smokeData["lastDeliveryReviewState"]
-            lastDeliveryFeedbackRefCount = [string]$smokeData["lastDeliveryFeedbackRefCount"]
-            lastDeliveryVisualDecisionRef = [string]$smokeData["lastDeliveryVisualDecisionRef"]
-            lastDeliveryVisualPolicyVersion = [string]$smokeData["lastDeliveryVisualPolicyVersion"]
-            lastDeliveryOptimizationVersion = [string]$smokeData["lastDeliveryOptimizationVersion"]
-            diagnosticsBundlePath = [string]$smokeData["diagnosticsBundlePath"]
-            diagnosticsManifestPath = [string]$smokeData["diagnosticsManifestPath"]
-            diagnosticsFileCount = [string]$smokeData["diagnosticsFileCount"]
-        }
-        diagnostics = [ordered]@{
-            kind = [string]$diagnosticManifest.kind
-            manifestPath = $manifestPath
-            bundleDirectoryPath = $bundlePath
-            subjectPackIndexPath = $subjectPackIndexPath
-            primarySubjectPackManifestPath = $primarySubjectPackManifestPath
-            primaryHumanSpecPath = $bundledHumanSpecPath
-            primaryMirroredSpecPath = $bundledMirroredSpecPath
-            primaryAcceptanceChecklistPath = $bundledAcceptanceChecklistPath
-            primarySubjectPack = [string]$diagnosticManifest.primarySubjectPack
-            subjectPacks = $diagnosticSubjectPacks
-            snapshotPath = [string]$diagnosticManifest.snapshotPath
-            lastSnapshotId = [string]$diagnosticManifest.lastSnapshotId
-            health = $diagnosticManifest.health
-            lastDeliveryContext = $diagnosticManifest.lastDeliveryContext
+            evalOk = [bool]::Parse([string]$smokeData["evalOk"])
+            evalCaseCount = [int]$smokeData["evalCaseCount"]
         }
     }
 
     New-Item -ItemType Directory -Path (Split-Path -Path $reportPath -Parent) -Force | Out-Null
-    $report | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $reportPath -Encoding utf8
+    $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $reportPath -Encoding utf8
 
     Write-Host "Smoke report: $reportPath"
     Write-Host $smokeText

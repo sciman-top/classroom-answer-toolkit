@@ -103,7 +103,7 @@ const browserCandidates = [
 ];
 
 const usage = `Usage:
-  npm run review-source-pdf -- <input.pdf> [--out <dir>] [--pages all|1,3,5-7,last] [--scale 1.8] [--ocr chi_sim]
+  npm run review-source-pdf -- <input.pdf> [--out <dir>] [--pages all|1,3,5-7,last] [--scale 1.8] [--vertical-tiles 2] [--question-regions] [--horizontal-tiles 2] [--tile-overlap 0.15] [--ocr chi_sim]
 
 Examples:
   npm run review-source-pdf -- "../../样例交付/能量-效率.pdf"
@@ -117,6 +117,10 @@ function parseArgs(argv) {
     out: null,
     pages: "all",
     scale: 1.8,
+    verticalTiles: 1,
+    horizontalTiles: 1,
+    questionRegions: false,
+    tileOverlap: 0.15,
     ocr: null
   };
 
@@ -154,6 +158,41 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--scale=")) {
       options.scale = Number(arg.slice("--scale=".length));
+      continue;
+    }
+
+    if (arg === "--vertical-tiles") {
+      options.verticalTiles = Number(argv[++index]);
+      continue;
+    }
+
+    if (arg.startsWith("--vertical-tiles=")) {
+      options.verticalTiles = Number(arg.slice("--vertical-tiles=".length));
+      continue;
+    }
+
+    if (arg === "--horizontal-tiles") {
+      options.horizontalTiles = Number(argv[++index]);
+      continue;
+    }
+
+    if (arg.startsWith("--horizontal-tiles=")) {
+      options.horizontalTiles = Number(arg.slice("--horizontal-tiles=".length));
+      continue;
+    }
+
+    if (arg === "--question-regions") {
+      options.questionRegions = true;
+      continue;
+    }
+
+    if (arg === "--tile-overlap") {
+      options.tileOverlap = Number(argv[++index]);
+      continue;
+    }
+
+    if (arg.startsWith("--tile-overlap=")) {
+      options.tileOverlap = Number(arg.slice("--tile-overlap=".length));
       continue;
     }
 
@@ -435,6 +474,18 @@ async function main() {
   if (!Number.isFinite(options.scale) || options.scale <= 0 || options.scale > 4) {
     fail("--scale must be a number greater than 0 and at most 4.");
   }
+  if (!Number.isInteger(options.verticalTiles) || options.verticalTiles < 1 || options.verticalTiles > 4) {
+    fail("--vertical-tiles must be an integer from 1 to 4.");
+  }
+  if (!Number.isInteger(options.horizontalTiles) || options.horizontalTiles < 1 || options.horizontalTiles > 3) {
+    fail("--horizontal-tiles must be an integer from 1 to 3.");
+  }
+  if (options.questionRegions && options.verticalTiles !== 1) {
+    fail("--question-regions cannot be combined with --vertical-tiles greater than 1.");
+  }
+  if (!Number.isFinite(options.tileOverlap) || options.tileOverlap < 0 || options.tileOverlap > 0.4) {
+    fail("--tile-overlap must be a number from 0 to 0.4.");
+  }
 
   const callerCwd = process.env.INIT_CWD || process.cwd();
   const inputPath = path.resolve(callerCwd, positional[0]);
@@ -462,6 +513,10 @@ const browserPath = browserCandidates.find((candidate) => candidate && fs.exists
     renderer: "pdfjs-dist + local Chrome/Edge via Playwright",
     browserPath,
     scale: options.scale,
+    verticalTiles: options.verticalTiles,
+    horizontalTiles: options.horizontalTiles,
+    questionRegions: options.questionRegions,
+    tileOverlap: options.tileOverlap,
     requestedPages: options.pages,
     selectedPages: [],
     pageCount: 0,
@@ -513,8 +568,17 @@ const browserPath = browserCandidates.find((candidate) => candidate && fs.exists
     manifest.selectedPages = parsePageSelection(options.pages, loaded.pageCount);
 
     const inputBase = path.basename(inputPath, path.extname(inputPath));
+    let lastQuestionNumber = 0;
     for (const pageNumber of manifest.selectedPages) {
-      const rendered = await page.evaluate(async ({ pageNumber: pageNo, scale }) => {
+      const rendered = await page.evaluate(async ({
+        pageNumber: pageNo,
+        scale,
+        verticalTiles,
+        horizontalTiles,
+        questionRegions,
+        tileOverlap,
+        previousQuestionNumber
+      }) => {
         const pdfPage = await window.pdfReview.document.getPage(pageNo);
         const viewport = pdfPage.getViewport({ scale });
         const canvas = document.createElement("canvas");
@@ -528,19 +592,119 @@ const browserPath = browserCandidates.find((candidate) => candidate && fs.exists
         const textContent = await pdfPage.getTextContent().catch(() => ({ items: [] }));
         const text = textContent.items.map((item) => item.str).join("").trim();
 
+        const markerCandidates = textContent.items
+          .map((item) => {
+            const match = String(item.str ?? "").trim().match(/^(\d{1,2})\.$/u);
+            if (!match || Number(item.transform?.[4]) > 90) {
+              return null;
+            }
+            const viewportPoint = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+            return { number: Number(match[1]), y: viewportPoint[1] };
+          })
+          .filter(Boolean)
+          .sort((left, right) => left.y - right.y);
+        const questionMarkers = [];
+        let detectedQuestionNumber = previousQuestionNumber;
+        for (const candidate of markerCandidates) {
+          const continuesPrevious = questionMarkers.length === 0
+            && candidate.number === detectedQuestionNumber;
+          if (continuesPrevious || candidate.number === detectedQuestionNumber + 1) {
+            questionMarkers.push(candidate);
+            detectedQuestionNumber = Math.max(detectedQuestionNumber, candidate.number);
+          }
+        }
+
+        const regions = [];
+        if (questionRegions) {
+          const margin = Math.max(24, Math.round(16 * scale));
+          if (questionMarkers.length === 0) {
+            regions.push({ questionNumber: detectedQuestionNumber || null, y: 0, endY: canvas.height });
+          } else {
+            const firstStart = Math.max(0, Math.floor(questionMarkers[0].y - margin));
+            if (firstStart > margin && previousQuestionNumber > 0
+                && questionMarkers[0].number > previousQuestionNumber) {
+              regions.push({ questionNumber: previousQuestionNumber, y: 0, endY: firstStart });
+            }
+            for (let index = 0; index < questionMarkers.length; index += 1) {
+              const marker = questionMarkers[index];
+              const y = Math.max(0, Math.floor(marker.y - margin));
+              const endY = index + 1 < questionMarkers.length
+                ? Math.max(y + 1, Math.floor(questionMarkers[index + 1].y - margin))
+                : canvas.height;
+              regions.push({ questionNumber: marker.number, y, endY });
+            }
+          }
+        } else {
+          const baseTileHeight = canvas.height / verticalTiles;
+          const overlapPixels = baseTileHeight * tileOverlap;
+          for (let tileIndex = 0; tileIndex < verticalTiles; tileIndex += 1) {
+            const y = Math.max(0, Math.floor(tileIndex * baseTileHeight - overlapPixels));
+            const endY = Math.min(canvas.height, Math.ceil((tileIndex + 1) * baseTileHeight + overlapPixels));
+            regions.push({ questionNumber: null, y, endY });
+          }
+        }
+
+        const tiles = [];
+        for (let regionIndex = 0; regionIndex < regions.length; regionIndex += 1) {
+          const region = regions[regionIndex];
+          const baseTileWidth = canvas.width / horizontalTiles;
+          const horizontalOverlapPixels = baseTileWidth * tileOverlap;
+          for (let horizontalIndex = 0; horizontalIndex < horizontalTiles; horizontalIndex += 1) {
+            const x = Math.max(0, Math.floor(horizontalIndex * baseTileWidth - horizontalOverlapPixels));
+            const endX = Math.min(canvas.width, Math.ceil((horizontalIndex + 1) * baseTileWidth + horizontalOverlapPixels));
+            const y = region.y;
+            const endY = region.endY;
+            const tileCanvas = document.createElement("canvas");
+            tileCanvas.width = endX - x;
+            tileCanvas.height = endY - y;
+            const tileContext = tileCanvas.getContext("2d", { alpha: false });
+            tileContext.fillStyle = "white";
+            tileContext.fillRect(0, 0, tileCanvas.width, tileCanvas.height);
+            tileContext.drawImage(
+              canvas,
+              x,
+              y,
+              tileCanvas.width,
+              tileCanvas.height,
+              0,
+              0,
+              tileCanvas.width,
+              tileCanvas.height
+            );
+            tiles.push({
+              dataUrl: tileCanvas.toDataURL("image/png"),
+              tileIndex: regionIndex + 1,
+              tileCount: regions.length,
+              horizontalIndex: horizontalIndex + 1,
+              horizontalTileCount: horizontalTiles,
+              questionNumber: region.questionNumber,
+              x,
+              y,
+              width: tileCanvas.width,
+              height: tileCanvas.height
+            });
+          }
+        }
+
         return {
-          dataUrl: canvas.toDataURL("image/png"),
           width: canvas.width,
           height: canvas.height,
-          text
+          text,
+          tiles,
+          detectedQuestionNumber
         };
-      }, { pageNumber, scale: options.scale });
+      }, {
+        pageNumber,
+        scale: options.scale,
+        verticalTiles: options.verticalTiles,
+        horizontalTiles: options.horizontalTiles,
+        questionRegions: options.questionRegions,
+        tileOverlap: options.tileOverlap,
+        previousQuestionNumber: lastQuestionNumber
+      });
+      lastQuestionNumber = rendered.detectedQuestionNumber;
 
       const pageLabel = String(pageNumber).padStart(3, "0");
-      const imagePath = path.join(outputDir, `${inputBase}.page-${pageLabel}.png`);
-      fs.mkdirSync(path.dirname(imagePath), { recursive: true });
-      fs.writeFileSync(imagePath, dataUrlToBuffer(rendered.dataUrl));
-
       let textLayerPath = null;
       if (rendered.text) {
         textLayerPath = path.join(outputDir, `${inputBase}.page-${pageLabel}.text-layer.txt`);
@@ -548,14 +712,34 @@ const browserPath = browserCandidates.find((candidate) => candidate && fs.exists
         fs.writeFileSync(textLayerPath, `${rendered.text}\n`, "utf8");
       }
 
-      manifest.pages.push({
-        pageNumber,
-        imagePath,
-        width: rendered.width,
-        height: rendered.height,
-        textLayerPath,
-        textLayerChars: rendered.text.length
-      });
+      for (const tile of rendered.tiles) {
+        const questionSuffix = tile.questionNumber === null
+          ? ""
+          : `.q-${String(tile.questionNumber).padStart(3, "0")}`;
+        const tileSuffix = options.verticalTiles === 1 && options.horizontalTiles === 1 && !options.questionRegions
+          ? ""
+          : `.tile-${String(tile.tileIndex).padStart(2, "0")}.x-${String(tile.horizontalIndex).padStart(2, "0")}`;
+        const imagePath = path.join(outputDir, `${inputBase}.page-${pageLabel}${questionSuffix}${tileSuffix}.png`);
+        fs.mkdirSync(path.dirname(imagePath), { recursive: true });
+        fs.writeFileSync(imagePath, dataUrlToBuffer(tile.dataUrl));
+        manifest.pages.push({
+          pageNumber,
+          questionNumber: tile.questionNumber,
+          tileIndex: tile.tileIndex,
+          tileCount: tile.tileCount,
+          horizontalIndex: tile.horizontalIndex,
+          horizontalTileCount: tile.horizontalTileCount,
+          sourceY: tile.y,
+          sourceX: tile.x,
+          sourcePageWidth: rendered.width,
+          sourcePageHeight: rendered.height,
+          imagePath,
+          width: tile.width,
+          height: tile.height,
+          textLayerPath,
+          textLayerChars: rendered.text.length
+        });
+      }
     }
   } finally {
     await rendererServer.close();

@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "assetId": "math-answer",
   "displayName": "Junior Math Answer Scaffold",
-  "version": "v0.1",
+  "version": "v0.2",
   "status": "experimental",
   "locale": "zh-CN",
   "domain": "junior-high-school-math",
@@ -11,7 +11,7 @@
     "../platform-core/manifest.json"
   ],
   "sourceOfTruth": {
-    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.1.md",
+    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.2.md",
     "mirroredSpec": "./spec.md",
     "acceptanceChecklist": "./checklists/acceptance.md",
     "runtimeConfig": "./config.json"
