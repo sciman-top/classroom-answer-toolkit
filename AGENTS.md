@@ -6,7 +6,7 @@
 ## 1. 当前落点与目标归宿
 - 当前落点：本仓实现课堂参考答案生成、渲染、验证与交付工具链。
 - 目标归宿：以可维护的 WPF 应用和可版本化 subject-pack 合同稳定交付多学科答案资产。
-- 下一最小里程碑：完成当前 verified 工作树的 Git 收口；之后保持 `VISION-101` blocked，直到真实标注 authority、稳定 provider endpoint 与四类对象预算条件全部满足。
+- 下一最小里程碑：对指定 2024/2025 交付物开展教师复核并记录 `teacher_accepted`；保持 `VISION-101` blocked，直到真实标注 authority、稳定 provider endpoint 与四类对象预算条件全部满足。
 
 ## A. 仓库事实与模块边界
 - `docs/strategy/` 是规划真源；先读 `README.md`、`product-prd.md` 与 `final-implementation-baseline.md`。
