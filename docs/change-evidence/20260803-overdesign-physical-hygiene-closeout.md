@@ -10,8 +10,8 @@
 - 风险级别：低；tracked 变更仅为历史 Markdown 迁移、索引和链接修复。
 - 生产代码、schema、subject-pack、compiled snapshot、renderer 与 WPF 行为均未修改。
 - 未跟踪的 `tmp/pdfs/2024-*` 和 `正式交付/**` 用户资产不在 write set 内。
-- 本机缓存清理只覆盖预演确认的 9 个旧 `tools/visual-*` 目录；目录内容全部为 ignored
-  `__pycache__/*.pyc`，对应 tracked 文件数为 0。
+- 本机目录清理只覆盖预演确认的 24 个已删除模块目录：其中 9 个旧 `tools/visual-*`
+  目录只含 ignored `__pycache__/*.pyc`，其余 15 个目录为空；全部对应 tracked 文件数为 0。
 
 ## Changes
 
@@ -19,7 +19,9 @@
   `docs/archive/strategy-plans/`。
 - 在归档目录增加执行边界：历史 `todo`、`next` 和完成定义不得生成任务或恢复已删除模块。
 - 更新策略索引、归档索引、根跳转壳和跨目录 Markdown 链接。
-- 删除 9 个旧 visual 工具目录中的 20 个 `.pyc` 及清空后的目录。
+- 删除 9 个旧 visual 工具目录中的 20 个 `.pyc`，并删除清空后的目录。
+- 删除其余 15 个已无 tracked 文件的空模块目录，包括 8 个旧非 visual 工具目录和 7 个旧
+  visual 工具目录。
 
 ## Verification
 
@@ -45,7 +47,7 @@
 
 - `docs/strategy/` 中 current `*-plan.md`：2 份。
 - `docs/archive/strategy-plans/` 中 historical/frozen `*-plan.md`：29 份。
-- 9 个旧 visual 工具目录：`exists=False` 且 `tracked=0`。
+- 24 个已删除模块目录：`exists=False` 且 `tracked=0`。
 - 检查归档、受影响索引和本证据共 34 份 Markdown：`broken_links=0`。
 - 旧 `docs/strategy/<historical-plan>.md` 引用：0。
 - `git diff --check`：通过。
@@ -58,6 +60,18 @@
   `evidence_link=this file`，`expires_at=next live acceptance run`，
   `recovery_condition=explicit egress authorization and valid provider credentials`。
 - `teacher_accepted` 与 `VISION-101` unlock 条件不属于本次物理卫生清理，不改变其 open/blocked 状态。
+
+## Follow-up physical audit
+
+同日提交后复核发现，除已清理的 9 个缓存目录外，Windows 工作区还保留 15 个已删除模块的
+空目录。经逐目录确认 `tracked=0`、`files=0` 并执行精确 `git clean -nd` 预演后，已删除这些
+空目录。再次检查全部 24 个 removal target：`present=0`、`tracked_total=0`；Core 门禁执行后
+仍为 `post_gate_present=0`。
+
+纠偏后 fresh 验证：build 0 warning/0 error，xUnit 33/33，assets contract 通过，
+`check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer` exit 0、elapsed 60.80s；
+gateway、renderer、spec boundary 与 junior physics eval 全部通过。Core 按设计跳过
+cross-subject 和 delivery smoke；此前同一 tracked 基线的 Full 结果见上节。
 
 ## Rollback
 
