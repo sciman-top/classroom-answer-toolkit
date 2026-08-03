@@ -34,7 +34,7 @@ SourceExam
 - `tools/ai-gateway`
 - `tools/latex-renderer`
 - `tools/ocr`，仅作为明确需要时的辅助能力
-- 最小 WPF 桌面壳层
+- App/Domain/Infra 三程序集的最小 WPF 桌面壳层
 
 ## Frozen and removal targets
 
@@ -42,7 +42,7 @@ SourceExam
 
 - 不得新增对这些模块的 schema、WPF 控件、gate 或 roadmap 承诺。
 - frozen 工具、专属 schema 和 fixture 已由 ARCH-101 从 active tree 删除；WPF DTO 与空项目由独立 ARCH-102 切片处理。
-- Git 历史和 change-evidence 承担追溯；不把旧代码复制到新的 archive 目录。
+- Git 历史和 change-evidence 承担追溯；不把旧代码、临时渲染产物、`.answer-graphics/` 或根目录旧提示词复制到 active tree。
 
 ## Invariants
 
@@ -53,6 +53,7 @@ SourceExam
 - Reference Review 完成后才可称 Reference-reviewed Delivery；只有教师实际验收后才可称 Teacher Accepted。
 - WPF 不复制 Node 业务逻辑，不因缺少历史 review/trust 对象而扩建领域模型。
 - shared spec、schema 或 renderer 变化必须执行 Full verifier；局部实现变化按受影响 Subject Pack 执行 Core verifier。
+- Full 的通用 renderer/layout 合同由主产品包运行一次；其他 subject-pack 必须保留独立 snapshot 和学科特异 sentinel，不复制同一输入与视觉基准。
 
 ## Compatibility and versioning
 

@@ -21,6 +21,7 @@
 | TEST-101 behavior-test rebalance | verified | 33 xUnit and focused Node behavior suites |
 | EVAL-101 2024/2025 real-paper baseline | verified | `docs/change-evidence/20260802-real-paper-regression-baseline.md` |
 | GATE-102 eval runtime lifecycle | verified | `docs/change-evidence/20260803-eval-gate-latency-closeout.md` |
+| LEAN-101 overdesign complete remediation | verified | `docs/change-evidence/20260803-overdesign-complete-remediation.md` |
 
 ## TASK VISION-101 — 有限部件级视觉定位
 

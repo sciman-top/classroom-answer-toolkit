@@ -13,6 +13,8 @@ PowerShell workflow / WPF
 
 PowerShell 是批处理主入口，WPF 是同一工具链的桌面入口。两者不复制生成或排版算法。
 
+WPF 生产代码只保留三个程序集：`App` 负责 UI、编排实现与 DI，`Domain` 负责请求、结果和编排接口，`Infra` 负责进程、路径和工作区 I/O。没有独立消费者、发布或变化率证据时不再拆分空壳程序集。
+
 ## 模块职责
 
 - spec assembler：从平台、通用和学科源规范生成完整提示词。

@@ -16,6 +16,7 @@ Archive 仅存历史版本，不再作为当前规划依据。当前真值入口
 
 - [strategy-plans/](./strategy-plans/README.md)：已经冻结或被产品简化决策取代的历史实施计划。
 - [visual-first-answering-architecture.md](./visual-first-answering-architecture.md)：已被当前单主链基线取代的历史视觉/信任聚合架构。
+- [decision-log-legacy.md](./decision-log-legacy.md)：D-001 至 D-034 历史决策；不得据此恢复 frozen 模块。
 
 归档文档中的 `todo`、`next`、阶段状态或完成定义都不构成执行授权。AI 只能执行当前
 [`execution-backlog.md`](../strategy/execution-backlog.md) 中 `status: ready` 的任务。

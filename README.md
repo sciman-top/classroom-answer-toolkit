@@ -23,7 +23,8 @@
 - 已真实跑通 2025 广州中考原卷到 Markdown/PDF 的完整链路。
 - 默认主链不再把单次整卷盲答直接送去排版：先以 4x 重渲染原卷，按 PDF.js 题号切成每题两个带重叠的高清视窗（续页继承题号）执行独立视觉审计，再进入可选参考答案复核。
 - 局部高清审计能降低滑轮、刻度尺和钩码计数错误，但不能保证消除所有仪表盘歧义；未经参考答案或人工复核仍不得声明答案可信。
-- 2025 实跑交付位于 `正式交付/2025广州中考/`，原卷目录 `广州物理中考试卷/` 保持为用户资料，不纳入仓库资产治理。
+- 2024/2025 实跑交付位于 `正式交付/`；仓内 `广州物理中考试卷/` 是明确版本化的广州真题 golden corpus。其他用户原卷仍可从任意路径输入，无需复制进仓库。
+- 可复现的页面图、裁剪图和诊断输出只写入 ignored `tmp/`；不得把它们重新提交。长期回归仅保留 `eval/real-paper/` 的最小 hash-bound 基准。
 
 ## 最短运行
 
@@ -62,8 +63,8 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 - `tools/rule-compiler/`：subject-pack、规则和 snapshot 编译与校验。
 - `tools/latex-renderer/`：Markdown 校验、PDF 渲染、review 页图和交付 manifest。
 - `scripts/run-live-answer-workflow.ps1`：真实原卷主链入口。
-- `src/`：WPF 桌面入口，只承载主链操作和状态展示。
-- `eval/*-answer/`：答案内容和排版的固定回归。
+- `src/`：App、Domain、Infra 三个生产项目；WPF 只承载主链操作、状态展示与本机适配。
+- `eval/junior-physics-answer/`：共享 renderer/layout 合同与主产品包回归；其他学科只保留独有 case 和 subject-pack sentinel。
 
 ## 验证
 
@@ -76,6 +77,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode 
 ```
 
 共享 spec/schema、renderer 或 release 变更使用 `-Mode Full`；只需快速检查 gateway/spec/Unicode 路径时使用 `-Mode Fast`。`Core` 是默认主链体检，不触发无关学科的全量 eval。Core/Full 已内置一次完整 `validate:assets`，不要在固定门禁外层重复执行；仅做 contract-only 定向检查时才单独运行该 npm 命令。
+
+Full 中共享 renderer/layout 回归只由 `junior-physics-answer` 承担一次；Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
 
 `scripts/bootstrap.ps1` 会安装依赖，只用于环境初始化，不是日常门禁。
 

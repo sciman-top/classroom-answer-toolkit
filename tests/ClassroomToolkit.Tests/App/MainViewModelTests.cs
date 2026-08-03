@@ -1,6 +1,5 @@
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
-using ClassroomToolkit.Application.Abstractions;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Domain.Toolchain;
 using FluentAssertions;

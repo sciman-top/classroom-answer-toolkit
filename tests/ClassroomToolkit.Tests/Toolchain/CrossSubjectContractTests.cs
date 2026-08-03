@@ -45,6 +45,34 @@ public sealed class CrossSubjectContractTests
     }
 
     [Fact]
+    public void PhysicsEvalSuitesDeclareOneSharedRendererOwnerAndBoundedSeniorSentinels()
+    {
+        var root = FindRepoRoot();
+        using var juniorDocument = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            root, "eval", "junior-physics-answer", "dataset.json")));
+        using var seniorDocument = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+            root, "eval", "senior-physics-answer", "dataset.json")));
+
+        juniorDocument.RootElement.GetProperty("coverageRole").GetString()
+            .Should().Be("shared-renderer-and-primary-subject");
+        seniorDocument.RootElement.GetProperty("coverageRole").GetString()
+            .Should().Be("subject-pack-sentinel");
+        seniorDocument.RootElement.GetProperty("sharedRendererContractSuite").GetString()
+            .Should().Be("junior-physics-answer");
+
+        seniorDocument.RootElement.GetProperty("cases")
+            .EnumerateArray()
+            .Select(item => item.GetProperty("id").GetString())
+            .Should().BeEquivalentTo([
+                "smoke-answer",
+                "figure-binding",
+                "instrument-reading-priority",
+                "instrument-range-scale-check",
+                "necessary-derivation"
+            ]);
+    }
+
+    [Fact]
     public void FrozenSurfacesAreAbsentFromTheActiveTree()
     {
         var root = FindRepoRoot();
@@ -56,7 +84,9 @@ public sealed class CrossSubjectContractTests
             "tools/sample-flywheel/package.json",
             "tools/track-orchestrator/package.json",
             "tools/visual-evidence/package.json",
-            "src/ClassroomToolkit.Interop/ClassroomToolkit.Interop.csproj"
+            "src/ClassroomToolkit.Interop/ClassroomToolkit.Interop.csproj",
+            "src/ClassroomToolkit.Application/ClassroomToolkit.Application.csproj",
+            "src/ClassroomToolkit.Services/ClassroomToolkit.Services.csproj"
         };
 
         removedEntrypoints

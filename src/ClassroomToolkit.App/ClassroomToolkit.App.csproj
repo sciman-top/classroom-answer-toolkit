@@ -12,8 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ClassroomToolkit.Application\ClassroomToolkit.Application.csproj" />
     <ProjectReference Include="..\ClassroomToolkit.Domain\ClassroomToolkit.Domain.csproj" />
-    <ProjectReference Include="..\ClassroomToolkit.Services\ClassroomToolkit.Services.csproj" />
+    <ProjectReference Include="..\ClassroomToolkit.Infra\ClassroomToolkit.Infra.csproj" />
   </ItemGroup>
 </Project>

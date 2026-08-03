@@ -4,7 +4,6 @@ using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
-using ClassroomToolkit.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 

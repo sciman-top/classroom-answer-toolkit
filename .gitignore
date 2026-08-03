@@ -22,6 +22,8 @@ __pycache__/
 **/obj/
 
 # Temporary render files
+tmp/
+.answer-graphics/
 .smoke-work/
 .smoke-visual/
 .eval-work/

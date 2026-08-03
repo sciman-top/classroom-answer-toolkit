@@ -18,7 +18,7 @@
 
 - [product-core-simplification.md](./product-core-simplification.md)：为什么冻结并清理旧 synthetic/review/flywheel 链。
 - [ai-gateway-config.md](./ai-gateway-config.md)：provider 配置和显式云出网边界。
-- [decision-log.md](./decision-log.md)：历史决策记录，不代表任务仍 active。
+- [decision-log.md](./decision-log.md)：仍约束当前产品的少量决策；D-001 至 D-034 已迁入 archive。
 
 ## Archive and evidence
 
