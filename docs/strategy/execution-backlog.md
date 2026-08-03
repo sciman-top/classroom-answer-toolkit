@@ -83,13 +83,14 @@
 - allowed_write_set: `scripts/check-toolchain.ps1`, gate-focused tests, `README.md`, `AGENTS.md`, strategy gate docs。
 - forbidden_write_set: renderer/AI 业务语义、live provider、用户资产。
 - implementation_steps: 参数和模式 -> step routing -> Subject Pack 过滤 -> 计时摘要 -> docs/tests。
-- acceptance_criteria: Fast/Core/Full 可独立运行；Core 不跑无关学科；Full 保留三科 smoke/eval；输出 executed/skipped/elapsed。
+- acceptance_criteria: Fast/Core/Full 可独立运行；Core/Full 内置且只执行一次资产合同；Core 不跑无关学科；Full 保留三科 smoke/eval；输出 executed/skipped/elapsed。
 - verification_commands: 三模式 dry/focused execution；最终 Full verifier。
 - evidence_output: gate-tiering evidence 或 final verification 摘要。
 - rollback: 恢复单一 check-toolchain 脚本和旧文档命令。
 - dependencies: none
 - truth_boundary: verifier ergonomics, not product acceptance。
 - stop_conditions: 不通过降低质量断言或跳过共享变更的 Full gate 达成耗时目标。
+- closeout_audit_2026-08-03: 修复固定命令外层与 wrapper 重复执行 `validate:assets`、以及 wrapper 内 `spec-boundary` 被资产合同再次覆盖的漂移；Fast 保留独立轻量 boundary，Core/Full 由单次 assets 承接完整合同。
 
 ## TASK SDK-101 — .NET patch 兼容
 

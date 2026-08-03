@@ -10,7 +10,7 @@
 | R4 | 默认题目级 4x 重叠 Visual Audit | current-worktree integrated | 2024 live, not accepted | Q16-Q18 盲测仍失败；全量 50 图请求超时 |
 | R5 | 规划/spec/verifier 真值收口 | verified | repo verified | 生产 spec、终态基线与 active backlog 已对齐 |
 | R6 | frozen 实现物理清理 | verified | N/A | 旧工具、专属 schema/eval、死 DTO、未使用 diagnostics 和空 Interop 已删除 |
-| R7 | Fast/Core/Full 门禁分层 | verified | N/A | 三模式按影响范围执行；Full 保留三科与 PDF smoke |
+| R7 | Fast/Core/Full 门禁分层 | verified | N/A | 三模式按影响范围执行；Core/Full 资产合同只跑一次，Full 保留三科与 PDF smoke |
 | R8 | 2024/2025 真实错题基准 | verified | existing live artifacts hash-bound | 2024 三阶段已记录；2025 audit 明确 not_run；teacher accepted 均为 false |
 | R9 | 有限部件级视觉定位 | blocked | provider/authority open | 需要真实标注、稳定 endpoint 和 R8 基准 |
 | R10 | 2015-2023 逐年真实回归 | later | open | R8/R9 稳定后推进 |

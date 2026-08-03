@@ -62,7 +62,7 @@
 ```text
 docs-only -> targeted link/contract verification
 local code -> build -> test --no-build -> Fast
-subject spec/rules -> build -> test --no-build -> validate:assets -> Core(subject)
-shared spec/schema/renderer/release -> build -> test --no-build -> validate:assets -> Full
+subject spec/rules -> build -> test --no-build -> Core(subject; includes assets once)
+shared spec/schema/renderer/release -> build -> test --no-build -> Full(includes assets once)
 real workflow claim -> above gates -> explicit relevant real delivery
 ```

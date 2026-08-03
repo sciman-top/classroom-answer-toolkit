@@ -55,9 +55,18 @@ Write-Host ("Toolchain gate mode={0}; requestedSubjectPack={1}" -f $Mode, $Subje
 Invoke-GateStep "runtime:dotnet-sdks" { dotnet --list-sdks } "dotnet SDK check failed."
 Invoke-GateStep "runtime:node" { node --version } "Node.js check failed."
 Invoke-GateStep "runtime:npm" { npm --version } "npm check failed."
-Invoke-GateStep "spec-boundary" {
-    npm --prefix tools/rule-compiler run validate:spec-boundary
-} "Spec boundary validation failed."
+
+if ($Mode -eq "Fast") {
+    Invoke-GateStep "spec-boundary" {
+        npm --prefix tools/rule-compiler run validate:spec-boundary
+    } "Spec boundary validation failed."
+} else {
+    Assert-BrowserAvailable
+    Invoke-GateStep "assets" {
+        npm --prefix tools/rule-compiler run validate:assets
+    } "Core asset validation failed."
+}
+
 Invoke-GateStep "ai-config" {
     npm --prefix tools/ai-gateway run validate:config -- --config-env-file .env.example --allow-missing-secrets
 } "AI gateway config validation failed."
@@ -68,11 +77,6 @@ Invoke-GateStep "renderer-output-path-tests" {
     npm --prefix tools/latex-renderer run test:output-path
 } "Renderer output path tests failed."
 
-$subjectPacks = @(Get-SubjectPackMetadata -RepositoryRoot $repoRoot)
-if ($subjectPacks.Count -eq 0) {
-    throw "No subject pack manifests were found under prompts/."
-}
-
 if ($Mode -eq "Fast") {
     Skip-GateStep "assets"
     Skip-GateStep "renderer-math-tests"
@@ -81,13 +85,14 @@ if ($Mode -eq "Fast") {
     Skip-GateStep "delivery-smoke"
     Skip-GateStep "answer-eval"
 } else {
-    Assert-BrowserAvailable
-    Invoke-GateStep "assets" {
-        npm --prefix tools/rule-compiler run validate:assets
-    } "Core asset validation failed."
     Invoke-GateStep "renderer-math-tests" {
         npm --prefix tools/latex-renderer run test:render
     } "Renderer math rendering tests failed."
+
+    $subjectPacks = @(Get-SubjectPackMetadata -RepositoryRoot $repoRoot)
+    if ($subjectPacks.Count -eq 0) {
+        throw "No subject pack manifests were found under prompts/."
+    }
 
     $selectedSubjectPacks = if ($Mode -eq "Full") {
         $subjectPacks

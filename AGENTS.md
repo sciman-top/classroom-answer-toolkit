@@ -26,13 +26,13 @@
 - 仅在外部格式、SDK、renderer、OCR 或重复失败命中全局条件时只读查阅；不继承参考仓指令，不经许可证和兼容复核不得复制或执行。
 
 ## C. 门禁、证据与回滚
-- fixed order：`build -> test --no-build -> contract/invariant -> risk-matched toolchain gate`。
+- fixed order：`build -> test --no-build -> risk-matched toolchain gate`；Core/Full 内部先执行一次 contract/invariant，再执行其余 hotspot，禁止在外层重复跑资产合同。
 - build：`dotnet build ClassroomToolkit.sln -c Debug`
 - test：`dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build`
-- contract/invariant：`npm --prefix tools/rule-compiler run validate:assets`
-- core：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer`
+- core：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer`；内置且只执行一次 `validate:assets`。
 - full：shared spec/schema、renderer、release 或跨学科变化使用 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Full`。
-- fast：局部反馈可用 focused xUnit/Node 或 `-Mode Fast`；Fast 不替代交付所需 Core/Full。
+- contract-only：仅需定向检查资产合同时可单独运行 `npm --prefix tools/rule-compiler run validate:assets`，不得随后再把它计作 Core/Full 的额外必跑前置。
+- fast：局部反馈可用 focused xUnit/Node 或 `-Mode Fast`；Fast 只跑轻量 spec boundary，不替代内置完整合同的 Core/Full。
 - 生成物漂移、subject-pack contract 失败或策略与运行事实不一致时阻断。
 - 证据放 `docs/change-evidence/`，记录风险、命令、exit code、关键输出、兼容、N/A 和回滚。
 - 回滚只撤销本任务规则、证据或实现切片；不得用 bootstrap 环境变化冒充仓库回滚。

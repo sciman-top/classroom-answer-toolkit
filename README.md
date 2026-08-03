@@ -72,11 +72,10 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 ```powershell
 dotnet build ClassroomToolkit.sln -c Debug
 dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build
-npm --prefix tools/rule-compiler run validate:assets
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer
 ```
 
-共享 spec/schema、renderer 或 release 变更使用 `-Mode Full`；只需快速检查 gateway/spec/Unicode 路径时使用 `-Mode Fast`。`Core` 是默认主链体检，不触发无关学科的全量 eval。
+共享 spec/schema、renderer 或 release 变更使用 `-Mode Full`；只需快速检查 gateway/spec/Unicode 路径时使用 `-Mode Fast`。`Core` 是默认主链体检，不触发无关学科的全量 eval。Core/Full 已内置一次完整 `validate:assets`，不要在固定门禁外层重复执行；仅做 contract-only 定向检查时才单独运行该 npm 命令。
 
 `scripts/bootstrap.ps1` 会安装依赖，只用于环境初始化，不是日常门禁。
 
