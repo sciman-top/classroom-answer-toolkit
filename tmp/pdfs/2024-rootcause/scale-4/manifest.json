@@ -1,0 +1,92 @@
+{
+  "inputPath": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2024广州中考.pdf",
+  "outputDir": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4",
+  "generatedAt": "2026-07-31T17:39:03.179Z",
+  "renderer": "pdfjs-dist + local Chrome/Edge via Playwright",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "scale": 4,
+  "requestedPages": "all",
+  "selectedPages": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "pageCount": 8,
+  "pages": [
+    {
+      "pageNumber": 1,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-001.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-001.text-layer.txt",
+      "textLayerChars": 672
+    },
+    {
+      "pageNumber": 2,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-002.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-002.text-layer.txt",
+      "textLayerChars": 390
+    },
+    {
+      "pageNumber": 3,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-003.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-003.text-layer.txt",
+      "textLayerChars": 519
+    },
+    {
+      "pageNumber": 4,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-004.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-004.text-layer.txt",
+      "textLayerChars": 393
+    },
+    {
+      "pageNumber": 5,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-005.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-005.text-layer.txt",
+      "textLayerChars": 803
+    },
+    {
+      "pageNumber": 6,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-006.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-006.text-layer.txt",
+      "textLayerChars": 623
+    },
+    {
+      "pageNumber": 7,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-007.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-007.text-layer.txt",
+      "textLayerChars": 645
+    },
+    {
+      "pageNumber": 8,
+      "imagePath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-008.png",
+      "width": 2382,
+      "height": 3368,
+      "textLayerPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\2024广州中考.page-008.text-layer.txt",
+      "textLayerChars": 401
+    }
+  ],
+  "ocrProvider": null,
+  "ocrProviderVersion": null,
+  "ocrLanguage": null,
+  "ocrStatus": "not-requested",
+  "fingerprint": "054db660be4f0840b1d3dfda2f2ac10b",
+  "reviewHtmlPath": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-rootcause\\scale-4\\review.html"
+}
