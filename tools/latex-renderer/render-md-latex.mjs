@@ -101,7 +101,8 @@ const browserCandidates = [
 ];
 
 const browserPath = browserCandidates.find((candidate) => candidate && fs.existsSync(candidate));
-if (!browserPath) {
+const sharedBrowserWsEndpoint = process.env.CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT?.trim() || null;
+if (!sharedBrowserWsEndpoint && !browserPath) {
   console.error("No local Chromium, Chrome, or Edge executable found for PDF rendering.");
   process.exit(3);
 }
@@ -360,10 +361,12 @@ ${body}
 const tempHtmlPath = makeRenderTempHtmlPath(outputPath);
 fs.writeFileSync(tempHtmlPath, html, "utf8");
 
-const browser = await chromium.launch({
-  executablePath: browserPath,
-  headless: true
-});
+const browser = sharedBrowserWsEndpoint
+  ? await chromium.connect(sharedBrowserWsEndpoint)
+  : await chromium.launch({
+      executablePath: browserPath,
+      headless: true
+    });
 const browserPdfOutputPath = makeBrowserPdfOutputPath(outputPath);
 if (fs.existsSync(browserPdfOutputPath)) {
   fs.unlinkSync(browserPdfOutputPath);

@@ -76,6 +76,9 @@ Invoke-GateStep "ai-answer-tests" {
 Invoke-GateStep "renderer-output-path-tests" {
     npm --prefix tools/latex-renderer run test:output-path
 } "Renderer output path tests failed."
+Invoke-GateStep "eval-runtime-tests" {
+    npm --prefix tools/latex-renderer run test:eval-runtime
+} "Answer eval runtime tests failed."
 
 if ($Mode -eq "Fast") {
     Skip-GateStep "assets"

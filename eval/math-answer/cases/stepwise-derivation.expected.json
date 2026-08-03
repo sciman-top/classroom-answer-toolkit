@@ -4,18 +4,12 @@
     "classroom": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/stepwise-derivation.classroom.page-001.png",
-      "delivery": {
-        "keepReview": false
-      }
+      "visualBaseline": "baselines/visual/stepwise-derivation.classroom.page-001.png"
     },
     "compact": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/stepwise-derivation.compact.page-001.png",
-      "delivery": {
-        "keepReview": false
-      }
+      "visualBaseline": "baselines/visual/stepwise-derivation.compact.page-001.png"
     }
   },
   "notes": [

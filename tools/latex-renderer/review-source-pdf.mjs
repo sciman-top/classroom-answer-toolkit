@@ -498,8 +498,9 @@ async function main() {
     : makeDefaultOutputDir(inputPath);
   fs.mkdirSync(outputDir, { recursive: true });
 
-const browserPath = browserCandidates.find((candidate) => candidate && fs.existsSync(candidate));
-  if (!browserPath) {
+  const browserPath = browserCandidates.find((candidate) => candidate && fs.existsSync(candidate));
+  const sharedBrowserWsEndpoint = process.env.CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT?.trim() || null;
+  if (!sharedBrowserWsEndpoint && !browserPath) {
     fail("No local Chromium, Chrome, or Edge executable found for PDF source review.", 3);
   }
 
@@ -511,7 +512,7 @@ const browserPath = browserCandidates.find((candidate) => candidate && fs.exists
     outputDir,
     generatedAt: new Date().toISOString(),
     renderer: "pdfjs-dist + local Chrome/Edge via Playwright",
-    browserPath,
+    browserPath: browserPath ?? "shared-browser-server",
     scale: options.scale,
     verticalTiles: options.verticalTiles,
     horizontalTiles: options.horizontalTiles,
@@ -527,10 +528,12 @@ const browserPath = browserCandidates.find((candidate) => candidate && fs.exists
     ocrStatus: options.ocr ? "requested" : "not-requested"
   };
 
-  const browser = await chromium.launch({
-    executablePath: browserPath,
-    headless: true
-  });
+  const browser = sharedBrowserWsEndpoint
+    ? await chromium.connect(sharedBrowserWsEndpoint)
+    : await chromium.launch({
+        executablePath: browserPath,
+        headless: true
+      });
   const rendererServer = await createRendererServer({ pdfJsPath, pdfWorkerPath });
 
   try {

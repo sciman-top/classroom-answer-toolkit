@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { chromium } from "playwright-core";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
+let sharedBrowserWsEndpoint = null;
 
 function fail(message, code = 2) {
   console.error(message);
@@ -42,63 +44,66 @@ function parseArgs(argv) {
 }
 
 function runValidator(relativeInputPath, profile, snapshotRelativePath, subjectPack) {
-  const result = spawnSync(
-    process.execPath,
-    [
-      path.join(toolDir, "validate-answer-markdown.mjs"),
-      relativeInputPath,
-      "--subject-pack",
-      subjectPack,
-      "--profile",
-      profile,
-      "--snapshot",
-      snapshotRelativePath
-    ],
-    {
-      cwd: toolDir,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        INIT_CWD: repoRoot
-      }
-    }
-  );
-
-  if (result.error) {
-    throw result.error;
-  }
-
-  return {
-    status: result.status ?? 2,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? ""
-  };
+  return runNodeTool("validate-answer-markdown.mjs", [
+    relativeInputPath,
+    "--subject-pack",
+    subjectPack,
+    "--profile",
+    profile,
+    "--snapshot",
+    snapshotRelativePath
+  ]);
 }
 
 function runNodeTool(scriptFileName, args, options = {}) {
-  const result = spawnSync(
-    process.execPath,
-    [path.join(toolDir, scriptFileName), ...args],
-    {
+  const scriptPath = path.isAbsolute(scriptFileName)
+    ? scriptFileName
+    : path.join(toolDir, scriptFileName);
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [scriptPath, ...args], {
       cwd: options.cwd ?? toolDir,
-      encoding: "utf8",
+      windowsHide: true,
       env: {
         ...process.env,
         INIT_CWD: repoRoot,
+        ...(sharedBrowserWsEndpoint
+          ? { CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT: sharedBrowserWsEndpoint }
+          : {}),
         ...(options.env ?? {})
       }
-    }
-  );
+    });
+    let stdout = "";
+    let stderr = "";
 
-  if (result.error) {
-    throw result.error;
-  }
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.once("error", reject);
+    child.once("close", (status) => {
+      resolve({
+        status: status ?? 2,
+        stdout,
+        stderr
+      });
+    });
+  });
+}
 
-  return {
-    status: result.status ?? 2,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? ""
-  };
+function resolveBrowserPath() {
+  const candidates = [
+    process.env.CLASSROOM_TOOLKIT_BROWSER_PATH,
+    path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
+  ];
+
+  return candidates.find((candidate) => candidate && fs.existsSync(candidate)) ?? null;
 }
 
 function sameStringSet(expectedValues, actualValues) {
@@ -173,11 +178,18 @@ function makeCaseWorkDir(evalWorkRoot, subjectPack, caseId, profile) {
   return path.join(evalWorkRoot, subjectPack, caseId, profile);
 }
 
-function main() {
+async function main() {
   const options = parseArgs(process.argv.slice(2));
   options.subjectPack = normalizeSubjectPackName(options.subjectPack, getDefaultSubjectPackName());
   const { manifest, manifestPath } = loadSubjectPackManifest(options.subjectPack);
   const evalWorkRoot = path.join(repoRoot, ".eval-work", `${options.subjectPack}-${process.pid}`);
+  const compiledSnapshots = new Map();
+  let profileExecutions = 0;
+  let snapshotCompileCount = 0;
+  let browserServerLaunchCount = 0;
+  let visualPipelineCount = 0;
+  let deliveryPipelineCount = 0;
+  let browserServer = null;
   removePathWithRetry(evalWorkRoot);
   try {
     const datasetPath = options.dataset
@@ -215,45 +227,45 @@ function main() {
       };
 
       for (const profile of profiles) {
+        profileExecutions += 1;
         const workDir = makeCaseWorkDir(evalWorkRoot, options.subjectPack, caseEntry.id, profile);
         removePathWithRetry(workDir);
         fs.mkdirSync(workDir, { recursive: true });
 
-        const snapshotFileName = options.subjectPack === "junior-physics-answer"
-          ? `resolved-snapshot.${profile}.json`
-          : `resolved-snapshot.${options.subjectPack}.${profile}.json`;
-        const snapshotRelativePath = path.join(".snapshot-cache", snapshotFileName);
-        const snapshotCompile = spawnSync(
-          process.execPath,
-          [
+        let snapshotEntry = compiledSnapshots.get(profile);
+        if (!snapshotEntry) {
+          const snapshotFileName = options.subjectPack === "junior-physics-answer"
+            ? `resolved-snapshot.${profile}.json`
+            : `resolved-snapshot.${options.subjectPack}.${profile}.json`;
+          const snapshotRelativePath = path.join(".snapshot-cache", snapshotFileName);
+          const snapshotCompile = await runNodeTool(
             path.resolve(toolDir, "..", "rule-compiler", "compile-snapshot.mjs"),
-            "--subject-pack",
-            options.subjectPack,
-            "--profile",
-            profile,
-            "--out",
-            snapshotRelativePath
-          ],
-          {
-            cwd: repoRoot,
-            encoding: "utf8",
-            env: {
-              ...process.env,
-              INIT_CWD: repoRoot
-            }
+            [
+              "--subject-pack",
+              options.subjectPack,
+              "--profile",
+              profile,
+              "--out",
+              snapshotRelativePath
+            ],
+            { cwd: repoRoot }
+          );
+
+          if (snapshotCompile.status !== 0) {
+            throw new Error(snapshotCompile.stderr || snapshotCompile.stdout || `Snapshot compile failed for profile ${profile}.`);
           }
-        );
 
-        if (snapshotCompile.error) {
-          throw snapshotCompile.error;
+          const compiledSnapshotPath = path.resolve(repoRoot, snapshotRelativePath);
+          snapshotEntry = {
+            snapshotRelativePath,
+            compiledSnapshotPath,
+            compiledSnapshot: readJson(compiledSnapshotPath)
+          };
+          compiledSnapshots.set(profile, snapshotEntry);
+          snapshotCompileCount += 1;
         }
 
-        if ((snapshotCompile.status ?? 0) !== 0) {
-          throw new Error(snapshotCompile.stderr || snapshotCompile.stdout || `Snapshot compile failed for profile ${profile}.`);
-        }
-
-        const compiledSnapshot = readJson(path.resolve(repoRoot, snapshotRelativePath));
-        const compiledSnapshotPath = path.resolve(repoRoot, snapshotRelativePath);
+        const { snapshotRelativePath, compiledSnapshotPath, compiledSnapshot } = snapshotEntry;
         const snapshotTrace = {
           snapshotId: compiledSnapshot.snapshotId,
           snapshotPath: snapshotRelativePath,
@@ -263,7 +275,7 @@ function main() {
         };
 
         const expectation = expected.profiles[profile];
-        const run = runValidator(
+        const run = await runValidator(
           path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
           profile,
           snapshotRelativePath,
@@ -275,10 +287,24 @@ function main() {
         let visual = null;
         let visualOk = true;
 
+        if ((expectation.visualBaseline || expectation.delivery) && !browserServer) {
+          const browserPath = resolveBrowserPath();
+          if (!browserPath) {
+            throw new Error("No local Chromium, Chrome, or Edge executable found for answer eval.");
+          }
+          browserServer = await chromium.launchServer({
+            executablePath: browserPath,
+            headless: true
+          });
+          sharedBrowserWsEndpoint = browserServer.wsEndpoint();
+          browserServerLaunchCount += 1;
+        }
+
         if (expectation.visualBaseline) {
+          visualPipelineCount += 1;
           const pdfPath = path.join(workDir, `${caseEntry.id}.${profile}.pdf`);
           const reviewDir = path.join(workDir, "review");
-          const renderRun = runNodeTool("render-md-latex.mjs", [
+          const renderRun = await runNodeTool("render-md-latex.mjs", [
             path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
             path.relative(repoRoot, pdfPath),
             "--profile",
@@ -293,7 +319,7 @@ function main() {
             throw new Error(renderRun.stderr || renderRun.stdout || `Render failed for case ${caseEntry.id}/${profile}.`);
           }
 
-          const reviewRun = runNodeTool("review-source-pdf.mjs", [
+          const reviewRun = await runNodeTool("review-source-pdf.mjs", [
             path.relative(repoRoot, pdfPath),
             "--out",
             path.relative(repoRoot, reviewDir),
@@ -307,7 +333,7 @@ function main() {
 
           const actualImagePath = firstPageImagePath(reviewDir);
           const baselineImagePath = path.resolve(datasetDir, expectation.visualBaseline);
-          const visualRun = runNodeTool("visual-regression.mjs", [
+          const visualRun = await runNodeTool("visual-regression.mjs", [
             path.relative(repoRoot, actualImagePath),
             path.relative(repoRoot, baselineImagePath)
           ]);
@@ -337,18 +363,19 @@ function main() {
         let deliveryOk = true;
 
         if (expectation.delivery) {
+          deliveryPipelineCount += 1;
           const deliverPdfPath = path.join(workDir, `${caseEntry.id}.${profile}.deliver.pdf`);
-        const deliverRun = runNodeTool("deliver-answer.mjs", [
-          path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
-          path.relative(repoRoot, deliverPdfPath),
-          "--profile",
-          profile,
-          "--subject-pack",
-          options.subjectPack,
-          "--snapshot-path",
-          path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
-          ...(expectation.delivery.keepReview ? ["--keep-review"] : [])
-        ]);
+          const deliverRun = await runNodeTool("deliver-answer.mjs", [
+            path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
+            path.relative(repoRoot, deliverPdfPath),
+            "--profile",
+            profile,
+            "--subject-pack",
+            options.subjectPack,
+            "--snapshot-path",
+            path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
+            ...(expectation.delivery.keepReview ? ["--keep-review"] : [])
+          ]);
 
           deliveryOk = deliverRun.status === 0;
           const deliveryManifestPath = path.resolve(
@@ -475,18 +502,23 @@ function main() {
 
     fs.writeFileSync(resultsPath, `${JSON.stringify(output, null, 2)}\n`, "utf8");
     console.log(`[eval] results: ${path.relative(repoRoot, resultsPath)}`);
+    console.log(
+      `[eval] runtime: profiles=${profileExecutions}; snapshot-compiles=${snapshotCompileCount}; browser-server-launches=${browserServerLaunchCount}; visual-pipelines=${visualPipelineCount}; delivery-pipelines=${deliveryPipelineCount}`
+    );
 
     if (!ok) {
       process.exitCode = 1;
     }
   } finally {
+    if (browserServer) {
+      await browserServer.close();
+      sharedBrowserWsEndpoint = null;
+    }
     removePathWithRetry(evalWorkRoot);
   }
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   console.error(error instanceof Error ? error.stack : error);
   process.exit(2);
-}
+});

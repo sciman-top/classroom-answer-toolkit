@@ -4,18 +4,12 @@
     "classroom": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/geometry-review-fallback.classroom.page-001.png",
-      "delivery": {
-        "keepReview": false
-      }
+      "visualBaseline": "baselines/visual/geometry-review-fallback.classroom.page-001.png"
     },
     "compact": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/geometry-review-fallback.compact.page-001.png",
-      "delivery": {
-        "keepReview": false
-      }
+      "visualBaseline": "baselines/visual/geometry-review-fallback.compact.page-001.png"
     }
   },
   "notes": [

@@ -34,8 +34,8 @@
 ## EPIC-D Gate Tiering
 
 - outcome：Fast/Core/Full 提供按风险分层的可解释反馈。
-- decisions：test 使用 `--no-build`；asset validation 不重复；Core 只跑受影响 Subject Pack；Full 才跑三科 PDF eval。
-- target budgets：当前工作站 Fast <= 60 秒，单 Subject Pack Core <= 120 秒，Full <= 360 秒。
+- decisions：test 使用 `--no-build`；asset validation 不重复；Core 只跑受影响 Subject Pack；Full 才跑三科 PDF eval；eval 按 profile 复用 snapshot 并在单科内共享浏览器服务；相同 delivery 合同不随视觉案例重复。
+- target budgets：当前工作站 Fast <= 15 秒，单 Subject Pack Core <= 90 秒，Full <= 240 秒。
 - acceptance：每种模式输出执行/跳过步骤、Subject Pack 和总耗时。
 
 ## EPIC-E Test Rebalancing

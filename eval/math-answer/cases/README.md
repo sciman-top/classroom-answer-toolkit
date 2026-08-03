@@ -10,21 +10,24 @@ This directory stores the fixed fixtures referenced by
   markdown validator rejects broken math delimiters for `math-answer` too.
 - `basic-statistics-summary`: positive math-specific fixture that keeps average,
   median, and mode conclusions explicit for a text-grounded case, then
-  verifies validator/render/deliver behavior with classroom and compact visual
-  baselines.
+  verifies validator/render behavior with classroom and compact visual baselines.
 - `stepwise-derivation`: positive math-specific fixture that keeps equivalent
-  transforms explicit, then verifies validator/render/deliver behavior with
-  classroom and compact visual baselines.
+  transforms explicit, then verifies validator/render behavior with classroom
+  and compact visual baselines.
 - `basic-probability-notation`: positive math-specific fixture that keeps
-  standard probability notation explicit for a text-grounded case, then
-  verifies validator/render/deliver behavior with classroom and compact visual
-  baselines.
+  standard probability notation explicit for a text-grounded case, then verifies
+  validator/render behavior with classroom and compact visual baselines.
 - `function-graph-review-fallback`: positive fallback fixture that keeps a
   compact `【疑】` marker for graph-dependent items and verifies the shared
-  validator/render/deliver pipeline can carry that downgrade posture.
+  validator/render pipeline can carry that downgrade posture.
 - `geometry-review-fallback`: positive fallback fixture that keeps a compact
   `【疑】` marker for geometry-dependent items and verifies the shared
-  validator/render/deliver pipeline can carry that downgrade posture.
+  validator/render pipeline can carry that downgrade posture.
 - `chart-driven-review-fallback`: positive fallback fixture that keeps a
   compact `【疑】` marker for chart/data-driven items and verifies the shared
-  validator/render/deliver pipeline can carry that downgrade posture.
+  validator/render pipeline can carry that downgrade posture.
+
+`linear-equation-smoke` alone carries the no-graphics delivery contract for both
+profiles. Repeating the same delivery manifest assertions on every visual case
+does not add coverage; physics fixtures separately protect single- and
+multi-graphic delivery.

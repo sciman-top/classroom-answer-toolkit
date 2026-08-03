@@ -8,6 +8,7 @@
     "deliver": "node deliver-answer.mjs",
     "eval:answer": "node eval-answer-fixtures.mjs",
     "eval:math": "node eval-answer-fixtures.mjs --subject-pack math-answer",
+    "test:eval-runtime": "node --test eval-answer-fixtures.test.mjs",
     "render": "node render-md-latex.mjs",
     "test:output-path": "node --test pdf-output-path.test.mjs",
     "test:render": "node --test render-md-latex.test.mjs",

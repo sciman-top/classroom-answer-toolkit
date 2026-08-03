@@ -178,3 +178,10 @@ listed case/profile pair, and writes a local summary to
 
 For another subject pack, pass `--subject-pack <name>` and the evaluator will
 default to `eval/<name>/dataset.json`.
+
+Within one subject eval, each profile snapshot is compiled once and all
+render/review subprocesses connect to one short-lived local browser server.
+Standalone `render`, `review-source-pdf`, and `deliver` commands remain
+self-contained. The math suite keeps delivery coverage on the two-profile smoke
+case; its other cases retain validator and visual-baseline coverage without
+repeating the same no-graphics manifest contract.
