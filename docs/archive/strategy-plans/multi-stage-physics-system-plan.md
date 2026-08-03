@@ -38,6 +38,6 @@
 
 ## 与其他文档的边界
 
-- 平台终态：见 [architecture-and-end-state.md](./architecture-and-end-state.md)
-- 规范治理：见 [spec-evolution-adaptation-plan.md](./spec-evolution-adaptation-plan.md)
-- 实施总基线：见 [final-implementation-baseline.md](./final-implementation-baseline.md)
+- 平台终态：见 [architecture-and-end-state.md](../../strategy/architecture-and-end-state.md)
+- 规范治理：见 [spec-evolution-adaptation-plan.md](../../strategy/spec-evolution-adaptation-plan.md)
+- 实施总基线：见 [final-implementation-baseline.md](../../strategy/final-implementation-baseline.md)

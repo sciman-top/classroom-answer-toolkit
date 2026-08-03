@@ -11,3 +11,10 @@ git show 6cf3904:docs/strategy/execution-backlog.md
 用于存放已迁出根目录、但仍需留档的历史规划文档版本。
 
 Archive 仅存历史版本，不再作为当前规划依据。当前真值入口一律看 [docs/strategy/README.md](../strategy/README.md)。
+
+## 归档分区
+
+- [strategy-plans/](./strategy-plans/README.md)：已经冻结或被产品简化决策取代的历史实施计划。
+
+归档文档中的 `todo`、`next`、阶段状态或完成定义都不构成执行授权。AI 只能执行当前
+[`execution-backlog.md`](../strategy/execution-backlog.md) 中 `status: ready` 的任务。

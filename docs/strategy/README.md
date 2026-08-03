@@ -23,8 +23,8 @@
 ## Archive and evidence
 
 - `docs/change-evidence/`：过去切片的命令、结果与边界，不定义未来范围。
-- `docs/archive/`：已退出当前阅读链的历史方案。
-- 未列入 `Current truth` 的 `*-plan.md` 默认为 supporting、frozen 或 historical；除非 active backlog 显式引用，否则 AI 不得执行。
+- `docs/archive/strategy-plans/`：已退出当前阅读链的历史方案；仅供追溯，AI 不得从中生成任务或恢复已删除模块。
+- 本目录仅保留 `Current truth` 中的两份 active `*-plan.md`；任何历史计划回迁都必须先形成 active backlog 条目和范围批准。
 - 旧版 62-task backlog 可从 Git 基线 `6cf3904` 读取：`git show 6cf3904:docs/strategy/execution-backlog.md`。
 
 ## AI execution rule
