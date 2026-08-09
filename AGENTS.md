@@ -1,6 +1,6 @@
 # AGENTS.md - classroom-answer-toolkit
 **项目契约**: 2.0
-**全局规则复核**: 9.73
+**全局规则复核**: 9.75
 **最后更新**: 2026-08-08
 
 ## 1. 当前落点与目标归宿
@@ -40,7 +40,7 @@
 - 回滚只撤销本任务规则、证据或实现切片；不得用 bootstrap 环境变化冒充仓库回滚。
 
 ## D. Global Rule -> Repo Action
-- Git profile: baseline=`main`; upstream=`origin/main`; closeout=`push_after_full_gate`。
+- Git profile: baseline=`main`; upstream=`origin/main`; closeout=`proportional_core_or_full`。
 - `R1`：从 subject-pack/spec 确定 compiler、renderer、WPF 或 docs 落点。
 - `R2`：先跑受影响合同，再以 `scripts/check-toolchain.ps1` 收口。
 - `R3`：实验工具或兼容层必须记录回收条件与最终归宿。
