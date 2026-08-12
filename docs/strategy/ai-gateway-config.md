@@ -17,4 +17,13 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
   --provider all
 ```
 
-provider 发生可重试失败时按 `primary -> fallback_1 -> fallback_2 -> ...` 数字顺序切换；fallback 档位可只覆盖 model/reasoning，并继承 primary 的 endpoint、key、kind 与 surface。既有本机配置若还保留旧连接字段，可设置对应的 `CLASSROOM_TOOLKIT_AI_FALLBACK_n_INHERIT_PRIMARY=true` 显式忽略这些字段。HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、reasoning effort、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。
+Gateway 会按任务项编排四档模型，而不是把整份文档固定到同一档位。路由只使用工作流 mode 和当前已存在的输入规模事实：
+
+- 普通盲生成（1–2 页）或小规模参考复核：`gpt-5.6-sol / medium`；其任务专属降级链为 `sol/medium -> sol/xhigh -> terra/xhigh -> terra/high`。
+- 大规模盲生成（10 页及以上）或大规模参考复核：`gpt-5.6-sol / xhigh`；降级链为 `sol/xhigh -> terra/xhigh -> sol/medium -> terra/high`。
+- 视觉审计：小规模使用 `terra/high`，中规模首选 `terra/xhigh`，大规模（原卷或审计输入达到 8 页）首选 `sol/xhigh`；相应降级链保持视觉任务优先 `terra/xhigh -> sol/xhigh -> terra/high -> sol/medium` 或 `sol/xhigh -> terra/xhigh -> sol/medium -> terra/high`。
+- 视觉 findings 提取或确定性 Markdown 合并：小/中规模首选 `terra/high`，大规模 findings 首选 `terra/xhigh`；降级链优先保留结构化整理档位。
+
+这是有限的确定性分类，不是通用评分框架：页数阈值只用于区分低、中、高复杂度，调用方不需要知道档位细节。`--provider primary|fallback|all` 仍然有效；显式 `primary` 只请求主档，显式 `fallback` 只在任务专属顺序中筛选 fallback 档，`all` 才执行完整任务链。每次成功回执的 `routing` 字段记录 `taskType`、`complexity`、`preferredRole`、实际 `orderedRoles` 与原因，不记录密钥。
+
+fallback 档位可只覆盖 model/reasoning，并继承 primary 的 endpoint、key、kind 与 surface。既有本机配置若还保留旧连接字段，可设置对应的 `CLASSROOM_TOOLKIT_AI_FALLBACK_n_INHERIT_PRIMARY=true` 显式忽略这些字段。HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、reasoning effort、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。

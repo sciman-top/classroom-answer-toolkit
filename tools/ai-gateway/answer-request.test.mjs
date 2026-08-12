@@ -9,6 +9,8 @@ import {
   buildAnswerRequestBody,
   applyReferenceChoiceAnswers,
   normalizeAnswerMarkdown,
+  classifyAnswerTask,
+  selectAnswerRoute,
   requestAnswerWithFailover
 } from "./answer-request.mjs";
 import { normalizeConfig } from "./validate-config.mjs";
@@ -145,6 +147,64 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
   }
 });
 
+test("answer routing selects the model tier from workflow mode and input scale", () => {
+  const blind = classifyAnswerTask({ mode: "blind_generation", sourcePageCount: 1 });
+  assert.deepEqual(
+    {
+      taskType: blind.taskType,
+      complexity: blind.complexity,
+      preferredRole: blind.preferredRole,
+      routeFamily: blind.routeFamily
+    },
+    { taskType: "blind_generation", complexity: "low", preferredRole: "fallback_1", routeFamily: "general" }
+  );
+
+  const largeBlind = classifyAnswerTask({ mode: "blind_generation", sourcePageCount: 12 });
+  assert.equal(largeBlind.complexity, "high");
+  assert.equal(largeBlind.preferredRole, "primary");
+
+  const findings = classifyAnswerTask({ mode: "visual_audit_findings", auditImageCount: 2 });
+  assert.deepEqual(
+    { taskType: findings.taskType, complexity: findings.complexity, preferredRole: findings.preferredRole },
+    { taskType: "visual_findings_extraction", complexity: "medium", preferredRole: "fallback_3" }
+  );
+
+  const largeAudit = classifyAnswerTask({ mode: "visual_audit", sourcePageCount: 8, auditImageCount: 8 });
+  assert.equal(largeAudit.complexity, "high");
+  assert.equal(largeAudit.preferredRole, "primary");
+});
+
+test("every workflow mode has a deterministic preferred tier", () => {
+  const cases = [
+    [{ sourceImagePaths: Array(6).fill("source.png") }, "blind_generation", "fallback_1", "medium"],
+    [{ sourceImagePaths: Array(8).fill("source.png"), referenceImagePaths: Array(3).fill("reference.png") }, "reference_review", "fallback_1", "medium"],
+    [{ auditImagePaths: Array(4).fill("audit.png") }, "visual_audit", "fallback_2", "medium"],
+    [{ auditFindingsOnly: true, auditImagePaths: Array(12).fill("audit.png") }, "visual_audit_findings", "fallback_2", "high"],
+    [{ auditFindingsFile: "findings.md" }, "visual_audit_merge", "fallback_3", "medium"]
+  ];
+  for (const [options, mode, preferredRole, complexity] of cases) {
+    const task = classifyAnswerTask(options);
+    assert.equal(task.mode, mode);
+    assert.equal(task.preferredRole, preferredRole, task.mode);
+    assert.equal(task.complexity, complexity, task.mode);
+    assert.ok(task.reasons.every((reason) => !reason.includes("key")), task.mode);
+  }
+});
+
+test("answer routing keeps a task-specific failover order and honors provider target filters", () => {
+  const providers = [
+    { lane: "ai", role: "fallback_3" },
+    { lane: "ai", role: "primary" },
+    { lane: "ai", role: "fallback_2" },
+    { lane: "ai", role: "fallback_1" }
+  ];
+  const task = classifyAnswerTask({ mode: "visual_audit_findings", auditImageCount: 12 });
+  const route = selectAnswerRoute({ providers }, task, "all");
+  assert.deepEqual(route.orderedRoles, ["fallback_2", "fallback_3", "primary", "fallback_1"]);
+  assert.deepEqual(selectAnswerRoute({ providers }, task, "fallback").orderedRoles, ["fallback_2", "fallback_3", "fallback_1"]);
+  assert.deepEqual(selectAnswerRoute({ providers }, task, "primary").orderedRoles, ["primary"]);
+});
+
 function createConfig(surface = "responses") {
   return {
     cloudEgressEnabled: true,
@@ -265,6 +325,8 @@ test("answer request retries a retryable primary failure and returns fallback Ma
     const result = await requestAnswerWithFailover(createConfig(), {
       allowCloudEgress: true,
       provider: "all",
+      mode: "blind_generation",
+      sourcePageCount: 12,
       prompt: "v8.14",
       imagePaths,
       visualDetailMode: "high",
@@ -277,13 +339,16 @@ test("answer request retries a retryable primary failure and returns fallback Ma
     assert.equal(result.reasoningEffort, "medium");
     assert.equal(result.answerMarkdown, "# 参考答案\n\n1. B");
     assert.equal(calls.length, 2);
+    assert.deepEqual(result.routing.orderedRoles, ["primary", "fallback_1"]);
+    assert.equal(result.routing.preferredRole, "primary");
+    assert.equal(result.routing.complexity, "high");
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("answer request tries every configured AI tier in numeric fallback order", async () => {
+test("answer request tries every configured AI tier in the task-specific order", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -313,6 +378,8 @@ test("answer request tries every configured AI tier in numeric fallback order", 
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
       allowCloudEgress: true,
       provider: "all",
+      mode: "blind_generation",
+      sourcePageCount: 12,
       prompt: "four tiers",
       imagePaths,
       visualDetailMode: "high",
@@ -324,8 +391,8 @@ test("answer request tries every configured AI tier in numeric fallback order", 
     assert.equal(result.provider, "fallback_3");
     assert.deepEqual(calls, [
       { model: "gpt-5.6-sol", effort: "xhigh" },
-      { model: "gpt-5.6-sol", effort: "medium" },
       { model: "gpt-5.6-terra", effort: "xhigh" },
+      { model: "gpt-5.6-sol", effort: "medium" },
       { model: "gpt-5.6-terra", effort: "high" }
     ]);
   } finally {

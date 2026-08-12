@@ -471,13 +471,145 @@ export function buildAnswerRequestBody(provider, options) {
   };
 }
 
-function orderedProviders(config, target = "all") {
-  return config.providers
+const TASK_MODES = new Set([
+  "blind_generation",
+  "visual_audit",
+  "visual_audit_findings",
+  "visual_audit_merge",
+  "reference_review"
+]);
+
+const ROUTE_ORDERS = Object.freeze({
+  general: ["fallback_1", "primary", "fallback_2", "fallback_3"],
+  semantic: ["primary", "fallback_2", "fallback_1", "fallback_3"],
+  visual: ["primary", "fallback_2", "fallback_1", "fallback_3"],
+  visual_batch: ["fallback_2", "primary", "fallback_3", "fallback_1"],
+  structured: ["fallback_3", "fallback_1", "fallback_2", "primary"],
+  structured_batch: ["fallback_2", "fallback_3", "primary", "fallback_1"]
+});
+
+function countOption(options, name, fallback = 0) {
+  const value = Number(options?.[name]);
+  return Number.isFinite(value) && value >= 0 ? Math.floor(value) : fallback;
+}
+
+function inferAnswerMode(options = {}) {
+  if (TASK_MODES.has(options.mode)) {
+    return options.mode;
+  }
+  if (options.auditFindingsOnly) {
+    return "visual_audit_findings";
+  }
+  if (options.auditFindingsFile || options.auditFindings) {
+    return "visual_audit_merge";
+  }
+  if (options.auditImagesDir || countOption(options, "auditImageCount") > 0 || options.auditImagePaths?.length > 0) {
+    return "visual_audit";
+  }
+  if (options.referenceImagesDir || countOption(options, "referencePageCount") > 0 || options.referenceImagePaths?.length > 0) {
+    return "reference_review";
+  }
+  return "blind_generation";
+}
+
+/**
+ * Classify the existing workflow facts into a small, deterministic routing task.
+ * The caller only supplies facts already known by answer-request; model details
+ * and failover policy stay behind this module's seam.
+ */
+export function classifyAnswerTask(options = {}) {
+  const mode = inferAnswerMode(options);
+  const sourcePageCount = countOption(
+    options,
+    "sourcePageCount",
+    options.sourceImagePaths?.length ?? (mode === "blind_generation" ? options.imagePaths?.length ?? 0 : 0)
+  );
+  const auditImageCount = countOption(options, "auditImageCount", options.auditImagePaths?.length ?? 0);
+  const referencePageCount = countOption(options, "referencePageCount", options.referenceImagePaths?.length ?? 0);
+  const visualPageCount = sourcePageCount + auditImageCount + referencePageCount;
+  const hasVisualInput = visualPageCount > 0 || (options.imagePaths?.length ?? 0) > 0;
+  const reasons = [`mode=${mode}`];
+  if (sourcePageCount > 0) reasons.push(`source_pages=${sourcePageCount}`);
+  if (auditImageCount > 0) reasons.push(`audit_pages=${auditImageCount}`);
+  if (referencePageCount > 0) reasons.push(`reference_pages=${referencePageCount}`);
+  if (hasVisualInput) reasons.push("visual_input=true");
+
+  let taskType = mode;
+  let complexity = "medium";
+  let routeFamily = "general";
+  if (mode === "blind_generation") {
+    complexity = sourcePageCount <= 2 ? "low" : sourcePageCount >= 10 ? "high" : "medium";
+    routeFamily = complexity === "high" ? "semantic" : "general";
+  } else if (mode === "reference_review") {
+    const reviewPages = sourcePageCount + referencePageCount;
+    complexity = reviewPages >= 16 || referencePageCount >= 8 ? "high" : "medium";
+    routeFamily = complexity === "high" ? "semantic" : "general";
+  } else if (mode === "visual_audit") {
+    complexity = auditImageCount >= 8 || sourcePageCount >= 8 ? "high" : auditImageCount <= 2 ? "low" : "medium";
+    routeFamily = complexity === "high" ? "visual" : complexity === "medium" ? "visual_batch" : "structured";
+    taskType = "visual_verification";
+  } else if (mode === "visual_audit_findings") {
+    complexity = auditImageCount >= 8 ? "high" : "medium";
+    routeFamily = complexity === "high" ? "structured_batch" : "structured";
+    taskType = "visual_findings_extraction";
+  } else if (mode === "visual_audit_merge") {
+    complexity = "medium";
+    routeFamily = "structured";
+    taskType = "visual_findings_merge";
+  }
+  reasons.push(`complexity=${complexity}`);
+  reasons.push(`route_family=${routeFamily}`);
+  const orderedRoles = ROUTE_ORDERS[routeFamily];
+  return {
+    mode,
+    taskType,
+    complexity,
+    routeFamily,
+    sourcePageCount,
+    auditImageCount,
+    referencePageCount,
+    visualPageCount,
+    hasVisualInput,
+    preferredRole: orderedRoles[0],
+    orderedRoles: [...orderedRoles],
+    reasons
+  };
+}
+
+export function selectAnswerRoute(config, task, target = "all") {
+  const classified = task?.orderedRoles ? task : classifyAnswerTask(task ?? {});
+  const roleRank = new Map(classified.orderedRoles.map((role, index) => [role, index]));
+  const providers = config.providers
     .filter((provider) => provider.lane === "ai")
     .filter((provider) => target === "all"
       || (target === "primary" && provider.role === "primary")
       || (target === "fallback" && provider.role.startsWith("fallback")))
-    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
+    .sort((left, right) => {
+      const leftRank = roleRank.get(left.role) ?? 1000 + providerOrder(left.role);
+      const rightRank = roleRank.get(right.role) ?? 1000 + providerOrder(right.role);
+      return leftRank - rightRank;
+    });
+  return {
+    ...classified,
+    target,
+    selectedRole: providers[0]?.role ?? null,
+    orderedRoles: providers.map((provider) => provider.role),
+    providers
+  };
+}
+
+function routingReceipt(route) {
+  return {
+    taskType: route.taskType,
+    mode: route.mode,
+    complexity: route.complexity,
+    preferredRole: route.preferredRole,
+    selectedRole: route.selectedRole,
+    routeFamily: route.routeFamily,
+    orderedRoles: route.orderedRoles,
+    reasons: route.reasons,
+    target: route.target
+  };
 }
 
 function providerOrder(role) {
@@ -603,7 +735,9 @@ export async function requestAnswerWithFailover(config, options) {
   if (typeof fetch !== "function") {
     throw new Error("This Node.js runtime does not provide fetch.");
   }
-  const providers = orderedProviders(config, options.provider);
+  const task = classifyAnswerTask(options);
+  const route = selectAnswerRoute(config, task, options.provider);
+  const providers = route.providers;
   if (providers.length === 0) {
     throw new Error(`No ${options.provider ?? "all"} AI provider is configured for answer generation.`);
   }
@@ -619,11 +753,19 @@ export async function requestAnswerWithFailover(config, options) {
         model: attempt.model,
         reasoningEffort: attempt.reasoningEffort,
         answerMarkdown: attempt.answerMarkdown,
-        attempts
+        attempts,
+        routing: routingReceipt(route)
       };
     }
     if (!attempt.retryable) {
-      return { ok: false, provider: provider.role, answerMarkdown: "", attempts, error: attempt.error };
+      return {
+        ok: false,
+        provider: provider.role,
+        answerMarkdown: "",
+        attempts,
+        routing: routingReceipt(route),
+        error: attempt.error
+      };
     }
   }
   return {
@@ -631,6 +773,7 @@ export async function requestAnswerWithFailover(config, options) {
     provider: attempts.at(-1)?.provider ?? null,
     answerMarkdown: "",
     attempts,
+    routing: routingReceipt(route),
     error: "All configured AI providers failed with retryable errors."
   };
 }
@@ -710,6 +853,7 @@ export async function main() {
     referencePageCount: options.referenceImagePaths.length,
     requestedVisualDetailMode: options.visualDetailMode,
     providerVisualDetailMode: normalizeDetailForProvider(options.visualDetailMode),
+    routing: result.routing,
     candidatePath: options.candidateFile,
     candidateSha256: options.candidateFile ? sha256File(options.candidateFile) : null,
     auditFindingsPath: options.auditFindingsFile,
