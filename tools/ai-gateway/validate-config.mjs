@@ -192,7 +192,7 @@ function boolValue(value) {
   return ["1", "true", "yes", "on"].includes(String(value ?? "").trim().toLowerCase());
 }
 
-function readAiProvider(env, role, canonicalPrefix, legacyPrefix) {
+function readAiProvider(env, role, canonicalPrefix, legacyPrefix, inherited = null) {
   const hasCanonical = hasAny(env, `${canonicalPrefix}_`);
   const hasLegacy = hasAny(env, `${legacyPrefix}_`);
   if (!hasCanonical && !hasLegacy) {
@@ -201,6 +201,7 @@ function readAiProvider(env, role, canonicalPrefix, legacyPrefix) {
 
   const source = hasCanonical ? "canonical" : "legacy";
   const prefix = hasCanonical ? canonicalPrefix : legacyPrefix;
+  const inheritPrimaryConnection = inherited !== null && boolValue(get(env, `${prefix}_INHERIT_PRIMARY`));
   const model = hasCanonical ? get(env, `${prefix}_TEXT_MODEL`) : get(env, `${prefix}_MODEL`);
   const visionModel = hasCanonical ? get(env, `${prefix}_VISION_MODEL`) || model : model;
 
@@ -208,15 +209,32 @@ function readAiProvider(env, role, canonicalPrefix, legacyPrefix) {
     lane: "ai",
     role,
     source,
-    kind: get(env, `${prefix}_KIND`) || "openai_compatible",
-    baseUrl: get(env, `${prefix}_BASE_URL`),
-    apiKey: get(env, `${prefix}_API_KEY`),
-    textModel: model,
-    visionModel,
-    reasoningEffort: get(env, `${prefix}_REASONING_EFFORT`).toLowerCase(),
-    textSurface: normalizeSurface(get(env, `${prefix}_TEXT_SURFACE`) || "responses"),
-    visionSurface: normalizeSurface(get(env, `${prefix}_VISION_SURFACE`) || "responses")
+    kind: inheritPrimaryConnection ? inherited.kind : get(env, `${prefix}_KIND`) || inherited?.kind || "openai_compatible",
+    baseUrl: inheritPrimaryConnection ? inherited.baseUrl : get(env, `${prefix}_BASE_URL`) || inherited?.baseUrl || "",
+    apiKey: inheritPrimaryConnection ? inherited.apiKey : get(env, `${prefix}_API_KEY`) || inherited?.apiKey || "",
+    textModel: model || inherited?.textModel || "",
+    visionModel: visionModel || inherited?.visionModel || "",
+    reasoningEffort: (get(env, `${prefix}_REASONING_EFFORT`) || inherited?.reasoningEffort || "").toLowerCase(),
+    textSurface: inheritPrimaryConnection
+      ? inherited.textSurface
+      : normalizeSurface(get(env, `${prefix}_TEXT_SURFACE`) || inherited?.textSurface || "responses"),
+    visionSurface: inheritPrimaryConnection
+      ? inherited.visionSurface
+      : normalizeSurface(get(env, `${prefix}_VISION_SURFACE`) || inherited?.visionSurface || "responses")
   };
+}
+
+function discoverAiFallbackIndices(env) {
+  const indices = new Set();
+  for (const key of Object.keys(env)) {
+    const canonical = key.match(/^CLASSROOM_TOOLKIT_AI_FALLBACK_(\d+)_/);
+    const legacy = key.match(/^TEXT_PROVIDER_FALLBACK_(\d+)_/);
+    const index = canonical?.[1] ?? legacy?.[1];
+    if (index && Number(index) > 0) {
+      indices.add(Number(index));
+    }
+  }
+  return [...indices].sort((left, right) => left - right);
 }
 
 function readImageProvider(env, role, canonicalPrefix, legacyPrefix) {
@@ -248,9 +266,17 @@ function normalizeSurface(value) {
 }
 
 export function normalizeConfig(env) {
+  const primaryAi = readAiProvider(env, "primary", "CLASSROOM_TOOLKIT_AI_PRIMARY", "TEXT_PROVIDER");
+  const aiFallbacks = discoverAiFallbackIndices(env).map((index) => readAiProvider(
+    env,
+    `fallback_${index}`,
+    `CLASSROOM_TOOLKIT_AI_FALLBACK_${index}`,
+    `TEXT_PROVIDER_FALLBACK_${index}`,
+    primaryAi
+  ));
   const providers = [
-    readAiProvider(env, "primary", "CLASSROOM_TOOLKIT_AI_PRIMARY", "TEXT_PROVIDER"),
-    readAiProvider(env, "fallback_1", "CLASSROOM_TOOLKIT_AI_FALLBACK_1", "TEXT_PROVIDER_FALLBACK_1"),
+    primaryAi,
+    ...aiFallbacks,
     readImageProvider(env, "primary", "CLASSROOM_TOOLKIT_IMAGE_PRIMARY", "IMAGE_PROVIDER"),
     readImageProvider(env, "fallback_1", "CLASSROOM_TOOLKIT_IMAGE_FALLBACK_1", "IMAGE_PROVIDER_FALLBACK_1")
   ].filter(Boolean);

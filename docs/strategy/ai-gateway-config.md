@@ -17,4 +17,4 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
   --provider all
 ```
 
-provider 失败时按 primary、fallback 顺序切换；HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。
+provider 发生可重试失败时按 `primary -> fallback_1 -> fallback_2 -> ...` 数字顺序切换；fallback 档位可只覆盖 model/reasoning，并继承 primary 的 endpoint、key、kind 与 surface。既有本机配置若还保留旧连接字段，可设置对应的 `CLASSROOM_TOOLKIT_AI_FALLBACK_n_INHERIT_PRIMARY=true` 显式忽略这些字段。HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、reasoning effort、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。

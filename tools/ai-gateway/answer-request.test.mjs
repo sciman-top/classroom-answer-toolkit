@@ -11,6 +11,7 @@ import {
   normalizeAnswerMarkdown,
   requestAnswerWithFailover
 } from "./answer-request.mjs";
+import { normalizeConfig } from "./validate-config.mjs";
 
 test("live task prompt requires complete subquestion coverage and independent visual checks", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-prompt-"));
@@ -52,6 +53,40 @@ test("reference review prompt separates source pages, reference pages, and blind
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("gateway config discovers ordered AI tiers and inherits primary connection settings", () => {
+  const config = normalizeConfig({
+    CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_TEXT_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "medium",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_INHERIT_PRIMARY: "true",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_BASE_URL: "https://stale.example.com/v1",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_API_KEY: "stale-key",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-5.6-terra",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_3_TEXT_MODEL: "gpt-5.6-terra",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_3_REASONING_EFFORT: "high"
+  });
+
+  const aiProviders = config.providers.filter((provider) => provider.lane === "ai");
+  assert.deepEqual(
+    aiProviders.map(({ role, textModel, reasoningEffort }) => ({ role, textModel, reasoningEffort })),
+    [
+      { role: "primary", textModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+      { role: "fallback_1", textModel: "gpt-5.6-sol", reasoningEffort: "medium" },
+      { role: "fallback_2", textModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+      { role: "fallback_3", textModel: "gpt-5.6-terra", reasoningEffort: "high" }
+    ]
+  );
+  assert.ok(aiProviders.slice(1).every((provider) => provider.baseUrl === aiProviders[0].baseUrl));
+  assert.ok(aiProviders.slice(1).every((provider) => provider.apiKey === aiProviders[0].apiKey));
+  assert.ok(aiProviders.every((provider) => provider.visionModel === provider.textModel));
 });
 
 test("visual audit prompt treats audit images as source evidence rather than reference answers", () => {
@@ -242,6 +277,57 @@ test("answer request retries a retryable primary failure and returns fallback Ma
     assert.equal(result.reasoningEffort, "medium");
     assert.equal(result.answerMarkdown, "# 参考答案\n\n1. B");
     assert.equal(calls.length, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("answer request tries every configured AI tier in numeric fallback order", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (_url, request) => {
+    const body = JSON.parse(request.body);
+    calls.push({ model: body.model, effort: body.reasoning.effort });
+    if (calls.length < 4) {
+      return new Response(JSON.stringify({ error: "temporary" }), { status: 503 });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+
+  const providers = [
+    { role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
+    { role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { role: "fallback_2", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+    { role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
+  ].map((provider) => ({
+    lane: "ai",
+    baseUrl: "https://primary.example.com/v1",
+    apiKey: "key",
+    visionSurface: "responses",
+    ...provider
+  }));
+
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      prompt: "four tiers",
+      imagePaths,
+      visualDetailMode: "high",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.provider, "fallback_3");
+    assert.deepEqual(calls, [
+      { model: "gpt-5.6-sol", effort: "xhigh" },
+      { model: "gpt-5.6-sol", effort: "medium" },
+      { model: "gpt-5.6-terra", effort: "xhigh" },
+      { model: "gpt-5.6-terra", effort: "high" }
+    ]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
