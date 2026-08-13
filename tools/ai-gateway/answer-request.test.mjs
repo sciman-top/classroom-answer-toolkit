@@ -156,7 +156,7 @@ test("answer routing selects the model tier from workflow mode and input scale",
       preferredRole: blind.preferredRole,
       routeFamily: blind.routeFamily
     },
-    { taskType: "blind_generation", complexity: "low", preferredRole: "fallback_1", routeFamily: "general" }
+    { taskType: "blind_generation", complexity: "high", preferredRole: "primary", routeFamily: "semantic" }
   );
 
   const largeBlind = classifyAnswerTask({ mode: "blind_generation", sourcePageCount: 12 });
@@ -176,7 +176,7 @@ test("answer routing selects the model tier from workflow mode and input scale",
 
 test("every workflow mode has a deterministic preferred tier", () => {
   const cases = [
-    [{ sourceImagePaths: Array(6).fill("source.png") }, "blind_generation", "fallback_1", "medium"],
+    [{ sourceImagePaths: Array(6).fill("source.png") }, "blind_generation", "primary", "high"],
     [{ sourceImagePaths: Array(8).fill("source.png"), referenceImagePaths: Array(3).fill("reference.png") }, "reference_review", "fallback_1", "medium"],
     [{ auditImagePaths: Array(4).fill("audit.png") }, "visual_audit", "fallback_2", "medium"],
     [{ auditFindingsOnly: true, auditImagePaths: Array(12).fill("audit.png") }, "visual_audit_findings", "fallback_2", "high"],
@@ -223,8 +223,8 @@ test("evidence-backed risk signals escalate semantic work without relying on pag
     sourcePageCount: 1,
     riskSignals: ["multi_part"]
   });
-  assert.equal(multiPart.complexity, "medium");
-  assert.equal(multiPart.preferredRole, "fallback_1");
+  assert.equal(multiPart.complexity, "high");
+  assert.equal(multiPart.preferredRole, "primary");
   assert.equal(multiPart.riskEscalated, false);
 
   const findingsConflict = classifyAnswerTask({
@@ -234,6 +234,21 @@ test("evidence-backed risk signals escalate semantic work without relying on pag
   });
   assert.equal(findingsConflict.routeFamily, "structured_batch");
   assert.equal(findingsConflict.preferredRole, "fallback_2");
+});
+
+test("blind solving accepts only gpt-5.6-sol/xhigh and never falls back to a lower tier", () => {
+  const providers = [
+    { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
+    { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" }
+  ];
+  const task = classifyAnswerTask({ mode: "blind_generation", sourcePageCount: 1 });
+  const route = selectAnswerRoute({ providers }, task, "all");
+  assert.deepEqual(route.orderedRoles, ["primary"]);
+  assert.equal(route.providers[0].visionModel, "gpt-5.6-sol");
+  assert.equal(route.providers[0].reasoningEffort, "xhigh");
+  assert.deepEqual(selectAnswerRoute({ providers }, task, "fallback").orderedRoles, []);
 });
 
 function createConfig(surface = "responses") {
@@ -340,7 +355,7 @@ test("chat completions request keeps page order and uses multimodal content", ()
   }
 });
 
-test("answer request retries a retryable primary failure and returns fallback Markdown", async () => {
+test("reference review retries a retryable primary failure and returns fallback Markdown", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -356,8 +371,9 @@ test("answer request retries a retryable primary failure and returns fallback Ma
     const result = await requestAnswerWithFailover(createConfig(), {
       allowCloudEgress: true,
       provider: "all",
-      mode: "blind_generation",
-      sourcePageCount: 12,
+      mode: "reference_review",
+      sourcePageCount: 8,
+      referencePageCount: 8,
       prompt: "v8.14",
       imagePaths,
       visualDetailMode: "high",
@@ -379,7 +395,7 @@ test("answer request retries a retryable primary failure and returns fallback Ma
   }
 });
 
-test("answer request tries every configured AI tier in the task-specific order", async () => {
+test("reference review tries every configured AI tier in the task-specific order", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -409,8 +425,9 @@ test("answer request tries every configured AI tier in the task-specific order",
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
       allowCloudEgress: true,
       provider: "all",
-      mode: "blind_generation",
-      sourcePageCount: 12,
+      mode: "reference_review",
+      sourcePageCount: 8,
+      referencePageCount: 8,
       prompt: "four tiers",
       imagePaths,
       visualDetailMode: "high",
@@ -426,6 +443,40 @@ test("answer request tries every configured AI tier in the task-specific order",
       { model: "gpt-5.6-sol", effort: "medium" },
       { model: "gpt-5.6-terra", effort: "high" }
     ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("blind solving fails closed after a retryable sol/xhigh failure", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (_url, request) => {
+    const body = JSON.parse(request.body);
+    calls.push({ model: body.model, effort: body.reasoning?.effort });
+    return new Response(JSON.stringify({ error: "temporary" }), { status: 503 });
+  };
+  const providers = [
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
+  ];
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "blind_generation",
+      sourcePageCount: 1,
+      prompt: "fixed solving tier",
+      imagePaths,
+      visualDetailMode: "high",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, false);
+    assert.deepEqual(calls, [{ model: "gpt-5.6-sol", effort: "xhigh" }]);
+    assert.deepEqual(result.routing.orderedRoles, ["primary"]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
@@ -469,6 +520,9 @@ test("answer request preserves the safe fetch cause in retry diagnostics", async
     const result = await requestAnswerWithFailover(createConfig(), {
       allowCloudEgress: true,
       provider: "primary",
+      mode: "reference_review",
+      sourcePageCount: 1,
+      referencePageCount: 1,
       prompt: "v8.14",
       imagePaths,
       visualDetailMode: "high",

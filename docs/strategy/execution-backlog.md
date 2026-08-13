@@ -22,6 +22,7 @@
 | EVAL-101 2024/2025 real-paper baseline | verified | `docs/change-evidence/20260802-real-paper-regression-baseline.md` |
 | GATE-102 eval runtime lifecycle | verified | `docs/change-evidence/20260803-eval-gate-latency-closeout.md` |
 | ROUTE-101 risk-aware model routing and comparison guard | verified | `docs/change-evidence/20260813-risk-aware-model-routing.md` |
+| ROUTE-102 fixed AI solving tier | verified | `docs/change-evidence/20260813-fixed-ai-solving-tier.md` |
 | LEAN-101 overdesign complete remediation | verified | `docs/change-evidence/20260803-overdesign-complete-remediation.md` |
 
 ## TASK VISION-101 — 有限部件级视觉定位

@@ -520,6 +520,9 @@ const ROUTE_ORDERS = Object.freeze({
   structured_batch: ["fallback_2", "fallback_3", "primary", "fallback_1"]
 });
 
+const SOLVING_MODEL = "gpt-5.6-sol";
+const SOLVING_REASONING_EFFORT = "xhigh";
+
 function countOption(options, name, fallback = 0) {
   const value = Number(options?.[name]);
   return Number.isFinite(value) && value >= 0 ? Math.floor(value) : fallback;
@@ -572,8 +575,9 @@ export function classifyAnswerTask(options = {}) {
   let complexity = "medium";
   let routeFamily = "general";
   if (mode === "blind_generation") {
-    complexity = sourcePageCount <= 2 ? "low" : sourcePageCount >= 10 ? "high" : "medium";
-    routeFamily = complexity === "high" ? "semantic" : "general";
+    complexity = "high";
+    routeFamily = "semantic";
+    reasons.push(`fixed_tier=${SOLVING_MODEL}/${SOLVING_REASONING_EFFORT}`);
   } else if (mode === "reference_review") {
     const reviewPages = sourcePageCount + referencePageCount;
     complexity = reviewPages >= 16 || referencePageCount >= 8 ? "high" : "medium";
@@ -591,7 +595,7 @@ export function classifyAnswerTask(options = {}) {
     routeFamily = "structured";
     taskType = "visual_findings_merge";
   }
-  if (riskSignals.includes("multi_part") && complexity === "low") {
+  if (mode !== "blind_generation" && riskSignals.includes("multi_part") && complexity === "low") {
     complexity = "medium";
     routeFamily = mode === "visual_audit" ? "visual_batch" : "general";
   }
@@ -630,6 +634,9 @@ export function selectAnswerRoute(config, task, target = "all") {
   const roleRank = new Map(classified.orderedRoles.map((role, index) => [role, index]));
   const providers = config.providers
     .filter((provider) => provider.lane === "ai")
+    .filter((provider) => classified.mode !== "blind_generation"
+      || (provider.visionModel === SOLVING_MODEL
+        && provider.reasoningEffort === SOLVING_REASONING_EFFORT))
     .filter((provider) => target === "all"
       || (target === "primary" && provider.role === "primary")
       || (target === "fallback" && provider.role.startsWith("fallback")))
@@ -790,6 +797,9 @@ export async function requestAnswerWithFailover(config, options) {
   const route = selectAnswerRoute(config, task, options.provider);
   const providers = route.providers;
   if (providers.length === 0) {
+    if (task.mode === "blind_generation") {
+      throw new Error(`Blind answer generation requires ${SOLVING_MODEL}/${SOLVING_REASONING_EFFORT}; no matching ${options.provider ?? "all"} provider is configured.`);
+    }
     throw new Error(`No ${options.provider ?? "all"} AI provider is configured for answer generation.`);
   }
 
