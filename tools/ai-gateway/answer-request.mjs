@@ -30,6 +30,7 @@ Options:
   --image <path>            Add one page image; repeat for multiple pages
   --output <path>           Markdown output path
   --provider <target>       primary, fallback, or all; default all
+  --risk-signal <signal>    Add an evidence-backed routing risk signal; repeat as needed
   --visual-detail <mode>    low, high, or original; default original
   --max-output-tokens <n>   Maximum answer tokens; default 24000
   --timeout-ms <ms>         Per-provider timeout; default 600000
@@ -50,6 +51,7 @@ function parseArgs(argv) {
     imagePaths: [],
     outputPath: null,
     provider: "all",
+    riskSignals: [],
     visualDetailMode: "original",
     maxOutputTokens: 24000,
     timeoutMs: 600000,
@@ -150,6 +152,14 @@ function parseArgs(argv) {
       options.provider = arg.slice("--provider=".length);
       continue;
     }
+    if (arg === "--risk-signal") {
+      options.riskSignals.push(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg.startsWith("--risk-signal=")) {
+      options.riskSignals.push(arg.slice("--risk-signal=".length));
+      continue;
+    }
     if (arg === "--visual-detail") {
       options.visualDetailMode = requireValue(argv, ++index, arg);
       continue;
@@ -220,6 +230,11 @@ function validateOptions(options) {
   if (!["primary", "fallback", "all"].includes(options.provider)) {
     throw new Error("--provider must be primary, fallback, or all.");
   }
+  const invalidRiskSignals = options.riskSignals.filter((signal) => !ROUTING_RISK_SIGNALS.has(signal));
+  if (invalidRiskSignals.length > 0) {
+    throw new Error(`Unsupported --risk-signal: ${invalidRiskSignals.join(", ")}.`);
+  }
+  options.riskSignals = [...new Set(options.riskSignals)];
   if (!["low", "high", "original"].includes(options.visualDetailMode)) {
     throw new Error("--visual-detail must be low, high, or original.");
   }
@@ -479,6 +494,23 @@ const TASK_MODES = new Set([
   "reference_review"
 ]);
 
+export const ROUTING_RISK_SIGNALS = new Set([
+  "multi_part",
+  "visual_binding",
+  "unit_conflict",
+  "validator_conflict",
+  "prior_regression_failure",
+  "reference_conflict"
+]);
+
+const HIGH_RISK_SIGNALS = new Set([
+  "visual_binding",
+  "unit_conflict",
+  "validator_conflict",
+  "prior_regression_failure",
+  "reference_conflict"
+]);
+
 const ROUTE_ORDERS = Object.freeze({
   general: ["fallback_1", "primary", "fallback_2", "fallback_3"],
   semantic: ["primary", "fallback_2", "fallback_1", "fallback_3"],
@@ -529,6 +561,8 @@ export function classifyAnswerTask(options = {}) {
   const visualPageCount = sourcePageCount + auditImageCount + referencePageCount;
   const hasVisualInput = visualPageCount > 0 || (options.imagePaths?.length ?? 0) > 0;
   const reasons = [`mode=${mode}`];
+  const riskSignals = [...new Set(options.riskSignals ?? [])].filter((signal) => ROUTING_RISK_SIGNALS.has(signal));
+  const highRiskSignals = riskSignals.filter((signal) => HIGH_RISK_SIGNALS.has(signal));
   if (sourcePageCount > 0) reasons.push(`source_pages=${sourcePageCount}`);
   if (auditImageCount > 0) reasons.push(`audit_pages=${auditImageCount}`);
   if (referencePageCount > 0) reasons.push(`reference_pages=${referencePageCount}`);
@@ -557,6 +591,19 @@ export function classifyAnswerTask(options = {}) {
     routeFamily = "structured";
     taskType = "visual_findings_merge";
   }
+  if (riskSignals.includes("multi_part") && complexity === "low") {
+    complexity = "medium";
+    routeFamily = mode === "visual_audit" ? "visual_batch" : "general";
+  }
+  if (highRiskSignals.length > 0) {
+    complexity = "high";
+    routeFamily = mode === "visual_audit"
+      ? "visual"
+      : mode === "visual_audit_findings" || mode === "visual_audit_merge"
+        ? "structured_batch"
+        : "semantic";
+  }
+  for (const signal of riskSignals) reasons.push(`risk_signal=${signal}`);
   reasons.push(`complexity=${complexity}`);
   reasons.push(`route_family=${routeFamily}`);
   const orderedRoles = ROUTE_ORDERS[routeFamily];
@@ -570,6 +617,8 @@ export function classifyAnswerTask(options = {}) {
     referencePageCount,
     visualPageCount,
     hasVisualInput,
+    riskSignals,
+    riskEscalated: highRiskSignals.length > 0,
     preferredRole: orderedRoles[0],
     orderedRoles: [...orderedRoles],
     reasons
@@ -608,6 +657,8 @@ function routingReceipt(route) {
     routeFamily: route.routeFamily,
     orderedRoles: route.orderedRoles,
     reasons: route.reasons,
+    riskSignals: route.riskSignals,
+    riskEscalated: route.riskEscalated,
     target: route.target
   };
 }

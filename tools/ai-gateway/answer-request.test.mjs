@@ -205,6 +205,37 @@ test("answer routing keeps a task-specific failover order and honors provider ta
   assert.deepEqual(selectAnswerRoute({ providers }, task, "primary").orderedRoles, ["primary"]);
 });
 
+test("evidence-backed risk signals escalate semantic work without relying on page count", () => {
+  const visualRisk = classifyAnswerTask({
+    mode: "blind_generation",
+    sourcePageCount: 1,
+    riskSignals: ["visual_binding", "prior_regression_failure"]
+  });
+  assert.equal(visualRisk.complexity, "high");
+  assert.equal(visualRisk.routeFamily, "semantic");
+  assert.equal(visualRisk.preferredRole, "primary");
+  assert.equal(visualRisk.riskEscalated, true);
+  assert.deepEqual(visualRisk.riskSignals, ["visual_binding", "prior_regression_failure"]);
+  assert.ok(visualRisk.reasons.includes("risk_signal=visual_binding"));
+
+  const multiPart = classifyAnswerTask({
+    mode: "blind_generation",
+    sourcePageCount: 1,
+    riskSignals: ["multi_part"]
+  });
+  assert.equal(multiPart.complexity, "medium");
+  assert.equal(multiPart.preferredRole, "fallback_1");
+  assert.equal(multiPart.riskEscalated, false);
+
+  const findingsConflict = classifyAnswerTask({
+    mode: "visual_audit_findings",
+    auditImageCount: 1,
+    riskSignals: ["validator_conflict"]
+  });
+  assert.equal(findingsConflict.routeFamily, "structured_batch");
+  assert.equal(findingsConflict.preferredRole, "fallback_2");
+});
+
 function createConfig(surface = "responses") {
   return {
     cloudEgressEnabled: true,

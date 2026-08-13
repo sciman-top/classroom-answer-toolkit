@@ -5,7 +5,12 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { loadBaselines, validateBaselineFiles, validateBaselineShape } from "./validate-real-eval.mjs";
+import {
+  evaluateModelTierEvidence,
+  loadBaselines,
+  validateBaselineFiles,
+  validateBaselineShape
+} from "./validate-real-eval.mjs";
 
 test("checked-in real-paper baselines have valid stage boundaries", () => {
   const baselines = loadBaselines();
@@ -22,6 +27,41 @@ test("reference pass does not overwrite blind or visual-audit failure", () => {
   assert.equal(baseline.stages.blind.cases["16"], "fail");
   assert.equal(baseline.stages.visualAudit.cases["16"], "fail");
   assert.equal(baseline.stages.referenceReview.cases["16"], "pass");
+});
+
+test("current real-paper evidence does not pretend one observed tier is optimal", () => {
+  const result = evaluateModelTierEvidence(loadBaselines(), "blind");
+  assert.deepEqual(result, {
+    status: "insufficient_comparative_evidence",
+    stage: "blind",
+    comparableGroups: 0,
+    requiredComparableGroups: 2,
+    recommendation: null
+  });
+});
+
+test("tier recommendation requires repeated same-paper comparisons and a unique winner", () => {
+  const fixture = (comparisonKey, tier, outcomes) => ({
+    comparisonKey,
+    stages: {
+      blind: {
+        status: "evaluated",
+        execution: { model: tier.model, reasoningEffort: tier.reasoningEffort },
+        cases: outcomes
+      }
+    }
+  });
+  const medium = { model: "gpt-5.6-sol", reasoningEffort: "medium" };
+  const xhigh = { model: "gpt-5.6-sol", reasoningEffort: "xhigh" };
+  const result = evaluateModelTierEvidence([
+    fixture("paper-a", medium, { "1": "fail", "2": "pass" }),
+    fixture("paper-a", xhigh, { "1": "pass", "2": "pass" }),
+    fixture("paper-b", medium, { "1": "fail", "2": "fail" }),
+    fixture("paper-b", xhigh, { "1": "pass", "2": "fail" })
+  ]);
+  assert.equal(result.status, "recommendation_available");
+  assert.equal(result.comparableGroups, 2);
+  assert.deepEqual(result.recommendation, { tier: "gpt-5.6-sol/xhigh", accuracy: 0.75, evaluated: 4 });
 });
 
 test("file verifier rejects changed authority bytes", () => {
@@ -42,15 +82,16 @@ test("file verifier rejects changed authority bytes", () => {
       id: "fixture",
       year: 2099,
       subjectPack: "junior-physics-answer",
+      comparisonKey: "fixture-q1",
       targetQuestions: [1],
       authority: {
         sourceExam: { path: "authority/source.pdf", sha256: digest("source") },
         referenceAnswer: { path: "authority/reference.pdf", sha256: digest("reference") }
       },
       stages: {
-        blind: { status: "evaluated", artifact: { path: "artifacts/blind.md", sha256: digest("blind") }, cases: { "1": "fail" } },
-        visualAudit: { status: "not_run", artifact: null, cases: { "1": "not_evaluated" } },
-        referenceReview: { status: "evaluated", artifact: { path: "artifacts/reference.md", sha256: digest("corrected") }, cases: { "1": "pass" } }
+        blind: { status: "evaluated", execution: { model: "gpt-5.6-sol", reasoningEffort: "medium" }, artifact: { path: "artifacts/blind.md", sha256: digest("blind") }, cases: { "1": "fail" } },
+        visualAudit: { status: "not_run", execution: null, artifact: null, cases: { "1": "not_evaluated" } },
+        referenceReview: { status: "evaluated", execution: { model: "gpt-5.6-sol", reasoningEffort: "medium" }, artifact: { path: "artifacts/reference.md", sha256: digest("corrected") }, cases: { "1": "pass" } }
       },
       evidenceRef: "docs/evidence.md",
       teacherAccepted: false

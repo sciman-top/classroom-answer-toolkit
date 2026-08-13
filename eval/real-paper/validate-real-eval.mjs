@@ -8,6 +8,8 @@ const defaultRepoRoot = path.resolve(moduleDirectory, "..", "..");
 const baselineDirectory = path.join(moduleDirectory, "baselines");
 const allowedStageStatuses = new Set(["evaluated", "not_run"]);
 const allowedCaseResults = new Set(["pass", "fail", "not_evaluated"]);
+const allowedModels = new Set(["gpt-5.6-sol", "gpt-5.6-terra"]);
+const allowedReasoningEfforts = new Set(["medium", "high", "xhigh"]);
 
 function fail(message) {
   throw new Error(message);
@@ -43,6 +45,9 @@ export function validateBaselineShape(baseline) {
   if (!Number.isInteger(baseline.year) || typeof baseline.id !== "string" || typeof baseline.subjectPack !== "string") {
     fail("Baseline id, year, and subjectPack are required.");
   }
+  if (typeof baseline.comparisonKey !== "string" || baseline.comparisonKey.length === 0) {
+    fail("comparisonKey is required.");
+  }
   if (!Array.isArray(baseline.targetQuestions) || baseline.targetQuestions.length === 0
       || baseline.targetQuestions.some((value) => !Number.isInteger(value))) {
     fail("targetQuestions must be a non-empty integer array.");
@@ -72,7 +77,15 @@ export function validateBaselineShape(baseline) {
       }
     }
     if (stage.status === "evaluated") validateFileBinding(stage.artifact, `stages.${stageName}.artifact`);
-    if (stage.status === "not_run" && stage.artifact !== null) fail(`${stageName}.artifact must be null when not_run.`);
+    if (stage.status === "evaluated") {
+      if (!allowedModels.has(stage.execution?.model)
+          || !allowedReasoningEfforts.has(stage.execution?.reasoningEffort)) {
+        fail(`${stageName}.execution must identify one supported model tier.`);
+      }
+    }
+    if (stage.status === "not_run" && (stage.artifact !== null || stage.execution !== null)) {
+      fail(`${stageName}.artifact and execution must be null when not_run.`);
+    }
   }
 
   if (Object.values(baseline.stages.referenceReview.cases).some((result) => result !== "pass")) {
@@ -113,6 +126,65 @@ export function loadBaselines(directory = baselineDirectory) {
     .map((name) => JSON.parse(fs.readFileSync(path.join(directory, name), "utf8")));
 }
 
+function tierId(execution) {
+  return `${execution.model}/${execution.reasoningEffort}`;
+}
+
+export function evaluateModelTierEvidence(baselines, stageName = "blind") {
+  const groups = new Map();
+  for (const baseline of baselines) {
+    const stage = baseline.stages?.[stageName];
+    if (stage?.status !== "evaluated") continue;
+    const group = groups.get(baseline.comparisonKey) ?? [];
+    group.push({ baseline, stage, tier: tierId(stage.execution) });
+    groups.set(baseline.comparisonKey, group);
+  }
+  const comparableGroups = [...groups.entries()]
+    .map(([comparisonKey, entries]) => ({ comparisonKey, entries, tiers: [...new Set(entries.map((entry) => entry.tier))] }))
+    .filter((group) => group.tiers.length >= 2);
+  if (comparableGroups.length < 2) {
+    return {
+      status: "insufficient_comparative_evidence",
+      stage: stageName,
+      comparableGroups: comparableGroups.length,
+      requiredComparableGroups: 2,
+      recommendation: null
+    };
+  }
+
+  const scores = new Map();
+  for (const group of comparableGroups) {
+    for (const entry of group.entries) {
+      const outcomes = Object.values(entry.stage.cases);
+      const score = scores.get(entry.tier) ?? { passes: 0, evaluated: 0, comparisonKeys: new Set() };
+      score.passes += outcomes.filter((outcome) => outcome === "pass").length;
+      score.evaluated += outcomes.length;
+      score.comparisonKeys.add(group.comparisonKey);
+      scores.set(entry.tier, score);
+    }
+  }
+  const eligible = [...scores.entries()]
+    .filter(([, score]) => score.comparisonKeys.size >= 2)
+    .map(([tier, score]) => ({ tier, accuracy: score.passes / score.evaluated, evaluated: score.evaluated }))
+    .sort((left, right) => right.accuracy - left.accuracy || right.evaluated - left.evaluated || left.tier.localeCompare(right.tier));
+  if (eligible.length < 2 || eligible[0].accuracy === eligible[1].accuracy) {
+    return {
+      status: eligible.length < 2 ? "insufficient_comparative_evidence" : "no_unique_winner",
+      stage: stageName,
+      comparableGroups: comparableGroups.length,
+      requiredComparableGroups: 2,
+      recommendation: null
+    };
+  }
+  return {
+    status: "recommendation_available",
+    stage: stageName,
+    comparableGroups: comparableGroups.length,
+    requiredComparableGroups: 2,
+    recommendation: eligible[0]
+  };
+}
+
 function main() {
   const baselines = loadBaselines();
   for (const baseline of baselines) validateBaselineFiles(baseline, defaultRepoRoot);
@@ -124,7 +196,11 @@ function main() {
     referencePasses: Object.values(baseline.stages.referenceReview.cases).filter((value) => value === "pass").length,
     teacherAccepted: baseline.teacherAccepted
   }));
-  console.log(JSON.stringify({ ok: true, baselines: summary }, null, 2));
+  console.log(JSON.stringify({
+    ok: true,
+    baselines: summary,
+    modelTierEvidence: ["blind", "visualAudit", "referenceReview"].map((stage) => evaluateModelTierEvidence(baselines, stage))
+  }, null, 2));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
