@@ -200,9 +200,6 @@ function main() {
   });
   const compileProfile = options.profile ?? "classroom";
 
-  console.log(`[${packageName}] validate-assets`);
-  runNodeScript(path.join("..", "rule-compiler", "validate-assets.mjs"), []);
-
   if (!options.snapshotPath) {
     console.log(`[${packageName}] compile-snapshot`);
     runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [

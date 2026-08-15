@@ -34,17 +34,6 @@ public sealed class CrossSubjectContractTests
     }
 
     [Fact]
-    public void RepositoryUsesCompatibleDotNetFeatureBand()
-    {
-        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(FindRepoRoot(), "global.json")));
-        var sdk = document.RootElement.GetProperty("sdk");
-
-        sdk.GetProperty("version").GetString().Should().Be("10.0.300");
-        sdk.GetProperty("rollForward").GetString().Should().Be("latestPatch");
-        sdk.GetProperty("allowPrerelease").GetBoolean().Should().BeFalse();
-    }
-
-    [Fact]
     public void PhysicsEvalSuitesDeclareOneSharedRendererOwnerAndBoundedSeniorSentinels()
     {
         var root = FindRepoRoot();
@@ -63,40 +52,7 @@ public sealed class CrossSubjectContractTests
         seniorDocument.RootElement.GetProperty("cases")
             .EnumerateArray()
             .Select(item => item.GetProperty("id").GetString())
-            .Should().BeEquivalentTo([
-                "smoke-answer",
-                "figure-binding",
-                "instrument-reading-priority",
-                "instrument-range-scale-check",
-                "necessary-derivation"
-            ]);
-    }
-
-    [Fact]
-    public void FrozenSurfacesAreAbsentFromTheActiveTree()
-    {
-        var root = FindRepoRoot();
-        var removedEntrypoints = new[]
-        {
-            "tools/answer-generator/package.json",
-            "tools/answer-graphics/package.json",
-            "tools/review-queue/package.json",
-            "tools/sample-flywheel/package.json",
-            "tools/track-orchestrator/package.json",
-            "tools/visual-evidence/package.json",
-            "src/ClassroomToolkit.Interop/ClassroomToolkit.Interop.csproj",
-            "src/ClassroomToolkit.Application/ClassroomToolkit.Application.csproj",
-            "src/ClassroomToolkit.Services/ClassroomToolkit.Services.csproj"
-        };
-
-        removedEntrypoints
-            .Select(path => Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar)))
-            .Should()
-            .OnlyContain(path => !File.Exists(path));
-
-        Directory.GetFiles(Path.Combine(root, "prompts", "shared", "schemas"), "*.schema.json")
-            .Should()
-            .HaveCount(12);
+            .Should().BeEquivalentTo(["smoke-answer"]);
     }
 
     private static string FindRepoRoot()

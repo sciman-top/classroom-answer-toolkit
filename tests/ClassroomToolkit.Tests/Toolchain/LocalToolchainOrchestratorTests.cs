@@ -22,6 +22,7 @@ public sealed class LocalToolchainOrchestratorTests
         execution.Succeeded.Should().BeTrue();
         delivery.Should().NotBeNull();
         delivery!.SnapshotId.Should().Be("snapshot-test");
+        delivery.ReviewDirectoryPath.Should().Be(Path.Combine(workspace.Root, ".pdf-review", "answer"));
         runner.Arguments.Should().Contain("deliver");
         runner.Arguments.Should().Contain("--keep-review");
     }
@@ -60,7 +61,11 @@ public sealed class LocalToolchainOrchestratorTests
                 snapshotPath = ".snapshot-cache/resolved-snapshot.json",
                 snapshot = new { version = "v8.14" },
                 profile = "classroom",
-                review = new { lifecycle = new { state = "ready_for_review" } }
+                review = new
+                {
+                    outputDir = Path.Combine(_root, ".pdf-review", "answer"),
+                    lifecycle = new { state = "ready_for_review" }
+                }
             }));
             return Task.FromResult(new ProcessRunResult(0, "ok", "", TimeSpan.Zero));
         }

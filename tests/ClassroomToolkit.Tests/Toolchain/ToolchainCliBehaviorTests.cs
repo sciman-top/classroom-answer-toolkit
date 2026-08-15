@@ -54,25 +54,6 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public async Task FastGateExecutesFastStepsAndSkipsCoreWork()
-    {
-        var result = await RunAsync(
-            "pwsh",
-            FindRepoRoot(),
-            "-NoProfile",
-            "-ExecutionPolicy", "Bypass",
-            "-File", "scripts/check-toolchain.ps1",
-            "-Mode", "Fast");
-
-        result.ExitCode.Should().Be(0, result.Output);
-        result.Output.Should().Contain("mode: Fast");
-        result.Output.Should().Contain("spec-boundary");
-        result.Output.Should().Contain("ai-answer-tests");
-        result.Output.Should().Contain("skipped: assets");
-        result.Output.Should().Contain("delivery-smoke");
-    }
-
-    [Fact]
     public async Task PublishedSmokeFailsClosedWhenExecutableIsMissing()
     {
         var missingPublishDirectory = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-MissingPublish", Guid.NewGuid().ToString("N"));

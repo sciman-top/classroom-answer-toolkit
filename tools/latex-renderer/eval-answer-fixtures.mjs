@@ -374,6 +374,7 @@ async function main() {
             options.subjectPack,
             "--snapshot-path",
             path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
+            "--skip-validate",
             ...(expectation.delivery.keepReview ? ["--keep-review"] : [])
           ]);
 

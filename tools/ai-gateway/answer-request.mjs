@@ -30,7 +30,6 @@ Options:
   --image <path>            Add one page image; repeat for multiple pages
   --output <path>           Markdown output path
   --provider <target>       primary, fallback, or all; default all
-  --risk-signal <signal>    Add an evidence-backed routing risk signal; repeat as needed
   --visual-detail <mode>    low, high, or original; default original
   --max-output-tokens <n>   Maximum answer tokens; default 24000
   --timeout-ms <ms>         Per-provider timeout; default 600000
@@ -51,7 +50,6 @@ function parseArgs(argv) {
     imagePaths: [],
     outputPath: null,
     provider: "all",
-    riskSignals: [],
     visualDetailMode: "original",
     maxOutputTokens: 24000,
     timeoutMs: 600000,
@@ -152,14 +150,6 @@ function parseArgs(argv) {
       options.provider = arg.slice("--provider=".length);
       continue;
     }
-    if (arg === "--risk-signal") {
-      options.riskSignals.push(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--risk-signal=")) {
-      options.riskSignals.push(arg.slice("--risk-signal=".length));
-      continue;
-    }
     if (arg === "--visual-detail") {
       options.visualDetailMode = requireValue(argv, ++index, arg);
       continue;
@@ -230,11 +220,6 @@ function validateOptions(options) {
   if (!["primary", "fallback", "all"].includes(options.provider)) {
     throw new Error("--provider must be primary, fallback, or all.");
   }
-  const invalidRiskSignals = options.riskSignals.filter((signal) => !ROUTING_RISK_SIGNALS.has(signal));
-  if (invalidRiskSignals.length > 0) {
-    throw new Error(`Unsupported --risk-signal: ${invalidRiskSignals.join(", ")}.`);
-  }
-  options.riskSignals = [...new Set(options.riskSignals)];
   if (!["low", "high", "original"].includes(options.visualDetailMode)) {
     throw new Error("--visual-detail must be low, high, or original.");
   }
@@ -494,39 +479,8 @@ const TASK_MODES = new Set([
   "reference_review"
 ]);
 
-export const ROUTING_RISK_SIGNALS = new Set([
-  "multi_part",
-  "visual_binding",
-  "unit_conflict",
-  "validator_conflict",
-  "prior_regression_failure",
-  "reference_conflict"
-]);
-
-const HIGH_RISK_SIGNALS = new Set([
-  "visual_binding",
-  "unit_conflict",
-  "validator_conflict",
-  "prior_regression_failure",
-  "reference_conflict"
-]);
-
-const ROUTE_ORDERS = Object.freeze({
-  general: ["fallback_1", "primary", "fallback_2", "fallback_3"],
-  semantic: ["primary", "fallback_2", "fallback_1", "fallback_3"],
-  visual: ["primary", "fallback_2", "fallback_1", "fallback_3"],
-  visual_batch: ["fallback_2", "primary", "fallback_3", "fallback_1"],
-  structured: ["fallback_3", "fallback_1", "fallback_2", "primary"],
-  structured_batch: ["fallback_2", "fallback_3", "primary", "fallback_1"]
-});
-
 const SOLVING_MODEL = "gpt-5.6-sol";
 const SOLVING_REASONING_EFFORT = "xhigh";
-
-function countOption(options, name, fallback = 0) {
-  const value = Number(options?.[name]);
-  return Number.isFinite(value) && value >= 0 ? Math.floor(value) : fallback;
-}
 
 function inferAnswerMode(options = {}) {
   if (TASK_MODES.has(options.mode)) {
@@ -538,115 +492,28 @@ function inferAnswerMode(options = {}) {
   if (options.auditFindingsFile || options.auditFindings) {
     return "visual_audit_merge";
   }
-  if (options.auditImagesDir || countOption(options, "auditImageCount") > 0 || options.auditImagePaths?.length > 0) {
+  if (options.auditImagesDir || options.auditImagePaths?.length > 0) {
     return "visual_audit";
   }
-  if (options.referenceImagesDir || countOption(options, "referencePageCount") > 0 || options.referenceImagePaths?.length > 0) {
+  if (options.referenceImagesDir || options.referenceImagePaths?.length > 0) {
     return "reference_review";
   }
   return "blind_generation";
 }
 
-/**
- * Classify the existing workflow facts into a small, deterministic routing task.
- * The caller only supplies facts already known by answer-request; model details
- * and failover policy stay behind this module's seam.
- */
-export function classifyAnswerTask(options = {}) {
-  const mode = inferAnswerMode(options);
-  const sourcePageCount = countOption(
-    options,
-    "sourcePageCount",
-    options.sourceImagePaths?.length ?? (mode === "blind_generation" ? options.imagePaths?.length ?? 0 : 0)
-  );
-  const auditImageCount = countOption(options, "auditImageCount", options.auditImagePaths?.length ?? 0);
-  const referencePageCount = countOption(options, "referencePageCount", options.referenceImagePaths?.length ?? 0);
-  const visualPageCount = sourcePageCount + auditImageCount + referencePageCount;
-  const hasVisualInput = visualPageCount > 0 || (options.imagePaths?.length ?? 0) > 0;
-  const reasons = [`mode=${mode}`];
-  const riskSignals = [...new Set(options.riskSignals ?? [])].filter((signal) => ROUTING_RISK_SIGNALS.has(signal));
-  const highRiskSignals = riskSignals.filter((signal) => HIGH_RISK_SIGNALS.has(signal));
-  if (sourcePageCount > 0) reasons.push(`source_pages=${sourcePageCount}`);
-  if (auditImageCount > 0) reasons.push(`audit_pages=${auditImageCount}`);
-  if (referencePageCount > 0) reasons.push(`reference_pages=${referencePageCount}`);
-  if (hasVisualInput) reasons.push("visual_input=true");
-
-  let taskType = mode;
-  let complexity = "medium";
-  let routeFamily = "general";
-  if (mode === "blind_generation") {
-    complexity = "high";
-    routeFamily = "semantic";
-    reasons.push(`fixed_tier=${SOLVING_MODEL}/${SOLVING_REASONING_EFFORT}`);
-  } else if (mode === "reference_review") {
-    const reviewPages = sourcePageCount + referencePageCount;
-    complexity = reviewPages >= 16 || referencePageCount >= 8 ? "high" : "medium";
-    routeFamily = complexity === "high" ? "semantic" : "general";
-  } else if (mode === "visual_audit") {
-    complexity = auditImageCount >= 8 || sourcePageCount >= 8 ? "high" : auditImageCount <= 2 ? "low" : "medium";
-    routeFamily = complexity === "high" ? "visual" : complexity === "medium" ? "visual_batch" : "structured";
-    taskType = "visual_verification";
-  } else if (mode === "visual_audit_findings") {
-    complexity = auditImageCount >= 8 ? "high" : "medium";
-    routeFamily = complexity === "high" ? "structured_batch" : "structured";
-    taskType = "visual_findings_extraction";
-  } else if (mode === "visual_audit_merge") {
-    complexity = "medium";
-    routeFamily = "structured";
-    taskType = "visual_findings_merge";
-  }
-  if (mode !== "blind_generation" && riskSignals.includes("multi_part") && complexity === "low") {
-    complexity = "medium";
-    routeFamily = mode === "visual_audit" ? "visual_batch" : "general";
-  }
-  if (highRiskSignals.length > 0) {
-    complexity = "high";
-    routeFamily = mode === "visual_audit"
-      ? "visual"
-      : mode === "visual_audit_findings" || mode === "visual_audit_merge"
-        ? "structured_batch"
-        : "semantic";
-  }
-  for (const signal of riskSignals) reasons.push(`risk_signal=${signal}`);
-  reasons.push(`complexity=${complexity}`);
-  reasons.push(`route_family=${routeFamily}`);
-  const orderedRoles = ROUTE_ORDERS[routeFamily];
-  return {
-    mode,
-    taskType,
-    complexity,
-    routeFamily,
-    sourcePageCount,
-    auditImageCount,
-    referencePageCount,
-    visualPageCount,
-    hasVisualInput,
-    riskSignals,
-    riskEscalated: highRiskSignals.length > 0,
-    preferredRole: orderedRoles[0],
-    orderedRoles: [...orderedRoles],
-    reasons
-  };
-}
-
-export function selectAnswerRoute(config, task, target = "all") {
-  const classified = task?.orderedRoles ? task : classifyAnswerTask(task ?? {});
-  const roleRank = new Map(classified.orderedRoles.map((role, index) => [role, index]));
+export function selectAnswerRoute(config, modeOrOptions = {}, target = "all") {
+  const mode = typeof modeOrOptions === "string" ? modeOrOptions : inferAnswerMode(modeOrOptions);
   const providers = config.providers
     .filter((provider) => provider.lane === "ai")
-    .filter((provider) => classified.mode !== "blind_generation"
+    .filter((provider) => mode !== "blind_generation"
       || (provider.visionModel === SOLVING_MODEL
         && provider.reasoningEffort === SOLVING_REASONING_EFFORT))
     .filter((provider) => target === "all"
       || (target === "primary" && provider.role === "primary")
       || (target === "fallback" && provider.role.startsWith("fallback")))
-    .sort((left, right) => {
-      const leftRank = roleRank.get(left.role) ?? 1000 + providerOrder(left.role);
-      const rightRank = roleRank.get(right.role) ?? 1000 + providerOrder(right.role);
-      return leftRank - rightRank;
-    });
+    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
   return {
-    ...classified,
+    mode,
     target,
     selectedRole: providers[0]?.role ?? null,
     orderedRoles: providers.map((provider) => provider.role),
@@ -656,16 +523,9 @@ export function selectAnswerRoute(config, task, target = "all") {
 
 function routingReceipt(route) {
   return {
-    taskType: route.taskType,
     mode: route.mode,
-    complexity: route.complexity,
-    preferredRole: route.preferredRole,
     selectedRole: route.selectedRole,
-    routeFamily: route.routeFamily,
     orderedRoles: route.orderedRoles,
-    reasons: route.reasons,
-    riskSignals: route.riskSignals,
-    riskEscalated: route.riskEscalated,
     target: route.target
   };
 }
@@ -793,11 +653,11 @@ export async function requestAnswerWithFailover(config, options) {
   if (typeof fetch !== "function") {
     throw new Error("This Node.js runtime does not provide fetch.");
   }
-  const task = classifyAnswerTask(options);
-  const route = selectAnswerRoute(config, task, options.provider);
+  const mode = inferAnswerMode(options);
+  const route = selectAnswerRoute(config, mode, options.provider);
   const providers = route.providers;
   if (providers.length === 0) {
-    if (task.mode === "blind_generation") {
+    if (mode === "blind_generation") {
       throw new Error(`Blind answer generation requires ${SOLVING_MODEL}/${SOLVING_REASONING_EFFORT}; no matching ${options.provider ?? "all"} provider is configured.`);
     }
     throw new Error(`No ${options.provider ?? "all"} AI provider is configured for answer generation.`);

@@ -102,7 +102,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             answerPath,
             outputPath,
             manifestPath,
-            AnswerArtifactPathResolver.ResolveReviewDirectoryPath(workspace.RepositoryRoot, outputPath),
+            context.ReviewDirectoryPath ?? string.Empty,
             context.SnapshotId,
             subjectPack,
             context.Profile ?? request.Profile,
@@ -152,6 +152,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             root.GetProperty("snapshotPath").GetString(),
             snapshot.GetProperty("version").GetString(),
             root.GetProperty("profile").GetString(),
+            review.GetProperty("outputDir").GetString(),
             reviewState);
     }
 
@@ -166,5 +167,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         string? SnapshotPath,
         string? SnapshotVersion,
         string? Profile,
+        string? ReviewDirectoryPath,
         string? ReviewState);
 }

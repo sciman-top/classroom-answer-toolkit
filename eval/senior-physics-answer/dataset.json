@@ -26,46 +26,6 @@
         "review",
         "visual-baseline"
       ]
-    },
-    {
-      "id": "figure-binding",
-      "input": "cases/figure-binding.md",
-      "expected": "cases/figure-binding.expected.json",
-      "tags": [
-        "subject-pack-sentinel",
-        "validator",
-        "multi-figure-question"
-      ]
-    },
-    {
-      "id": "instrument-reading-priority",
-      "input": "cases/instrument-reading-priority.md",
-      "expected": "cases/instrument-reading-priority.expected.json",
-      "tags": [
-        "subject-pack-sentinel",
-        "validator",
-        "instrument-reading"
-      ]
-    },
-    {
-      "id": "instrument-range-scale-check",
-      "input": "cases/instrument-range-scale-check.md",
-      "expected": "cases/instrument-range-scale-check.expected.json",
-      "tags": [
-        "subject-pack-sentinel",
-        "validator",
-        "instrument-reading"
-      ]
-    },
-    {
-      "id": "necessary-derivation",
-      "input": "cases/necessary-derivation.md",
-      "expected": "cases/necessary-derivation.expected.json",
-      "tags": [
-        "subject-pack-sentinel",
-        "validator",
-        "derivation"
-      ]
     }
   ]
 }

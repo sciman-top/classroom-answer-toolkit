@@ -1,3 +1,8 @@
+[CmdletBinding()]
+param(
+    [switch]$WithOcr
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -176,6 +181,8 @@ Assert-DotNetSdk
 Assert-Browser
 Install-NodeDependencies
 Compile-RuleSnapshots
-Install-PythonOcrEnv
+if ($WithOcr) {
+    Install-PythonOcrEnv
+}
 
 Write-Host "Bootstrap complete."

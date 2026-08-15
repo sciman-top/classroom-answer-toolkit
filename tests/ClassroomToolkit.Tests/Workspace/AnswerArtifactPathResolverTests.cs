@@ -16,17 +16,6 @@ public sealed class AnswerArtifactPathResolverTests
     }
 
     [Fact]
-    public void ResolveReviewDirectoryPath_MapsPdfPathIntoPdfReviewFolder()
-    {
-        var repositoryRoot = @"D:\repo";
-        var outputPdfPath = @"D:\repo\样例交付\folder\sample-answer.pdf";
-
-        var result = AnswerArtifactPathResolver.ResolveReviewDirectoryPath(repositoryRoot, outputPdfPath);
-
-        result.Should().Be(@"D:\repo\.pdf-review\样例交付_folder__sample-answer");
-    }
-
-    [Fact]
     public void ResolveDeliveryManifestPath_UsesPdfStemWithDeliveryManifestSuffix()
     {
         var outputPdfPath = @"D:\repo\样例交付\folder\sample-answer.pdf";

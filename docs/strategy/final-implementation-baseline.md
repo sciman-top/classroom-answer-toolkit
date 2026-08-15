@@ -19,7 +19,6 @@ SourceExam
 ## Truth surfaces
 
 - 产品和执行真值：`docs/strategy/` 中 Strategy Index 列出的 Current truth。
-- 领域词汇：根 `CONTEXT.md`。
 - 提示词人类真源：`prompts/specs/platform|commons|subjects/`。
 - 汇编真值：`prompts/specs/assemblies/`。
 - 生成提示词：`prompts/specs/compiled/` 与 `prompts/<subject-pack>/spec.md`，禁止手改。
@@ -33,12 +32,12 @@ SourceExam
 - `tools/rule-compiler`
 - `tools/ai-gateway`
 - `tools/latex-renderer`
-- `tools/ocr`，仅作为明确需要时的辅助能力
+- `tools/ocr`，仅作为明确需要时的辅助能力；默认 bootstrap 不安装
 - App/Domain/Infra 三程序集的最小 WPF 桌面壳层
 
 ## Frozen and removal targets
 
-以下能力不属于当前产品主链：synthetic 视觉观察/诊断/语义投影链、visual-evidence 聚合信任链、sample flywheel、review queue、synthetic answer generator 和实验 answer-graphics CLI。
+以下能力不属于当前产品主链：synthetic 视觉观察/诊断/语义投影链、visual-evidence 聚合信任链、sample flywheel、review queue、synthetic answer generator、image-generation provider lane、Typst migration contract 和实验 answer-graphics CLI。
 
 - 不得新增对这些模块的 schema、WPF 控件、gate 或 roadmap 承诺。
 - frozen 工具、专属 schema 和 fixture 已由 ARCH-101 从 active tree 删除；WPF DTO 与空项目由独立 ARCH-102 切片处理。
@@ -52,7 +51,7 @@ SourceExam
 - prompt 版本正确不等于答案正确；AI 请求成功不等于题号覆盖或读图正确；PDF 成功不等于语义正确。
 - Reference Review 完成后才可称 Reference-reviewed Delivery；只有教师实际验收后才可称 Teacher Accepted。
 - WPF 不复制 Node 业务逻辑，不因缺少历史 review/trust 对象而扩建领域模型。
-- shared spec、schema 或 renderer 变化必须执行 Full verifier；局部实现变化按受影响 Subject Pack 执行 Core verifier。
+- 验证按变更面路由：C# 用 build+xUnit，gateway/renderer 用 focused Node 测试，subject spec/rules 用 Core；shared spec/schema、跨学科或 release 才用 Full。
 - Full 的通用 renderer/layout 合同由主产品包运行一次；其他 subject-pack 必须保留独立 snapshot 和学科特异 sentinel，不复制同一输入与视觉基准。
 
 ## Compatibility and versioning

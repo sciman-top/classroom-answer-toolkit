@@ -32,7 +32,6 @@ _tmp_*
 *.render.html
 .*.render.html
 artifacts/
-artifacts/
 
 # Eval outputs
 eval/**/results/*

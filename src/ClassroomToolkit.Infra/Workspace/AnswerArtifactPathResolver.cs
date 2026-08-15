@@ -19,19 +19,4 @@ public static class AnswerArtifactPathResolver
             $"{Path.GetFileNameWithoutExtension(outputPdfPath)}.delivery-manifest.json");
     }
 
-    public static string ResolveReviewDirectoryPath(string repositoryRoot, string outputPdfPath)
-    {
-        var relativePdfPath = Path.GetRelativePath(repositoryRoot, outputPdfPath);
-        var safeName = Path.GetFileNameWithoutExtension(outputPdfPath);
-        var parentFragment = Path.GetDirectoryName(relativePdfPath)?
-            .Replace(Path.DirectorySeparatorChar, '_')
-            .Replace(Path.AltDirectorySeparatorChar, '_')
-            .Trim('_');
-
-        var folderName = string.IsNullOrWhiteSpace(parentFragment)
-            ? safeName
-            : $"{parentFragment}__{safeName}";
-
-        return Path.Combine(repositoryRoot, ".pdf-review", folderName);
-    }
 }

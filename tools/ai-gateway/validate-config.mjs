@@ -7,14 +7,11 @@ export const repoRoot = path.resolve(toolDir, "..", "..");
 
 const KNOWN_PREFIXES = [
   "CLASSROOM_TOOLKIT_",
-  "TEXT_PROVIDER",
-  "IMAGE_PROVIDER"
+  "TEXT_PROVIDER"
 ];
 
 const ALLOWED_AI_KINDS = new Set(["openai_compatible"]);
-const ALLOWED_IMAGE_KINDS = new Set(["openai_compatible_image", "openai_compatible_image_only"]);
 const ALLOWED_TEXT_SURFACES = new Set(["responses", "chat_completions"]);
-const ALLOWED_IMAGE_SURFACES = new Set(["responses", "images"]);
 const ALLOWED_REASONING_EFFORTS = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
 
 function usage() {
@@ -237,30 +234,6 @@ function discoverAiFallbackIndices(env) {
   return [...indices].sort((left, right) => left - right);
 }
 
-function readImageProvider(env, role, canonicalPrefix, legacyPrefix) {
-  const hasCanonical = hasAny(env, `${canonicalPrefix}_`);
-  const hasLegacy = hasAny(env, `${legacyPrefix}_`);
-  if (!hasCanonical && !hasLegacy) {
-    return null;
-  }
-
-  const source = hasCanonical ? "canonical" : "legacy";
-  const prefix = hasCanonical ? canonicalPrefix : legacyPrefix;
-
-  return {
-    lane: "image",
-    role,
-    source,
-    kind: get(env, `${prefix}_KIND`) || "openai_compatible_image",
-    baseUrl: get(env, `${prefix}_BASE_URL`),
-    apiKey: get(env, `${prefix}_API_KEY`) || get(env, `${prefix}_API_KEY_1`),
-    model: get(env, `${prefix}_MODEL`),
-    surface: normalizeSurface(get(env, `${prefix}_SURFACE`) || get(env, `${prefix}_IMAGE_SURFACE`) || "responses"),
-    responsesModel: get(env, `${prefix}_RESPONSES_MODEL`),
-    totalConcurrency: get(env, `${prefix}_TOTAL_CONCURRENCY`)
-  };
-}
-
 function normalizeSurface(value) {
   return value.trim().toLowerCase().replace(/-/g, "_");
 }
@@ -276,9 +249,7 @@ export function normalizeConfig(env) {
   ));
   const providers = [
     primaryAi,
-    ...aiFallbacks,
-    readImageProvider(env, "primary", "CLASSROOM_TOOLKIT_IMAGE_PRIMARY", "IMAGE_PROVIDER"),
-    readImageProvider(env, "fallback_1", "CLASSROOM_TOOLKIT_IMAGE_FALLBACK_1", "IMAGE_PROVIDER_FALLBACK_1")
+    ...aiFallbacks
   ].filter(Boolean);
 
   return {
@@ -314,34 +285,18 @@ export function validateConfig(config, options, parseErrors) {
 function validateProvider(provider, options, errors, warnings) {
   const label = `${provider.lane}.${provider.role}`;
 
-  if (provider.lane === "ai" && !ALLOWED_AI_KINDS.has(provider.kind)) {
-    errors.push(`${label}: unsupported kind '${provider.kind}'.`);
-  }
-  if (provider.lane === "image" && !ALLOWED_IMAGE_KINDS.has(provider.kind)) {
+  if (!ALLOWED_AI_KINDS.has(provider.kind)) {
     errors.push(`${label}: unsupported kind '${provider.kind}'.`);
   }
 
   validateBaseUrl(provider.baseUrl, label, errors);
   validateSecret(provider.apiKey, `${label}: api key`, options, errors, warnings);
-
-  if (provider.lane === "ai") {
-    validateRequired(provider.textModel, `${label}: text model`, errors);
-    validateRequired(provider.visionModel, `${label}: vision model`, errors);
-    validateSurface(provider.textSurface, ALLOWED_TEXT_SURFACES, `${label}: text surface`, errors);
-    validateSurface(provider.visionSurface, ALLOWED_TEXT_SURFACES, `${label}: vision surface`, errors);
-    if (provider.reasoningEffort.length > 0 && !ALLOWED_REASONING_EFFORTS.has(provider.reasoningEffort)) {
-      errors.push(`${label}: reasoning effort must be one of ${[...ALLOWED_REASONING_EFFORTS].join(", ")}.`);
-    }
-    return;
-  }
-
-  validateRequired(provider.model, `${label}: image model`, errors);
-  validateSurface(provider.surface, ALLOWED_IMAGE_SURFACES, `${label}: image surface`, errors);
-  if (provider.surface === "responses" && provider.responsesModel.length === 0) {
-    warnings.push(`${label}: responses surface is set without an explicit responses model; the image model may not be valid for /responses.`);
-  }
-  if (provider.totalConcurrency.length > 0 && (!/^[1-9][0-9]*$/.test(provider.totalConcurrency))) {
-    errors.push(`${label}: total concurrency must be a positive integer.`);
+  validateRequired(provider.textModel, `${label}: text model`, errors);
+  validateRequired(provider.visionModel, `${label}: vision model`, errors);
+  validateSurface(provider.textSurface, ALLOWED_TEXT_SURFACES, `${label}: text surface`, errors);
+  validateSurface(provider.visionSurface, ALLOWED_TEXT_SURFACES, `${label}: vision surface`, errors);
+  if (provider.reasoningEffort.length > 0 && !ALLOWED_REASONING_EFFORTS.has(provider.reasoningEffort)) {
+    errors.push(`${label}: reasoning effort must be one of ${[...ALLOWED_REASONING_EFFORTS].join(", ")}.`);
   }
 }
 
@@ -404,23 +359,13 @@ export function summarizeProvider(provider) {
     apiKey: provider.apiKey.length > 0 ? "set" : "missing"
   };
 
-  if (provider.lane === "ai") {
-    return {
-      ...base,
-      textModel: provider.textModel,
-      visionModel: provider.visionModel,
-      reasoningEffort: provider.reasoningEffort || null,
-      textSurface: provider.textSurface,
-      visionSurface: provider.visionSurface
-    };
-  }
-
   return {
     ...base,
-    model: provider.model,
-    surface: provider.surface,
-    responsesModel: provider.responsesModel || null,
-    totalConcurrency: provider.totalConcurrency || null
+    textModel: provider.textModel,
+    visionModel: provider.visionModel,
+    reasoningEffort: provider.reasoningEffort || null,
+    textSurface: provider.textSurface,
+    visionSurface: provider.visionSurface
   };
 }
 
@@ -430,11 +375,7 @@ function printHumanSummary(options, config, validation, liveResults = []) {
   console.log(`- cloud egress: ${config.cloudEgressEnabled ? "enabled" : "disabled"}`);
   for (const provider of config.providers) {
     const summary = summarizeProvider(provider);
-    if (summary.lane === "ai") {
-      console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, ${summary.baseUrl}, text=${summary.textModel}, vision=${summary.visionModel}, reasoning=${summary.reasoningEffort ?? "default"}, key=${summary.apiKey}`);
-    } else {
-      console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, ${summary.baseUrl}, model=${summary.model}, surface=${summary.surface}, key=${summary.apiKey}`);
-    }
+    console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, ${summary.baseUrl}, text=${summary.textModel}, vision=${summary.visionModel}, reasoning=${summary.reasoningEffort ?? "default"}, key=${summary.apiKey}`);
   }
 
   for (const warning of validation.warnings) {

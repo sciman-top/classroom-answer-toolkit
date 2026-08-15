@@ -14,9 +14,6 @@ param(
     [ValidateSet("primary", "fallback", "all")]
     [string]$Provider = "all",
 
-    [ValidateSet("multi_part", "visual_binding", "unit_conflict", "validator_conflict", "prior_regression_failure", "reference_conflict")]
-    [string[]]$RiskSignal = @(),
-
     [ValidateSet("classroom", "compact")]
     [string]$Profile = "classroom",
 
@@ -160,17 +157,6 @@ function Invoke-NodeTool {
     }
 }
 
-function Add-RiskSignalArguments {
-    param([Parameter(Mandatory = $true)][string[]]$Arguments)
-    $result = [Collections.Generic.List[string]]::new()
-    $result.AddRange($Arguments)
-    foreach ($signal in $RiskSignal) {
-        $result.Add("--risk-signal")
-        $result.Add($signal)
-    }
-    return $result.ToArray()
-}
-
 try {
     New-Item -ItemType Directory -Force -Path $pageDirectory | Out-Null
 
@@ -192,7 +178,7 @@ try {
     Write-Host "[live-answer-workflow] generate answer Markdown from $($pageImages.Count) page(s)"
     $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
     $generationOutputPath = if ($referencePath -or -not $SkipVisualAudit) { $blindMarkdownPath } else { $answerMarkdownPath }
-    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments (Add-RiskSignalArguments @(
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
         "--config-env-file", $envFilePath,
         "--prompt-file", $promptPath,
         "--images-dir", $pageDirectory,
@@ -202,7 +188,7 @@ try {
         "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--allow-cloud-egress"
-    ))
+    )
 
     $candidateForReference = $blindMarkdownPath
     if (-not $SkipVisualAudit) {
@@ -219,7 +205,7 @@ try {
         )
 
         Write-Host "[live-answer-workflow] extract visual findings without rewriting the blind candidate"
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments (Add-RiskSignalArguments @(
+        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
             "--candidate-file", $blindMarkdownPath,
@@ -231,9 +217,9 @@ try {
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--allow-cloud-egress"
-        ))
+        )
         Write-Host "[live-answer-workflow] merge visual findings into the complete answer Markdown"
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments (Add-RiskSignalArguments @(
+        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
             "--candidate-file", $blindMarkdownPath,
@@ -243,7 +229,7 @@ try {
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--allow-cloud-egress"
-        ))
+        )
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
             $blindMarkdownPath,
             $visualAuditMarkdownPath,
@@ -287,7 +273,7 @@ try {
         if (Test-Path -LiteralPath $referenceTextPath -PathType Leaf) {
             $reviewArguments += @("--reference-text-file", $referenceTextPath)
         }
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments (Add-RiskSignalArguments $reviewArguments)
+        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $reviewArguments
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
             $blindMarkdownPath,
             $answerMarkdownPath,

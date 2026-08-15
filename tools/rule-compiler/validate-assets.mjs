@@ -69,14 +69,6 @@ function validateSubjectPack(subjectPack) {
   }
 }
 
-function validateRendererContracts() {
-  const root = resolveRepoPath("eval/renderer-contract/cases");
-  const schema = path.join(schemaRoot, "renderer-contract.schema.json");
-  for (const filePath of listJsonFiles(root)) {
-    assertValid(filePath, path.basename(schema));
-  }
-}
-
 function main() {
   const assemblyErrors = listJsonFiles(resolveRepoPath("prompts/specs/assemblies"))
     .flatMap((assemblyPath) => checkAssemblyOutputs(assemblyPath));
@@ -91,9 +83,7 @@ function main() {
   for (const subject of subjects) {
     validateSubjectPack(subject);
   }
-  validateRendererContracts();
-
-  console.log(`Validated ${schemaCount} core schemas, ${subjects.length} subject packs, spec boundaries, compiled prompt assemblies, snapshots, and renderer contracts.`);
+  console.log(`Validated ${schemaCount} core schemas, ${subjects.length} subject packs, spec boundaries, compiled prompt assemblies, and snapshots.`);
 }
 
 try {

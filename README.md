@@ -68,19 +68,22 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 
 ## 验证
 
-固定顺序：
+按变更面运行最低充分检查：
 
 ```powershell
+# WPF / Domain / Infra
 dotnet build ClassroomToolkit.sln -c Debug
 dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build
+
+# subject-pack spec / rules
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer
 ```
 
-共享 spec/schema、renderer 或 release 变更使用 `-Mode Full`；只需快速检查 gateway/spec/Unicode 路径时使用 `-Mode Fast`。`Core` 是默认主链体检，不触发无关学科的全量 eval。Core/Full 已内置一次完整 `validate:assets`，不要在固定门禁外层重复执行；仅做 contract-only 定向检查时才单独运行该 npm 命令。
+AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
 
 Full 中共享 renderer/layout 回归只由 `junior-physics-answer` 承担一次；Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
 
-`scripts/bootstrap.ps1` 会安装依赖，只用于环境初始化，不是日常门禁。
+`scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；确需 RapidOCR 时显式增加 `-WithOcr`。
 
 ## 可信边界
 

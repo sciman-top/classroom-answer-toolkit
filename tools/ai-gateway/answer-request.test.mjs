@@ -9,7 +9,6 @@ import {
   buildAnswerRequestBody,
   applyReferenceChoiceAnswers,
   normalizeAnswerMarkdown,
-  classifyAnswerTask,
   selectAnswerRoute,
   requestAnswerWithFailover
 } from "./answer-request.mjs";
@@ -147,95 +146,6 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
   }
 });
 
-test("answer routing selects the model tier from workflow mode and input scale", () => {
-  const blind = classifyAnswerTask({ mode: "blind_generation", sourcePageCount: 1 });
-  assert.deepEqual(
-    {
-      taskType: blind.taskType,
-      complexity: blind.complexity,
-      preferredRole: blind.preferredRole,
-      routeFamily: blind.routeFamily
-    },
-    { taskType: "blind_generation", complexity: "high", preferredRole: "primary", routeFamily: "semantic" }
-  );
-
-  const largeBlind = classifyAnswerTask({ mode: "blind_generation", sourcePageCount: 12 });
-  assert.equal(largeBlind.complexity, "high");
-  assert.equal(largeBlind.preferredRole, "primary");
-
-  const findings = classifyAnswerTask({ mode: "visual_audit_findings", auditImageCount: 2 });
-  assert.deepEqual(
-    { taskType: findings.taskType, complexity: findings.complexity, preferredRole: findings.preferredRole },
-    { taskType: "visual_findings_extraction", complexity: "medium", preferredRole: "fallback_3" }
-  );
-
-  const largeAudit = classifyAnswerTask({ mode: "visual_audit", sourcePageCount: 8, auditImageCount: 8 });
-  assert.equal(largeAudit.complexity, "high");
-  assert.equal(largeAudit.preferredRole, "primary");
-});
-
-test("every workflow mode has a deterministic preferred tier", () => {
-  const cases = [
-    [{ sourceImagePaths: Array(6).fill("source.png") }, "blind_generation", "primary", "high"],
-    [{ sourceImagePaths: Array(8).fill("source.png"), referenceImagePaths: Array(3).fill("reference.png") }, "reference_review", "fallback_1", "medium"],
-    [{ auditImagePaths: Array(4).fill("audit.png") }, "visual_audit", "fallback_2", "medium"],
-    [{ auditFindingsOnly: true, auditImagePaths: Array(12).fill("audit.png") }, "visual_audit_findings", "fallback_2", "high"],
-    [{ auditFindingsFile: "findings.md" }, "visual_audit_merge", "fallback_3", "medium"]
-  ];
-  for (const [options, mode, preferredRole, complexity] of cases) {
-    const task = classifyAnswerTask(options);
-    assert.equal(task.mode, mode);
-    assert.equal(task.preferredRole, preferredRole, task.mode);
-    assert.equal(task.complexity, complexity, task.mode);
-    assert.ok(task.reasons.every((reason) => !reason.includes("key")), task.mode);
-  }
-});
-
-test("answer routing keeps a task-specific failover order and honors provider target filters", () => {
-  const providers = [
-    { lane: "ai", role: "fallback_3" },
-    { lane: "ai", role: "primary" },
-    { lane: "ai", role: "fallback_2" },
-    { lane: "ai", role: "fallback_1" }
-  ];
-  const task = classifyAnswerTask({ mode: "visual_audit_findings", auditImageCount: 12 });
-  const route = selectAnswerRoute({ providers }, task, "all");
-  assert.deepEqual(route.orderedRoles, ["fallback_2", "fallback_3", "primary", "fallback_1"]);
-  assert.deepEqual(selectAnswerRoute({ providers }, task, "fallback").orderedRoles, ["fallback_2", "fallback_3", "fallback_1"]);
-  assert.deepEqual(selectAnswerRoute({ providers }, task, "primary").orderedRoles, ["primary"]);
-});
-
-test("evidence-backed risk signals escalate semantic work without relying on page count", () => {
-  const visualRisk = classifyAnswerTask({
-    mode: "blind_generation",
-    sourcePageCount: 1,
-    riskSignals: ["visual_binding", "prior_regression_failure"]
-  });
-  assert.equal(visualRisk.complexity, "high");
-  assert.equal(visualRisk.routeFamily, "semantic");
-  assert.equal(visualRisk.preferredRole, "primary");
-  assert.equal(visualRisk.riskEscalated, true);
-  assert.deepEqual(visualRisk.riskSignals, ["visual_binding", "prior_regression_failure"]);
-  assert.ok(visualRisk.reasons.includes("risk_signal=visual_binding"));
-
-  const multiPart = classifyAnswerTask({
-    mode: "blind_generation",
-    sourcePageCount: 1,
-    riskSignals: ["multi_part"]
-  });
-  assert.equal(multiPart.complexity, "high");
-  assert.equal(multiPart.preferredRole, "primary");
-  assert.equal(multiPart.riskEscalated, false);
-
-  const findingsConflict = classifyAnswerTask({
-    mode: "visual_audit_findings",
-    auditImageCount: 1,
-    riskSignals: ["validator_conflict"]
-  });
-  assert.equal(findingsConflict.routeFamily, "structured_batch");
-  assert.equal(findingsConflict.preferredRole, "fallback_2");
-});
-
 test("blind solving accepts only gpt-5.6-sol/xhigh and never falls back to a lower tier", () => {
   const providers = [
     { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
@@ -243,12 +153,11 @@ test("blind solving accepts only gpt-5.6-sol/xhigh and never falls back to a low
     { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
     { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" }
   ];
-  const task = classifyAnswerTask({ mode: "blind_generation", sourcePageCount: 1 });
-  const route = selectAnswerRoute({ providers }, task, "all");
+  const route = selectAnswerRoute({ providers }, "blind_generation", "all");
   assert.deepEqual(route.orderedRoles, ["primary"]);
   assert.equal(route.providers[0].visionModel, "gpt-5.6-sol");
   assert.equal(route.providers[0].reasoningEffort, "xhigh");
-  assert.deepEqual(selectAnswerRoute({ providers }, task, "fallback").orderedRoles, []);
+  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback").orderedRoles, []);
 });
 
 function createConfig(surface = "responses") {
@@ -387,15 +296,13 @@ test("reference review retries a retryable primary failure and returns fallback 
     assert.equal(result.answerMarkdown, "# 参考答案\n\n1. B");
     assert.equal(calls.length, 2);
     assert.deepEqual(result.routing.orderedRoles, ["primary", "fallback_1"]);
-    assert.equal(result.routing.preferredRole, "primary");
-    assert.equal(result.routing.complexity, "high");
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("reference review tries every configured AI tier in the task-specific order", async () => {
+test("reference review tries every configured AI tier in provider order", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -439,8 +346,8 @@ test("reference review tries every configured AI tier in the task-specific order
     assert.equal(result.provider, "fallback_3");
     assert.deepEqual(calls, [
       { model: "gpt-5.6-sol", effort: "xhigh" },
-      { model: "gpt-5.6-terra", effort: "xhigh" },
       { model: "gpt-5.6-sol", effort: "medium" },
+      { model: "gpt-5.6-terra", effort: "xhigh" },
       { model: "gpt-5.6-terra", effort: "high" }
     ]);
   } finally {

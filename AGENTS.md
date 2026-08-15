@@ -6,7 +6,7 @@
 ## 1. 当前落点与目标归宿
 - 当前落点：本仓实现课堂参考答案生成、渲染、验证与交付工具链。
 - 目标归宿：以可维护的 WPF 应用和可版本化 subject-pack 合同稳定交付多学科答案资产。
-- 下一最小里程碑：从 `docs/strategy/`、当前计划与 `docs/change-evidence/` fresh read 首个未闭合教师交付切片；`teacher_accepted`、blocked item 和 provider readiness 只在其证据真源维护，未验收不得外推。
+- 下一最小里程碑：从 `docs/strategy/README.md` 与 `execution-backlog.md` fresh read 首个可执行切片；历史证据只在当前基准或 waiver 精确引用时读取，未验收不得外推。
 
 ## A. 仓库事实与模块边界
 - `docs/strategy/` 是规划真源；先读 `README.md`、`product-prd.md` 与 `final-implementation-baseline.md`。
@@ -18,7 +18,6 @@
 ## B. 执行与风险边界
 - `scripts/bootstrap.ps1` 会安装 SDK 或依赖，只是 setup 入口，不是日常验证门禁。
 - 保持 4 空格、.NET `PascalCase`/`camelCase` 与 kebab-case subject/tool ID。
-- 根规划 Markdown 只作跳转壳，不把权威策略搬回根目录。
 - schema、runtime、renderer、WPF 或生成合同变化必须同步人类真源、生成物验证和兼容证据，不得只改 compiled 输出。
 - Markdown 规则只指导真源和风险；生成物不可手改、subject-pack 合同与交付阻断由 assembler/compiler、测试和 `scripts/check-toolchain.ps1` 强制。
 
@@ -28,27 +27,26 @@
 - 仅在外部格式、SDK、renderer、OCR 或重复失败命中全局条件时只读查阅；登记来源、固定版本/revision、license、消费模块与 adopt/adapt/reject，不继承参考仓指令，不经兼容复核不得复制或执行。
 
 ## C. 门禁、证据与回滚
-- fixed order：`build -> test --no-build -> risk-matched toolchain gate`；Core/Full 内部先执行一次 contract/invariant，再执行其余 hotspot，禁止在外层重复跑资产合同。
-- build：`dotnet build ClassroomToolkit.sln -c Debug`
-- test：`dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build`
-- core：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer`；内置且只执行一次 `validate:assets`。
-- full：shared spec/schema、renderer、release 或跨学科变化使用 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Full`。
-- contract-only：仅需定向检查资产合同时可单独运行 `npm --prefix tools/rule-compiler run validate:assets`，不得随后再把它计作 Core/Full 的额外必跑前置。
-- fast：局部反馈可用 focused xUnit/Node 或 `-Mode Fast`；Fast 只跑轻量 spec boundary，不替代内置完整合同的 Core/Full。
+- WPF/Domain/Infra：`dotnet build ClassroomToolkit.sln -c Debug` 后运行 `dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build`。
+- AI gateway：只运行 `npm --prefix tools/ai-gateway run validate:config -- --config-env-file .env.example --allow-missing-secrets` 与 `npm --prefix tools/ai-gateway run test:answer`。
+- renderer/eval：只运行受影响的 `test:output-path`、`test:render`、`test:eval-runtime` 或目标 eval；不要无关全跑。
+- spec/rules：运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer`；Core 内置一次 `validate:assets` 和目标包的全部 profile snapshot，不运行 PDF eval。
+- shared spec/schema、跨学科或 release：运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Full`；Full 才运行 cross-subject、delivery smoke 和三科 eval。
+- 只诊断 source/compiled 边界时可单独运行 `npm --prefix tools/rule-compiler run validate:spec-boundary`；实际 Core/Full 前不得重复运行其已内置的 `validate:assets`。
 - 生成物漂移、subject-pack contract 失败或策略与运行事实不一致时阻断。
-- 证据放 `docs/change-evidence/`，记录风险、命令、exit code、关键输出、兼容、N/A 和回滚。
+- 常规变更以 Git diff/commit 和当前最低充分命令留证；`docs/change-evidence/` 只保留真实试卷/live/manual/external acceptance 或有期限 waiver，不为普通修复新增审计文档。
 - 回滚只撤销本任务规则、证据或实现切片；不得用 bootstrap 环境变化冒充仓库回滚。
 
 ## D. Global Rule -> Repo Action
 - Git profile: baseline=`main`; upstream=`origin/main`; closeout=`proportional_core_or_full`。
 - `R1`：从 subject-pack/spec 确定 compiler、renderer、WPF 或 docs 落点。
-- `R2`：先跑受影响合同，再以 `scripts/check-toolchain.ps1` 收口。
+- `R2`：按 C 章风险映射只跑受影响合同；不追加无关 Core/Full。
 - `R3`：实验工具或兼容层必须记录回收条件与最终归宿。
 - `R4`：浏览器/OCR/外部工具写入按授权、隔离与可回滚边界执行。
 - `R5`：无真实课堂链或重复证据，不扩大框架与产品承诺。
-- `R6`：C 章顺序和风险匹配是硬门禁，bootstrap 不计入门禁证据。
+- `R6`：C 章风险匹配是门禁；bootstrap 不计入门禁证据，focused check 通过后不得重复全跑。
 - `R7`：保持 subject-pack、compiled snapshot、renderer 与 WPF 行为兼容。
-- `R8`：`docs/change-evidence/` 记录范围、命令、证据与回滚。
+- `R8`：Git 记录常规范围/证据/回滚；只有 live/manual/external/waiver 使用 `docs/change-evidence/`。
 - `S1`：先跑通 subject-pack 到课堂输出的最薄真实主链。
 - `S2`：动态验收与工具可用性只进 spec/evidence。
 - `S3`：参考依据足以形成可逆决定即停止查证。

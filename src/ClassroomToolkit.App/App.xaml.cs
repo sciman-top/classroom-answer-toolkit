@@ -2,7 +2,9 @@ using System.Windows;
 using System.Linq;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
+using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
+using ClassroomToolkit.Infra.Process;
 using ClassroomToolkit.Infra.Workspace;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,8 +23,9 @@ public partial class App : System.Windows.Application
             .ConfigureServices(services =>
             {
                 var repositoryRootOverride = GetArgumentValue(e.Args, "--repository-root");
-                services.AddClassroomToolkitServices();
                 services.AddSingleton<IRepositoryRootResolver>(_ => new RepositoryRootResolver(AppContext.BaseDirectory, repositoryRootOverride));
+                services.AddSingleton<IProcessRunner, PowerShellProcessRunner>();
+                services.AddSingleton<IToolchainOrchestrator, LocalToolchainOrchestrator>();
                 services.AddSingleton<IPathOpener, WindowsPathOpener>();
                 services.AddSingleton<IHeadlessSmokeRunner, HeadlessSmokeRunner>();
                 services.AddSingleton<MainViewModel>();
