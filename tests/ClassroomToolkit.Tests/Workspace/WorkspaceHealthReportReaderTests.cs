@@ -101,6 +101,20 @@ public sealed class WorkspaceHealthReportReaderTests
         result.Issues.Should().ContainSingle(issue => issue.Contains("评测结果版本 v10.9", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Read_AddsIssue_WhenEvalUsesAnOlderSnapshotWithTheSameAssetVersion()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("junior-physics-answer", "v11.0");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4, snapshotId: "snapshot-stale");
+
+        var result = new WorkspaceHealthReportReader(workspace.Root).Read();
+
+        result.Issues.Should().ContainSingle(issue => issue.Contains("snapshot-stale", StringComparison.Ordinal));
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
@@ -168,6 +182,7 @@ public sealed class WorkspaceHealthReportReaderTests
 
             var snapshot = new
             {
+                snapshotId = BuildSnapshotId(subjectPack, version, profile),
                 subjectPack = new { version },
                 activeProfile = new { name = profile }
             };
@@ -175,16 +190,23 @@ public sealed class WorkspaceHealthReportReaderTests
             File.WriteAllText(snapshotPath, JsonSerializer.Serialize(snapshot, Indented));
         }
 
-        public void WriteEval(string subjectPack, string assetVersion, bool ok, int caseCount)
+        public void WriteEval(string subjectPack, string assetVersion, bool ok, int caseCount, string? snapshotId = null)
         {
             var evalPath = Path.Combine(Root, "eval", subjectPack, "results", "latest.json");
             Directory.CreateDirectory(Path.GetDirectoryName(evalPath)!);
+            snapshotId ??= BuildSnapshotId(subjectPack, assetVersion, "classroom");
 
             var eval = new
             {
                 assetVersion,
                 ok,
-                cases = Enumerable.Range(0, caseCount).Select(_ => new { }).ToArray()
+                cases = Enumerable.Range(0, caseCount).Select(_ => new
+                {
+                    profiles = new Dictionary<string, object>
+                    {
+                        ["classroom"] = new { actual = new { snapshot = new { snapshotId } } }
+                    }
+                }).ToArray()
             };
 
             File.WriteAllText(evalPath, JsonSerializer.Serialize(eval, Indented));
@@ -208,5 +230,8 @@ public sealed class WorkspaceHealthReportReaderTests
                 _ => $"../specs/compiled/{subjectPack}-full-{version}.md"
             };
         }
+
+        private static string BuildSnapshotId(string subjectPack, string version, string profile) =>
+            $"snapshot-{subjectPack}-{version}-{profile}";
     }
 }

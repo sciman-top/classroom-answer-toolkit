@@ -32,7 +32,7 @@ SourceExam
 - `tools/rule-compiler`
 - `tools/ai-gateway`
 - `tools/latex-renderer`
-- `tools/ocr`，仅作为明确需要时的辅助能力；默认 bootstrap 不安装
+- renderer 内的 Tesseract.js OCR，仅作为明确请求时的辅助能力
 - App/Domain/Infra 三程序集的最小 WPF 桌面壳层
 
 ## Frozen and removal targets

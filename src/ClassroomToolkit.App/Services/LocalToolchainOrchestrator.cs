@@ -9,11 +9,11 @@ namespace ClassroomToolkit.App.Services;
 
 public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
 {
-    private readonly IRepositoryRootResolver _repositoryRootResolver;
+    private readonly RepositoryRootResolver _repositoryRootResolver;
     private readonly IProcessRunner _processRunner;
 
     public LocalToolchainOrchestrator(
-        IRepositoryRootResolver repositoryRootResolver,
+        RepositoryRootResolver repositoryRootResolver,
         IProcessRunner processRunner)
     {
         _repositoryRootResolver = repositoryRootResolver;
@@ -107,10 +107,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             subjectPack,
             context.Profile ?? request.Profile,
             context.SnapshotPath ?? string.Empty,
-            context.SnapshotVersion)
-        {
-            ReviewLifecycleState = context.ReviewState
-        });
+            context.SnapshotVersion));
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(
@@ -143,17 +140,12 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         var root = document.RootElement;
         var snapshot = root.GetProperty("snapshot");
         var review = root.GetProperty("review");
-        var reviewState = review.TryGetProperty("lifecycle", out var lifecycle)
-            && lifecycle.TryGetProperty("state", out var state)
-                ? state.GetString()
-                : null;
         return new ManifestContext(
             root.GetProperty("snapshotId").GetString(),
             root.GetProperty("snapshotPath").GetString(),
             snapshot.GetProperty("version").GetString(),
             root.GetProperty("profile").GetString(),
-            review.GetProperty("outputDir").GetString(),
-            reviewState);
+            review.GetProperty("outputDir").GetString());
     }
 
     private static string BuildOutput(string standardOutput, string standardError)
@@ -167,6 +159,5 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         string? SnapshotPath,
         string? SnapshotVersion,
         string? Profile,
-        string? ReviewDirectoryPath,
-        string? ReviewState);
+        string? ReviewDirectoryPath);
 }

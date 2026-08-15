@@ -133,7 +133,6 @@ function validateReviewMetadata(errors, manifest, manifestDir) {
     return;
   }
 
-  const reviewLifecycleState = review.lifecycle?.state;
   const reviewOutputDir = typeof review.outputDir === "string" && review.outputDir.trim().length > 0
     ? resolveManifestRelativePath(review.outputDir, manifestDir)
     : null;
@@ -151,80 +150,6 @@ function validateReviewMetadata(errors, manifest, manifestDir) {
     }
   }
 
-  if (reviewLifecycleState === "draft" && status.reviewArtifactReady === true) {
-    errors.push("review.lifecycle.state cannot be draft when review artifacts are ready.");
-  }
-
-  if (status.visualReviewPassed === true
-    && !["visually_reviewed", "approved", "published"].includes(reviewLifecycleState)) {
-    errors.push("status.visualReviewPassed=true requires review.lifecycle.state to be visually_reviewed, approved, or published.");
-  }
-
-  if (status.visualReviewPassed === false
-    && ["approved", "published"].includes(reviewLifecycleState)) {
-    errors.push("status.visualReviewPassed=false cannot coexist with an approved or published review lifecycle.");
-  }
-
-  if (status.trusted === true && !["approved", "published"].includes(reviewLifecycleState)) {
-    errors.push("status.trusted=true requires review.lifecycle.state to be approved or published.");
-  }
-
-  if (Array.isArray(review.feedbackRefs)) {
-    for (const [index, feedbackRef] of review.feedbackRefs.entries()) {
-      if (typeof feedbackRef !== "string" || feedbackRef.trim().length === 0) {
-        errors.push(`review.feedbackRefs[${index}] must be a non-empty string.`);
-      }
-    }
-  }
-
-  if (review.visualDecisionRef !== undefined
-    && (typeof review.visualDecisionRef !== "string" || review.visualDecisionRef.trim().length === 0)) {
-    errors.push("review.visualDecisionRef must be a non-empty string when provided.");
-  }
-
-  const attachment = review.deliveryDecisionAggregateAttachment;
-  if (attachment !== undefined) {
-    if (!attachment || typeof attachment !== "object" || Array.isArray(attachment)) {
-      errors.push("review.deliveryDecisionAggregateAttachment must be an object when provided.");
-      return;
-    }
-
-    for (const fieldName of ["attachmentId", "aggregateRef", "preimageBackupRef", "receiptRef"]) {
-      if (typeof attachment[fieldName] !== "string" || attachment[fieldName].trim().length === 0) {
-        errors.push(`review.deliveryDecisionAggregateAttachment.${fieldName} must be a non-empty string.`);
-      }
-    }
-    for (const fieldName of ["aggregateSha256", "manifestPreimageSha256"]) {
-      if (!isSha256(attachment[fieldName])) {
-        errors.push(`review.deliveryDecisionAggregateAttachment.${fieldName} must be a lowercase SHA-256 digest.`);
-      }
-    }
-    if (status.visualReviewPassed !== true || status.trusted !== true) {
-      errors.push("deliveryDecisionAggregateAttachment requires trusted visual review status.");
-    }
-  }
-}
-
-function isSha256(value) {
-  return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-}
-
-function validatePolicyMetadata(errors, manifest) {
-  if (manifest.policy === undefined) {
-    return;
-  }
-
-  if (!manifest.policy || typeof manifest.policy !== "object" || Array.isArray(manifest.policy)) {
-    errors.push("policy must be an object when provided.");
-    return;
-  }
-
-  for (const fieldName of ["visualPolicyVersion", "optimizationVersion"]) {
-    if (manifest.policy[fieldName] !== undefined
-      && (typeof manifest.policy[fieldName] !== "string" || manifest.policy[fieldName].trim().length === 0)) {
-      errors.push(`policy.${fieldName} must be a non-empty string when provided.`);
-    }
-  }
 }
 
 function validateReferencedSnapshot(errors, manifest, manifestDir) {
@@ -321,7 +246,6 @@ export function validateDeliveryManifest(
 
   validateOcrMetadata(errors, manifest.ocr);
   validateReviewMetadata(errors, manifest, manifestDir);
-  validatePolicyMetadata(errors, manifest);
 
   if (manifest.graphics !== undefined && !Array.isArray(manifest.graphics?.items)) {
     errors.push("graphics.items must be an array.");
@@ -389,14 +313,6 @@ export function validateDeliveryManifest(
 
   if (typeof manifest.status?.reviewArtifactReady !== "boolean") {
     errors.push("status.reviewArtifactReady must be a boolean.");
-  }
-
-  if (typeof manifest.status?.trusted !== "boolean") {
-    errors.push("status.trusted must be a boolean.");
-  }
-
-  if (manifest.status?.trusted === true && manifest.status?.visualReviewPassed !== true) {
-    errors.push("status.trusted cannot be true unless status.visualReviewPassed is true.");
   }
 
   return errors;

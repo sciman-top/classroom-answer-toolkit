@@ -29,7 +29,7 @@ public sealed class WorkspaceHealthReportReader
         var manifestVersion = ReadManifestVersion(manifestPath);
         var snapshotPath = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath, manifestPath);
         var snapshotStatus = ReadSnapshotStatus(snapshotPath);
-        var evalStatus = ReadEvalStatus(evalResultsPath);
+        var evalStatus = ReadEvalStatus(evalResultsPath, snapshotStatus.Profile);
 
         var issues = new List<string>();
 
@@ -58,6 +58,12 @@ public sealed class WorkspaceHealthReportReader
         else if (evalStatus.AssetVersion is not null && manifestVersion is not null && evalStatus.AssetVersion != manifestVersion)
         {
             issues.Add($"评测结果版本 {evalStatus.AssetVersion} 与资产版本 {manifestVersion} 不一致。");
+        }
+        else if (snapshotStatus.Id is not null && evalStatus.SnapshotId != snapshotStatus.Id)
+        {
+            issues.Add(evalStatus.SnapshotId is null
+                ? "评测结果未绑定当前 snapshot。"
+                : $"评测结果 snapshot {evalStatus.SnapshotId} 与当前 snapshot {snapshotStatus.Id} 不一致。");
         }
 
         var summary = issues.Count == 0
@@ -140,15 +146,18 @@ public sealed class WorkspaceHealthReportReader
             : null;
     }
 
-    private static (bool Exists, string? Version, string? Profile) ReadSnapshotStatus(string snapshotPath)
+    private static (bool Exists, string? Id, string? Version, string? Profile) ReadSnapshotStatus(string snapshotPath)
     {
         if (!File.Exists(snapshotPath))
         {
-            return (false, null, null);
+            return (false, null, null, null);
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(snapshotPath));
         var root = document.RootElement;
+        var id = root.TryGetProperty("snapshotId", out var idElement)
+            ? idElement.GetString()
+            : null;
         var version = root.TryGetProperty("subjectPack", out var subjectPackElement)
             && subjectPackElement.TryGetProperty("version", out var versionElement)
                 ? versionElement.GetString()
@@ -157,14 +166,16 @@ public sealed class WorkspaceHealthReportReader
             && activeProfileElement.TryGetProperty("name", out var profileElement)
                 ? profileElement.GetString()
                 : null;
-        return (true, version, profile);
+        return (true, id, version, profile);
     }
 
-    private static (bool Exists, bool Ok, string? AssetVersion, int CaseCount) ReadEvalStatus(string evalResultsPath)
+    private static (bool Exists, bool Ok, string? AssetVersion, int CaseCount, string? SnapshotId) ReadEvalStatus(
+        string evalResultsPath,
+        string? profile)
     {
         if (!File.Exists(evalResultsPath))
         {
-            return (false, false, null, 0);
+            return (false, false, null, 0, null);
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(evalResultsPath));
@@ -174,8 +185,32 @@ public sealed class WorkspaceHealthReportReader
             ? assetVersionElement.GetString()
             : null;
         var ok = root.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
+        var snapshotId = ReadEvalSnapshotId(root, profile);
 
-        return (true, ok, assetVersion, caseCount);
+        return (true, ok, assetVersion, caseCount, snapshotId);
+    }
+
+    private static string? ReadEvalSnapshotId(JsonElement root, string? profile)
+    {
+        if (string.IsNullOrWhiteSpace(profile)
+            || !root.TryGetProperty("cases", out var casesElement))
+        {
+            return null;
+        }
+
+        foreach (var evalCase in casesElement.EnumerateArray())
+        {
+            if (evalCase.TryGetProperty("profiles", out var profiles)
+                && profiles.TryGetProperty(profile, out var profileResult)
+                && profileResult.TryGetProperty("actual", out var actual)
+                && actual.TryGetProperty("snapshot", out var snapshot)
+                && snapshot.TryGetProperty("snapshotId", out var snapshotId))
+            {
+                return snapshotId.GetString();
+            }
+        }
+
+        return null;
     }
 
     private sealed class VersionComparer : IComparer<string>

@@ -18,8 +18,7 @@
     "visual:compare": "node visual-regression.mjs",
     "visual:smoke": "node visual-regression-smoke.mjs",
     "validate:delivery-manifest": "node validate-delivery-manifest.mjs",
-    "write:delivery-manifest": "node write-delivery-manifest.mjs",
-    "ocr:rapid": "..\\ocr\\.venv\\Scripts\\python.exe ..\\ocr\\batch_ocr.py"
+    "write:delivery-manifest": "node write-delivery-manifest.mjs"
   },
   "dependencies": {
     "katex": "^0.16.25",

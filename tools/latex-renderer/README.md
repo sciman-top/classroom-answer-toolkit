@@ -67,20 +67,6 @@ with language data cached in `.tessdata/`, so it is suitable only as an
 auxiliary check. When OCR conflicts with the page image, the page image remains
 the source of truth.
 
-## Batch OCR poor scans
-
-For poor scans or batch OCR, render page images first, then run the RapidOCR CPU
-pipeline:
-
-```powershell
-npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --out "_ocr_work/能量-效率" --scale 2
-npm --prefix tools/latex-renderer run ocr:rapid -- "_ocr_work/能量-效率"
-```
-
-The RapidOCR command uses the repository-local Python environment in
-`tools/ocr/.venv/`. Its default `--preprocess auto` mode OCRs the original page
-and a cleaned copy, then keeps the better-scoring result.
-
 ## Clean transient artifacts
 
 After a successful answer delivery and visual review, clean repository-local
@@ -98,8 +84,7 @@ This removes known transient outputs such as:
 - explicitly targeted `*.render.html`
 
 It does **not** remove final deliverables such as the original PDF, answer
-Markdown, answer PDF, or runtime dependencies like `node_modules`, `.tessdata`,
-and `tools/ocr/.venv/`.
+Markdown, answer PDF, or runtime dependencies like `node_modules` and `.tessdata`.
 
 Useful options:
 

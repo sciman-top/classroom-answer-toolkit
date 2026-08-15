@@ -63,8 +63,7 @@ public sealed class LocalToolchainOrchestratorTests
                 profile = "classroom",
                 review = new
                 {
-                    outputDir = Path.Combine(_root, ".pdf-review", "answer"),
-                    lifecycle = new { state = "ready_for_review" }
+                    outputDir = Path.Combine(_root, ".pdf-review", "answer")
                 }
             }));
             return Task.FromResult(new ProcessRunResult(0, "ok", "", TimeSpan.Zero));

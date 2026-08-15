@@ -17,7 +17,7 @@
 3. `compiled/` 下文件与 `prompts/<subject-pack>/spec.md` 视为 generated artifacts，不直接手改。
 4. 新增学段或学科时，先补 `subjects/` 与 `assemblies/`；只有确认可复用时才上移到 `commons/`。
 5. `subject-pack` 的 `humanSpec` 一律指向 `compiled/` 下的完整版，不指向源规范。
-6. schema、compatibility、impact analysis、回归窗口与回滚要求的执行面统一看 [docs/strategy/spec-evolution-adaptation-plan.md](../../docs/strategy/spec-evolution-adaptation-plan.md)。
+6. schema、compatibility 与回滚边界统一看 [final-implementation-baseline.md](../../docs/strategy/final-implementation-baseline.md)。
 
 ## 当前分层
 

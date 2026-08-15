@@ -226,7 +226,6 @@ function main() {
   const answerGraphics = collectAnswerGraphicReferences(inputPath);
   const ocr = collectOcrMetadata(reviewManifestPath);
   const generatedAt = new Date().toISOString();
-  const reviewLifecycleState = reviewArtifactReady ? "ready_for_review" : "draft";
 
   const manifest = {
     schemaVersion: "1.0",
@@ -246,12 +245,7 @@ function main() {
     review: {
       outputDir: reviewDir,
       manifestPath: reviewManifestPath,
-      scale: options.reviewScale,
-      lifecycle: {
-        state: reviewLifecycleState,
-        updatedAt: generatedAt
-      },
-      feedbackRefs: []
+      scale: options.reviewScale
     },
     ocr,
     graphics: {
@@ -260,9 +254,7 @@ function main() {
     status: {
       toolchainPassed: true,
       deliveryComplete,
-      reviewArtifactReady,
-      visualReviewPassed: null,
-      trusted: false
+      reviewArtifactReady
     }
   };
 

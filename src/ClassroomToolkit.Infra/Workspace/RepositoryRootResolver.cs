@@ -1,8 +1,6 @@
-using ClassroomToolkit.Infra.Abstractions;
-
 namespace ClassroomToolkit.Infra.Workspace;
 
-public sealed class RepositoryRootResolver : IRepositoryRootResolver
+public sealed class RepositoryRootResolver
 {
     private readonly string _startDirectory;
     private readonly string? _repositoryRootOverride;

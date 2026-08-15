@@ -406,17 +406,13 @@ async function main() {
             const expectedStatus = expectation.delivery.expectedStatus ?? {
               toolchainPassed: true,
               deliveryComplete: true,
-              reviewArtifactReady: Boolean(expectation.delivery.keepReview),
-              visualReviewPassed: null,
-              trusted: false
+              reviewArtifactReady: Boolean(expectation.delivery.keepReview)
             };
             const actualStatus = deliveryManifest.status ?? {};
             const statusMatch =
               actualStatus.toolchainPassed === expectedStatus.toolchainPassed
               && actualStatus.deliveryComplete === expectedStatus.deliveryComplete
-              && actualStatus.reviewArtifactReady === expectedStatus.reviewArtifactReady
-              && actualStatus.visualReviewPassed === expectedStatus.visualReviewPassed
-              && actualStatus.trusted === expectedStatus.trusted;
+              && actualStatus.reviewArtifactReady === expectedStatus.reviewArtifactReady;
             const expectedOcr = expectation.delivery.expectedOcr ?? { status: "not-requested" };
             const actualOcr = deliveryManifest.ocr ?? {};
             const ocrMatch = Object.entries(expectedOcr)

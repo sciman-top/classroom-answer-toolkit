@@ -83,7 +83,7 @@ AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测�
 
 Full 中共享 renderer/layout 回归只由 `junior-physics-answer` 承担一次；Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
 
-`scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；确需 RapidOCR 时显式增加 `-WithOcr`。
+`scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；可选 OCR 由 renderer 的 `review-source-pdf --ocr` 显式启用。
 
 ## 可信边界
 

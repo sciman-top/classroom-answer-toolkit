@@ -1,8 +1,3 @@
-[CmdletBinding()]
-param(
-    [switch]$WithOcr
-)
-
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -133,56 +128,9 @@ function Compile-RuleSnapshots {
     }
 }
 
-function Install-PythonOcrEnv {
-    $requiredPythonVersion = "3.13.7"
-    $pythonExe = Get-Command python -ErrorAction SilentlyContinue
-    if (-not $pythonExe) {
-        $pythonExe = Get-Command py -ErrorAction SilentlyContinue
-    }
-
-    if (-not $pythonExe) {
-        throw "Python $requiredPythonVersion was not found."
-    }
-
-    $venvDir = Join-Path $repoRoot "tools\ocr\.venv"
-    $venvPython = Join-Path $venvDir "Scripts\python.exe"
-
-    if (-not (Test-Path -LiteralPath $venvPython)) {
-        Write-Host "Creating Python virtual environment for tools/ocr..."
-        if ($pythonExe.Name -eq "py.exe") {
-            & $pythonExe.Source -3.13 -m venv tools/ocr/.venv
-        } else {
-            & $pythonExe.Source -m venv tools/ocr/.venv
-        }
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to create tools/ocr/.venv."
-        }
-    }
-
-    $actualPythonVersion = & $venvPython -c "import platform; print(platform.python_version())"
-    if ($LASTEXITCODE -ne 0 -or $actualPythonVersion.Trim() -ne $requiredPythonVersion) {
-        throw "tools/ocr/.venv must use CPython $requiredPythonVersion; found $actualPythonVersion."
-    }
-
-    Write-Host "Upgrading Python packaging tools..."
-    & $venvPython -m pip install --upgrade pip setuptools wheel
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to upgrade pip tooling."
-    }
-
-    Write-Host "Installing Python OCR dependencies..."
-    & $venvPython -m pip install -r tools/ocr/requirements.txt
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to install tools/ocr requirements."
-    }
-}
-
 Assert-DotNetSdk
 Assert-Browser
 Install-NodeDependencies
 Compile-RuleSnapshots
-if ($WithOcr) {
-    Install-PythonOcrEnv
-}
 
 Write-Host "Bootstrap complete."

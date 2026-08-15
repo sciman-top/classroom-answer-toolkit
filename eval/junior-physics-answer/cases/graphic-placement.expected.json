@@ -13,9 +13,7 @@
         "expectedStatus": {
           "toolchainPassed": true,
           "deliveryComplete": true,
-          "reviewArtifactReady": false,
-          "visualReviewPassed": null,
-          "trusted": false
+          "reviewArtifactReady": false
         },
         "expectedOcr": {
           "status": "not-requested"
@@ -34,9 +32,7 @@
         "expectedStatus": {
           "toolchainPassed": true,
           "deliveryComplete": true,
-          "reviewArtifactReady": false,
-          "visualReviewPassed": null,
-          "trusted": false
+          "reviewArtifactReady": false
         },
         "expectedOcr": {
           "status": "not-requested"

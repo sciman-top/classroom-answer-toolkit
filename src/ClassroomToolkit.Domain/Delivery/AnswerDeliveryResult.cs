@@ -9,7 +9,4 @@ public sealed record AnswerDeliveryResult(
     string SubjectPack,
     string Profile,
     string SnapshotPath,
-    string? SnapshotVersion)
-{
-    public string? ReviewLifecycleState { get; init; }
-}
+    string? SnapshotVersion);

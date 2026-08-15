@@ -56,7 +56,6 @@
                 <TextBlock Margin="0,10,0,0" Text="{Binding LastOutputPdfPath, StringFormat=PDF: {0}}" TextWrapping="Wrap" />
                 <TextBlock Margin="0,6,0,0" Text="{Binding LastDeliveryManifestPath, StringFormat=Manifest: {0}}" TextWrapping="Wrap" />
                 <TextBlock Margin="0,6,0,0" Text="{Binding LastSnapshotId, StringFormat=Snapshot: {0}}" TextWrapping="Wrap" />
-                <TextBlock Margin="0,6,0,0" Text="{Binding LastReviewLifecycleState, StringFormat=Review: {0}}" TextWrapping="Wrap" />
                 <WrapPanel Margin="0,12,0,0">
                     <Button Content="打开 PDF" Command="{Binding OpenLastOutputPdfCommand}" />
                     <Button Content="打开 Manifest" Command="{Binding OpenLastDeliveryManifestCommand}" />

@@ -23,11 +23,10 @@ public partial class App : System.Windows.Application
             .ConfigureServices(services =>
             {
                 var repositoryRootOverride = GetArgumentValue(e.Args, "--repository-root");
-                services.AddSingleton<IRepositoryRootResolver>(_ => new RepositoryRootResolver(AppContext.BaseDirectory, repositoryRootOverride));
+                services.AddSingleton(_ => new RepositoryRootResolver(AppContext.BaseDirectory, repositoryRootOverride));
                 services.AddSingleton<IProcessRunner, PowerShellProcessRunner>();
                 services.AddSingleton<IToolchainOrchestrator, LocalToolchainOrchestrator>();
                 services.AddSingleton<IPathOpener, WindowsPathOpener>();
-                services.AddSingleton<IHeadlessSmokeRunner, HeadlessSmokeRunner>();
                 services.AddSingleton<MainViewModel>();
                 services.AddSingleton<MainWindow>();
             })
@@ -66,16 +65,18 @@ public partial class App : System.Windows.Application
             throw new InvalidOperationException("Host not initialized.");
         }
 
-        var smoke = _host.Services.GetRequiredService<IHeadlessSmokeRunner>().Run();
-        Console.WriteLine($"repositoryRoot={smoke.RepositoryRoot}");
-        Console.WriteLine($"workspaceSummary={smoke.WorkspaceSummary}");
-        Console.WriteLine($"workspaceHealthy={smoke.WorkspaceHealthy}");
-        Console.WriteLine($"healthSummary={smoke.HealthSummary}");
-        Console.WriteLine($"primarySubjectPack={smoke.PrimarySubjectPack}");
-        Console.WriteLine($"subjectPacks={string.Join(",", smoke.SubjectPacks)}");
-        Console.WriteLine($"snapshotPath={smoke.SnapshotPath}");
-        Console.WriteLine($"evalOk={smoke.EvalOk}");
-        Console.WriteLine($"evalCaseCount={smoke.EvalCaseCount}");
+        var orchestrator = _host.Services.GetRequiredService<IToolchainOrchestrator>();
+        var workspace = orchestrator.GetWorkspaceInfo();
+        var health = orchestrator.GetWorkspaceHealthReport();
+        Console.WriteLine($"repositoryRoot={workspace.RepositoryRoot}");
+        Console.WriteLine($"workspaceSummary={workspace.Summary}");
+        Console.WriteLine($"workspaceHealthy={health.IsHealthy}");
+        Console.WriteLine($"healthSummary={health.Summary}");
+        Console.WriteLine($"primarySubjectPack={health.PrimarySubjectPack}");
+        Console.WriteLine($"subjectPacks={string.Join(",", health.SubjectPacks)}");
+        Console.WriteLine($"snapshotPath={health.SnapshotPath}");
+        Console.WriteLine($"evalOk={health.EvalOk}");
+        Console.WriteLine($"evalCaseCount={health.EvalCaseCount}");
     }
 
     private static string? GetArgumentValue(IReadOnlyList<string> args, string name)

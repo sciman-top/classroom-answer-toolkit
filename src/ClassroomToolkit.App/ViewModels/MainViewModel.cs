@@ -71,7 +71,6 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string lastSnapshotId = string.Empty;
     [ObservableProperty] private string lastDeliverySnapshotPath = string.Empty;
     [ObservableProperty] private string lastDeliverySnapshotVersion = string.Empty;
-    [ObservableProperty] private string lastReviewLifecycleState = string.Empty;
 
     private bool CanDeliver() => !IsBusy && File.Exists(SelectedAnswerMarkdownPath);
     private bool CanRunToolchain() => !IsBusy;
@@ -119,7 +118,6 @@ public partial class MainViewModel : ObservableObject
             LastSnapshotId = delivery.SnapshotId ?? string.Empty;
             LastDeliverySnapshotPath = delivery.SnapshotPath;
             LastDeliverySnapshotVersion = delivery.SnapshotVersion ?? string.Empty;
-            LastReviewLifecycleState = delivery.ReviewLifecycleState ?? string.Empty;
             StatusMessage = "答案交付完成";
         });
     }

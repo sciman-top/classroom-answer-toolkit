@@ -69,8 +69,7 @@ public sealed class MainViewModelTests
             var delivery = new AnswerDeliveryResult(
                 request.AnswerMarkdownPath, @"D:\out\answer.pdf", @"D:\out\answer.delivery-manifest.json",
                 @"D:\repo\.pdf-review\answer", "snapshot-test", "junior-physics-answer", "classroom",
-                @"D:\repo\.snapshot-cache\resolved-snapshot.json", "v8.14")
-            { ReviewLifecycleState = "ready_for_review" };
+                @"D:\repo\.snapshot-cache\resolved-snapshot.json", "v8.14");
             return Task.FromResult<(ToolchainExecutionResult, AnswerDeliveryResult?)>((Success(ToolchainScriptKind.Deliver), delivery));
         }
 
