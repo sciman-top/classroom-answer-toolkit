@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { makeRenderTempHtmlPath } from "./pdf-output-path.mjs";
+import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -136,25 +136,12 @@ function runNodeScript(scriptFileName, scriptArgs) {
     throw result.error;
   }
 
-  if (typeof result.status === "number" && result.status !== 0) {
-    process.exit(result.status);
+  if (result.status !== 0) {
+    if (result.signal) {
+      console.error(`${scriptFileName} terminated by signal ${result.signal}.`);
+    }
+    process.exit(typeof result.status === "number" ? result.status : 2);
   }
-}
-
-function makeReviewOutputDir(pdfPath) {
-  const relativePdfPath = path.relative(repoRoot, pdfPath);
-  const safeName = path.basename(pdfPath, path.extname(pdfPath));
-  const parentFragment = path
-    .dirname(relativePdfPath)
-    .replace(/[\\/]+/g, "__")
-    .replace(/^\.+/, "")
-    .replace(/^__+/, "");
-
-  const folderName = parentFragment && parentFragment !== "."
-    ? `${parentFragment}__${safeName}`
-    : safeName;
-
-  return path.join(repoRoot, ".pdf-review", folderName);
 }
 
 function makeDeliveryManifestPath(pdfPath) {
@@ -193,7 +180,11 @@ function main() {
     fail(`Expected a Markdown answer file: ${inputPath}`);
   }
 
-  const reviewOutputDir = makeReviewOutputDir(outputPath);
+  if (!/\.pdf$/i.test(outputPath)) {
+    fail(`Expected a PDF output file: ${outputPath}`);
+  }
+
+  const reviewOutputDir = makeReviewOutputDir(repoRoot, outputPath);
   const snapshotPath = resolveSnapshotPath(options.snapshotPath, {
     subjectPack: options.subjectPack,
     callerCwd
@@ -252,6 +243,7 @@ function main() {
   ]);
 
   console.log(`[${packageName}] review: ${path.relative(repoRoot, outputPath)}`);
+  fs.rmSync(reviewOutputDir, { recursive: true, force: true });
   runNodeScript("review-source-pdf.mjs", [
     path.relative(repoRoot, outputPath),
     "--out",

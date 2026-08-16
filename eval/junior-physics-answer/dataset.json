@@ -168,6 +168,16 @@
         "hard-gate",
         "katex"
       ]
+    },
+    {
+      "id": "raw-script-html",
+      "input": "cases/raw-script-html.md",
+      "expected": "cases/raw-script-html.expected.json",
+      "tags": [
+        "validator",
+        "html",
+        "hard-gate"
+      ]
     }
   ]
 }

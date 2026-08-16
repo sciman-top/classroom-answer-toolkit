@@ -4,10 +4,6 @@
     "classroom": {
       "shouldPass": false,
       "maxWarnings": 0
-    },
-    "compact": {
-      "shouldPass": false,
-      "maxWarnings": 0
     }
   },
   "notes": [

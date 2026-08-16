@@ -1,73 +1,78 @@
 using System.Windows;
 using System.Linq;
+using System.Text;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Process;
 using ClassroomToolkit.Infra.Workspace;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace ClassroomToolkit.App;
 
 public partial class App : System.Windows.Application
 {
-    private IHost? _host;
+    private IToolchainOrchestrator? _toolchainOrchestrator;
+    private MainViewModel? _viewModel;
 
-    protected override async void OnStartup(StartupEventArgs e)
+    protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        _host = Host.CreateDefaultBuilder(e.Args)
-            .ConfigureServices(services =>
-            {
-                var repositoryRootOverride = GetArgumentValue(e.Args, "--repository-root");
-                services.AddSingleton(_ => new RepositoryRootResolver(AppContext.BaseDirectory, repositoryRootOverride));
-                services.AddSingleton<IProcessRunner, PowerShellProcessRunner>();
-                services.AddSingleton<IToolchainOrchestrator, LocalToolchainOrchestrator>();
-                services.AddSingleton<IPathOpener, WindowsPathOpener>();
-                services.AddSingleton<MainViewModel>();
-                services.AddSingleton<MainWindow>();
-            })
-            .Build();
-
-        await _host.StartAsync();
-
-        if (e.Args.Any(arg => string.Equals(arg, "--smoke", StringComparison.OrdinalIgnoreCase)))
+        var isSmoke = e.Args.Any(arg => string.Equals(arg, "--smoke", StringComparison.OrdinalIgnoreCase));
+        try
         {
-            RunHeadlessSmoke();
-            Shutdown(0);
-            return;
-        }
+            var repositoryRootOverride = GetArgumentValue(e.Args, "--repository-root");
+            var repositoryRootResolver = new RepositoryRootResolver(AppContext.BaseDirectory, repositoryRootOverride);
+            IProcessRunner processRunner = new PowerShellProcessRunner();
+            _toolchainOrchestrator = new LocalToolchainOrchestrator(repositoryRootResolver, processRunner);
+            _viewModel = new MainViewModel(_toolchainOrchestrator, new WindowsPathOpener());
 
-        var window = _host.Services.GetRequiredService<MainWindow>();
-        window.DataContext = _host.Services.GetRequiredService<MainViewModel>();
-        MainWindow = window;
-        window.Show();
+            if (isSmoke)
+            {
+                RunHeadlessSmoke();
+                Shutdown(0);
+                return;
+            }
+
+            var window = new MainWindow
+            {
+                DataContext = _viewModel
+            };
+            MainWindow = window;
+            window.Show();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            if (!isSmoke)
+            {
+                MessageBox.Show(
+                    $"应用启动失败：{ex.Message}",
+                    "Classroom Answer Toolkit",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            Shutdown(1);
+        }
     }
 
-    protected override async void OnExit(ExitEventArgs e)
+    protected override void OnExit(ExitEventArgs e)
     {
-        if (_host is not null)
-        {
-            await _host.StopAsync(TimeSpan.FromSeconds(5));
-            _host.Dispose();
-        }
-
+        _viewModel?.Dispose();
         base.OnExit(e);
     }
 
     private void RunHeadlessSmoke()
     {
-        if (_host is null)
+        Console.OutputEncoding = Encoding.UTF8;
+        if (_toolchainOrchestrator is null)
         {
-            throw new InvalidOperationException("Host not initialized.");
+            throw new InvalidOperationException("Toolchain orchestrator not initialized.");
         }
 
-        var orchestrator = _host.Services.GetRequiredService<IToolchainOrchestrator>();
-        var workspace = orchestrator.GetWorkspaceInfo();
-        var health = orchestrator.GetWorkspaceHealthReport();
+        var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
+        var health = _toolchainOrchestrator.GetWorkspaceHealthReport();
         Console.WriteLine($"repositoryRoot={workspace.RepositoryRoot}");
         Console.WriteLine($"workspaceSummary={workspace.Summary}");
         Console.WriteLine($"workspaceHealthy={health.IsHealthy}");

@@ -8,23 +8,15 @@
     "classroom",
     "compact"
   ],
-  "visualBaselines": [
-    "baselines/visual/smoke-classroom.page-001.png",
-    "baselines/visual/smoke-compact.page-001.png"
-  ],
   "resultsFile": "results/latest.json",
   "cases": [
     {
       "id": "smoke-answer",
       "input": "cases/smoke-answer.md",
       "expected": "cases/smoke-answer.expected.json",
-      "visualBaseline": "baselines/visual/smoke-classroom.page-001.png",
       "tags": [
         "subject-pack-sentinel",
-        "validator",
-        "render",
-        "review",
-        "visual-baseline"
+        "validator"
       ]
     }
   ]

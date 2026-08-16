@@ -28,6 +28,32 @@ export function makeRenderTempHtmlPath(outputPath) {
   return path.join(path.dirname(outputPath), `.classroom-toolkit-render-${outputKey}.html`);
 }
 
+export function makeReviewOutputDir(repositoryRoot, outputPath) {
+  const resolvedRoot = path.resolve(repositoryRoot);
+  const resolvedOutput = path.resolve(outputPath);
+  const relativeOutput = path.relative(resolvedRoot, resolvedOutput);
+  const isExternal = path.isAbsolute(relativeOutput)
+    || relativeOutput === ".."
+    || relativeOutput.startsWith(`..${path.sep}`);
+  const outputKey = crypto
+    .createHash("sha256")
+    .update(resolvedOutput.toLowerCase())
+    .digest("hex")
+    .slice(0, 16);
+  const parent = path.dirname(relativeOutput);
+  const flattenedParent = parent === "."
+    ? ""
+    : parent.replace(/[\\/]+/g, "__");
+  const parentToken = isExternal
+    ? `external-${outputKey}`
+    : flattenedParent.length > 80
+      ? `nested-${outputKey}`
+      : flattenedParent;
+  const outputName = path.basename(resolvedOutput, path.extname(resolvedOutput));
+  const folderName = parentToken ? `${parentToken}__${outputName}` : outputName;
+  return path.join(resolvedRoot, ".pdf-review", folderName);
+}
+
 export function commitBrowserPdfOutput(temporaryPath, outputPath) {
   if (!fs.existsSync(temporaryPath)) {
     throw new Error(`Browser PDF output was not created: ${temporaryPath}`);

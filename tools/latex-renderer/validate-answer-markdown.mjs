@@ -11,6 +11,7 @@ Checks:
   - backtick-wrapped math or units
   - unbalanced LaTeX dollar signs
   - CJK punctuation used directly in a LaTeX math fence
+  - executable raw HTML
   - overly long plain-text lines (warning)
 `;
 
@@ -220,6 +221,13 @@ function validateCjkPunctuationInMath(source, rule, errors, warnings) {
   }
 }
 
+function validateExecutableRawHtml(source, errors) {
+  const dangerousTag = source.match(/<\s*\/?\s*(?:script|iframe|object|embed|svg|style|link|meta)\b/iu);
+  if (dangerousTag) {
+    errors.push(`Document contains executable raw HTML: ${dangerousTag[0]}.`);
+  }
+}
+
 function validateLineLengths(lines, maxCjkPerLine, warnings) {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -263,6 +271,8 @@ function main() {
   const errors = [];
   const warnings = [];
   const rules = resolveValidationRules(snapshot);
+
+  validateExecutableRawHtml(source, errors);
 
   if (rules.trueLatex) {
     validateUnbalancedDollarSigns(source, rules.trueLatex, errors, warnings);

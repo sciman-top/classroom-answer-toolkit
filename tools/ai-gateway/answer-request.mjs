@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 
 import {
   assertLiveEgressAllowed,
@@ -200,6 +201,7 @@ function parseArgs(argv) {
     ...options.auditImagePaths,
     ...options.referenceImagePaths
   ];
+  validateOutputCollision(options);
   return options;
 }
 
@@ -250,6 +252,21 @@ function validateOptions(options) {
   }
   if (options.referenceTextFile && !fs.existsSync(options.referenceTextFile)) {
     throw new Error(`Reference text file not found: ${options.referenceTextFile}`);
+  }
+
+}
+
+function validateOutputCollision(options) {
+  const outputPath = path.resolve(options.outputPath);
+  const protectedInputs = [
+    options.promptFile,
+    options.candidateFile,
+    options.auditFindingsFile,
+    options.referenceTextFile,
+    ...options.imagePaths
+  ].filter(Boolean).map((inputPath) => path.resolve(inputPath));
+  if (protectedInputs.some((inputPath) => inputPath === outputPath)) {
+    throw new Error("--output must not overwrite a prompt, candidate, findings, reference text, or source image input.");
   }
 }
 
@@ -429,8 +446,16 @@ function imageDataUrl(imagePath) {
   return `data:${mimeType};base64,${fs.readFileSync(imagePath).toString("base64")}`;
 }
 
+function resolveImageDataUrls(options) {
+  if (Array.isArray(options.imageDataUrls)) {
+    return options.imageDataUrls;
+  }
+  return options.imagePaths.map(imageDataUrl);
+}
+
 export function buildAnswerRequestBody(provider, options) {
   const detail = normalizeDetailForProvider(options.visualDetailMode);
+  const imageDataUrls = resolveImageDataUrls(options);
   if (provider.visionSurface === "chat_completions") {
     return {
       model: provider.visionModel,
@@ -440,9 +465,9 @@ export function buildAnswerRequestBody(provider, options) {
           role: "user",
           content: [
             { type: "text", text: options.prompt },
-            ...options.imagePaths.map((imagePath) => ({
+            ...imageDataUrls.map((imageUrl) => ({
               type: "image_url",
-              image_url: { url: imageDataUrl(imagePath), detail }
+              image_url: { url: imageUrl, detail }
             }))
           ]
         }
@@ -459,9 +484,9 @@ export function buildAnswerRequestBody(provider, options) {
         role: "user",
         content: [
           { type: "input_text", text: options.prompt },
-          ...options.imagePaths.map((imagePath) => ({
+          ...imageDataUrls.map((imageUrl) => ({
             type: "input_image",
-            image_url: imageDataUrl(imagePath),
+            image_url: imageUrl,
             detail
           }))
         ]
@@ -664,8 +689,12 @@ export async function requestAnswerWithFailover(config, options) {
   }
 
   const attempts = [];
+  const requestOptions = {
+    ...options,
+    imageDataUrls: resolveImageDataUrls(options)
+  };
   for (const provider of providers) {
-    const attempt = await callProvider(provider, options);
+    const attempt = await callProvider(provider, requestOptions);
     attempts.push(attempt);
     if (attempt.ok) {
       return {
@@ -701,13 +730,6 @@ export async function requestAnswerWithFailover(config, options) {
 
 function sha256File(filePath) {
   return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
-}
-
-function writeAtomic(filePath, content) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const tempPath = `${filePath}.${process.pid}.tmp`;
-  fs.writeFileSync(tempPath, content, "utf8");
-  fs.renameSync(tempPath, filePath);
 }
 
 function redactAttempt(attempt) {
@@ -752,7 +774,7 @@ export async function main() {
     ? applyReferenceChoiceAnswers(result.answerMarkdown, fs.readFileSync(options.referenceTextFile, "utf8"))
     : { markdown: result.answerMarkdown, applied: false, answers: null };
   const answerMarkdown = choiceOverride.markdown;
-  writeAtomic(options.outputPath, `${answerMarkdown}\n`);
+  writeTextFileAtomic(options.outputPath, `${answerMarkdown}\n`);
   const summary = {
     kind: "live-answer-generation-summary",
     provider: result.provider,

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import MarkdownIt from "markdown-it";
@@ -108,7 +109,7 @@ if (!sharedBrowserWsEndpoint && !browserPath) {
 }
 
 const md = new MarkdownIt({
-  html: true,
+  html: false,
   breaks: true,
   typographer: false
 });
@@ -225,27 +226,38 @@ function renderAnswerGraphicHtml(placementPath) {
   const figureClass = `answer-graphic answer-graphic-${placementMode}`;
   const altText = escapeHtml(placement.graphicId || placement.questionRef || "answer graphic");
 
-  let mediaHtml;
-  if (/\.svg$/i.test(previewPath)) {
-    mediaHtml = fs.readFileSync(previewPath, "utf8").replace(/^<\?xml[^>]+>\s*/u, "");
-  } else {
-    mediaHtml = `<img src="${escapeHtml(pathToFileURL(previewPath).href)}" alt="${altText}" />`;
-  }
+  const mediaHtml = `<img src="${escapeHtml(pathToFileURL(previewPath).href)}" alt="${altText}" />`;
 
   return `<div class="answer-graphic-shell ${escapeHtml(figureClass)}" style="${escapeHtml(figureStyle)}">${mediaHtml}</div>`;
 }
 
 function expandAnswerGraphicMarkers(markdown, sourcePath) {
-  return markdown.replace(/<!--\s*answer-graphic:\s*(.+?)\s*-->/g, (_match, placementPath) => {
+  const graphics = [];
+  const expandedMarkdown = markdown.replace(/<!--\s*answer-graphic:\s*(.+?)\s*-->/g, (_match, placementPath) => {
     const resolvedPlacementPath = path.resolve(path.dirname(sourcePath), placementPath.trim());
-    return `\n\n${renderAnswerGraphicHtml(resolvedPlacementPath)}\n\n`;
+    const token = `CLASSROOM_TOOLKIT_ANSWER_GRAPHIC_${crypto.randomUUID().replace(/-/g, "")}`;
+    graphics.push({ token, html: renderAnswerGraphicHtml(resolvedPlacementPath) });
+    return `\n\n${token}\n\n`;
   });
+  return { expandedMarkdown, graphics };
+}
+
+function injectAnswerGraphics(html, graphics) {
+  let output = html;
+  for (const graphic of graphics) {
+    output = output.split(`<p>${graphic.token}</p>\n`).join(`${graphic.html}\n`);
+    if (output.includes(graphic.token)) {
+      throw new Error("Unable to restore a controlled answer graphic marker after Markdown rendering.");
+    }
+  }
+  return output;
 }
 
 const source = fs.readFileSync(inputPath, "utf8");
 const normalizedSource = normalizeQuestionLeadLines(source);
-const renderedMarkdown = md.render(replaceMath(expandAnswerGraphicMarkers(normalizedSource, inputPath)));
-const body = injectMath(renderedMarkdown);
+const expanded = expandAnswerGraphicMarkers(normalizedSource, inputPath);
+const renderedMarkdown = md.render(replaceMath(expanded.expandedMarkdown));
+const body = injectAnswerGraphics(injectMath(renderedMarkdown), expanded.graphics);
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const katexCss = fs.readFileSync(

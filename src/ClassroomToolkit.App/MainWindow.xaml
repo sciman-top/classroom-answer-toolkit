@@ -102,6 +102,7 @@
             <WrapPanel Grid.Row="3" Margin="0,16,0,0">
                 <Button Content="执行主链体检" Command="{Binding CheckCommand}" Background="#176B87" />
                 <Button Content="安装 / 修复依赖" Command="{Binding BootstrapCommand}" Background="#566573" />
+                <Button Content="取消当前任务" Command="{Binding CancelCommand}" Background="#B42318" />
             </WrapPanel>
         </Grid>
     </Grid>

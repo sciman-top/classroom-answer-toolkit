@@ -12,10 +12,7 @@
     "compact": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/linear-equation-smoke.compact.page-001.png",
-      "delivery": {
-        "keepReview": false
-      }
+      "visualBaseline": "baselines/visual/linear-equation-smoke.compact.page-001.png"
     }
   },
   "notes": [

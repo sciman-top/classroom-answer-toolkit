@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ClassroomToolkit.Domain.Toolchain;
 using ClassroomToolkit.Infra.Workspace;
 using FluentAssertions;
 
@@ -115,6 +116,37 @@ public sealed class WorkspaceHealthReportReaderTests
         result.Issues.Should().ContainSingle(issue => issue.Contains("snapshot-stale", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Read_ReportsInvalidManifestWithoutThrowing()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteRawManifest("junior-physics-answer", "{ invalid json");
+
+        WorkspaceHealthReport? result = null;
+        var action = () => result = new WorkspaceHealthReportReader(workspace.Root).Read();
+
+        action.Should().NotThrow();
+        result.Should().NotBeNull();
+        result!.IsHealthy.Should().BeFalse();
+        result.Issues.Should().Contain(issue => issue.Contains("manifest", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Read_ReportsIncompleteSnapshotAndEvalInsteadOfTreatingThemAsHealthy()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("junior-physics-answer", "v11.0");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteRawSnapshot("junior-physics-answer", "{}");
+        workspace.WriteRawEval("junior-physics-answer", "{\"ok\":true,\"cases\":[]}");
+
+        var result = new WorkspaceHealthReportReader(workspace.Root).Read();
+
+        result.IsHealthy.Should().BeFalse();
+        result.Issues.Should().Contain(issue => issue.Contains("snapshot 缺少", StringComparison.Ordinal));
+        result.Issues.Should().Contain(issue => issue.Contains("assetVersion", StringComparison.Ordinal));
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
@@ -159,6 +191,11 @@ public sealed class WorkspaceHealthReportReaderTests
             File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, Indented));
         }
 
+        public void WriteRawManifest(string subjectPack, string content)
+        {
+            WriteRaw(Path.Combine(Root, "prompts", subjectPack, "manifest.json"), content);
+        }
+
         public void WriteConfig(string subjectPack, string snapshotPath)
         {
             var configPath = Path.Combine(Root, "prompts", subjectPack, "config.json");
@@ -190,6 +227,14 @@ public sealed class WorkspaceHealthReportReaderTests
             File.WriteAllText(snapshotPath, JsonSerializer.Serialize(snapshot, Indented));
         }
 
+        public void WriteRawSnapshot(string subjectPack, string content)
+        {
+            var snapshotFileName = subjectPack == "math-answer"
+                ? "resolved-snapshot.math.json"
+                : "resolved-snapshot.json";
+            WriteRaw(Path.Combine(Root, ".snapshot-cache", snapshotFileName), content);
+        }
+
         public void WriteEval(string subjectPack, string assetVersion, bool ok, int caseCount, string? snapshotId = null)
         {
             var evalPath = Path.Combine(Root, "eval", subjectPack, "results", "latest.json");
@@ -210,6 +255,11 @@ public sealed class WorkspaceHealthReportReaderTests
             };
 
             File.WriteAllText(evalPath, JsonSerializer.Serialize(eval, Indented));
+        }
+
+        public void WriteRawEval(string subjectPack, string content)
+        {
+            WriteRaw(Path.Combine(Root, "eval", subjectPack, "results", "latest.json"), content);
         }
 
         public void Dispose()
@@ -233,5 +283,11 @@ public sealed class WorkspaceHealthReportReaderTests
 
         private static string BuildSnapshotId(string subjectPack, string version, string profile) =>
             $"snapshot-{subjectPack}-{version}-{profile}";
+
+        private static void WriteRaw(string filePath, string content)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+            File.WriteAllText(filePath, content);
+        }
     }
 }

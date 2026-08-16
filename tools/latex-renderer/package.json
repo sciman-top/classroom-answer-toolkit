@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "katex": "^0.16.25",
-    "markdown-it": "^14.1.0",
-    "pdfjs-dist": "^5.7.284",
+    "markdown-it": "^14.3.0",
+    "pdfjs-dist": "^6.2.108",
     "playwright-core": "^1.57.0",
     "tesseract.js": "^7.0.0"
   }

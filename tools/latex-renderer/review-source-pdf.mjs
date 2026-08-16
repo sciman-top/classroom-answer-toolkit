@@ -111,6 +111,14 @@ Examples:
   npm run review-source-pdf -- "../../样例交付/能量-效率.pdf" --pages 1 --ocr chi_sim
 `;
 
+function requireValue(argv, index, flag) {
+  const value = argv[index];
+  if (!value || value.startsWith("--")) {
+    throw new Error(`${flag} requires a value.`);
+  }
+  return value;
+}
+
 function parseArgs(argv) {
   const positional = [];
   const options = {
@@ -132,7 +140,7 @@ function parseArgs(argv) {
     }
 
     if (arg === "--out") {
-      options.out = argv[++index];
+      options.out = requireValue(argv, ++index, arg);
       continue;
     }
 
@@ -142,7 +150,7 @@ function parseArgs(argv) {
     }
 
     if (arg === "--pages") {
-      options.pages = argv[++index];
+      options.pages = requireValue(argv, ++index, arg);
       continue;
     }
 
@@ -152,7 +160,7 @@ function parseArgs(argv) {
     }
 
     if (arg === "--scale") {
-      options.scale = Number(argv[++index]);
+      options.scale = Number(requireValue(argv, ++index, arg));
       continue;
     }
 
@@ -162,7 +170,7 @@ function parseArgs(argv) {
     }
 
     if (arg === "--vertical-tiles") {
-      options.verticalTiles = Number(argv[++index]);
+      options.verticalTiles = Number(requireValue(argv, ++index, arg));
       continue;
     }
 
@@ -172,7 +180,7 @@ function parseArgs(argv) {
     }
 
     if (arg === "--horizontal-tiles") {
-      options.horizontalTiles = Number(argv[++index]);
+      options.horizontalTiles = Number(requireValue(argv, ++index, arg));
       continue;
     }
 
@@ -187,7 +195,7 @@ function parseArgs(argv) {
     }
 
     if (arg === "--tile-overlap") {
-      options.tileOverlap = Number(argv[++index]);
+      options.tileOverlap = Number(requireValue(argv, ++index, arg));
       continue;
     }
 
@@ -210,6 +218,10 @@ function parseArgs(argv) {
     if (arg.startsWith("--ocr=")) {
       options.ocr = arg.slice("--ocr=".length) || "chi_sim";
       continue;
+    }
+
+    if (arg.startsWith("-")) {
+      throw new Error(`Unknown argument: ${arg}`);
     }
 
     positional.push(arg);
@@ -467,7 +479,7 @@ async function main() {
     return;
   }
 
-  if (!positional[0]) {
+  if (positional.length !== 1) {
     fail(usage);
   }
 
@@ -528,15 +540,17 @@ async function main() {
     ocrStatus: options.ocr ? "requested" : "not-requested"
   };
 
-  const browser = sharedBrowserWsEndpoint
-    ? await chromium.connect(sharedBrowserWsEndpoint)
-    : await chromium.launch({
-        executablePath: browserPath,
-        headless: true
-      });
-  const rendererServer = await createRendererServer({ pdfJsPath, pdfWorkerPath });
-
+  let browser = null;
+  let rendererServer = null;
   try {
+    browser = sharedBrowserWsEndpoint
+      ? await chromium.connect(sharedBrowserWsEndpoint)
+      : await chromium.launch({
+          executablePath: browserPath,
+          headless: true
+        });
+    rendererServer = await createRendererServer({ pdfJsPath, pdfWorkerPath });
+
     const page = await browser.newPage({ viewport: { width: 1280, height: 1800 } });
     const pageErrors = [];
     page.on("console", (message) => {
@@ -745,8 +759,15 @@ async function main() {
       }
     }
   } finally {
-    await rendererServer.close();
-    await browser.close();
+    try {
+      if (rendererServer) {
+        await rendererServer.close();
+      }
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
   }
 
   if (options.ocr) {

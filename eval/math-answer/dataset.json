@@ -6,18 +6,8 @@
   "visualBaselines": [
     "baselines/visual/linear-equation-smoke.classroom.page-001.png",
     "baselines/visual/linear-equation-smoke.compact.page-001.png",
-    "baselines/visual/basic-statistics-summary.classroom.page-001.png",
-    "baselines/visual/basic-statistics-summary.compact.page-001.png",
     "baselines/visual/basic-probability-notation.classroom.page-001.png",
-    "baselines/visual/basic-probability-notation.compact.page-001.png",
-    "baselines/visual/chart-driven-review-fallback.classroom.page-001.png",
-    "baselines/visual/chart-driven-review-fallback.compact.page-001.png",
-    "baselines/visual/function-graph-review-fallback.classroom.page-001.png",
-    "baselines/visual/function-graph-review-fallback.compact.page-001.png",
-    "baselines/visual/geometry-review-fallback.classroom.page-001.png",
-    "baselines/visual/geometry-review-fallback.compact.page-001.png",
-    "baselines/visual/stepwise-derivation.classroom.page-001.png",
-    "baselines/visual/stepwise-derivation.compact.page-001.png"
+    "baselines/visual/stepwise-derivation.classroom.page-001.png"
   ],
   "resultsFile": "results/latest.json",
   "cases": [

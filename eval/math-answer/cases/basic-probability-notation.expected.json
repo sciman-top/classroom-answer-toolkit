@@ -5,11 +5,6 @@
       "shouldPass": true,
       "maxWarnings": 0,
       "visualBaseline": "baselines/visual/basic-probability-notation.classroom.page-001.png"
-    },
-    "compact": {
-      "shouldPass": true,
-      "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/basic-probability-notation.compact.page-001.png"
     }
   },
   "notes": [

@@ -23,21 +23,7 @@
     "compact": {
       "shouldPass": true,
       "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/graphic-placement.compact.page-001.png",
-      "delivery": {
-        "keepReview": false,
-        "expectedGraphics": [
-          "sample-lever-figure-answer"
-        ],
-        "expectedStatus": {
-          "toolchainPassed": true,
-          "deliveryComplete": true,
-          "reviewArtifactReady": false
-        },
-        "expectedOcr": {
-          "status": "not-requested"
-        }
-      }
+      "visualBaseline": "baselines/visual/graphic-placement.compact.page-001.png"
     }
   },
   "notes": [

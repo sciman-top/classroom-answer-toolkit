@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
-import { withManifestWriteLock } from "../manifest-write-lock.mjs";
 import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -264,8 +264,7 @@ function main() {
   }
 
   fs.mkdirSync(path.dirname(manifestOutPath), { recursive: true });
-  withManifestWriteLock(manifestOutPath, () =>
-    fs.writeFileSync(manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8"));
+  writeTextFileAtomic(manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(manifestOutPath);
 }
 

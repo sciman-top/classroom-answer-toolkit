@@ -14,7 +14,9 @@ public sealed record WorkspaceSubjectPackPaths(
 
 public static class WorkspaceSubjectPackLocator
 {
-    public static IReadOnlyList<WorkspaceSubjectPackPaths> FindSubjectPacks(string repositoryRoot)
+    public static IReadOnlyList<WorkspaceSubjectPackPaths> FindSubjectPacks(
+        string repositoryRoot,
+        ICollection<string>? issues = null)
     {
         var promptsRoot = Path.Combine(repositoryRoot, "prompts");
         if (!Directory.Exists(promptsRoot))
@@ -25,7 +27,20 @@ public static class WorkspaceSubjectPackLocator
         var subjectPacks = new List<WorkspaceSubjectPackPaths>();
         foreach (var manifestPath in Directory.EnumerateFiles(promptsRoot, "manifest.json", SearchOption.AllDirectories))
         {
-            var subjectPack = TryReadSubjectPack(manifestPath);
+            WorkspaceSubjectPackPaths? subjectPack;
+            try
+            {
+                subjectPack = TryReadSubjectPack(manifestPath);
+            }
+            catch (Exception ex) when (ex is IOException
+                or UnauthorizedAccessException
+                or JsonException
+                or InvalidOperationException)
+            {
+                issues?.Add($"无法读取 subject pack manifest {manifestPath}: {ex.Message}");
+                continue;
+            }
+
             if (subjectPack is not null)
             {
                 subjectPacks.Add(subjectPack);

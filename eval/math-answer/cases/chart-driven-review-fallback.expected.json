@@ -3,13 +3,7 @@
   "profiles": {
     "classroom": {
       "shouldPass": true,
-      "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/chart-driven-review-fallback.classroom.page-001.png"
-    },
-    "compact": {
-      "shouldPass": true,
-      "maxWarnings": 0,
-      "visualBaseline": "baselines/visual/chart-driven-review-fallback.compact.page-001.png"
+      "maxWarnings": 0
     }
   },
   "notes": [

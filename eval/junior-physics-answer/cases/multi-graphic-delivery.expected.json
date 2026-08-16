@@ -19,25 +19,6 @@
           "status": "not-requested"
         }
       }
-    },
-    "compact": {
-      "shouldPass": true,
-      "maxWarnings": 0,
-      "delivery": {
-        "keepReview": false,
-        "expectedGraphics": [
-          "multi-graphic-lever-answer",
-          "multi-graphic-optics-answer"
-        ],
-        "expectedStatus": {
-          "toolchainPassed": true,
-          "deliveryComplete": true,
-          "reviewArtifactReady": false
-        },
-        "expectedOcr": {
-          "status": "not-requested"
-        }
-      }
     }
   },
   "notes": [

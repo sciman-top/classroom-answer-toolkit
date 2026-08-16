@@ -42,9 +42,45 @@ public sealed class MainViewModelTests
         }
     }
 
+    [Fact]
+    public async Task CancelStopsTheCurrentToolchainOperation()
+    {
+        var orchestrator = new FakeOrchestrator(blockCheck: true);
+        using var viewModel = new MainViewModel(orchestrator, new FakePathOpener());
+
+        var checkTask = viewModel.CheckCommand.ExecuteAsync(null);
+        await orchestrator.CheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        viewModel.CancelCommand.Execute(null);
+        await checkTask;
+
+        viewModel.IsBusy.Should().BeFalse();
+        viewModel.StatusMessage.Should().Be("当前任务已取消");
+    }
+
+    [Fact]
+    public async Task ActivityLogIsBoundedForLargeToolOutput()
+    {
+        var orchestrator = new FakeOrchestrator(checkOutput: new string('x', 100_000));
+        using var viewModel = new MainViewModel(orchestrator, new FakePathOpener());
+
+        await viewModel.CheckCommand.ExecuteAsync(null);
+
+        viewModel.ActivityLog.Length.Should().BeLessThanOrEqualTo(64 * 1024);
+    }
+
     private sealed class FakeOrchestrator : IToolchainOrchestrator
     {
+        private readonly bool _blockCheck;
+        private readonly string _checkOutput;
+
+        public FakeOrchestrator(bool blockCheck = false, string checkOutput = "ok")
+        {
+            _blockCheck = blockCheck;
+            _checkOutput = checkOutput;
+        }
+
         public AnswerDeliveryRequest? LastDeliveryRequest { get; private set; }
+        public TaskCompletionSource CheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public ToolchainWorkspaceInfo GetWorkspaceInfo() => new(
             @"D:\repo", @"D:\repo\scripts\bootstrap.ps1", @"D:\repo\scripts\check-toolchain.ps1",
@@ -58,8 +94,21 @@ public sealed class MainViewModelTests
         public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(Success(ToolchainScriptKind.Bootstrap));
 
-        public Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult(Success(ToolchainScriptKind.Check));
+        public async Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default)
+        {
+            CheckStarted.TrySetResult();
+            if (_blockCheck)
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+
+            return ToolchainExecutionResult.Success(
+                ToolchainScriptKind.Check,
+                "tool",
+                DateTimeOffset.Now,
+                DateTimeOffset.Now,
+                _checkOutput);
+        }
 
         public Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
             AnswerDeliveryRequest request,

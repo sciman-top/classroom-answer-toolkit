@@ -10,11 +10,13 @@ using Microsoft.Win32;
 
 namespace ClassroomToolkit.App.ViewModels;
 
-public partial class MainViewModel : ObservableObject
+public partial class MainViewModel : ObservableObject, IDisposable
 {
+    private const int MaxActivityLogCharacters = 64 * 1024;
     private readonly IToolchainOrchestrator _toolchainOrchestrator;
     private readonly IPathOpener _pathOpener;
     private readonly StringBuilder _activityLog = new();
+    private CancellationTokenSource? _operationCancellation;
 
     public MainViewModel(IToolchainOrchestrator toolchainOrchestrator, IPathOpener pathOpener)
     {
@@ -22,13 +24,8 @@ public partial class MainViewModel : ObservableObject
         _pathOpener = pathOpener;
         AvailableSubjectPacks = new ObservableCollection<string>();
         StatusCards = new ObservableCollection<StatusCardViewModel>();
-        Issues = new ObservableCollection<string>();
 
         var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
-        RepositoryRoot = workspace.RepositoryRoot;
-        WorkspaceSummary = workspace.Summary;
-        BootstrapScriptPath = workspace.BootstrapScriptPath;
-        CheckScriptPath = workspace.CheckScriptPath;
         foreach (var subjectPack in workspace.SubjectPacks)
         {
             AvailableSubjectPacks.Add(subjectPack);
@@ -44,12 +41,7 @@ public partial class MainViewModel : ObservableObject
 
     public ObservableCollection<string> AvailableSubjectPacks { get; }
     public ObservableCollection<StatusCardViewModel> StatusCards { get; }
-    public ObservableCollection<string> Issues { get; }
 
-    [ObservableProperty] private string repositoryRoot = string.Empty;
-    [ObservableProperty] private string workspaceSummary = string.Empty;
-    [ObservableProperty] private string bootstrapScriptPath = string.Empty;
-    [ObservableProperty] private string checkScriptPath = string.Empty;
     [ObservableProperty] private string statusMessage = string.Empty;
     [ObservableProperty] private string lastResultSummary = "等待操作";
     [ObservableProperty] private string activityLog = string.Empty;
@@ -64,16 +56,16 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
     [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private bool isBusy;
     [ObservableProperty] private string lastOutputPdfPath = string.Empty;
     [ObservableProperty] private string lastDeliveryManifestPath = string.Empty;
     [ObservableProperty] private string lastReviewDirectoryPath = string.Empty;
     [ObservableProperty] private string lastSnapshotId = string.Empty;
-    [ObservableProperty] private string lastDeliverySnapshotPath = string.Empty;
-    [ObservableProperty] private string lastDeliverySnapshotVersion = string.Empty;
 
     private bool CanDeliver() => !IsBusy && File.Exists(SelectedAnswerMarkdownPath);
     private bool CanRunToolchain() => !IsBusy;
+    private bool CanCancel() => IsBusy && _operationCancellation is { IsCancellationRequested: false };
 
     [RelayCommand]
     private void BrowseAnswerMarkdown()
@@ -96,7 +88,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanDeliver))]
     private async Task DeliverAsync()
     {
-        await RunAsync("正在生成排版答案 PDF...", async () =>
+        await RunAsync("正在生成排版答案 PDF...", async cancellationToken =>
         {
             var (execution, delivery) = await _toolchainOrchestrator.RunDeliverAsync(
                 new AnswerDeliveryRequest(
@@ -104,7 +96,8 @@ public partial class MainViewModel : ObservableObject
                     string.IsNullOrWhiteSpace(SelectedOutputPdfPath) ? null : SelectedOutputPdfPath,
                     SelectedProfile,
                     KeepReviewArtifacts,
-                    SelectedSubjectPack));
+                    SelectedSubjectPack),
+                cancellationToken);
             ApplyExecution(execution);
             if (!execution.Succeeded || delivery is null)
             {
@@ -116,8 +109,6 @@ public partial class MainViewModel : ObservableObject
             LastDeliveryManifestPath = delivery.DeliveryManifestPath;
             LastReviewDirectoryPath = delivery.ReviewDirectoryPath;
             LastSnapshotId = delivery.SnapshotId ?? string.Empty;
-            LastDeliverySnapshotPath = delivery.SnapshotPath;
-            LastDeliverySnapshotVersion = delivery.SnapshotVersion ?? string.Empty;
             StatusMessage = "答案交付完成";
         });
     }
@@ -142,22 +133,42 @@ public partial class MainViewModel : ObservableObject
         string message,
         Func<CancellationToken, Task<ToolchainExecutionResult>> action)
     {
-        await RunAsync(message, async () =>
+        await RunAsync(message, async cancellationToken =>
         {
-            var result = await action(CancellationToken.None);
+            var result = await action(cancellationToken);
             ApplyExecution(result);
             StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
             RefreshHealth();
         });
     }
 
-    private async Task RunAsync(string message, Func<Task> action)
+    [RelayCommand(CanExecute = nameof(CanCancel))]
+    private void Cancel()
     {
+        if (_operationCancellation is not { IsCancellationRequested: false } cancellation)
+        {
+            return;
+        }
+
+        StatusMessage = "正在取消当前任务...";
+        cancellation.Cancel();
+        CancelCommand.NotifyCanExecuteChanged();
+    }
+
+    private async Task RunAsync(string message, Func<CancellationToken, Task> action)
+    {
+        using var cancellation = new CancellationTokenSource();
+        _operationCancellation = cancellation;
         IsBusy = true;
         StatusMessage = message;
         try
         {
-            await action();
+            await action(cancellation.Token);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            StatusMessage = "当前任务已取消";
+            AppendLog("Operation canceled by user.");
         }
         catch (Exception ex)
         {
@@ -166,7 +177,12 @@ public partial class MainViewModel : ObservableObject
         }
         finally
         {
+            if (ReferenceEquals(_operationCancellation, cancellation))
+            {
+                _operationCancellation = null;
+            }
             IsBusy = false;
+            CancelCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -179,12 +195,7 @@ public partial class MainViewModel : ObservableObject
     private void RefreshHealth()
     {
         var health = _toolchainOrchestrator.GetWorkspaceHealthReport();
-        StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : "主链仍有待处理项";
-        Issues.Clear();
-        foreach (var issue in health.Issues)
-        {
-            Issues.Add(issue);
-        }
+        StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
         StatusCards.Clear();
         StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现", health.SubjectPacks.Count > 0));
         StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath, health.SnapshotExists));
@@ -211,7 +222,23 @@ public partial class MainViewModel : ObservableObject
         {
             return;
         }
-        _activityLog.AppendLine(text.Trim());
+
+        var normalized = text.Trim();
+        if (normalized.Length > MaxActivityLogCharacters)
+        {
+            normalized = normalized[^MaxActivityLogCharacters..];
+        }
+
+        _activityLog.AppendLine(normalized);
+        if (_activityLog.Length > MaxActivityLogCharacters)
+        {
+            _activityLog.Remove(0, _activityLog.Length - MaxActivityLogCharacters);
+        }
         ActivityLog = _activityLog.ToString();
+    }
+
+    public void Dispose()
+    {
+        _operationCancellation?.Cancel();
     }
 }

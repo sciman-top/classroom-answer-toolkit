@@ -1,14 +1,18 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   commitBrowserPdfOutput,
   makeBrowserPdfOutputPath,
-  makeRenderTempHtmlPath
+  makeRenderTempHtmlPath,
+  makeReviewOutputDir
 } from "./pdf-output-path.mjs";
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 
 test("browser PDF output always uses an ASCII temporary file name", () => {
   const target = path.join("D:\\repo\\正式交付", "2025广州中考参考答案.pdf");
@@ -43,4 +47,42 @@ test("committing browser output replaces the final Unicode target after renderin
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("review output uses a bounded safe folder for a PDF on another drive", () => {
+  const reviewDirectory = makeReviewOutputDir(
+    "D:\\repo\\classroom-answer-toolkit",
+    "C:\\正式交付\\2025广州中考参考答案.pdf"
+  );
+
+  assert.equal(path.dirname(reviewDirectory), "D:\\repo\\classroom-answer-toolkit\\.pdf-review");
+  assert.match(path.basename(reviewDirectory), /^external-[a-f0-9]{16}__2025广州中考参考答案$/);
+  assert.doesNotMatch(path.basename(reviewDirectory), /:/);
+});
+
+test("atomic text writes replace an existing file without leaving a temporary artifact", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-atomic-write-"));
+  const target = path.join(directory, "answer.md");
+  try {
+    writeFileSync(target, "old", "utf8");
+
+    writeTextFileAtomic(target, "new");
+
+    assert.equal(readFileSync(target, "utf8"), "new");
+    assert.deepEqual(readdirSync(directory), ["answer.md"]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("PDF review rejects an unknown option instead of silently using a default", () => {
+  const result = spawnSync(process.execPath, [
+    fileURLToPath(new URL("./review-source-pdf.mjs", import.meta.url)),
+    "missing.pdf",
+    "--scal",
+    "4"
+  ], { encoding: "utf8" });
+
+  assert.notEqual(result.status, 0);
+  assert.match(`${result.stdout}\n${result.stderr}`, /Unknown argument: --scal/);
 });

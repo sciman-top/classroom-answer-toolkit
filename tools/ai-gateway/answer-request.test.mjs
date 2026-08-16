@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   buildPrompt,
@@ -356,6 +358,40 @@ test("reference review tries every configured AI tier in provider order", async 
   }
 });
 
+test("failover reuses pre-encoded page images instead of reading them for every provider", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  let callCount = 0;
+  globalThis.fetch = async () => {
+    callCount += 1;
+    if (callCount === 1) {
+      unlinkSync(imagePaths[0]);
+      return new Response(JSON.stringify({ error: "temporary" }), { status: 503 });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+
+  try {
+    const result = await requestAnswerWithFailover(createConfig(), {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "reference_review",
+      prompt: "reuse images",
+      imagePaths,
+      visualDetailMode: "high",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.provider, "fallback_1");
+    assert.equal(callCount, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("blind solving fails closed after a retryable sol/xhigh failure", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
@@ -407,6 +443,28 @@ test("answer request remains blocked unless config and command both allow cloud 
       ),
       /Live request blocked/
     );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("answer request refuses to overwrite one of its inputs", () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const promptPath = path.join(directory, "spec.md");
+  writeFileSync(promptPath, "spec", "utf8");
+  try {
+    const result = spawnSync(process.execPath, [
+      fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
+      "--prompt-file", promptPath,
+      "--image", imagePaths[0],
+      "--output", promptPath
+    ], {
+      cwd: directory,
+      encoding: "utf8"
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(`${result.stdout}\n${result.stderr}`, /must not overwrite/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
