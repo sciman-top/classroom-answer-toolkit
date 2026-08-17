@@ -393,11 +393,19 @@ async function main() {
             const deliverySnapshotPath = typeof deliveryManifest.snapshotPath === "string"
               ? path.resolve(deliveryManifest.snapshotPath)
               : null;
+            const expectedDeliverySnapshotPath = path.resolve(
+              path.dirname(deliverPdfPath),
+              `${path.basename(deliverPdfPath, path.extname(deliverPdfPath))}.snapshot.json`
+            );
+            const deliverySnapshot = deliverySnapshotPath && fs.existsSync(deliverySnapshotPath)
+              ? readJson(deliverySnapshotPath)
+              : null;
             const snapshotMatch = deliveryManifest.snapshotId === compiledSnapshot.snapshotId
               && deliveryManifest.snapshot?.id === compiledSnapshot.snapshotId
               && deliveryManifest.snapshot?.version === compiledSnapshot.subjectPack?.version
               && deliveryManifest.snapshot?.profile === profile
-              && deliverySnapshotPath === compiledSnapshotPath;
+              && deliverySnapshotPath === expectedDeliverySnapshotPath
+              && JSON.stringify(deliverySnapshot) === JSON.stringify(compiledSnapshot);
             const expectedGraphics = expectation.delivery.expectedGraphics ?? [];
             const actualGraphics = (deliveryManifest.graphics?.items ?? [])
               .map((item) => item?.graphicId)
@@ -425,7 +433,7 @@ async function main() {
               snapshotId: deliveryManifest.snapshotId,
               snapshotPath: deliveryManifest.snapshotPath,
               snapshotMatch,
-              expectedSnapshotPath: path.relative(repoRoot, compiledSnapshotPath),
+              expectedSnapshotPath: path.relative(repoRoot, expectedDeliverySnapshotPath),
               expectedGraphics,
               actualGraphics,
               graphicsMatch,
@@ -444,7 +452,13 @@ async function main() {
               snapshotId: null,
               snapshotPath: null,
               snapshotMatch: false,
-              expectedSnapshotPath: path.relative(repoRoot, compiledSnapshotPath),
+              expectedSnapshotPath: path.relative(
+                repoRoot,
+                path.resolve(
+                  path.dirname(deliverPdfPath),
+                  `${path.basename(deliverPdfPath, path.extname(deliverPdfPath))}.snapshot.json`
+                )
+              ),
               expectedGraphics: expectation.delivery.expectedGraphics ?? [],
               actualGraphics: [],
               graphicsMatch: false,

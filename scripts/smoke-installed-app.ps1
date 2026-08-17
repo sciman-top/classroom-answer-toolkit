@@ -6,41 +6,106 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
 
-if ([System.IO.Path]::IsPathRooted($PublishDir)) {
-    $publishDir = $PublishDir
-} else {
-    $publishDir = Join-Path $repoRoot $PublishDir
+function Resolve-RepoPath {
+    param([Parameter(Mandatory = $true)][string]$PathValue)
+
+    if ([IO.Path]::IsPathFullyQualified($PathValue)) {
+        return [IO.Path]::GetFullPath($PathValue)
+    }
+
+    return [IO.Path]::GetFullPath((Join-Path $repoRoot $PathValue))
 }
 
+function Get-PublishTreeReceipt {
+    param([Parameter(Mandatory = $true)][string]$DirectoryPath)
+
+    $entries = @(Get-ChildItem -LiteralPath $DirectoryPath -Recurse -File | ForEach-Object {
+        [ordered]@{
+            relativePath = [IO.Path]::GetRelativePath($DirectoryPath, $_.FullName).Replace("\", "/")
+            bytes = $_.Length
+            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            lastWriteAt = $_.LastWriteTimeUtc.ToString("O")
+        }
+    } | Sort-Object { $_["relativePath"] })
+    $canonical = ($entries | ForEach-Object { "{0}|{1}|{2}" -f $_["relativePath"], $_["bytes"], $_["sha256"] }) -join "`n"
+    $treeHashBytes = [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($canonical))
+    $treeHash = [Convert]::ToHexString($treeHashBytes).ToLowerInvariant()
+    $totalBytes = ($entries | ForEach-Object { [long]$_["bytes"] } | Measure-Object -Sum).Sum
+    if ($null -eq $totalBytes) {
+        $totalBytes = 0
+    }
+    $latestWriteAt = if ($entries.Count -gt 0) {
+        ($entries | Sort-Object { $_["lastWriteAt"] } -Descending | Select-Object -First 1)["lastWriteAt"]
+    }
+    else {
+        $null
+    }
+
+    return [ordered]@{
+        algorithm = "sha256"
+        sha256 = $treeHash
+        fileCount = $entries.Count
+        bytes = [long]$totalBytes
+        latestWriteAt = $latestWriteAt
+    }
+}
+
+function Write-JsonFileAtomic {
+    param(
+        [Parameter(Mandatory = $true)][string]$PathValue,
+        [Parameter(Mandatory = $true)]$Value
+    )
+
+    $directory = [IO.Path]::GetDirectoryName($PathValue)
+    [IO.Directory]::CreateDirectory($directory) | Out-Null
+    $temporaryPath = Join-Path $directory (".{0}.{1}.tmp" -f [IO.Path]::GetFileName($PathValue), [Guid]::NewGuid().ToString("N"))
+    try {
+        [IO.File]::WriteAllText(
+            $temporaryPath,
+            (($Value | ConvertTo-Json -Depth 10) + [Environment]::NewLine),
+            [Text.UTF8Encoding]::new($false))
+        [IO.File]::Move($temporaryPath, $PathValue, $true)
+    }
+    finally {
+        [IO.File]::Delete($temporaryPath)
+    }
+}
+
+$publishDir = Resolve-RepoPath $PublishDir
 if ([string]::IsNullOrWhiteSpace($ReportPath)) {
     $reportDir = Join-Path (Split-Path -Path $publishDir -Parent) "verification"
     $reportPath = Join-Path $reportDir ("{0}.smoke-report.json" -f (Split-Path -Path $publishDir -Leaf))
-} elseif ([System.IO.Path]::IsPathRooted($ReportPath)) {
-    $reportPath = $ReportPath
-} else {
-    $reportPath = Join-Path $repoRoot $ReportPath
+}
+else {
+    $reportPath = Resolve-RepoPath $ReportPath
 }
 
 $exePath = Join-Path $publishDir "ClassroomToolkit.App.exe"
-if (-not (Test-Path -LiteralPath $exePath)) {
+if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
     throw "Published app not found: $exePath"
 }
 
-Write-Host "Running published app smoke: $exePath --smoke"
-$stdoutPath = Join-Path $env:TEMP ("ClassroomToolkit-smoke-{0}.stdout.log" -f ([guid]::NewGuid().ToString("N")))
-$stderrPath = Join-Path $env:TEMP ("ClassroomToolkit-smoke-{0}.stderr.log" -f ([guid]::NewGuid().ToString("N")))
+$isolationRoot = Join-Path $env:TEMP ("ClassroomToolkit-published-smoke-{0}" -f [Guid]::NewGuid().ToString("N"))
+$isolatedPublishDir = Join-Path $isolationRoot "ClassroomToolkit.App"
+$isolatedExePath = Join-Path $isolatedPublishDir "ClassroomToolkit.App.exe"
+$stdoutPath = Join-Path $env:TEMP ("ClassroomToolkit-smoke-{0}.stdout.log" -f [Guid]::NewGuid().ToString("N"))
+$stderrPath = Join-Path $env:TEMP ("ClassroomToolkit-smoke-{0}.stderr.log" -f [Guid]::NewGuid().ToString("N"))
 
+Write-Host "Running isolated published app smoke: $isolatedExePath --smoke"
 try {
-    $process = Start-Process -FilePath $exePath -ArgumentList @("--smoke", "--repository-root", $repoRoot) -WorkingDirectory $repoRoot -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    [IO.Directory]::CreateDirectory($isolatedPublishDir) | Out-Null
+    Copy-Item -Path (Join-Path $publishDir "*") -Destination $isolatedPublishDir -Recurse -Force
+
+    $process = Start-Process -FilePath $isolatedExePath -ArgumentList @("--smoke") -WorkingDirectory $isolatedPublishDir -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
     if ($process.ExitCode -ne 0) {
         throw "Published app smoke failed with exit code $($process.ExitCode)."
     }
 
-    $stdoutText = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw } else { "" }
-    $stderrText = if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw } else { "" }
+    $stdoutText = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw -Encoding utf8 } else { "" }
+    $stderrText = if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw -Encoding utf8 } else { "" }
     $smokeText = ($stdoutText + [Environment]::NewLine + $stderrText).Trim()
     $smokeData = @{}
     foreach ($line in ($smokeText -split "\r?\n")) {
@@ -49,66 +114,68 @@ try {
         }
     }
 
-    $requiredKeys = @(
-        "repositoryRoot",
-        "workspaceSummary",
-        "workspaceHealthy",
-        "healthSummary",
-        "primarySubjectPack",
-        "subjectPacks",
-        "snapshotPath",
-        "evalOk",
-        "evalCaseCount")
-    foreach ($key in $requiredKeys) {
+    foreach ($key in @("repositoryRoot", "workspaceHealthy", "healthSummary", "subjectPacks", "evalOk")) {
         if (-not $smokeData.ContainsKey($key)) {
             throw "Published app smoke did not report $key."
         }
     }
 
-    if (-not [bool]::Parse([string]$smokeData["workspaceHealthy"])) {
-        throw "Published app reported an unhealthy workspace: $($smokeData['healthSummary'])"
+    $reportedRoot = [IO.Path]::GetFullPath([string]$smokeData["repositoryRoot"]).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    $expectedRoot = [IO.Path]::GetFullPath($isolatedPublishDir).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    if (-not [string]::Equals($reportedRoot, $expectedRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Published app escaped its isolated tree: reported repository root $reportedRoot"
     }
-    if (-not [bool]::Parse([string]$smokeData["evalOk"])) {
-        throw "Published app reported failed evaluation state."
+    if ([bool]::Parse([string]$smokeData["workspaceHealthy"])) {
+        throw "Published app unexpectedly reported a healthy bundled workspace; the publish tree must not masquerade as a self-contained toolchain."
     }
-    if ([string]::IsNullOrWhiteSpace([string]$smokeData["primarySubjectPack"])) {
-        throw "Published app did not identify a primary subject pack."
+    if ([bool]::Parse([string]$smokeData["evalOk"])) {
+        throw "Published app unexpectedly reported evaluation success without an external repository."
     }
-
-    $subjectPacks = @(
-        [string]$smokeData["subjectPacks"] -split "," |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-    )
-    if ($subjectPacks.Count -lt 1) {
-        throw "Published app did not report any subject packs."
+    $subjectPacks = @([string]$smokeData["subjectPacks"] -split "," | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($subjectPacks.Count -ne 0) {
+        throw "Published app unexpectedly discovered subject packs outside the isolated publish tree."
     }
 
+    $sourceCommit = (& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($sourceCommit)) {
+        throw "Unable to resolve the source commit for the smoke report."
+    }
+    $sourceDirty = -not [string]::IsNullOrWhiteSpace((& git -C $repoRoot status --porcelain --untracked-files=no | Out-String).Trim())
+    $exeItem = Get-Item -LiteralPath $exePath
+    $publishTree = Get-PublishTreeReceipt -DirectoryPath $publishDir
     $report = [ordered]@{
-        schemaVersion = "1.0"
+        schemaVersion = "1.1"
         kind = "published-app-smoke-report"
         status = "passed"
-        generatedAt = [DateTimeOffset]::Now.ToString("O")
+        generatedAt = [DateTimeOffset]::UtcNow.ToString("O")
+        source = [ordered]@{
+            commit = $sourceCommit
+            dirty = $sourceDirty
+        }
         publishDirectoryPath = $publishDir
-        executablePath = $exePath
+        executable = [ordered]@{
+            path = $exeItem.FullName
+            bytes = $exeItem.Length
+            sha256 = (Get-FileHash -LiteralPath $exeItem.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+        publishTree = $publishTree
         smoke = [ordered]@{
+            isolationMode = "published-tree-only"
+            repositoryCoupled = $true
+            capability = "launch-and-fail-closed-only"
             repositoryRoot = [string]$smokeData["repositoryRoot"]
-            workspaceSummary = [string]$smokeData["workspaceSummary"]
             workspaceHealthy = [bool]::Parse([string]$smokeData["workspaceHealthy"])
             healthSummary = [string]$smokeData["healthSummary"]
-            primarySubjectPack = [string]$smokeData["primarySubjectPack"]
             subjectPacks = $subjectPacks
-            snapshotPath = [string]$smokeData["snapshotPath"]
             evalOk = [bool]::Parse([string]$smokeData["evalOk"])
-            evalCaseCount = [int]$smokeData["evalCaseCount"]
         }
     }
 
-    New-Item -ItemType Directory -Path (Split-Path -Path $reportPath -Parent) -Force | Out-Null
-    $report | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $reportPath -Encoding utf8
-
+    Write-JsonFileAtomic -PathValue $reportPath -Value $report
     Write-Host "Smoke report: $reportPath"
     Write-Host $smokeText
 }
 finally {
     Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $isolationRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

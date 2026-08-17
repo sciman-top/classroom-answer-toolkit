@@ -23,7 +23,8 @@ public sealed class LocalToolchainOrchestratorTests
         delivery.Should().NotBeNull();
         delivery!.SnapshotId.Should().Be("snapshot-test");
         delivery.ReviewDirectoryPath.Should().Be(Path.Combine(workspace.Root, ".pdf-review", "answer"));
-        runner.Arguments.Should().Contain("deliver");
+        runner.FileName.Should().Be("node");
+        runner.Arguments[0].Should().EndWith("deliver-answer.mjs");
         runner.Arguments.Should().Contain("--keep-review");
     }
 
@@ -111,6 +112,23 @@ public sealed class LocalToolchainOrchestratorTests
         delivery.Should().BeNull();
     }
 
+    [Fact]
+    public async Task DeliverFailsWhenManifestInputDoesNotMatchRequest()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var runner = new DeliveryRunner(
+            workspace.Root,
+            manifestInputPath: Path.Combine(workspace.Root, "different-answer.md"));
+        var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
+
+        var (execution, delivery) = await orchestrator.RunDeliverAsync(new AnswerDeliveryRequest(
+            workspace.MarkdownPath, workspace.PdfPath, "classroom", false, "junior-physics-answer"));
+
+        execution.Succeeded.Should().BeFalse();
+        execution.Output.Should().Contain("manifest input does not match");
+        delivery.Should().BeNull();
+    }
+
     private sealed class DeliveryRunner : IProcessRunner
     {
         private readonly string _root;
@@ -119,6 +137,7 @@ public sealed class LocalToolchainOrchestratorTests
         private readonly string _manifestSubjectPack;
         private readonly string _manifestProfile;
         private readonly DateTimeOffset? _generatedAt;
+        private readonly string? _manifestInputPath;
 
         public DeliveryRunner(
             string root,
@@ -126,7 +145,8 @@ public sealed class LocalToolchainOrchestratorTests
             bool invalidManifest = false,
             string manifestSubjectPack = "junior-physics-answer",
             string manifestProfile = "classroom",
-            DateTimeOffset? generatedAt = null)
+            DateTimeOffset? generatedAt = null,
+            string? manifestInputPath = null)
         {
             _root = root;
             _writeManifest = writeManifest;
@@ -134,15 +154,18 @@ public sealed class LocalToolchainOrchestratorTests
             _manifestSubjectPack = manifestSubjectPack;
             _manifestProfile = manifestProfile;
             _generatedAt = generatedAt;
+            _manifestInputPath = manifestInputPath;
         }
         public IReadOnlyList<string> Arguments { get; private set; } = [];
+        public string FileName { get; private set; } = string.Empty;
         public int CallCount { get; private set; }
 
         public Task<ProcessRunResult> RunAsync(string fileName, IReadOnlyList<string> arguments, string workingDirectory, CancellationToken cancellationToken = default)
         {
             CallCount += 1;
+            FileName = fileName;
             Arguments = arguments;
-            var pdfPath = arguments[6];
+            var pdfPath = arguments[2];
             File.WriteAllText(pdfPath, "%PDF-test");
             var manifestPath = Path.Combine(Path.GetDirectoryName(pdfPath)!, $"{Path.GetFileNameWithoutExtension(pdfPath)}.delivery-manifest.json");
             if (!_writeManifest)
@@ -160,6 +183,7 @@ public sealed class LocalToolchainOrchestratorTests
             {
                 generatedAt = _generatedAt ?? DateTimeOffset.UtcNow,
                 subjectPack = _manifestSubjectPack,
+                input = _manifestInputPath ?? arguments[1],
                 output = pdfPath,
                 snapshotId = "snapshot-test",
                 snapshotPath = ".snapshot-cache/resolved-snapshot.json",

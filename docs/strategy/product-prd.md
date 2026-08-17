@@ -11,7 +11,7 @@
 - 默认执行只依据原卷的 Visual Audit，并保留审计输入与摘要。
 - 可选读取权威参考答案，执行 Reference Review，输出完整校正 Markdown 和可审计差异。
 - 校验题号覆盖、答案格式、LaTeX、单位与排版规则。
-- 生成 Markdown、PDF、review 页图和 Delivery Manifest。
+- 生成 Markdown、PDF、review 页图、交付专属 snapshot、Delivery Manifest 1.1 和 Workflow Run Receipt。
 - 明确报告 candidate、visual-audited、reference-reviewed、rendered 与 teacher-accepted 边界。
 
 ## Non-goals
@@ -31,7 +31,8 @@
 4. 系统默认生成题目级高清重叠视窗并执行 Visual Audit；证据不足时保留候选并标示未决，不得用占位文本覆盖完整答案。
 5. 如提供权威参考答案，系统执行 Reference Review，保留 Blind Candidate，并生成完整校正 Markdown 和差异报告。
 6. 系统运行 validator、renderer、review 和 manifest 验证。
-7. 教师查看或打印 Reference-reviewed Delivery；未进行参考复核时，交付必须明确需要人工复核。
+7. 系统持久化各 AI 阶段 summary 和整次 workflow receipt；失败阶段与保留诊断目录必须可定位，跳过阶段不得伪装为完成。
+8. 教师查看或打印 Reference-reviewed Delivery；未进行参考复核时，交付必须明确需要人工复核。
 
 ## Acceptance criteria
 
@@ -41,6 +42,9 @@
 - 固定 eval 覆盖选择题行、公式、仪表读数、图号绑定、必要推导和多图排版。
 - 有参考答案时，差异可追踪到题号；未决差异不得静默放行。
 - Visual Audit 必须记录 requested/provider detail、输入图数量和 hash，但这些字段不构成语义验收。
+- 新生成的 Delivery Manifest 必须把实际输入 Markdown、最终 PDF、交付 snapshot 和保留的 review 文件集合绑定到 SHA-256；任一文件缺失或篡改必须 fail closed。
+- workflow receipt 必须绑定 Source Exam、可选 Reference PDF、prompt、各阶段 summary/产物和阶段终态；参考差异必须以实际送入 Reference Review 的候选为基线。
+- WPF publish smoke 必须在开发仓之外运行并绑定 commit、EXE 与 publish tree；当前 repository-coupled 形态不得产出或宣称自包含 MSIX。
 - Teacher Accepted 只能来自教师对指定交付物的实际验收，不由 repo gate 或 manifest 自动推导。
 
 ## Current evidence boundary

@@ -39,9 +39,14 @@ This one command will:
 3. keep temporary artifacts when render or review fails;
 4. automatically clean transient artifacts when both steps succeed.
 5. validate answer Markdown against baseline formatting rules before rendering.
+6. persist `<pdf-base>.snapshot.json` beside the PDF instead of pointing long-lived delivery evidence at the mutable `.snapshot-cache`.
+7. write and validate Delivery Manifest 1.1 integrity metadata for the input Markdown, PDF, delivery snapshot, and exact retained review-file set.
 
 Use `--keep-review` when you want to retain the answer review page images for
 manual re-checking after a successful run.
+
+The validator still accepts legacy manifest `1.0` files. New deliveries always
+write `1.1`; changing any bound file after delivery causes validation to fail.
 
 ## Review source PDF pages
 

@@ -30,6 +30,7 @@ Options:
   --reference-text-file <path>  Optional extracted text layer from the same reference PDF
   --image <path>            Add one page image; repeat for multiple pages
   --output <path>           Markdown output path
+  --summary-out <path>      Optional atomic JSON receipt for this generation stage
   --provider <target>       primary, fallback, or all; default all
   --visual-detail <mode>    low, high, or original; default original
   --max-output-tokens <n>   Maximum answer tokens; default 24000
@@ -50,6 +51,7 @@ function parseArgs(argv) {
     candidateFile: null,
     imagePaths: [],
     outputPath: null,
+    summaryPath: null,
     provider: "all",
     visualDetailMode: "original",
     maxOutputTokens: 24000,
@@ -141,6 +143,14 @@ function parseArgs(argv) {
     }
     if (arg.startsWith("--output=")) {
       options.outputPath = resolveCallerPath(arg.slice("--output=".length));
+      continue;
+    }
+    if (arg === "--summary-out") {
+      options.summaryPath = resolveCallerPath(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg.startsWith("--summary-out=")) {
+      options.summaryPath = resolveCallerPath(arg.slice("--summary-out=".length));
       continue;
     }
     if (arg === "--provider") {
@@ -258,6 +268,7 @@ function validateOptions(options) {
 
 function validateOutputCollision(options) {
   const outputPath = path.resolve(options.outputPath);
+  const summaryPath = options.summaryPath ? path.resolve(options.summaryPath) : null;
   const protectedInputs = [
     options.promptFile,
     options.candidateFile,
@@ -265,8 +276,16 @@ function validateOutputCollision(options) {
     options.referenceTextFile,
     ...options.imagePaths
   ].filter(Boolean).map((inputPath) => path.resolve(inputPath));
-  if (protectedInputs.some((inputPath) => inputPath === outputPath)) {
+  const normalizePath = (filePath) => process.platform === "win32" ? filePath.toLowerCase() : filePath;
+  const protectedPathKeys = new Set(protectedInputs.map(normalizePath));
+  if (protectedPathKeys.has(normalizePath(outputPath))) {
     throw new Error("--output must not overwrite a prompt, candidate, findings, reference text, or source image input.");
+  }
+  if (summaryPath && (
+    protectedPathKeys.has(normalizePath(summaryPath))
+    || normalizePath(summaryPath) === normalizePath(outputPath)
+  )) {
+    throw new Error("--summary-out must not overwrite an input or the generated Markdown output.");
   }
 }
 
@@ -776,7 +795,9 @@ export async function main() {
   const answerMarkdown = choiceOverride.markdown;
   writeTextFileAtomic(options.outputPath, `${answerMarkdown}\n`);
   const summary = {
+    schemaVersion: "1.0",
     kind: "live-answer-generation-summary",
+    generatedAt: new Date().toISOString(),
     provider: result.provider,
     model: result.model,
     reasoningEffort: result.reasoningEffort,
@@ -816,7 +837,11 @@ export async function main() {
       : { applied: false },
     attempts: result.attempts.map(redactAttempt)
   };
-  console.log(JSON.stringify(summary, null, 2));
+  const summaryJson = `${JSON.stringify(summary, null, 2)}\n`;
+  if (options.summaryPath) {
+    writeTextFileAtomic(options.summaryPath, summaryJson);
+  }
+  console.log(summaryJson.trimEnd());
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

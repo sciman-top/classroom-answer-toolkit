@@ -107,6 +107,30 @@
       },
       "additionalProperties": true
     },
+    "integrity": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "input",
+        "output",
+        "snapshot",
+        "reviewFiles"
+      ],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "const": "sha256"
+        },
+        "input": { "$ref": "#/$defs/fileIntegrity" },
+        "output": { "$ref": "#/$defs/fileIntegrity" },
+        "snapshot": { "$ref": "#/$defs/fileIntegrity" },
+        "reviewFiles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/fileIntegrity" }
+        }
+      },
+      "additionalProperties": true
+    },
     "status": {
       "type": "object",
       "required": [
@@ -118,6 +142,25 @@
         "toolchainPassed": { "type": "boolean" },
         "deliveryComplete": { "type": "boolean" },
         "reviewArtifactReady": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "fileIntegrity": {
+      "type": "object",
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": { "type": "string" },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": { "type": "string" }
       },
       "additionalProperties": true
     }

@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -151,6 +152,13 @@ function makeDeliveryManifestPath(pdfPath) {
   );
 }
 
+function makeDeliverySnapshotPath(pdfPath) {
+  return path.resolve(
+    path.dirname(pdfPath),
+    `${path.basename(pdfPath, path.extname(pdfPath))}.snapshot.json`
+  );
+}
+
 function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
   const callerCwd = process.env.INIT_CWD || process.cwd();
@@ -216,6 +224,9 @@ function main() {
   if (typeof snapshotSubjectPack !== "string" || snapshotSubjectPack.trim().length === 0) {
     fail(`Resolved snapshot is missing subjectPack.assetId: ${snapshotPath}`);
   }
+
+  const deliverySnapshotPath = makeDeliverySnapshotPath(outputPath);
+  writeTextFileAtomic(deliverySnapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
 
   if (!options.skipValidate) {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
@@ -283,7 +294,7 @@ function main() {
     "--output",
     path.relative(repoRoot, outputPath),
     "--snapshot-path",
-    path.relative(repoRoot, snapshotPath),
+    path.relative(repoRoot, deliverySnapshotPath),
     "--review-dir",
     path.relative(repoRoot, reviewOutputDir),
     "--review-manifest",

@@ -81,6 +81,10 @@ function assertDeliveryManifestMatches(manifestPath, expectedSnapshot, expectedS
   const manifest = readJson(manifestPath);
   const actualSnapshotPath = path.resolve(manifest.snapshotPath);
 
+  if (manifest.schemaVersion !== "1.1" || manifest.integrity?.algorithm !== "sha256") {
+    throw new Error("Deliver manifest must use schema 1.1 with SHA-256 integrity metadata.");
+  }
+
   if (manifest.snapshotId !== expectedSnapshot.snapshotId) {
     throw new Error(`Deliver manifest snapshotId mismatch: expected ${expectedSnapshot.snapshotId}, got ${manifest.snapshotId}`);
   }
@@ -95,6 +99,10 @@ function assertDeliveryManifestMatches(manifestPath, expectedSnapshot, expectedS
 
   if (actualSnapshotPath !== expectedSnapshotPath) {
     throw new Error(`Deliver manifest snapshotPath mismatch: expected ${expectedSnapshotPath}, got ${actualSnapshotPath}`);
+  }
+
+  if (path.resolve(manifest.integrity?.snapshot?.path ?? "") !== expectedSnapshotPath) {
+    throw new Error("Deliver manifest integrity.snapshot.path must match snapshotPath.");
   }
 
   const status = manifest.status ?? {};
@@ -378,7 +386,7 @@ function main() {
   assertDeliveryManifestMatches(
     deliverManifestPath,
     classroomSnapshot,
-    path.resolve(path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json")),
+    path.join(smokeDir, "smoke-deliver.snapshot.json"),
     { reviewArtifactReady: true }
   );
 
@@ -407,8 +415,15 @@ function main() {
   assertDeliveryManifestMatches(
     explicitDeliverManifestPath,
     explicitSnapshot,
-    explicitSnapshotPath,
+    path.join(smokeDir, "smoke-deliver-explicit.snapshot.json"),
     { reviewArtifactReady: false }
+  );
+
+  fs.appendFileSync(explicitDeliverPdfPath, "tampered", "utf8");
+  runNodeScriptExpectFailure(
+    "validate-delivery-manifest.mjs",
+    ["--manifest", path.relative(repoRoot, explicitDeliverManifestPath)],
+    "integrity.output.bytes does not match the current file."
   );
 
   assertDeliveryManifestRejectsMismatchedGraphic(explicitSnapshot);

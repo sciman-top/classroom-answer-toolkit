@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -73,6 +74,139 @@ function isDirectory(filePath) {
     return fs.statSync(filePath).isDirectory();
   } catch {
     return false;
+  }
+}
+
+function normalizePathForComparison(filePath) {
+  const resolvedPath = path.resolve(filePath);
+  return process.platform === "win32" ? resolvedPath.toLowerCase() : resolvedPath;
+}
+
+function collectFilePaths(directoryPath) {
+  if (!isDirectory(directoryPath)) {
+    return [];
+  }
+
+  const paths = [];
+  const visit = (currentDirectory) => {
+    const entries = fs.readdirSync(currentDirectory, { withFileTypes: true })
+      .sort((left, right) => left.name.localeCompare(right.name, "en"));
+    for (const entry of entries) {
+      const entryPath = path.join(currentDirectory, entry.name);
+      if (entry.isDirectory()) {
+        visit(entryPath);
+      } else if (entry.isFile()) {
+        paths.push(entryPath);
+      }
+    }
+  };
+
+  visit(directoryPath);
+  return paths;
+}
+
+function validateFileIntegrity(errors, entry, expectedPath, label, manifestDir) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    errors.push(`integrity.${label} must be an object.`);
+    return;
+  }
+
+  if (typeof entry.path !== "string" || entry.path.trim().length === 0) {
+    errors.push(`integrity.${label}.path must be a non-empty string.`);
+    return;
+  }
+
+  const integrityPath = resolveManifestRelativePath(entry.path, manifestDir);
+  if (expectedPath
+      && normalizePathForComparison(integrityPath) !== normalizePathForComparison(expectedPath)) {
+    errors.push(`integrity.${label}.path must match ${label}.`);
+  }
+
+  if (!isFile(integrityPath)) {
+    errors.push(`integrity.${label}.path not found: ${entry.path}`);
+    return;
+  }
+
+  const bytes = fs.readFileSync(integrityPath);
+  if (entry.bytes !== bytes.byteLength) {
+    errors.push(`integrity.${label}.bytes does not match the current file.`);
+  }
+
+  const sha256 = crypto.createHash("sha256").update(bytes).digest("hex");
+  if (entry.sha256 !== sha256) {
+    errors.push(`integrity.${label}.sha256 does not match the current file.`);
+  }
+}
+
+function validateIntegrity(errors, manifest, manifestDir) {
+  if (manifest.schemaVersion !== "1.1") {
+    return;
+  }
+
+  const integrity = manifest.integrity;
+  if (!integrity || typeof integrity !== "object" || Array.isArray(integrity)) {
+    errors.push("schemaVersion 1.1 requires integrity metadata.");
+    return;
+  }
+
+  if (integrity.algorithm !== "sha256") {
+    errors.push("integrity.algorithm must be sha256.");
+  }
+
+  const inputPath = typeof manifest.input === "string"
+    ? resolveManifestRelativePath(manifest.input, manifestDir)
+    : null;
+  const outputPath = typeof manifest.output === "string"
+    ? resolveManifestRelativePath(manifest.output, manifestDir)
+    : null;
+  const snapshotPath = typeof manifest.snapshotPath === "string"
+    ? resolveManifestRelativePath(manifest.snapshotPath, manifestDir)
+    : null;
+  validateFileIntegrity(errors, integrity.input, inputPath, "input", manifestDir);
+  validateFileIntegrity(errors, integrity.output, outputPath, "output", manifestDir);
+  validateFileIntegrity(errors, integrity.snapshot, snapshotPath, "snapshot", manifestDir);
+
+  if (!Array.isArray(integrity.reviewFiles)) {
+    errors.push("integrity.reviewFiles must be an array.");
+    return;
+  }
+
+  if (manifest.status?.reviewArtifactReady !== true) {
+    if (integrity.reviewFiles.length > 0) {
+      errors.push("integrity.reviewFiles must be empty when review artifacts are not ready.");
+    }
+    return;
+  }
+
+  const reviewOutputDir = typeof manifest.review?.outputDir === "string"
+    ? resolveManifestRelativePath(manifest.review.outputDir, manifestDir)
+    : null;
+  const actualReviewPaths = reviewOutputDir ? collectFilePaths(reviewOutputDir) : [];
+  const actualPathKeys = new Set(actualReviewPaths.map(normalizePathForComparison));
+  const boundPathKeys = new Set();
+
+  for (const [index, entry] of integrity.reviewFiles.entries()) {
+    const label = `reviewFiles[${index}]`;
+    const entryPath = typeof entry?.path === "string"
+      ? resolveManifestRelativePath(entry.path, manifestDir)
+      : null;
+    if (entryPath) {
+      const entryKey = normalizePathForComparison(entryPath);
+      if (boundPathKeys.has(entryKey)) {
+        errors.push(`integrity.${label}.path is duplicated.`);
+      }
+      boundPathKeys.add(entryKey);
+      if (!actualPathKeys.has(entryKey)) {
+        errors.push(`integrity.${label}.path is not a current review artifact.`);
+      }
+    }
+    validateFileIntegrity(errors, entry, entryPath, label, manifestDir);
+  }
+
+  for (const actualPath of actualReviewPaths) {
+    if (!boundPathKeys.has(normalizePathForComparison(actualPath))) {
+      errors.push(`integrity.reviewFiles is missing current review artifact: ${actualPath}`);
+    }
   }
 }
 
@@ -246,6 +380,7 @@ export function validateDeliveryManifest(
 
   validateOcrMetadata(errors, manifest.ocr);
   validateReviewMetadata(errors, manifest, manifestDir);
+  validateIntegrity(errors, manifest, manifestDir);
 
   if (manifest.graphics !== undefined && !Array.isArray(manifest.graphics?.items)) {
     errors.push("graphics.items must be an array.");

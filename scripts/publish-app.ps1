@@ -8,12 +8,15 @@ $runtimeIdentifier = "win-x64"
 $publishDir = Join-Path $repoRoot "artifacts\publish\ClassroomToolkit.App"
 $smokeReportPath = Join-Path $repoRoot "artifacts\publish\verification\ClassroomToolkit.App.smoke-report.json"
 
+Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $smokeReportPath -Force -ErrorAction SilentlyContinue
+
 dotnet restore src/ClassroomToolkit.App/ClassroomToolkit.App.csproj -r $runtimeIdentifier
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet restore failed for publish runtime."
 }
 
-dotnet publish src/ClassroomToolkit.App/ClassroomToolkit.App.csproj -c Debug -r $runtimeIdentifier --self-contained false -p:PublishSingleFile=true -p:PublishTrimmed=false -o $publishDir
+dotnet publish src/ClassroomToolkit.App/ClassroomToolkit.App.csproj -c Release -r $runtimeIdentifier --self-contained false -p:PublishSingleFile=true -p:PublishTrimmed=false -o $publishDir
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed."
 }

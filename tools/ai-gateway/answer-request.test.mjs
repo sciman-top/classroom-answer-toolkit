@@ -470,6 +470,32 @@ test("answer request refuses to overwrite one of its inputs", () => {
   }
 });
 
+test("answer request refuses a summary path that overwrites an input or output", () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const promptPath = path.join(directory, "spec.md");
+  const outputPath = path.join(directory, "answer.md");
+  writeFileSync(promptPath, "spec", "utf8");
+  try {
+    for (const summaryPath of [promptPath, outputPath]) {
+      const result = spawnSync(process.execPath, [
+        fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
+        "--prompt-file", promptPath,
+        "--image", imagePaths[0],
+        "--output", outputPath,
+        "--summary-out", summaryPath
+      ], {
+        cwd: directory,
+        encoding: "utf8"
+      });
+
+      assert.notEqual(result.status, 0);
+      assert.match(`${result.stdout}\n${result.stderr}`, /--summary-out must not overwrite/);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("answer request preserves the safe fetch cause in retry diagnostics", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;

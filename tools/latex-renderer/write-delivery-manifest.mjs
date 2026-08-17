@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -172,6 +173,38 @@ function collectOcrMetadata(reviewManifestPath) {
   return ocr;
 }
 
+function createFileIntegrity(filePath) {
+  const bytes = fs.readFileSync(filePath);
+  return {
+    path: filePath,
+    bytes: bytes.byteLength,
+    sha256: crypto.createHash("sha256").update(bytes).digest("hex")
+  };
+}
+
+function collectReviewFilePaths(directoryPath) {
+  if (!directoryPath || !fs.existsSync(directoryPath)) {
+    return [];
+  }
+
+  const paths = [];
+  const visit = (currentDirectory) => {
+    const entries = fs.readdirSync(currentDirectory, { withFileTypes: true })
+      .sort((left, right) => left.name.localeCompare(right.name, "en"));
+    for (const entry of entries) {
+      const entryPath = path.join(currentDirectory, entry.name);
+      if (entry.isDirectory()) {
+        visit(entryPath);
+      } else if (entry.isFile()) {
+        paths.push(entryPath);
+      }
+    }
+  };
+
+  visit(directoryPath);
+  return paths;
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (!options.input || !options.output || !options.snapshotPath) {
@@ -188,8 +221,14 @@ function main() {
     ? path.resolve(callerCwd, options.out)
     : path.resolve(path.dirname(outputPath), `${path.basename(outputPath, path.extname(outputPath))}.delivery-manifest.json`);
 
-  if (!fs.existsSync(snapshotPath)) {
-    fail(`Resolved snapshot not found: ${snapshotPath}`);
+  for (const [label, filePath] of [
+    ["Answer Markdown", inputPath],
+    ["Rendered PDF", outputPath],
+    ["Resolved snapshot", snapshotPath]
+  ]) {
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+      fail(`${label} not found: ${filePath}`);
+    }
   }
 
   let snapshot;
@@ -226,9 +265,12 @@ function main() {
   const answerGraphics = collectAnswerGraphicReferences(inputPath);
   const ocr = collectOcrMetadata(reviewManifestPath);
   const generatedAt = new Date().toISOString();
+  const reviewFiles = reviewArtifactReady
+    ? collectReviewFilePaths(reviewDir).map(createFileIntegrity)
+    : [];
 
   const manifest = {
-    schemaVersion: "1.0",
+    schemaVersion: "1.1",
     kind: "delivery-manifest",
     generatedAt,
     snapshotId,
@@ -250,6 +292,13 @@ function main() {
     ocr,
     graphics: {
       items: answerGraphics
+    },
+    integrity: {
+      algorithm: "sha256",
+      input: createFileIntegrity(inputPath),
+      output: createFileIntegrity(outputPath),
+      snapshot: createFileIntegrity(snapshotPath),
+      reviewFiles
     },
     status: {
       toolchainPassed: true,

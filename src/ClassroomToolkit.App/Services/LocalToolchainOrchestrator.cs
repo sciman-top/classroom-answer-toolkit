@@ -37,10 +37,10 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             subjectPacks.Select(pack => pack.AssetId).ToArray());
     }
 
-    public WorkspaceHealthReport GetWorkspaceHealthReport()
+    public WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null)
     {
         var workspace = GetWorkspaceInfo();
-        return new WorkspaceHealthReportReader(workspace.RepositoryRoot).Read();
+        return new WorkspaceHealthReportReader(workspace.RepositoryRoot).Read(subjectPack);
     }
 
     public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default)
@@ -53,14 +53,19 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             cancellationToken);
     }
 
-    public Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default)
+    public Task<ToolchainExecutionResult> RunCheckAsync(
+        string? subjectPack = null,
+        CancellationToken cancellationToken = default)
     {
         var workspace = GetWorkspaceInfo();
         return RunScriptAsync(
             ToolchainScriptKind.Check,
             workspace.CheckScriptPath,
             workspace.RepositoryRoot,
-            cancellationToken);
+            cancellationToken,
+            string.IsNullOrWhiteSpace(subjectPack)
+                ? []
+                : ["-Mode", "Core", "-SubjectPack", subjectPack]);
     }
 
     public async Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
@@ -79,14 +84,20 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 $"Answer Markdown not found: {answerPath}"), null);
         }
 
+        if (!File.Exists(toolPath))
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.Deliver, toolPath, -1, startedAt, DateTimeOffset.Now,
+                $"Renderer tool not found: {toolPath}"), null);
+        }
+
         var outputPath = AnswerArtifactPathResolver.ResolveOutputPdfPath(answerPath, request.OutputPdfPath);
         var subjectPack = string.IsNullOrWhiteSpace(request.SubjectPack)
             ? workspace.PrimarySubjectPack ?? "junior-physics-answer"
             : request.SubjectPack;
         var arguments = new List<string>
         {
-            "--prefix", Path.Combine(workspace.RepositoryRoot, "tools", "latex-renderer"),
-            "run", "deliver", "--", answerPath, outputPath,
+            toolPath, answerPath, outputPath,
             "--subject-pack", subjectPack,
             "--profile", request.Profile
         };
@@ -95,7 +106,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             arguments.Add("--keep-review");
         }
 
-        var process = await _processRunner.RunAsync("npm", arguments, workspace.RepositoryRoot, cancellationToken);
+        var process = await _processRunner.RunAsync("node", arguments, workspace.RepositoryRoot, cancellationToken);
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(process.StandardOutput, process.StandardError);
         var execution = process.ExitCode == 0
@@ -180,6 +191,19 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
 
         if (!string.Equals(
+                Path.GetFullPath(context.InputPath),
+                answerPath,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return (ArtifactFailure(
+                toolPath,
+                startedAt,
+                finishedAt,
+                output,
+                $"Delivery manifest input does not match the requested Markdown: {context.InputPath}"), null);
+        }
+
+        if (!string.Equals(
                 Path.GetFullPath(context.OutputPath),
                 Path.GetFullPath(outputPath),
                 StringComparison.OrdinalIgnoreCase))
@@ -208,7 +232,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         ToolchainScriptKind kind,
         string scriptPath,
         string repositoryRoot,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlyList<string>? scriptArguments = null)
     {
         var startedAt = DateTimeOffset.Now;
         if (!File.Exists(scriptPath))
@@ -217,9 +242,18 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 $"Script not found: {scriptPath}");
         }
 
+        var arguments = new List<string>
+        {
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath
+        };
+        if (scriptArguments is not null)
+        {
+            arguments.AddRange(scriptArguments);
+        }
+
         var process = await _processRunner.RunAsync(
             "pwsh",
-            ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath],
+            arguments,
             repositoryRoot,
             cancellationToken);
         var finishedAt = DateTimeOffset.Now;
@@ -240,6 +274,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             root.GetProperty("generatedAt").GetDateTimeOffset(),
             root.GetProperty("subjectPack").GetString()
                 ?? throw new InvalidOperationException("Manifest subjectPack is empty."),
+            root.GetProperty("input").GetString()
+                ?? throw new InvalidOperationException("Manifest input is empty."),
             root.GetProperty("output").GetString()
                 ?? throw new InvalidOperationException("Manifest output is empty."),
             root.GetProperty("snapshotId").GetString(),
@@ -276,6 +312,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     private sealed record ManifestContext(
         DateTimeOffset GeneratedAt,
         string SubjectPack,
+        string InputPath,
         string OutputPath,
         string? SnapshotId,
         string? SnapshotPath,

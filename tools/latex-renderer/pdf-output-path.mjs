@@ -59,6 +59,5 @@ export function commitBrowserPdfOutput(temporaryPath, outputPath) {
     throw new Error(`Browser PDF output was not created: ${temporaryPath}`);
   }
 
-  fs.copyFileSync(temporaryPath, outputPath);
-  fs.unlinkSync(temporaryPath);
+  fs.renameSync(temporaryPath, outputPath);
 }

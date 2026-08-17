@@ -67,6 +67,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool CanRunToolchain() => !IsBusy;
     private bool CanCancel() => IsBusy && _operationCancellation is { IsCancellationRequested: false };
 
+    partial void OnSelectedSubjectPackChanged(string value)
+    {
+        RefreshHealth();
+    }
+
     [RelayCommand]
     private void BrowseAnswerMarkdown()
     {
@@ -122,7 +127,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanRunToolchain))]
     private async Task CheckAsync()
     {
-        await RunToolchainAsync("正在执行主链体检...", _toolchainOrchestrator.RunCheckAsync);
+        await RunToolchainAsync(
+            "正在执行主链体检...",
+            cancellationToken => _toolchainOrchestrator.RunCheckAsync(SelectedSubjectPack, cancellationToken));
     }
 
     [RelayCommand] private void OpenLastOutputPdf() => OpenPath(LastOutputPdfPath);
@@ -194,7 +201,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void RefreshHealth()
     {
-        var health = _toolchainOrchestrator.GetWorkspaceHealthReport();
+        var health = _toolchainOrchestrator.GetWorkspaceHealthReport(SelectedSubjectPack);
         StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
         StatusCards.Clear();
         StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现", health.SubjectPacks.Count > 0));

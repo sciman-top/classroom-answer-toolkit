@@ -12,7 +12,8 @@
   -> 可选：参考答案 PDF 复核与校正
   -> Markdown 规则校验
   -> PDF 排版
-  -> review 页图与 delivery manifest
+  -> review 页图、交付专属 snapshot 与 delivery manifest 1.1
+  -> workflow run receipt
 ```
 
 本项目不是题库系统，不负责试卷入库、标签治理、知识图谱或样例飞轮。原卷与参考答案可以保留在用户自己的资料目录中；运行脚本接受任意明确路径，不要求把资料迁入项目资产结构。
@@ -41,6 +42,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-live-answer-workflow.p
 若 Node 直连 AI 网关出现 `UND_ERR_CONNECT_TIMEOUT`，但本机已配置 `HTTP_PROXY`、`HTTPS_PROXY` 或 `ALL_PROXY`，可在同一命令增加 `-UseGatewayProxy`。该开关只在本次工作流进程内启用 Node 环境代理，并仅从本次子进程的 `NO_PROXY` 副本中移除 `.env` 已配置的 AI 网关主机；不会修改持久环境变量。
 
 工作流默认执行视觉审计。只有诊断旧链或明确控制 provider 成本时才使用 `-SkipVisualAudit`；这会恢复单次盲答路径，不能作为可信交付。
+
+每个 AI 阶段都会原子写入独立的 `*.summary.json`；工作流最终写入 `<原卷名>.workflow-run.json`，记录 run id、输入 SHA-256、阶段 `completed/skipped/failed`、当前阶段产物和最终交付哈希。失败回执会指向保留的临时诊断目录；这些回执证明本次执行和文件绑定，不证明答案语义正确。
 
 只对已有答案 Markdown 做校验和 PDF 交付：
 
@@ -85,9 +88,15 @@ Full 中共享 renderer/layout 回归只由 `junior-physics-answer` 承担一次
 
 `scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；可选 OCR 由 renderer 的 `review-source-pdf --ocr` 显式启用。
 
+## 桌面发布边界
+
+WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓库以及其中的 Node/npm、PowerShell、prompt、snapshot 和 eval 状态。`scripts/publish-app.ps1` 会清空准确的 publish 目录，以 Release 生成应用，并在仓库外复制发布树执行隔离启动 smoke；该 smoke 只验收“应用可启动且缺少仓库时正确 fail closed”，回执绑定 source commit、EXE SHA-256 和 publish-tree SHA-256。
+
+`scripts/pack-msix.ps1` 会校验回执是否属于当前 commit 和当前 publish tree，但在可写、版本化 runtime bundle 及安装/升级合同落地前始终阻断 MSIX 创建。不得把当前 publish/smoke 结果描述为自包含安装包验收。
+
 ## 可信边界
 
-`delivery-manifest.json` 证明的是指定 snapshot、Markdown、PDF 和 review 产物之间的交付关系，不证明答案语义必然正确。答案可信需要满足以下至少一项：
+`delivery-manifest.json` 1.1 会把输入 Markdown、最终 PDF、同目录交付 snapshot 和保留的 review 文件绑定到字节数与 SHA-256；validator 会拒绝缺失、篡改或 review 文件集合漂移。它证明的是指定文件之间的交付关系，不证明答案语义必然正确。答案可信需要满足以下至少一项：
 
 - 与权威参考答案逐题比对并完成校正；
 - 由教师逐题复核；

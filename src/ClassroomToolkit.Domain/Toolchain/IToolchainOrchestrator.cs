@@ -7,11 +7,13 @@ public interface IToolchainOrchestrator
 {
     ToolchainWorkspaceInfo GetWorkspaceInfo();
 
-    WorkspaceHealthReport GetWorkspaceHealthReport();
+    WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null);
 
     Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default);
 
-    Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default);
+    Task<ToolchainExecutionResult> RunCheckAsync(
+        string? subjectPack = null,
+        CancellationToken cancellationToken = default);
 
     Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
         AnswerDeliveryRequest request,

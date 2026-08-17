@@ -54,6 +54,86 @@ function Resolve-WorkflowPath {
     return [System.IO.Path]::GetFullPath((Join-Path $repoRoot $PathValue))
 }
 
+function Assert-WorkflowOutputDoesNotOverwriteInput {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$Inputs,
+        [Parameter(Mandatory = $true)][hashtable]$Outputs
+    )
+
+    foreach ($inputName in $Inputs.Keys) {
+        $inputPath = $Inputs[$inputName]
+        if ([string]::IsNullOrWhiteSpace($inputPath)) {
+            continue
+        }
+
+        foreach ($outputName in $Outputs.Keys) {
+            $outputPath = $Outputs[$outputName]
+            if ([string]::Equals(
+                    [IO.Path]::GetFullPath($inputPath),
+                    [IO.Path]::GetFullPath($outputPath),
+                    [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Workflow output $outputName collides with input $inputName`: $outputPath"
+            }
+        }
+    }
+}
+
+function Get-WorkflowFileReceipt {
+    param([string]$PathValue)
+
+    if ([string]::IsNullOrWhiteSpace($PathValue) -or -not (Test-Path -LiteralPath $PathValue -PathType Leaf)) {
+        return $null
+    }
+
+    $item = Get-Item -LiteralPath $PathValue
+    return [ordered]@{
+        path = $item.FullName
+        bytes = $item.Length
+        sha256 = (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+}
+
+function Write-JsonFileAtomic {
+    param(
+        [Parameter(Mandatory = $true)][string]$PathValue,
+        [Parameter(Mandatory = $true)]$Value
+    )
+
+    $resolvedPath = [IO.Path]::GetFullPath($PathValue)
+    $directory = [IO.Path]::GetDirectoryName($resolvedPath)
+    [IO.Directory]::CreateDirectory($directory) | Out-Null
+    $temporaryPath = Join-Path $directory (".{0}.{1}.tmp" -f [IO.Path]::GetFileName($resolvedPath), [Guid]::NewGuid().ToString("N"))
+    try {
+        [IO.File]::WriteAllText(
+            $temporaryPath,
+            (($Value | ConvertTo-Json -Depth 12) + [Environment]::NewLine),
+            [Text.UTF8Encoding]::new($false))
+        [IO.File]::Move($temporaryPath, $resolvedPath, $true)
+    }
+    finally {
+        [IO.File]::Delete($temporaryPath)
+    }
+}
+
+function Copy-WorkflowFileAtomic {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourcePath,
+        [Parameter(Mandatory = $true)][string]$DestinationPath
+    )
+
+    $resolvedDestination = [IO.Path]::GetFullPath($DestinationPath)
+    $directory = [IO.Path]::GetDirectoryName($resolvedDestination)
+    [IO.Directory]::CreateDirectory($directory) | Out-Null
+    $temporaryPath = Join-Path $directory (".{0}.{1}.tmp" -f [IO.Path]::GetFileName($resolvedDestination), [Guid]::NewGuid().ToString("N"))
+    try {
+        [IO.File]::Copy($SourcePath, $temporaryPath, $true)
+        [IO.File]::Move($temporaryPath, $resolvedDestination, $true)
+    }
+    finally {
+        [IO.File]::Delete($temporaryPath)
+    }
+}
+
 function Get-GatewayHostnames {
     param([Parameter(Mandatory = $true)][string]$EnvFilePath)
 
@@ -88,8 +168,6 @@ if (-not (Test-Path -LiteralPath $envFilePath -PathType Leaf)) {
     throw "Gateway env file not found: $envFilePath"
 }
 
-New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
-
 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($sourcePath)
 $answerMarkdownPath = Join-Path $outputRoot "${baseName}参考答案.md"
 $blindMarkdownPath = Join-Path $outputRoot "${baseName}盲答候选.md"
@@ -98,6 +176,13 @@ $visualAuditFindingsPath = Join-Path $outputRoot "${baseName}视觉审计发现.
 $answerPdfPath = Join-Path $outputRoot "${baseName}参考答案.pdf"
 $comparisonReportPath = Join-Path $outputRoot "${baseName}答案自动复核文本差异报告.md"
 $visualAuditReportPath = Join-Path $outputRoot "${baseName}盲答与视觉审计差异报告.md"
+$blindSummaryPath = Join-Path $outputRoot "${baseName}.blind-generation.summary.json"
+$visualFindingsSummaryPath = Join-Path $outputRoot "${baseName}.visual-findings.summary.json"
+$visualMergeSummaryPath = Join-Path $outputRoot "${baseName}.visual-merge.summary.json"
+$referenceReviewSummaryPath = Join-Path $outputRoot "${baseName}.reference-review.summary.json"
+$workflowReceiptPath = Join-Path $outputRoot "${baseName}.workflow-run.json"
+$deliveryManifestPath = Join-Path $outputRoot "${baseName}参考答案.delivery-manifest.json"
+$deliverySnapshotPath = Join-Path $outputRoot "${baseName}参考答案.snapshot.json"
 $workRoot = Join-Path $env:TEMP ("classroom-answer-toolkit\live-answer-workflow\" + [Guid]::NewGuid().ToString("N"))
 $pageDirectory = Join-Path $workRoot "pages"
 $visualAuditPageDirectory = Join-Path $workRoot "visual-audit-pages"
@@ -108,9 +193,127 @@ $previousCloudEgress = $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
 $previousNodeOptions = $env:NODE_OPTIONS
 $previousNoProxy = $env:NO_PROXY
 $referencePath = if ([string]::IsNullOrWhiteSpace($ReferencePdf)) { $null } else { Resolve-WorkflowPath $ReferencePdf }
+$workflowRunId = [Guid]::NewGuid().ToString("N")
+$workflowStartedAt = [DateTimeOffset]::UtcNow
+$currentPhase = $null
 
 if ($referencePath -and -not (Test-Path -LiteralPath $referencePath -PathType Leaf)) {
     throw "Reference PDF not found: $referencePath"
+}
+
+Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
+    SourcePdf = $sourcePath
+    ReferencePdf = $referencePath
+    PromptFile = $promptPath
+    ConfigEnvFile = $envFilePath
+} -Outputs @{
+    AnswerMarkdown = $answerMarkdownPath
+    BlindMarkdown = $blindMarkdownPath
+    VisualAuditMarkdown = $visualAuditMarkdownPath
+    VisualAuditFindings = $visualAuditFindingsPath
+    AnswerPdf = $answerPdfPath
+    ComparisonReport = $comparisonReportPath
+    VisualAuditReport = $visualAuditReportPath
+    BlindSummary = $blindSummaryPath
+    VisualFindingsSummary = $visualFindingsSummaryPath
+    VisualMergeSummary = $visualMergeSummaryPath
+    ReferenceReviewSummary = $referenceReviewSummaryPath
+    WorkflowReceipt = $workflowReceiptPath
+    DeliveryManifest = $deliveryManifestPath
+    DeliverySnapshot = $deliverySnapshotPath
+}
+
+New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+
+$generationOutputPath = if ($referencePath -or -not $SkipVisualAudit) { $blindMarkdownPath } else { $answerMarkdownPath }
+$phaseStates = [ordered]@{
+    blindGeneration = [ordered]@{ status = "pending"; summaryPath = $blindSummaryPath; artifactPath = $generationOutputPath }
+    visualFindings = [ordered]@{ status = $(if ($SkipVisualAudit) { "skipped" } else { "pending" }); summaryPath = $visualFindingsSummaryPath; artifactPath = $visualAuditFindingsPath }
+    visualMerge = [ordered]@{ status = $(if ($SkipVisualAudit) { "skipped" } else { "pending" }); summaryPath = $visualMergeSummaryPath; artifactPath = $visualAuditMarkdownPath }
+    referenceReview = [ordered]@{ status = $(if ($referencePath) { "pending" } else { "skipped" }); summaryPath = $referenceReviewSummaryPath; artifactPath = $answerMarkdownPath }
+    delivery = [ordered]@{ status = "pending"; summaryPath = $null; artifactPath = $answerPdfPath }
+}
+
+foreach ($summaryPath in @($blindSummaryPath, $visualFindingsSummaryPath, $visualMergeSummaryPath, $referenceReviewSummaryPath, $workflowReceiptPath)) {
+    Remove-Item -LiteralPath $summaryPath -Force -ErrorAction SilentlyContinue
+}
+
+function Write-WorkflowReceipt {
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet("succeeded", "failed")][string]$Status,
+        [string]$ErrorMessage
+    )
+
+    $phaseReceipts = [ordered]@{}
+    foreach ($phaseName in $phaseStates.Keys) {
+        $state = $phaseStates[$phaseName]
+        $phaseReceipt = [ordered]@{
+            status = $state.status
+            summaryPath = $state.summaryPath
+            artifactPath = $state.artifactPath
+            summary = $null
+            artifact = $null
+        }
+        if ($state.status -eq "completed") {
+            $phaseReceipt.summary = Get-WorkflowFileReceipt -PathValue $state.summaryPath
+            $phaseReceipt.artifact = Get-WorkflowFileReceipt -PathValue $state.artifactPath
+        }
+        if ($state.Contains("error")) {
+            $phaseReceipt.error = $state.error
+        }
+        $phaseReceipts[$phaseName] = $phaseReceipt
+    }
+
+    $artifacts = @()
+    if ($Status -eq "succeeded") {
+        foreach ($artifactPath in @(
+                $answerMarkdownPath,
+                $answerPdfPath,
+                $deliveryManifestPath,
+                $deliverySnapshotPath,
+                $(if (-not $SkipVisualAudit) { $blindMarkdownPath; $visualAuditFindingsPath; $visualAuditMarkdownPath; $visualAuditReportPath }),
+                $(if ($referencePath) { $comparisonReportPath })
+            )) {
+            $artifactReceipt = Get-WorkflowFileReceipt -PathValue $artifactPath
+            if ($null -ne $artifactReceipt) {
+                $artifacts += $artifactReceipt
+            }
+        }
+    }
+
+    $receipt = [ordered]@{
+        schemaVersion = "1.0"
+        kind = "live-answer-workflow-run"
+        runId = $workflowRunId
+        status = $Status
+        startedAt = $workflowStartedAt.ToString("O")
+        finishedAt = [DateTimeOffset]::UtcNow.ToString("O")
+        inputs = [ordered]@{
+            sourcePdf = Get-WorkflowFileReceipt -PathValue $sourcePath
+            referencePdf = Get-WorkflowFileReceipt -PathValue $referencePath
+            prompt = Get-WorkflowFileReceipt -PathValue $promptPath
+        }
+        options = [ordered]@{
+            provider = $Provider
+            profile = $Profile
+            visualDetail = $VisualDetail
+            maxOutputTokens = $MaxOutputTokens
+            timeoutMs = $TimeoutMs
+            reviewScale = $ReviewScale
+            visualAuditScale = $VisualAuditScale
+            skipVisualAudit = [bool]$SkipVisualAudit
+            keepReview = [bool]$KeepReview
+            useGatewayProxy = [bool]$UseGatewayProxy
+        }
+        phases = $phaseReceipts
+        artifacts = $artifacts
+        diagnostics = [ordered]@{
+            retainedWorkRoot = $(if ($Status -eq "failed") { $workRoot } else { $null })
+        }
+        error = $(if ([string]::IsNullOrWhiteSpace($ErrorMessage)) { $null } else { $ErrorMessage })
+    }
+
+    Write-JsonFileAtomic -PathValue $workflowReceiptPath -Value $receipt
 }
 
 if ($UseGatewayProxy) {
@@ -177,18 +380,22 @@ try {
 
     Write-Host "[live-answer-workflow] generate answer Markdown from $($pageImages.Count) page(s)"
     $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
-    $generationOutputPath = if ($referencePath -or -not $SkipVisualAudit) { $blindMarkdownPath } else { $answerMarkdownPath }
+    $currentPhase = "blindGeneration"
+    $phaseStates[$currentPhase].status = "in_progress"
     Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
         "--config-env-file", $envFilePath,
         "--prompt-file", $promptPath,
         "--images-dir", $pageDirectory,
         "--output", $generationOutputPath,
+        "--summary-out", $blindSummaryPath,
         "--provider", $Provider,
         "--visual-detail", $VisualDetail,
         "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--allow-cloud-egress"
     )
+    $phaseStates[$currentPhase].status = "completed"
+    $currentPhase = $null
 
     $candidateForReference = $blindMarkdownPath
     if (-not $SkipVisualAudit) {
@@ -205,6 +412,8 @@ try {
         )
 
         Write-Host "[live-answer-workflow] extract visual findings without rewriting the blind candidate"
+        $currentPhase = "visualFindings"
+        $phaseStates[$currentPhase].status = "in_progress"
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
@@ -212,24 +421,32 @@ try {
             "--audit-images-dir", $visualAuditPageDirectory,
             "--audit-findings-only",
             "--output", $visualAuditFindingsPath,
+            "--summary-out", $visualFindingsSummaryPath,
             "--provider", $Provider,
             "--visual-detail", $VisualDetail,
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--allow-cloud-egress"
         )
+        $phaseStates[$currentPhase].status = "completed"
+        $currentPhase = $null
         Write-Host "[live-answer-workflow] merge visual findings into the complete answer Markdown"
+        $currentPhase = "visualMerge"
+        $phaseStates[$currentPhase].status = "in_progress"
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
             "--candidate-file", $blindMarkdownPath,
             "--audit-findings-file", $visualAuditFindingsPath,
             "--output", $visualAuditMarkdownPath,
+            "--summary-out", $visualMergeSummaryPath,
             "--provider", $Provider,
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--allow-cloud-egress"
         )
+        $phaseStates[$currentPhase].status = "completed"
+        $currentPhase = $null
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
             $blindMarkdownPath,
             $visualAuditMarkdownPath,
@@ -237,7 +454,7 @@ try {
         )
         $candidateForReference = $visualAuditMarkdownPath
         if (-not $referencePath) {
-            Copy-Item -LiteralPath $visualAuditMarkdownPath -Destination $answerMarkdownPath -Force
+            Copy-WorkflowFileAtomic -SourcePath $visualAuditMarkdownPath -DestinationPath $answerMarkdownPath
         }
     }
 
@@ -257,6 +474,8 @@ try {
         }
 
         Write-Host "[live-answer-workflow] review blind candidate against authoritative reference"
+        $currentPhase = "referenceReview"
+        $phaseStates[$currentPhase].status = "in_progress"
         $reviewArguments = @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
@@ -264,6 +483,7 @@ try {
             "--candidate-file", $candidateForReference,
             "--reference-images-dir", $referencePageDirectory,
             "--output", $answerMarkdownPath,
+            "--summary-out", $referenceReviewSummaryPath,
             "--provider", $Provider,
             "--visual-detail", $VisualDetail,
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
@@ -274,14 +494,18 @@ try {
             $reviewArguments += @("--reference-text-file", $referenceTextPath)
         }
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $reviewArguments
+        $phaseStates[$currentPhase].status = "completed"
+        $currentPhase = $null
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
-            $blindMarkdownPath,
+            $candidateForReference,
             $answerMarkdownPath,
             $comparisonReportPath
         )
     }
 
     Write-Host "[live-answer-workflow] validate and render answer delivery"
+    $currentPhase = "delivery"
+    $phaseStates[$currentPhase].status = "in_progress"
     $deliveryArguments = @(
         $answerMarkdownPath,
         $answerPdfPath,
@@ -293,6 +517,22 @@ try {
         $deliveryArguments += "--keep-review"
     }
     Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/deliver-answer.mjs") -Arguments $deliveryArguments
+    $phaseStates[$currentPhase].status = "completed"
+    $currentPhase = $null
+
+    if ($SkipVisualAudit) {
+        foreach ($stalePath in @($visualAuditMarkdownPath, $visualAuditFindingsPath, $visualAuditReportPath)) {
+            Remove-Item -LiteralPath $stalePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+    if (-not $referencePath) {
+        Remove-Item -LiteralPath $comparisonReportPath -Force -ErrorAction SilentlyContinue
+    }
+    if ($SkipVisualAudit -and -not $referencePath) {
+        Remove-Item -LiteralPath $blindMarkdownPath -Force -ErrorAction SilentlyContinue
+    }
+
+    Write-WorkflowReceipt -Status "succeeded"
 
     $workflowSucceeded = $true
     Write-Host "[live-answer-workflow] complete"
@@ -307,6 +547,22 @@ try {
         Write-Host "Blind/audit report: $visualAuditReportPath"
     }
     Write-Host "PDF: $answerPdfPath"
+    Write-Host "Workflow receipt: $workflowReceiptPath"
+}
+catch {
+    $failure = $_
+    if ($currentPhase -and $phaseStates[$currentPhase].status -eq "in_progress") {
+        $phaseStates[$currentPhase].status = "failed"
+        $phaseStates[$currentPhase].error = $failure.Exception.Message
+    }
+    try {
+        Write-WorkflowReceipt -Status "failed" -ErrorMessage $failure.Exception.Message
+        Write-Warning "Workflow failure receipt: $workflowReceiptPath"
+    }
+    catch {
+        Write-Warning "Unable to write workflow failure receipt: $($_.Exception.Message)"
+    }
+    throw $failure
 }
 finally {
     if ($null -eq $previousCloudEgress) {

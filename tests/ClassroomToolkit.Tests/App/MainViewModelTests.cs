@@ -18,6 +18,18 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void SelectingSubjectPackRefreshesItsHealthStatus()
+    {
+        var orchestrator = new FakeOrchestrator();
+        var viewModel = new MainViewModel(orchestrator, new FakePathOpener());
+
+        viewModel.SelectedSubjectPack = "math-answer";
+
+        orchestrator.LastHealthSubjectPack.Should().Be("math-answer");
+        viewModel.StatusCards[0].Detail.Should().Be("math-answer");
+    }
+
+    [Fact]
     public async Task DeliverUpdatesOutputArtifacts()
     {
         var markdownPath = Path.GetTempFileName();
@@ -80,21 +92,29 @@ public sealed class MainViewModelTests
         }
 
         public AnswerDeliveryRequest? LastDeliveryRequest { get; private set; }
+        public string? LastHealthSubjectPack { get; private set; }
         public TaskCompletionSource CheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public ToolchainWorkspaceInfo GetWorkspaceInfo() => new(
             @"D:\repo", @"D:\repo\scripts\bootstrap.ps1", @"D:\repo\scripts\check-toolchain.ps1",
             true, true, "junior-physics-answer", ["junior-physics-answer", "math-answer"]);
 
-        public WorkspaceHealthReport GetWorkspaceHealthReport() => new(
-            "junior-physics-answer", ["junior-physics-answer", "math-answer"], "v8.14", "v8.14",
-            true, @"D:\repo\.snapshot-cache\resolved-snapshot.json", "v8.14", "classroom",
-            true, true, 12, "主链就绪", []);
+        public WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null)
+        {
+            LastHealthSubjectPack = subjectPack;
+            var selected = subjectPack ?? "junior-physics-answer";
+            return new(
+                selected, ["junior-physics-answer", "math-answer"], "v8.14", "v8.14",
+                true, @"D:\repo\.snapshot-cache\resolved-snapshot.json", "v8.14", "classroom",
+                true, true, 12, $"{selected} 主链就绪", []);
+        }
 
         public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(Success(ToolchainScriptKind.Bootstrap));
 
-        public async Task<ToolchainExecutionResult> RunCheckAsync(CancellationToken cancellationToken = default)
+        public async Task<ToolchainExecutionResult> RunCheckAsync(
+            string? subjectPack = null,
+            CancellationToken cancellationToken = default)
         {
             CheckStarted.TrySetResult();
             if (_blockCheck)

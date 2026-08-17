@@ -17,11 +17,20 @@ public sealed class WorkspaceHealthReportReader
         _repositoryRoot = repositoryRoot;
     }
 
-    public WorkspaceHealthReport Read()
+    public WorkspaceHealthReport Read(string? requestedSubjectPack = null)
     {
         var issues = new List<string>();
         var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(_repositoryRoot, issues);
-        var subjectPack = subjectPacks.FirstOrDefault();
+        var subjectPack = string.IsNullOrWhiteSpace(requestedSubjectPack)
+            ? subjectPacks.FirstOrDefault()
+            : subjectPacks.FirstOrDefault(pack => string.Equals(
+                pack.AssetId,
+                requestedSubjectPack,
+                StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(requestedSubjectPack) && subjectPack is null)
+        {
+            issues.Add($"未发现 subject pack: {requestedSubjectPack}。");
+        }
         var manifestPath = subjectPack?.ManifestPath ?? Path.Combine(_repositoryRoot, "prompts", "junior-physics-answer", "manifest.json");
         var configPath = subjectPack?.ConfigPath ?? Path.Combine(_repositoryRoot, "prompts", "junior-physics-answer", "config.json");
         var evalResultsPath = subjectPack?.EvalResultsPath ?? Path.Combine(_repositoryRoot, "eval", "junior-physics-answer", "results", "latest.json");

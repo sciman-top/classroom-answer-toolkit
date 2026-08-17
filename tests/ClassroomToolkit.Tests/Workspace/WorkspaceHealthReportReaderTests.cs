@@ -52,6 +52,27 @@ public sealed class WorkspaceHealthReportReaderTests
     }
 
     [Fact]
+    public void Read_UsesRequestedSubjectPackInsteadOfPrimaryPack()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WriteManifest("junior-physics-answer", "v11.0");
+        workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
+        workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
+        workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
+
+        workspace.WriteManifest("math-answer", "v0.1");
+        workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
+        workspace.WriteSnapshot("math-answer", "v0.1", "classroom");
+        workspace.WriteEval("math-answer", "v0.1", ok: true, caseCount: 2);
+
+        var result = new WorkspaceHealthReportReader(workspace.Root).Read("math-answer");
+
+        result.PrimarySubjectPack.Should().Be("math-answer");
+        result.AssetVersion.Should().Be("v0.1");
+        result.EvalCaseCount.Should().Be(2);
+    }
+
+    [Fact]
     public void Read_ReturnsHealthyReport_WhenMathWorkspaceUsesCompiledHumanSpec()
     {
         using var workspace = new TemporaryWorkspace();

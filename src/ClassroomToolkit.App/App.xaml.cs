@@ -72,7 +72,7 @@ public partial class App : System.Windows.Application
         }
 
         var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
-        var health = _toolchainOrchestrator.GetWorkspaceHealthReport();
+        var health = _toolchainOrchestrator.GetWorkspaceHealthReport(workspace.PrimarySubjectPack);
         Console.WriteLine($"repositoryRoot={workspace.RepositoryRoot}");
         Console.WriteLine($"workspaceSummary={workspace.Summary}");
         Console.WriteLine($"workspaceHealthy={health.IsHealthy}");

@@ -10,178 +10,120 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
 
 function Resolve-RepoPath {
-    param([string]$Path)
+    param([Parameter(Mandatory = $true)][string]$PathValue)
 
-    if ([System.IO.Path]::IsPathRooted($Path)) {
-        return $Path
+    if ([IO.Path]::IsPathFullyQualified($PathValue)) {
+        return [IO.Path]::GetFullPath($PathValue)
     }
 
-    return Join-Path $repoRoot $Path
+    return [IO.Path]::GetFullPath((Join-Path $repoRoot $PathValue))
 }
 
-function Resolve-SmokeReportPath {
-    param(
-        [string]$PublishDirPath,
-        [string]$ConfiguredPath
-    )
+function Get-PublishTreeReceipt {
+    param([Parameter(Mandatory = $true)][string]$DirectoryPath)
 
-    if ([string]::IsNullOrWhiteSpace($ConfiguredPath)) {
-        $reportDir = Join-Path $PublishDirPath "..\verification"
-        return Join-Path $reportDir ("{0}.smoke-report.json" -f (Split-Path -Path $PublishDirPath -Leaf))
-    }
-
-    return Resolve-RepoPath $ConfiguredPath
-}
-
-function New-Png {
-    param(
-        [string]$Path,
-        [int]$Width,
-        [int]$Height
-    )
-
-    Add-Type -AssemblyName System.Drawing
-    $bitmap = New-Object System.Drawing.Bitmap($Width, $Height)
-    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    try {
-        $graphics.Clear([System.Drawing.Color]::FromArgb(21, 101, 192))
-        $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::White)
-        $fontSize = [Math]::Max(10, [Math]::Floor($Width / 3))
-        $font = New-Object System.Drawing.Font("Segoe UI", $fontSize, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-        $format = New-Object System.Drawing.StringFormat
-        $format.Alignment = [System.Drawing.StringAlignment]::Center
-        $format.LineAlignment = [System.Drawing.StringAlignment]::Center
-        $rect = New-Object System.Drawing.RectangleF(0, 0, $Width, $Height)
-        $graphics.DrawString("CT", $font, $brush, $rect, $format)
-        $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
-    }
-    finally {
-        $graphics.Dispose()
-        $bitmap.Dispose()
-    }
-}
-
-function Get-MakeAppxPath {
-    $roots = @(${env:ProgramFiles(x86)}, $env:ProgramFiles) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-    foreach ($root in $roots) {
-        $sdkRoot = Join-Path $root "Windows Kits\10\bin"
-        if (-not (Test-Path -LiteralPath $sdkRoot)) {
-            continue
+    $entries = @(Get-ChildItem -LiteralPath $DirectoryPath -Recurse -File | ForEach-Object {
+        [ordered]@{
+            relativePath = [IO.Path]::GetRelativePath($DirectoryPath, $_.FullName).Replace("\", "/")
+            bytes = $_.Length
+            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
         }
-
-        $candidate = Get-ChildItem -LiteralPath $sdkRoot -Recurse -Filter makeappx.exe -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-
-        if ($candidate) {
-            return $candidate.FullName
-        }
+    } | Sort-Object { $_["relativePath"] })
+    $canonical = ($entries | ForEach-Object { "{0}|{1}|{2}" -f $_["relativePath"], $_["bytes"], $_["sha256"] }) -join "`n"
+    $treeHashBytes = [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($canonical))
+    $totalBytes = ($entries | ForEach-Object { [long]$_["bytes"] } | Measure-Object -Sum).Sum
+    if ($null -eq $totalBytes) {
+        $totalBytes = 0
     }
 
-    return $null
+    return [ordered]@{
+        sha256 = [Convert]::ToHexString($treeHashBytes).ToLowerInvariant()
+        fileCount = $entries.Count
+        bytes = [long]$totalBytes
+    }
 }
 
 $publishDir = Resolve-RepoPath $PublishDir
 $stageDir = Resolve-RepoPath $StageDir
 $packageDir = Resolve-RepoPath $PackageDir
-$smokeReportPath = Resolve-SmokeReportPath -PublishDirPath $publishDir -ConfiguredPath $SmokeReportPath
-
-$exePath = Join-Path $publishDir "ClassroomToolkit.App.exe"
-if (-not (Test-Path -LiteralPath $exePath)) {
-    throw "Published app not found. Run scripts/publish-app.ps1 first. Missing: $exePath"
+$smokeReportPath = if ([string]::IsNullOrWhiteSpace($SmokeReportPath)) {
+    Join-Path (Join-Path $publishDir "..\verification") ("{0}.smoke-report.json" -f (Split-Path -Path $publishDir -Leaf))
+}
+else {
+    Resolve-RepoPath $SmokeReportPath
 }
 
-if (-not (Test-Path -LiteralPath $smokeReportPath)) {
+$exePath = Join-Path $publishDir "ClassroomToolkit.App.exe"
+if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
+    throw "Published app not found. Run scripts/publish-app.ps1 first. Missing: $exePath"
+}
+if (-not (Test-Path -LiteralPath $smokeReportPath -PathType Leaf)) {
     throw "Published smoke report not found. Run scripts/publish-app.ps1 first. Missing: $smokeReportPath"
 }
 
-$smokeReport = Get-Content -LiteralPath $smokeReportPath -Raw | ConvertFrom-Json
-if ([string]$smokeReport.kind -ne "published-app-smoke-report" -or [string]$smokeReport.status -ne "passed") {
-    throw "Published smoke report is invalid or not marked passed."
+$smokeReport = Get-Content -LiteralPath $smokeReportPath -Raw -Encoding utf8 | ConvertFrom-Json
+if ([string]$smokeReport.schemaVersion -ne "1.1" -or
+    [string]$smokeReport.kind -ne "published-app-smoke-report" -or
+    [string]$smokeReport.status -ne "passed") {
+    throw "Published smoke report is invalid or not a passed schemaVersion 1.1 receipt."
 }
 
-if ([string]::IsNullOrWhiteSpace([string]$smokeReport.smoke.primarySubjectPack)) {
-    throw "Published smoke report missing smoke.primarySubjectPack."
+$reportedPublishDir = [IO.Path]::GetFullPath([string]$smokeReport.publishDirectoryPath)
+if (-not [string]::Equals($reportedPublishDir, $publishDir, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Published smoke report belongs to a different publish directory: $reportedPublishDir"
 }
 
-if ($null -eq $smokeReport.smoke.subjectPacks -or $smokeReport.smoke.subjectPacks.Count -lt 1) {
-    throw "Published smoke report missing smoke.subjectPacks."
+$currentCommit = (& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($currentCommit)) {
+    throw "Unable to resolve the current source commit."
+}
+if ([string]$smokeReport.source.commit -ne $currentCommit) {
+    throw "Published smoke report is stale for the current commit. Expected $currentCommit, got $($smokeReport.source.commit)."
+}
+if ([bool]$smokeReport.source.dirty) {
+    throw "Published smoke report was generated from a dirty source tree and cannot authorize packaging."
+}
+if ([string]$smokeReport.smoke.isolationMode -ne "published-tree-only" -or
+    -not [bool]$smokeReport.smoke.repositoryCoupled) {
+    throw "Published smoke report does not prove isolated repository-coupled launch behavior."
 }
 
-if ([string]::IsNullOrWhiteSpace([string]$smokeReport.smoke.snapshotPath)) {
-    throw "Published smoke report missing smoke.snapshotPath."
+$reportedExePath = [IO.Path]::GetFullPath([string]$smokeReport.executable.path)
+if (-not [string]::Equals($reportedExePath, $exePath, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Published smoke report executable path does not match the current publish tree."
+}
+$exeItem = Get-Item -LiteralPath $exePath
+$exeSha256 = (Get-FileHash -LiteralPath $exePath -Algorithm SHA256).Hash.ToLowerInvariant()
+if ([long]$smokeReport.executable.bytes -ne $exeItem.Length -or
+    [string]$smokeReport.executable.sha256 -ne $exeSha256) {
+    throw "Published smoke report executable SHA-256 or byte length does not match the current executable."
 }
 
-Remove-Item -LiteralPath $stageDir -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $stageDir | Out-Null
-New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
-
-Copy-Item -Path (Join-Path $publishDir "*") -Destination $stageDir -Recurse -Force
-
-$assetDir = Join-Path $stageDir "Assets"
-New-Item -ItemType Directory -Path $assetDir -Force | Out-Null
-New-Png -Path (Join-Path $assetDir "StoreLogo.png") -Width 50 -Height 50
-New-Png -Path (Join-Path $assetDir "Square44x44Logo.png") -Width 44 -Height 44
-New-Png -Path (Join-Path $assetDir "Square150x150Logo.png") -Width 150 -Height 150
-
-$manifestPath = Join-Path $stageDir "AppxManifest.xml"
-@"
-<?xml version="1.0" encoding="utf-8"?>
-<Package
-  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
-  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-  IgnorableNamespaces="uap">
-  <Identity
-    Name="ClassroomToolkit.App"
-    Publisher="$Publisher"
-    Version="$Version" />
-  <Properties>
-    <DisplayName>ClassroomToolkit</DisplayName>
-    <PublisherDisplayName>ClassroomToolkit</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
-  </Properties>
-  <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
-  </Dependencies>
-  <Resources>
-    <Resource Language="zh-CN" />
-    <Resource Language="en-US" />
-  </Resources>
-  <Applications>
-    <Application Id="ClassroomToolkitApp" Executable="ClassroomToolkit.App.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements
-        DisplayName="ClassroomToolkit"
-        Description="ClassroomToolkit"
-        BackgroundColor="#1565C0"
-        Square44x44Logo="Assets\Square44x44Logo.png"
-        Square150x150Logo="Assets\Square150x150Logo.png" />
-    </Application>
-  </Applications>
-</Package>
-"@ | Set-Content -LiteralPath $manifestPath -Encoding utf8
-
-$makeAppxPath = Get-MakeAppxPath
-$packagePath = Join-Path $packageDir "ClassroomToolkit.App_$Version.msix"
-$evidenceDir = Join-Path $packageDir "release-evidence"
-New-Item -ItemType Directory -Path $evidenceDir -Force | Out-Null
-$evidenceSmokeReportPath = Join-Path $evidenceDir ("ClassroomToolkit.App_{0}.smoke-report.json" -f $Version)
-Copy-Item -LiteralPath $smokeReportPath -Destination $evidenceSmokeReportPath -Force
-
-if ($makeAppxPath) {
-    & $makeAppxPath pack /d $stageDir /p $packagePath /overwrite
-    if ($LASTEXITCODE -ne 0) {
-        throw "makeappx failed."
-    }
-
-    Write-Host "MSIX package created: $packagePath"
-    Write-Host "Release evidence: $evidenceSmokeReportPath"
-} else {
-    Write-Host "Windows SDK makeappx.exe not found; MSIX staging prepared without packaging."
-    Write-Host "Stage directory: $stageDir"
-    Write-Host "Manifest: $manifestPath"
-    Write-Host "Release evidence: $evidenceSmokeReportPath"
+$currentTree = Get-PublishTreeReceipt -DirectoryPath $publishDir
+if ([string]$smokeReport.publishTree.sha256 -ne $currentTree.sha256 -or
+    [int]$smokeReport.publishTree.fileCount -ne $currentTree.fileCount -or
+    [long]$smokeReport.publishTree.bytes -ne $currentTree.bytes) {
+    throw "Published smoke report publish-tree SHA-256 does not match the current publish directory."
 }
+
+$generatedAt = [DateTimeOffset]::Parse([string]$smokeReport.generatedAt, [Globalization.CultureInfo]::InvariantCulture)
+$latestWriteAt = [DateTimeOffset]::Parse([string]$smokeReport.publishTree.latestWriteAt, [Globalization.CultureInfo]::InvariantCulture)
+if ($generatedAt -lt $latestWriteAt.AddSeconds(-1)) {
+    throw "Published smoke report predates the current publish tree."
+}
+if ($generatedAt -gt [DateTimeOffset]::UtcNow.AddMinutes(5)) {
+    throw "Published smoke report timestamp is unexpectedly in the future."
+}
+$currentSourceStatus = (& git -C $repoRoot status --porcelain --untracked-files=no | Out-String).Trim()
+if (-not [string]::IsNullOrWhiteSpace($currentSourceStatus)) {
+    throw "The current source tree is dirty and cannot authorize packaging."
+}
+
+throw (("MSIX packaging is blocked: the WPF executable is a repository-coupled companion and the publish tree intentionally excludes " +
+    "the mutable repository toolchain, Node.js/npm, PowerShell, prompts, snapshots, and eval state. " +
+    "Creating {0} in {1} would misrepresent it as a self-contained installable product. " +
+    "Keep stage path {2} unused until a writable, versioned runtime bundle has its own install and upgrade contract.") -f $Version, $packageDir, $stageDir)
