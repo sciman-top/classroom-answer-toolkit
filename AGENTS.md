@@ -1,7 +1,7 @@
 # AGENTS.md - classroom-answer-toolkit
 **项目契约**: 2.0
-**全局规则复核**: 9.76
-**最后更新**: 2026-08-14
+**全局规则复核**: 9.77
+**最后更新**: 2026-08-19
 
 ## 1. 当前落点与目标归宿
 - 当前落点：本仓实现课堂参考答案生成、渲染、验证与交付工具链。
@@ -37,21 +37,6 @@
 - 常规变更以 Git diff/commit 和当前最低充分命令留证；`docs/change-evidence/` 只保留真实试卷/live/manual/external acceptance 或有期限 waiver，不为普通修复新增审计文档。
 - 回滚只撤销本任务规则、证据或实现切片；不得用 bootstrap 环境变化冒充仓库回滚。
 
-## D. Global Rule -> Repo Action
-- Git profile: baseline=`main`; upstream=`origin/main`; closeout=`proportional_core_or_full`。
-- `R1`：从 subject-pack/spec 确定 compiler、renderer、WPF 或 docs 落点。
-- `R2`：按 C 章风险映射只跑受影响合同；不追加无关 Core/Full。
-- `R3`：实验工具或兼容层必须记录回收条件与最终归宿。
-- `R4`：浏览器/OCR/外部工具写入按授权、隔离与可回滚边界执行。
-- `R5`：无真实课堂链或重复证据，不扩大框架与产品承诺。
-- `R6`：C 章风险匹配是门禁；bootstrap 不计入门禁证据，focused check 通过后不得重复全跑。
-- `R7`：保持 subject-pack、compiled snapshot、renderer 与 WPF 行为兼容。
-- `R8`：Git 记录常规范围/证据/回滚；只有 live/manual/external/waiver 使用 `docs/change-evidence/`。
-- `S1`：先跑通 subject-pack 到课堂输出的最薄真实主链。
-- `S2`：动态验收与工具可用性只进 spec/evidence。
-- `S3`：参考依据足以形成可逆决定即停止查证。
-- `S4`：参考源按消费者、许可与净收益晋降或退役。
-- `S5`：`scripts/check-toolchain.ps1` 承接确定性门禁，规则只声明入口和边界。
-- `E4`：check-toolchain 与测试结果承接健康证据。
-- `E5`：SDK/npm/Python/OCR/browser 变化记录供应链。
-- `E6`：spec/schema/snapshot 变化记录迁移、兼容和回滚。
+## D. Git 与回滚
+- Git baseline=`main`; upstream=`origin/main`; closeout=`proportional_core_or_full`。
+- 回滚只撤销本任务规则、证据或实现切片；不得用 bootstrap 环境变化冒充仓库回滚。
