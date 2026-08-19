@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { removePathRecursive } from "../safe-remove.mjs";
+
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 
@@ -131,7 +133,7 @@ function removePath(targetPath, dryRun) {
     return { removed: false, kind };
   }
 
-  fs.rmSync(targetPath, { recursive: true, force: true });
+  removePathRecursive(targetPath);
   console.log(`removed ${kind}: ${relative}`);
   return { removed: true, kind };
 }

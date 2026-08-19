@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -13,6 +13,7 @@ import {
   makeReviewOutputDir
 } from "./pdf-output-path.mjs";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
+import { removePathRecursive } from "../safe-remove.mjs";
 
 test("browser PDF output always uses an ASCII temporary file name", () => {
   const target = path.join("D:\\repo\\正式交付", "2025广州中考参考答案.pdf");
@@ -60,19 +61,31 @@ test("review output uses a bounded safe folder for a PDF on another drive", () =
   assert.doesNotMatch(path.basename(reviewDirectory), /:/);
 });
 
-test("atomic text writes replace an existing file without leaving a temporary artifact", () => {
+test("atomic text writes replace an existing Unicode file without leaving a temporary artifact", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-atomic-write-"));
-  const target = path.join(directory, "answer.md");
+  const target = path.join(directory, "2023广州中考盲答候选.md");
   try {
     writeFileSync(target, "old", "utf8");
 
     writeTextFileAtomic(target, "new");
 
     assert.equal(readFileSync(target, "utf8"), "new");
-    assert.deepEqual(readdirSync(directory), ["answer.md"]);
+    assert.deepEqual(readdirSync(directory), ["2023广州中考盲答候选.md"]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("recursive cleanup removes a nested Unicode directory tree", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-safe-remove-"));
+  const target = path.join(directory, "正式交付", "2023广州中考参考答案");
+  mkdirSync(target, { recursive: true });
+  writeFileSync(path.join(target, "review.txt"), "review", "utf8");
+
+  removePathRecursive(path.join(directory, "正式交付"));
+
+  assert.deepEqual(readdirSync(directory), []);
+  rmSync(directory, { recursive: true, force: true });
 });
 
 test("PDF review rejects an unknown option instead of silently using a default", () => {

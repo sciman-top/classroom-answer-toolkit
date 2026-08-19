@@ -451,8 +451,13 @@ export function applyReferenceChoiceAnswers(markdown, referenceText) {
   return { markdown: lines.join("\n"), applied: true, answers };
 }
 
-function normalizeDetailForProvider(detail) {
-  return detail === "original" ? "high" : detail;
+function normalizeDetailForProvider(detail, visionModel) {
+  if (detail !== "original") {
+    return detail;
+  }
+  // GPT-5.6 supports the original image dimensions; older-compatible gateways
+  // still receive high detail because they may reject the newer value.
+  return /^gpt-5\.6(?:-|$)/iu.test(visionModel ?? "") ? "original" : "high";
 }
 
 function imageDataUrl(imagePath) {
@@ -473,7 +478,7 @@ function resolveImageDataUrls(options) {
 }
 
 export function buildAnswerRequestBody(provider, options) {
-  const detail = normalizeDetailForProvider(options.visualDetailMode);
+  const detail = normalizeDetailForProvider(options.visualDetailMode, provider.visionModel);
   const imageDataUrls = resolveImageDataUrls(options);
   if (provider.visionSurface === "chat_completions") {
     return {
@@ -816,7 +821,7 @@ export async function main() {
     auditImageCount: options.auditImagePaths.length,
     referencePageCount: options.referenceImagePaths.length,
     requestedVisualDetailMode: options.visualDetailMode,
-    providerVisualDetailMode: normalizeDetailForProvider(options.visualDetailMode),
+    providerVisualDetailMode: normalizeDetailForProvider(options.visualDetailMode, result.model),
     routing: result.routing,
     candidatePath: options.candidateFile,
     candidateSha256: options.candidateFile ? sha256File(options.candidateFile) : null,

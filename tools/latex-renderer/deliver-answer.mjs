@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
+import { removePathRecursive } from "../safe-remove.mjs";
 import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -254,7 +255,7 @@ function main() {
   ]);
 
   console.log(`[${packageName}] review: ${path.relative(repoRoot, outputPath)}`);
-  fs.rmSync(reviewOutputDir, { recursive: true, force: true });
+  removePathRecursive(reviewOutputDir);
   runNodeScript("review-source-pdf.mjs", [
     path.relative(repoRoot, outputPath),
     "--out",
@@ -279,7 +280,7 @@ function main() {
     if (!options.keepReview) {
       const reviewRoot = path.join(repoRoot, ".pdf-review");
       if (fs.existsSync(reviewRoot) && fs.readdirSync(reviewRoot).length === 0) {
-        fs.rmSync(reviewRoot, { recursive: true, force: true });
+        removePathRecursive(reviewRoot);
       }
     }
   } else {

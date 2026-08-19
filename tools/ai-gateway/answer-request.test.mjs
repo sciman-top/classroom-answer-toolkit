@@ -358,6 +358,23 @@ test("reference review tries every configured AI tier in provider order", async 
   }
 });
 
+test("GPT-5.6 keeps original image dimensions when requested", () => {
+  const { directory, imagePaths } = createPageImages(1);
+  try {
+    const provider = { ...createConfig().providers[0], visionModel: "gpt-5.6-sol" };
+    const body = buildAnswerRequestBody(provider, {
+      prompt: "audit",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 4000
+    });
+
+    assert.equal(body.input[0].content[1].detail, "original");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("failover reuses pre-encoded page images instead of reading them for every provider", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;

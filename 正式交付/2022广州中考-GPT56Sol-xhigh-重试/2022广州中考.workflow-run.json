@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "c4a7a94fb5a54bb692c58e0a8bdc41b4",
+  "status": "succeeded",
+  "startedAt": "2026-08-19T12:43:46.9260207+00:00",
+  "finishedAt": "2026-08-19T12:50:35.7453227+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2022广州中考.pdf",
+      "bytes": 1829178,
+      "sha256": "66c5959ae3db3fa2d521b234d371c5fa05ef84763ffc1a5a9ed8bd9adce16101"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2022广州中考-参考答案.pdf",
+      "bytes": 1524553,
+      "sha256": "519a730083d49f576effa9f9d099c0f2731022ff94bc80bbe5e64713d2016120"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 103796,
+      "sha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0"
+    }
+  },
+  "options": {
+    "provider": "primary",
+    "profile": "classroom",
+    "visualDetail": "high",
+    "maxOutputTokens": 12000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": true,
+    "keepReview": false,
+    "useGatewayProxy": false
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考.blind-generation.summary.json",
+        "bytes": 3593,
+        "sha256": "53e476ad53d9e7fef2fd6486d50f824bfb4fa5ed25e17825edc8a61812bcc893"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考盲答候选.md",
+        "bytes": 2522,
+        "sha256": "4417ad2759b03408cbcfa8d26616d4c145b2d96800c5f6799ca385616fb5b864"
+      }
+    },
+    "visualFindings": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考视觉审计发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualMerge": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考视觉审计候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考.reference-review.summary.json",
+        "bytes": 9340,
+        "sha256": "421559a2f10189d9fe8a12de64815ab548c22529dcbeb4c5a12292471ef56843"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.md",
+        "bytes": 2565,
+        "sha256": "072db9d06d234ec5ffb00acc4abe2828995a9baa8b512c1d104e729dd6fc390d"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.pdf",
+        "bytes": 145898,
+        "sha256": "fd4cd45ed08426ae18b14053f491d3a653bfc0bff438088b4fca9eac2163651f"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.md",
+      "bytes": 2565,
+      "sha256": "072db9d06d234ec5ffb00acc4abe2828995a9baa8b512c1d104e729dd6fc390d"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.pdf",
+      "bytes": 145898,
+      "sha256": "fd4cd45ed08426ae18b14053f491d3a653bfc0bff438088b4fca9eac2163651f"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.delivery-manifest.json",
+      "bytes": 2194,
+      "sha256": "0326df0b27ce027394542b397b83aaf357379ee0aebb7fb0eaff25ddd48be273"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "05e9cc4308edc9c06629376fc5a047c25d3582c0234f4b005a265d26b8066248"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-GPT56Sol-xhigh-重试\\2022广州中考答案自动复核文本差异报告.md",
+      "bytes": 5433,
+      "sha256": "56992547a2c35df6108d81a60a2696f997bb3bf2e4836a566f2ae0ee8f828bb7"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}
