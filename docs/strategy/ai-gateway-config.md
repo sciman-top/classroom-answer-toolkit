@@ -18,7 +18,9 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
   --provider all
 ```
 
-盲答解题固定使用 `gpt-5.6-sol / xhigh`，不降级到 `sol/medium` 或任一 `terra` 档；没有匹配 provider 或请求失败时 fail closed。其他阶段按配置中的显式顺序 `primary -> fallback_1 -> fallback_2 -> fallback_3` 尝试，首个 HTTP/协议成功的结果返回。
+盲答解题以 `gpt-5.6-sol / xhigh` 为主档；任一可重试失败发生一次后立即按 `xhigh -> high -> medium` 逐档恢复，每档只请求一次，禁止降级到任一 `terra` 档，三档均失败时 fail closed。每次 attempt 必须记录实际 model、reasoning effort、耗时和请求字节数。其他阶段按配置中的显式顺序 `primary -> fallback_1 -> fallback_2 -> fallback_3` 尝试，同一档也只请求一次；首个 HTTP/协议成功的结果返回。
+
+`--timeout-ms` 是每档应用层 AbortController 总上限，默认 600 秒。gateway 显式把 Undici `headersTimeout` 和 `bodyTimeout` 设为该值加 5 秒，使应用层计时器成为权威截止线，避免默认约 300 秒的响应头上限提前截断长推理。连接建立仍使用 Undici 的短超时。启用工作流 `-UseGatewayProxy` 时使用 `EnvHttpProxyAgent`，保持 `HTTP_PROXY`、`HTTPS_PROXY` 和 `NO_PROXY` 语义。可重试失败发生后立即进入下一档，不在同档重复；三档不会均分或缩短单档预算。
 
 `--provider primary|fallback|all` 只过滤尝试范围：`primary` 只请求主档，`fallback` 只请求 fallback 档，`all` 使用完整顺序。页数、题型和风险信号不再自动改变模型，避免维护没有真实比较证据的动态评分框架。成功回执的 `routing` 只记录 mode、实际 `orderedRoles`、`selectedRole` 和 target，不记录密钥。
 

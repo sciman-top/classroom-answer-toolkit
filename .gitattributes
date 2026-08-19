@@ -1,2 +1,4 @@
 样例交付/**/*.json text eol=lf
 样例交付/**/*.md text eol=lf
+正式交付/**/*.json text eol=lf
+正式交付/**/*.md text eol=lf whitespace=-trailing-space

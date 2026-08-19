@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { once } from "node:events";
 import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -11,10 +13,84 @@ import {
   buildAnswerRequestBody,
   applyReferenceChoiceAnswers,
   normalizeAnswerMarkdown,
+  resolveAnswerTransportPolicy,
   selectAnswerRoute,
   requestAnswerWithFailover
 } from "./answer-request.mjs";
 import { normalizeConfig } from "./validate-config.mjs";
+
+test("answer transport keeps the application timeout authoritative", () => {
+  assert.deepEqual(resolveAnswerTransportPolicy(600000, ""), {
+    applicationTimeoutMs: 600000,
+    headersTimeoutMs: 605000,
+    bodyTimeoutMs: 605000,
+    environmentProxyEnabled: false
+  });
+  assert.deepEqual(resolveAnswerTransportPolicy(600000, "--trace-warnings --use-env-proxy"), {
+    applicationTimeoutMs: 600000,
+    headersTimeoutMs: 605000,
+    bodyTimeoutMs: 605000,
+    environmentProxyEnabled: true
+  });
+});
+
+test("application timeout aborts before the longer transport timeout", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalNodeOptions = process.env.NODE_OPTIONS;
+  delete process.env.NODE_OPTIONS;
+  const server = createServer((_request, response) => {
+    setTimeout(() => {
+      if (!response.destroyed) {
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }));
+      }
+    }, 250);
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  const provider = {
+    lane: "ai",
+    role: "primary",
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    apiKey: "key",
+    visionSurface: "responses",
+    visionModel: "gpt-5.6-sol",
+    reasoningEffort: "xhigh"
+  };
+
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers: [provider] }, {
+      allowCloudEgress: true,
+      provider: "primary",
+      mode: "blind_generation",
+      prompt: "timeout precedence",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 60
+    });
+
+    assert.equal(result.ok, false);
+    assert.match(result.attempts[0].error, /abort/i);
+    assert.ok(result.attempts[0].durationMs < 500);
+    assert.deepEqual(result.attempts[0].transport, {
+      applicationTimeoutMs: 60,
+      headersTimeoutMs: 5060,
+      bodyTimeoutMs: 5060,
+      environmentProxyEnabled: false
+    });
+  } finally {
+    if (originalNodeOptions === undefined) {
+      delete process.env.NODE_OPTIONS;
+    } else {
+      process.env.NODE_OPTIONS = originalNodeOptions;
+    }
+    server.close();
+    await once(server, "close");
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 test("live task prompt requires complete subquestion coverage and independent visual checks", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-prompt-"));
@@ -67,12 +143,12 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
     CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_TEXT_MODEL: "gpt-5.6-sol",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "medium",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "high",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_INHERIT_PRIMARY: "true",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_BASE_URL: "https://stale.example.com/v1",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_API_KEY: "stale-key",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-5.6-terra",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "medium",
     CLASSROOM_TOOLKIT_AI_FALLBACK_3_TEXT_MODEL: "gpt-5.6-terra",
     CLASSROOM_TOOLKIT_AI_FALLBACK_3_REASONING_EFFORT: "high"
   });
@@ -82,8 +158,8 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
     aiProviders.map(({ role, textModel, reasoningEffort }) => ({ role, textModel, reasoningEffort })),
     [
       { role: "primary", textModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-      { role: "fallback_1", textModel: "gpt-5.6-sol", reasoningEffort: "medium" },
-      { role: "fallback_2", textModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+      { role: "fallback_1", textModel: "gpt-5.6-sol", reasoningEffort: "high" },
+      { role: "fallback_2", textModel: "gpt-5.6-sol", reasoningEffort: "medium" },
       { role: "fallback_3", textModel: "gpt-5.6-terra", reasoningEffort: "high" }
     ]
   );
@@ -148,18 +224,19 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
   }
 });
 
-test("blind solving accepts only gpt-5.6-sol/xhigh and never falls back to a lower tier", () => {
+test("blind solving orders only gpt-5.6-sol xhigh, high, and medium tiers", () => {
   const providers = [
     { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
+    { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
     { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" }
+    { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_4", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" }
   ];
   const route = selectAnswerRoute({ providers }, "blind_generation", "all");
-  assert.deepEqual(route.orderedRoles, ["primary"]);
+  assert.deepEqual(route.orderedRoles, ["primary", "fallback_1", "fallback_2"]);
   assert.equal(route.providers[0].visionModel, "gpt-5.6-sol");
   assert.equal(route.providers[0].reasoningEffort, "xhigh");
-  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback").orderedRoles, []);
+  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback").orderedRoles, ["fallback_1", "fallback_2"]);
 });
 
 function createConfig(surface = "responses") {
@@ -320,8 +397,8 @@ test("reference review tries every configured AI tier in provider order", async 
   const providers = [
     { role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
     { role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { role: "fallback_2", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
-    { role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
+    { role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
+    { role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "high" }
   ].map((provider) => ({
     lane: "ai",
     baseUrl: "https://primary.example.com/v1",
@@ -348,8 +425,8 @@ test("reference review tries every configured AI tier in provider order", async 
     assert.equal(result.provider, "fallback_3");
     assert.deepEqual(calls, [
       { model: "gpt-5.6-sol", effort: "xhigh" },
+      { model: "gpt-5.6-sol", effort: "high" },
       { model: "gpt-5.6-sol", effort: "medium" },
-      { model: "gpt-5.6-terra", effort: "xhigh" },
       { model: "gpt-5.6-terra", effort: "high" }
     ]);
   } finally {
@@ -409,7 +486,7 @@ test("failover reuses pre-encoded page images instead of reading them for every 
   }
 });
 
-test("blind solving fails closed after a retryable sol/xhigh failure", async () => {
+test("blind solving tries sol/xhigh, sol/high, and sol/medium once before failing closed", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -420,7 +497,8 @@ test("blind solving fails closed after a retryable sol/xhigh failure", async () 
   };
   const providers = [
     { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
+    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_2", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
@@ -435,8 +513,134 @@ test("blind solving fails closed after a retryable sol/xhigh failure", async () 
       timeoutMs: 1000
     });
     assert.equal(result.ok, false);
-    assert.deepEqual(calls, [{ model: "gpt-5.6-sol", effort: "xhigh" }]);
-    assert.deepEqual(result.routing.orderedRoles, ["primary"]);
+    assert.deepEqual(calls, [
+      { model: "gpt-5.6-sol", effort: "xhigh" },
+      { model: "gpt-5.6-sol", effort: "high" },
+      { model: "gpt-5.6-sol", effort: "medium" }
+    ]);
+    assert.deepEqual(result.routing.orderedRoles, ["primary", "fallback_1", "fallback_2"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("blind solving switches from xhigh to high after one headers timeout", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, request) => {
+    const body = JSON.parse(request.body);
+    calls.push({ url: String(url), effort: body.reasoning.effort });
+    if (calls.length === 1) {
+      throw new TypeError("fetch failed", {
+        cause: { code: "UND_ERR_HEADERS_TIMEOUT", message: "Headers Timeout Error" }
+      });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+  const providers = [
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_2", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
+  ];
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "blind_generation",
+      prompt: "retry headers",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.reasoningEffort, "high");
+    assert.deepEqual(calls, [
+      { url: "https://primary.example.com/v1/responses", effort: "xhigh" },
+      { url: "https://primary.example.com/v1/responses", effort: "high" }
+    ]);
+    assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 1]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("blind solving reaches medium only after xhigh and high retryable failures", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (_url, request) => {
+    const body = JSON.parse(request.body);
+    calls.push(body.reasoning.effort);
+    if (calls.length < 3) {
+      return new Response(JSON.stringify({ error: "temporary" }), { status: 503 });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+  const providers = ["xhigh", "high", "medium"].map((reasoningEffort, index) => ({
+    lane: "ai",
+    role: index === 0 ? "primary" : `fallback_${index}`,
+    baseUrl: "https://primary.example.com/v1",
+    apiKey: "key",
+    visionSurface: "responses",
+    visionModel: "gpt-5.6-sol",
+    reasoningEffort
+  }));
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "blind_generation",
+      prompt: "fallback to medium",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.reasoningEffort, "medium");
+    assert.deepEqual(calls, ["xhigh", "high", "medium"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("reference review switches provider after one headers timeout", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, request) => {
+    const body = JSON.parse(request.body);
+    calls.push({ url: String(url), effort: body.reasoning.effort });
+    if (calls.length === 1) {
+      throw new TypeError("fetch failed", {
+        cause: { code: "UND_ERR_HEADERS_TIMEOUT", message: "Headers Timeout Error" }
+      });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+  try {
+    const result = await requestAnswerWithFailover(createConfig(), {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "reference_review",
+      prompt: "retry reference headers",
+      imagePaths,
+      visualDetailMode: "high",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.provider, "fallback_1");
+    assert.deepEqual(calls, [
+      { url: "https://primary.example.com/v1/responses", effort: "medium" },
+      { url: "https://fallback.example.com/v1/responses", effort: "medium" }
+    ]);
+    assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 1]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
@@ -566,6 +770,13 @@ test("Markdown normalization removes math fences around simple point-label lists
   assert.equal(
     normalizeAnswerMarkdown("13. 作 $A、B$ 关于平面镜的对称点 $A'、B'$。"),
     "13. 作 A、B 关于平面镜的对称点 A'、B'。"
+  );
+});
+
+test("Markdown normalization wraps bare CJK script labels in LaTeX text", () => {
+  assert.equal(
+    normalizeAnswerMarkdown("$E_{k乙}=2\\,\\mathrm{J}$，$F^{甲}=3\\,\\mathrm{N}$，$E_{\\text{损}}=1\\,\\mathrm{J}$。"),
+    "$E_{k\\text{乙}}=2\\,\\mathrm{J}$，$F^{\\text{甲}}=3\\,\\mathrm{N}$，$E_{\\text{损}}=1\\,\\mathrm{J}$。"
   );
 });
 

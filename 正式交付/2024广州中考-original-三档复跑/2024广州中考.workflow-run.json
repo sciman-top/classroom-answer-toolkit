@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "80945768e0e845878063e48321fb7932",
+  "status": "failed",
+  "startedAt": "2026-08-19T22:36:50.851813+08:00",
+  "finishedAt": "2026-08-19T22:43:53.416818+08:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2024广州中考.pdf",
+      "bytes": 1649497,
+      "sha256": "f6a3a77585343e30722ef5e09cda58795fa752e2d86c74d0dda3c89e159311ef"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2024广州中考（解析版）.pdf",
+      "bytes": 1291410,
+      "sha256": "5b588bd2ed97be333da83a1f50031fe7f3adf66c8532506a481c97ed09adda95"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 103796,
+      "sha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 16000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": true,
+    "keepReview": false,
+    "useGatewayProxy": false
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考.blind-generation.summary.json",
+        "bytes": 3722,
+        "sha256": "0329791290fc3645bdc9cdaeddefdff0265dce4d868e4d7310b3edf34af47e34"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考盲答候选.md",
+        "bytes": 3750,
+        "sha256": "7911eff9860564c71c83274813263cab2a0c7b6ce12332ecd8858d9044303dde"
+      }
+    },
+    "visualFindings": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考视觉审计发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualMerge": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考视觉审计候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考.reference-review.summary.json",
+        "bytes": 9228,
+        "sha256": "5b24f9b6d850c178d524e781e85193315f1e676aefb1b506cf7aaf4b0ace1c43"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考参考答案.md",
+        "bytes": 4239,
+        "sha256": "7a9f98f213ed7d327e35ba5f327b4d67fe262cc6202e6906ba31b2a4d65e0635"
+      }
+    },
+    "delivery": {
+      "status": "failed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": null,
+      "error": "Node tool failed with exit code 1: D:\\CODE\\classroom-answer-toolkit\\tools\\latex-renderer\\deliver-answer.mjs"
+    }
+  },
+  "artifacts": [],
+  "diagnostics": {
+    "retainedWorkRoot": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\976735f534374429832c689ea929fc69"
+  },
+  "error": "Node tool failed with exit code 1: D:\\CODE\\classroom-answer-toolkit\\tools\\latex-renderer\\deliver-answer.mjs"
+}

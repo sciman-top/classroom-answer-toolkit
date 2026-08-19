@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import katex from "katex";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const usage = `Usage:
@@ -10,7 +12,7 @@ Checks:
   - orphan question-number first lines
   - backtick-wrapped math or units
   - unbalanced LaTeX dollar signs
-  - CJK punctuation used directly in a LaTeX math fence
+  - LaTeX math that fails the renderer's strict KaTeX contract
   - executable raw HTML
   - overly long plain-text lines (warning)
 `;
@@ -202,19 +204,43 @@ function lineNumberAt(source, offset) {
   return source.slice(0, offset).split("\n").length;
 }
 
-function validateCjkPunctuationInMath(source, rule, errors, warnings) {
-  const mathFence = /(?<!\\)(\${1,2})([\s\S]*?)(?<!\\)\1/g;
-  for (const match of source.matchAll(mathFence)) {
-    const tex = match[2];
-    const punctuation = tex.match(/[、，；：。！？]/u);
-    if (!punctuation || match.index === undefined) {
-      continue;
+export function findStrictKatexErrors(source) {
+  const findings = [];
+  const patterns = [
+    { regex: /\$\$([\s\S]+?)\$\$/g, displayMode: true },
+    { regex: /\\\[([\s\S]+?)\\\]/g, displayMode: true },
+    { regex: /(?<![\\$])\$((?:\\.|[^$])*?)(?<!\\)\$(?!\$)/g, displayMode: false }
+  ];
+  for (const { regex, displayMode } of patterns) {
+    for (const match of source.matchAll(regex)) {
+      if (match.index === undefined) {
+        continue;
+      }
+      try {
+        katex.renderToString(match[1].trim(), {
+          displayMode,
+          throwOnError: true,
+          strict: "error",
+          fleqn: true,
+          trust: false,
+          output: "htmlAndMathml"
+        });
+      } catch (error) {
+        findings.push({
+          lineNumber: lineNumberAt(source, match.index),
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
     }
+  }
+  return findings;
+}
 
-    const lineNumber = lineNumberAt(source, match.index + match[0].indexOf(punctuation[0]));
+function validateStrictKatex(source, rule, errors, warnings) {
+  for (const finding of findStrictKatexErrors(source)) {
     addRuleFinding(
       rule,
-      `Line ${lineNumber}: CJK punctuation "${punctuation[0]}" cannot be used directly in a LaTeX math fence. Move labels and punctuation into normal text, or use valid LaTeX text commands.`,
+      `Line ${finding.lineNumber}: LaTeX math does not satisfy the strict renderer contract: ${finding.message}`,
       errors,
       warnings
     );
@@ -276,7 +302,7 @@ function main() {
 
   if (rules.trueLatex) {
     validateUnbalancedDollarSigns(source, rules.trueLatex, errors, warnings);
-    validateCjkPunctuationInMath(source, rules.trueLatex, errors, warnings);
+    validateStrictKatex(source, rules.trueLatex, errors, warnings);
   }
 
   for (let index = 0; index < lines.length; index += 1) {
@@ -322,4 +348,6 @@ function main() {
   console.log(`Validation passed for ${path.basename(inputPath)} with profile "${profile.name}".`);
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

@@ -10,5 +10,8 @@
     "request:text": "node text-request.mjs",
     "test:answer": "node --test answer-request.test.mjs answer-diff-report.test.mjs",
     "report:answer-diff": "node answer-diff-report.mjs"
+  },
+  "dependencies": {
+    "undici": "8.10.0"
   }
 }

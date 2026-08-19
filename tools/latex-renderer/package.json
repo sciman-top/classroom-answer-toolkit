@@ -11,7 +11,7 @@
     "test:eval-runtime": "node --test eval-answer-fixtures.test.mjs",
     "render": "node render-md-latex.mjs",
     "test:output-path": "node --test pdf-output-path.test.mjs",
-    "test:render": "node --test render-md-latex.test.mjs",
+    "test:render": "node --test render-md-latex.test.mjs validate-answer-markdown.test.mjs",
     "review-source-pdf": "node review-source-pdf.mjs",
     "smoke": "node smoke-test.mjs",
     "validate:answer": "node validate-answer-markdown.mjs",

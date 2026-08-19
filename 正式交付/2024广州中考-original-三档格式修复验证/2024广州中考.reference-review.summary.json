@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-19T16:04:47.775Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0",
+  "mode": "reference_review",
+  "sourcePageCount": 8,
+  "auditImageCount": 0,
+  "referencePageCount": 17,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "reference_review",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档格式修复验证\\2024广州中考盲答候选.md",
+  "candidateSha256": "05c15d864f625ea333b7846c0e72ad8b5a7046aa41a5f9d4f5329f8037dace21",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "referenceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-answer-text.txt",
+  "referenceTextSha256": "5e69a298de3fe649cf65fbf3a9bd203c25e4f62b46219de4f790a3247bb6c2d4",
+  "pageCount": 25,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-001.png",
+      "sha256": "82ff2f325b695b6f5fee879feb0f48447876184864c715e621dd35f2781e7164"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-002.png",
+      "sha256": "a576fe0b18cc1911a74e426be434120712067478e567f1e0fc11ffa4f95be235"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-003.png",
+      "sha256": "d5bb850c91fcc618dcdacdd91e19f81f2d5ec31f1909e89be6ca215193a50b57"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-004.png",
+      "sha256": "d025b21d6ad45926f4f6580ee51e7fb13f49bef7324f8de45b2da2e97b1b5ef8"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-005.png",
+      "sha256": "c6c3ae39a904f68c8c5935219e7e9198a5a67d9f14d74fd96c217ed3d46f9ea3"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-006.png",
+      "sha256": "5339414a6e78c62edd923baebeee3029cfa91d01af788b36c4b8bc00d254f1bd"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-007.png",
+      "sha256": "f56d74d2e88f1e367f06b7ae03eb0dbb51c8e3dfa951d5d367761ecdde831c31"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\pages\\2024广州中考.page-008.png",
+      "sha256": "adf7458806c31057631aabc2e879e4c45f8cef855da42a2bfe7fd668fabbabff"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-001.png",
+      "sha256": "26ae57013bf1ed6f76d923a113464a46ad15438337c1b642f1442398d391131b"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-002.png",
+      "sha256": "37ca2119850930363ad5dcb4787b63bdaa11eeed2e827b34a50efe6e09cbd19d"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-003.png",
+      "sha256": "35ecc2602f46411227338dbf9f11d7f46ebf8d4982f0a3d0f23ef2e6e5b24aa5"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-004.png",
+      "sha256": "926abb3a3a97ed85adb6b5d0dfb30ee293fdb44323cc969d7dc65a654b8d9c65"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-005.png",
+      "sha256": "e0e415ea97fdd1ee686cba49270d0dd99b532cc30717fc5185f9fd53b88b023d"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-006.png",
+      "sha256": "b68b538cd2dcb31da64ce2715b76afff683875043e5bd64bc13426b377a40257"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-007.png",
+      "sha256": "30c57a72c6f50a4d0af01ad3bb40b15c8c043e98fff0f81c2d2125150ee49990"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-008.png",
+      "sha256": "1a5b0818972a9b6ca0a5656893e9f0db7c8100b78e201d7e2429ccb477d133b3"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-009.png",
+      "sha256": "f5f3b3069a11a9f063f4151be9e3c62c93aa31bc424cc448993c7d70b5101448"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-010.png",
+      "sha256": "3cf4382d715f24770306a07020d6b528b69f8631e69b1570762b82ec7dee3bca"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-011.png",
+      "sha256": "f8889006ed86aed69e757e1fd461bcb9ee28a3a51fb79b3d612f97974f97217a"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-012.png",
+      "sha256": "e0fb8a6e7350a224f4f3c61d8d3255036af77618af1457ccb55804c5c4a87206"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-013.png",
+      "sha256": "8c6b7fdb531ba3145d876b65fa44a1d469df16806a420b6d9e0508dc350955b4"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-014.png",
+      "sha256": "fd0cf76a330301e3b94dce95e59a33900b81d8c89b9868601ecffbcb0e0da7c1"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-015.png",
+      "sha256": "579c02d44655171c1259402456b6f71221619c7678425c7e2cd844d4a08e9d14"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-016.png",
+      "sha256": "34afed55cb06a8b58c8a508f4f8b68eeb5081b50bc356549e5357b5481630f41"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a749f1539088445b90b50613df703e88\\reference-pages\\2024广州中考（解析版）.page-017.png",
+      "sha256": "2c3891f47663d674cb00a18ebbf81723055ad714eee5288af5fbafe2e45dda58"
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档格式修复验证\\2024广州中考参考答案.md",
+  "outputSha256": "7890a8539f839c71f0a2ddf034006513b386e949ee4d045401de79bca2eaca8f",
+  "answerCharacters": 2750,
+  "referenceChoiceOverride": {
+    "applied": true,
+    "answers": "BCCBCADDAD"
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 133646,
+      "requestBytes": 11267394,
+      "error": ""
+    }
+  ]
+}

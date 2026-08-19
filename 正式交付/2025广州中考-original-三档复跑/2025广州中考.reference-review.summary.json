@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-19T15:03:59.161Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0",
+  "mode": "reference_review",
+  "sourcePageCount": 8,
+  "auditImageCount": 0,
+  "referencePageCount": 3,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "reference_review",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-三档复跑\\2025广州中考盲答候选.md",
+  "candidateSha256": "8cf644c8a9cb0152fedbad1179e9c6ca68f9ccff7fdc857ffdf7adf2339db67f",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "referenceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\reference-answer-text.txt",
+  "referenceTextSha256": "436568f279d8a59e52e7960b5bd8527a1cab075fdefe666515c967ab586eddcd",
+  "pageCount": 11,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-001.png",
+      "sha256": "9b642830d7db0cbc6acf73daba020cdc3c6804a83b3165d4c64842c64b9d006b"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-002.png",
+      "sha256": "af450fc3f0781f9f442a788d5c92e57a98727da9c060961becfdc452afe6a583"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-003.png",
+      "sha256": "272fd5afa9052c672b7fe3825335a6f7a37ec848673618e1099b0f5b0ab99c21"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-004.png",
+      "sha256": "768b90da3437abe8c5ca48e9db95a2c65cbee8e8cf807711291397f03484873b"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-005.png",
+      "sha256": "08a9799814fa6f74dc0f3cad17fad41f28fbd6189831e70f48c8187e5b1f5c70"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-006.png",
+      "sha256": "1747dd7239291cb58f9b74f55ff3bf8060cb77629f6b26f2e11a3f295db29470"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-007.png",
+      "sha256": "cca7586ed7f6ee485542385379a82ef26386ada9ccea3cb6c4401423a7476f97"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\pages\\2025广州中考.page-008.png",
+      "sha256": "d73803f81c6e9feefd286e5aa60f59f8b01c03ed030925118f37d0f012331bc9"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\reference-pages\\2025广州中考（答案）.page-001.png",
+      "sha256": "43336dd49fbd269bf1b0eda1b53eb3e01b295b877c60d9de019e56e403cad3ef"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\reference-pages\\2025广州中考（答案）.page-002.png",
+      "sha256": "1a18478d740a758e8fc2ab5f44d258fc910786c76b6ab0c59824787a1f892d38"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\c84ddd03177b4769ae8bc90a58c4d360\\reference-pages\\2025广州中考（答案）.page-003.png",
+      "sha256": "b3e10b727c696bf88abafac85af340409cdfd231b490246d2396d59f21992b4f"
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-三档复跑\\2025广州中考参考答案.md",
+  "outputSha256": "295cce1e32acc5d2fc948b2db24cc0715b96e6d62137bfcf0fe1619a034932f3",
+  "answerCharacters": 1786,
+  "referenceChoiceOverride": {
+    "applied": true,
+    "answers": "BAADACBBDD"
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 133131,
+      "requestBytes": 5023486,
+      "error": ""
+    }
+  ]
+}

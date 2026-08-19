@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-19T13:47:19.001Z",
+  "snapshotId": "snapshot-1b94c28d0ccf490d",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-xhigh复跑\\2023广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-1b94c28d0ccf490d",
+    "version": "v8.15",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-xhigh复跑\\2023广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-xhigh复跑\\2023广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2023广州中考-original-xhigh复跑__2023广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2023广州中考-original-xhigh复跑__2023广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested"
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-xhigh复跑\\2023广州中考参考答案.md",
+      "bytes": 2764,
+      "sha256": "0ffdc95a2728c7a621a68b0ec57bcf9b97603f2a2a8e3a44081cfda190d3d23b"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-xhigh复跑\\2023广州中考参考答案.pdf",
+      "bytes": 146784,
+      "sha256": "bac6f776144a1c1f773d79f079f13eb75121221570652293f9712845eda4a5dd"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-xhigh复跑\\2023广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "d1d07a4c5326946dc50fe7d07cf6fb3b146f23c28559f479a1bbf6c6e7b1a8f8"
+    },
+    "reviewFiles": []
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": false
+  }
+}

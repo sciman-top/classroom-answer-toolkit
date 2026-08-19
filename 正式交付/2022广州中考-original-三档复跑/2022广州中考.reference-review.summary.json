@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-19T14:31:10.937Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0",
+  "mode": "reference_review",
+  "sourcePageCount": 8,
+  "auditImageCount": 0,
+  "referencePageCount": 18,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "reference_review",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-三档复跑\\2022广州中考盲答候选.md",
+  "candidateSha256": "fdec43b1c22ae94b158034253a58ce97009c4279dc6dbcac433f17f0d0cb77bd",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "referenceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-answer-text.txt",
+  "referenceTextSha256": "3674a35b9c7c8d38d8ab606b902a0acebc5c476b8c1c1e4fc3e57de147a004b9",
+  "pageCount": 26,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-001.png",
+      "sha256": "c141722b3765c718976d610a8c3fa26f3c496a16776a925714bb491257e2d70b"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-002.png",
+      "sha256": "36352e2b6923a825fad4f74702def15a2097087d6375a7c74eb4f215a52a6dfe"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-003.png",
+      "sha256": "7ba4adee5a4c68f4e1a57cfeaaede612a4109677aeca22699106d7f70bf14787"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-004.png",
+      "sha256": "28a3a7514eb806042131356e915b79bf18e1827cb6f7014193893d7c92e93c8a"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-005.png",
+      "sha256": "8d2ac5d6ee21284f255198735506aa38f5787d77f20a6371b32bad7eb94db6e7"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-006.png",
+      "sha256": "87437512aa1ecb4dd14dc0c7ab5c7411f2615f0a248047514ebf844162e25f51"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-007.png",
+      "sha256": "eee8e3938f0f50078eb13e8af2eb1e44b6e88bb1286d3606da518c3232994622"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\pages\\2022广州中考.page-008.png",
+      "sha256": "8c59cce5780204aaabb453cc58a846bf203304d01d13bfe91e4b055b8f7b492d"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-001.png",
+      "sha256": "dc70998d6d73c1726bf564d75ed3d0bcc3d2ff465b99efae84755c07df5085d7"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-002.png",
+      "sha256": "e3158230cc6be7def6f48eb1c5d730d89b7d0012afd0cbeb84326cfec4fcb150"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-003.png",
+      "sha256": "9f2bdc2aa181f61130f2e9d6628d76c943402d253580ca3474c9507daa22f111"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-004.png",
+      "sha256": "5433baaeaf7b3faa0b05fbea5808cce50830f86e04c0d2e77f87a846fc510b68"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-005.png",
+      "sha256": "29b3c2b29d8ddbdd9dc314cde023c8ddce63722b0534f25faffc68c9581f6063"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-006.png",
+      "sha256": "e38bb508e9fea66c91dcca9455c4ca0be92689c655577b752351197e4a10ac6d"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-007.png",
+      "sha256": "6ed93c88f3c17203fb581f0d449dec8e0c022bab782e244ff50adb524e17d057"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-008.png",
+      "sha256": "c6b42892640c7ad3a35f493b9d78b77fb884f962846af5d8ae341b8566489ec0"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-009.png",
+      "sha256": "15a8662b44121b9a6ef9e17c05d398b9c252d40dd97611d66a733a7627524422"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-010.png",
+      "sha256": "9f2f9aa92d633b6c17279920d2c16af1675c7531ee1b3071617cb47e26a408d5"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-011.png",
+      "sha256": "f14724ae9b44ce0a8b7eb3662f0161d003935543cbbda32651eb6f5e53b2c65f"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-012.png",
+      "sha256": "73444d8fd64f7bbb241c62b948f1e395b467d789a01b67267cc429462c37fb54"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-013.png",
+      "sha256": "4a75c63fe32193054b7a0d3e60e366e21f24bb11150073a63380c11398c570cd"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-014.png",
+      "sha256": "04a5f8b5975d6c7d2da98bf9be9c4e35fb51a7a7070f81a7c4fead793d17ec63"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-015.png",
+      "sha256": "ab0ad81aa3d1a1c63fe442b21ebab24091097a16b763d9878eff3e1ffa97bb18"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-016.png",
+      "sha256": "c37821cecefde0e65530c85fa8104367f44abc3bad1e2121f25f2fcdddf791b4"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-017.png",
+      "sha256": "a777891caee2451829c04f6dbe8312d1dceef2bba912dc0a6c794f29ecfb7dff"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\42ab593e6b6c47e2acc24f5d85333c95\\reference-pages\\2022广州中考-参考答案.page-018.png",
+      "sha256": "70683fec834df5edf724c4d0526a760a7bf5e88bcf802e4ed34274ea0b48b54f"
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-三档复跑\\2022广州中考参考答案.md",
+  "outputSha256": "09d5ee38716e93f7f00d21cf9bfe063596f6ad7de4035ebbff23049a2b5ebf47",
+  "answerCharacters": 1536,
+  "referenceChoiceOverride": {
+    "applied": true,
+    "answers": "CCDAABBDCB"
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 167565,
+      "requestBytes": 12222156,
+      "error": ""
+    }
+  ]
+}

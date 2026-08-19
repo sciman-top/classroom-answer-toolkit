@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "6f1575e3aa3042c4a4e64ec653826ca4",
+  "status": "succeeded",
+  "startedAt": "2026-08-19T21:27:56.3121815+08:00",
+  "finishedAt": "2026-08-19T21:41:44.4474046+08:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2022广州中考.pdf",
+      "bytes": 1829178,
+      "sha256": "66c5959ae3db3fa2d521b234d371c5fa05ef84763ffc1a5a9ed8bd9adce16101"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2022广州中考-参考答案.pdf",
+      "bytes": 1524553,
+      "sha256": "519a730083d49f576effa9f9d099c0f2731022ff94bc80bbe5e64713d2016120"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 103796,
+      "sha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 12000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": true,
+    "keepReview": false,
+    "useGatewayProxy": false
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考.blind-generation.summary.json",
+        "bytes": 4381,
+        "sha256": "bfe5b02af216af1ba0c14b43cbe50946acb18dc7b061aaf5f9ccfb01d7983f87"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考盲答候选.md",
+        "bytes": 2418,
+        "sha256": "25341e96ea199260f7dff241ff0a279596096ca5f5bda8755c3f1570aa05cc23"
+      }
+    },
+    "visualFindings": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考视觉审计发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualMerge": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考视觉审计候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考.reference-review.summary.json",
+        "bytes": 9487,
+        "sha256": "2cd7e7885aa5a6ea4c250e2ef23fdc46187ce9a2647d22e315f5595d23fecd40"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.md",
+        "bytes": 2657,
+        "sha256": "54a8e2414498234b20c1361fa7ea7eccb5f96e5bb4f24bd20ddcd6c1f88b5704"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.pdf",
+        "bytes": 151837,
+        "sha256": "ba59a3dee26db55e3c95fc6bada3bf3ffc8af53602a6fa3aa2ecf270d1261e2d"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.md",
+      "bytes": 2657,
+      "sha256": "54a8e2414498234b20c1361fa7ea7eccb5f96e5bb4f24bd20ddcd6c1f88b5704"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.pdf",
+      "bytes": 151837,
+      "sha256": "ba59a3dee26db55e3c95fc6bada3bf3ffc8af53602a6fa3aa2ecf270d1261e2d"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.delivery-manifest.json",
+      "bytes": 2186,
+      "sha256": "8826774913d4b4525fad84f3150b41d4507906032c08cf94e55edfd25d520fd5"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "d1ae327ec4efbad2b73e2fdee462313f5028455509f30ebcd46d389a143b0129"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考答案自动复核文本差异报告.md",
+      "bytes": 5188,
+      "sha256": "fe0c99d8d1e992fb28256dbd714442edcca4c65ab631a0ac7a87a528569c32c1"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

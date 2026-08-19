@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-19T16:29:25.317Z",
+  "snapshotId": "snapshot-1b94c28d0ccf490d",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh-600秒超时修复验证\\2024广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-1b94c28d0ccf490d",
+    "version": "v8.15",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh-600秒超时修复验证\\2024广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh-600秒超时修复验证\\2024广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2024广州中考-original-xhigh-600秒超时修复验证__2024广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2024广州中考-original-xhigh-600秒超时修复验证__2024广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested"
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh-600秒超时修复验证\\2024广州中考参考答案.md",
+      "bytes": 3776,
+      "sha256": "4367aff283e05f6a1c27982c52fad1ce32b7e404b7f878ec64e49f0b94d8de8b"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh-600秒超时修复验证\\2024广州中考参考答案.pdf",
+      "bytes": 154561,
+      "sha256": "0e433fd599f7d045066a0f673317b905cee448c37009c0a00991ea64496c5b9f"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh-600秒超时修复验证\\2024广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "f9427f91df559b4f74db6b5f9351a3d882d4d72dfff93acf85777fb3326c46c5"
+    },
+    "reviewFiles": []
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": false
+  }
+}

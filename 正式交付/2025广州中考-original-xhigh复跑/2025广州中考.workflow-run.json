@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "a09db0275df34f2a9374fd4a3b3e46a7",
+  "status": "succeeded",
+  "startedAt": "2026-08-19T21:57:51.5330754+08:00",
+  "finishedAt": "2026-08-19T22:13:38.5724213+08:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2025广州中考.pdf",
+      "bytes": 2357891,
+      "sha256": "26c8aabc95cd2ffa67ed2ea873f13c9f2cb15d8e576ca2e4d4281f00f63e0fbe"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2025广州中考（答案）.pdf",
+      "bytes": 394067,
+      "sha256": "214bf640b640e4a0260380779942eb39cdaada8d86be39ef1befae36ce77b91d"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 103796,
+      "sha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 16000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": true,
+    "keepReview": false,
+    "useGatewayProxy": false
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考.blind-generation.summary.json",
+        "bytes": 4381,
+        "sha256": "65ca917afb4b097649f933ff39d02d34a2fade027ede50c5310d5cd26d411d5c"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考盲答候选.md",
+        "bytes": 2719,
+        "sha256": "07c7985217bfc085c1e7ca3e71f53619e442e8e8fb9fdd741ec37a362aab3e8e"
+      }
+    },
+    "visualFindings": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考视觉审计发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualMerge": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考视觉审计候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考.reference-review.summary.json",
+        "bytes": 5043,
+        "sha256": "f1f48cd47a2b9d36a276be6c368b73b4fc61ef9fb6787e9f5fccffafa6f68132"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.md",
+        "bytes": 3248,
+        "sha256": "5a7b9f47f41ca6c871eefcfab886e74a58d110e82a649160a910eabf7735b236"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.pdf",
+        "bytes": 159575,
+        "sha256": "d43d23a4ed5a54499f25c356dc488dd901d0214dece213912339ca5806c3af06"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.md",
+      "bytes": 3248,
+      "sha256": "5a7b9f47f41ca6c871eefcfab886e74a58d110e82a649160a910eabf7735b236"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.pdf",
+      "bytes": 159575,
+      "sha256": "d43d23a4ed5a54499f25c356dc488dd901d0214dece213912339ca5806c3af06"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.delivery-manifest.json",
+      "bytes": 2186,
+      "sha256": "de30669d6477abe400c354029b5aa1a25b244c2299e584c5e2d71824d7abeaf2"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "610275953cba6a24229ef1fbde6cf5ceb71485929fcb560680a79b698bf18e74"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-xhigh复跑\\2025广州中考答案自动复核文本差异报告.md",
+      "bytes": 6202,
+      "sha256": "df7637baa3121ffe345ea520d2013445a48a61d82b482d2fbe1c8a39ef3388dc"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

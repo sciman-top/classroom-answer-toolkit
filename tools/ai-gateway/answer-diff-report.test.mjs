@@ -13,6 +13,8 @@ test("line diff records added and removed answer lines", () => {
   assert.equal(diff.removed, 1);
   assert.ok(diff.lines.includes("-1. C"));
   assert.ok(diff.lines.includes("+1. D"));
+  assert.ok(diff.lines.includes(""));
+  assert.ok(diff.lines.every((line) => !/[ \t]+$/.test(line)));
 });
 
 test("diff report records SHA-256 for the exact file bytes", () => {
@@ -30,6 +32,7 @@ test("diff report records SHA-256 for the exact file bytes", () => {
     const expectedAfterHash = crypto.createHash("sha256").update(Buffer.from(after)).digest("hex");
     assert.ok(report.includes(`候选 SHA-256：\`${expectedBeforeHash}\``));
     assert.ok(report.includes(`校正 SHA-256：\`${expectedAfterHash}\``));
+    assert.doesNotMatch(report, /[ \t]+$/m);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

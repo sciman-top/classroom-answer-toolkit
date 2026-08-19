@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-19T16:27:06.856Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0",
+  "mode": "blind_generation",
+  "sourcePageCount": 8,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "blind_generation",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary"
+    ],
+    "target": "primary"
+  },
+  "candidatePath": null,
+  "candidateSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 8,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-001.png",
+      "sha256": "82ff2f325b695b6f5fee879feb0f48447876184864c715e621dd35f2781e7164"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-002.png",
+      "sha256": "a576fe0b18cc1911a74e426be434120712067478e567f1e0fc11ffa4f95be235"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-003.png",
+      "sha256": "d5bb850c91fcc618dcdacdd91e19f81f2d5ec31f1909e89be6ca215193a50b57"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-004.png",
+      "sha256": "d025b21d6ad45926f4f6580ee51e7fb13f49bef7324f8de45b2da2e97b1b5ef8"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-005.png",
+      "sha256": "c6c3ae39a904f68c8c5935219e7e9198a5a67d9f14d74fd96c217ed3d46f9ea3"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-006.png",
+      "sha256": "5339414a6e78c62edd923baebeee3029cfa91d01af788b36c4b8bc00d254f1bd"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-007.png",
+      "sha256": "f56d74d2e88f1e367f06b7ae03eb0dbb51c8e3dfa951d5d367761ecdde831c31"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\ee00029c74104c76b548b49a390f1a11\\pages\\2024广州中考.page-008.png",
+      "sha256": "adf7458806c31057631aabc2e879e4c45f8cef855da42a2bfe7fd668fabbabff"
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh-600秒超时修复验证\\2024广州中考盲答候选.md",
+  "outputSha256": "5fcc103bfbc6ea03dec2e5b951eb2ab34c88c83fa4e31f5d1a0a54b22381ecce",
+  "answerCharacters": 2582,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 265328,
+      "requestBytes": 3938280,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

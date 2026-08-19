@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "55eec847a2844873b1c3735bea433367",
+  "status": "succeeded",
+  "startedAt": "2026-08-19T21:48:30.2187684+08:00",
+  "finishedAt": "2026-08-19T21:55:14.4759497+08:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2024广州中考.pdf",
+      "bytes": 1649497,
+      "sha256": "f6a3a77585343e30722ef5e09cda58795fa752e2d86c74d0dda3c89e159311ef"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2024广州中考（解析版）.pdf",
+      "bytes": 1291410,
+      "sha256": "5b588bd2ed97be333da83a1f50031fe7f3adf66c8532506a481c97ed09adda95"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 103796,
+      "sha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 16000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": true,
+    "keepReview": false,
+    "useGatewayProxy": false
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考.blind-generation.summary.json",
+        "bytes": 3701,
+        "sha256": "58b392e56ba9f318fe470326904aea7a17b8a21204b3a60247c7e404608450fb"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考盲答候选.md",
+        "bytes": 3696,
+        "sha256": "e6bbb4f4dd7d1cbd37fde1056f04ee8b5d6d7e7503caf000099f83b7b01b7f13"
+      }
+    },
+    "visualFindings": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考视觉审计发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualMerge": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考视觉审计候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考.reference-review.summary.json",
+        "bytes": 9226,
+        "sha256": "b32b794ba4e5b35dee59eb40a5c50c8548b67549f847f74d1c8bc76e8dca3c84"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.md",
+        "bytes": 3902,
+        "sha256": "cba68e72dec9ef0ae37284515b2b18d09d8adfb97c5c090480c312f05aa259d6"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.pdf",
+        "bytes": 159312,
+        "sha256": "19fb481f17339128b5b353926ed9fb15d7b749aae2387ed614b6e22db3d0987e"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.md",
+      "bytes": 3902,
+      "sha256": "cba68e72dec9ef0ae37284515b2b18d09d8adfb97c5c090480c312f05aa259d6"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.pdf",
+      "bytes": 159312,
+      "sha256": "19fb481f17339128b5b353926ed9fb15d7b749aae2387ed614b6e22db3d0987e"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.delivery-manifest.json",
+      "bytes": 2186,
+      "sha256": "afe83e9157216d84828006a61b83db73928730ab73efe31720f887f5a47c1a93"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "00f69c40e66a88b154e18ebf208a353d7b210af5ec5b05cadaa0daa0a67d9700"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-xhigh复跑\\2024广州中考答案自动复核文本差异报告.md",
+      "bytes": 7056,
+      "sha256": "fa8409075ee3e96662d822122abb35b332960ee362c061955be6e4fa202bca44"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

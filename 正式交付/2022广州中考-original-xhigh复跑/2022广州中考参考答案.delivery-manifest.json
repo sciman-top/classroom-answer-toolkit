@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-19T13:41:44.299Z",
+  "snapshotId": "snapshot-1b94c28d0ccf490d",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-1b94c28d0ccf490d",
+    "version": "v8.15",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2022广州中考-original-xhigh复跑__2022广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2022广州中考-original-xhigh复跑__2022广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested"
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.md",
+      "bytes": 2657,
+      "sha256": "54a8e2414498234b20c1361fa7ea7eccb5f96e5bb4f24bd20ddcd6c1f88b5704"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.pdf",
+      "bytes": 151837,
+      "sha256": "ba59a3dee26db55e3c95fc6bada3bf3ffc8af53602a6fa3aa2ecf270d1261e2d"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2022广州中考-original-xhigh复跑\\2022广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "d1ae327ec4efbad2b73e2fdee462313f5028455509f30ebcd46d389a143b0129"
+    },
+    "reviewFiles": []
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": false
+  }
+}

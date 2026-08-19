@@ -29,7 +29,7 @@ export function lineDiff(before, after) {
   let j = 0;
   while (i < left.length || j < right.length) {
     if (i < left.length && j < right.length && left[i] === right[j]) {
-      output.push(` ${left[i]}`);
+      output.push(left[i].length > 0 ? ` ${left[i]}` : "");
       i += 1;
       j += 1;
     } else if (j < right.length && (i === left.length || rows[i][j + 1] >= rows[i + 1][j])) {

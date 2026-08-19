@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-19T15:38:12.759Z",
+  "provider": "fallback_1",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "high",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0",
+  "mode": "visual_audit_findings",
+  "sourcePageCount": 0,
+  "auditImageCount": 6,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_findings",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考盲答候选.md",
+  "candidateSha256": "7911eff9860564c71c83274813263cab2a0c7b6ce12332ecd8858d9044303dde",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 6,
+  "pageImages": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-q16-18\\2024广州中考.page-006.tile-01.x-01.png",
+      "sha256": "a9be0b012b8da1e71985f691818a1b5a86d68b058fa9f0c2a7a6e74ab5949359"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-q16-18\\2024广州中考.page-006.tile-01.x-02.png",
+      "sha256": "2c81239161ca295b5922554c78153eca68b7b54dac099d77e3a4e9bee0982c14"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-q16-18\\2024广州中考.page-007.tile-01.x-01.png",
+      "sha256": "b2d21492d35f498ea5725324a66d69467000bbd161618720509333025f6645da"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-q16-18\\2024广州中考.page-007.tile-01.x-02.png",
+      "sha256": "19840136a6a7e0a0f5c09ac43682a476486921c2b07cde1b434f611311d572ab"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-q16-18\\2024广州中考.page-008.tile-01.x-01.png",
+      "sha256": "f2dd767159e7af7867ead53fea43777b5828c564693e400dfc1e45a20baf8ba2"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\tmp\\pdfs\\2024-q16-18\\2024广州中考.page-008.tile-01.x-02.png",
+      "sha256": "9b5a48be23227833f2458ad544686ad3b9828bc035907cd938096f3acaef16be"
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2024广州中考-original-三档复跑\\2024广州中考局部视觉审计发现.md",
+  "outputSha256": "5bd20d1946516f0f290e96c98d3f8943e4bd50de546472041c77c9a7c128177e",
+  "answerCharacters": 4745,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": null,
+      "ok": false,
+      "retryable": true,
+      "attemptNumber": 1,
+      "durationMs": 306110,
+      "requestBytes": 4120950,
+      "error": "fetch failed (UND_ERR_HEADERS_TIMEOUT: Headers Timeout Error)"
+    },
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": null,
+      "ok": false,
+      "retryable": true,
+      "attemptNumber": 2,
+      "durationMs": 306153,
+      "requestBytes": 4120950,
+      "error": "fetch failed (UND_ERR_HEADERS_TIMEOUT: Headers Timeout Error)"
+    },
+    {
+      "provider": "fallback_1",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "high",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 151065,
+      "requestBytes": 4120949,
+      "error": ""
+    }
+  ]
+}

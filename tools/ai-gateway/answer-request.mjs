@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { Agent, EnvHttpProxyAgent, setGlobalDispatcher } from "undici";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 
 import {
@@ -14,6 +15,35 @@ import {
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const defaultPromptPath = path.join(repoRoot, "prompts", "junior-physics-answer", "spec.md");
+const TRANSPORT_TIMEOUT_GRACE_MS = 5000;
+let activeTransportKey = null;
+
+export function resolveAnswerTransportPolicy(timeoutMs, nodeOptions = process.env.NODE_OPTIONS ?? "") {
+  const environmentProxyEnabled = /(?:^|\s)--use-env-proxy(?:\s|$)/.test(nodeOptions);
+  return {
+    applicationTimeoutMs: timeoutMs,
+    headersTimeoutMs: timeoutMs + TRANSPORT_TIMEOUT_GRACE_MS,
+    bodyTimeoutMs: timeoutMs + TRANSPORT_TIMEOUT_GRACE_MS,
+    environmentProxyEnabled
+  };
+}
+
+function configureAnswerTransport(timeoutMs) {
+  const policy = resolveAnswerTransportPolicy(timeoutMs);
+  const transportKey = JSON.stringify(policy);
+  if (transportKey !== activeTransportKey) {
+    const dispatcherOptions = {
+      headersTimeout: policy.headersTimeoutMs,
+      bodyTimeout: policy.bodyTimeoutMs
+    };
+    const dispatcher = policy.environmentProxyEnabled
+      ? new EnvHttpProxyAgent(dispatcherOptions)
+      : new Agent(dispatcherOptions);
+    setGlobalDispatcher(dispatcher);
+    activeTransportKey = transportKey;
+  }
+  return policy;
+}
 
 const usage = `Usage:
   npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress --images-dir <dir> --output <answer.md>
@@ -383,7 +413,10 @@ export function normalizeAnswerMarkdown(value) {
   const unfenced = (match ? match[1] : normalized).trim();
   const headingIndex = unfenced.search(/#\s+(?:物理试卷参考答案|参考答案|答案)(?=\s|$)/u);
   const answerOnly = headingIndex >= 0 ? unfenced.slice(headingIndex) : unfenced;
-  return answerOnly.replace(/\$([A-D](?:['′])?(?:[、，][A-D](?:['′])?)*)\$/g, "$1");
+  return answerOnly
+    .replace(/\$([A-D](?:['′])?(?:[、，][A-D](?:['′])?)*)\$/g, "$1")
+    .replace(/([_^]\{)([^{}]*[\u3400-\u9fff][^{}]*)(\})/gu, (_match, open, body, close) =>
+      `${open}${body.replace(/[\u3400-\u9fff]+/gu, (label) => `\\text{${label}}`)}${close}`);
 }
 
 function extractNumberedChoiceAnswers(referenceText) {
@@ -529,7 +562,7 @@ const TASK_MODES = new Set([
 ]);
 
 const SOLVING_MODEL = "gpt-5.6-sol";
-const SOLVING_REASONING_EFFORT = "xhigh";
+const SOLVING_REASONING_EFFORTS = ["xhigh", "high", "medium"];
 
 function inferAnswerMode(options = {}) {
   if (TASK_MODES.has(options.mode)) {
@@ -556,11 +589,14 @@ export function selectAnswerRoute(config, modeOrOptions = {}, target = "all") {
     .filter((provider) => provider.lane === "ai")
     .filter((provider) => mode !== "blind_generation"
       || (provider.visionModel === SOLVING_MODEL
-        && provider.reasoningEffort === SOLVING_REASONING_EFFORT))
+        && SOLVING_REASONING_EFFORTS.includes(provider.reasoningEffort)))
     .filter((provider) => target === "all"
       || (target === "primary" && provider.role === "primary")
       || (target === "fallback" && provider.role.startsWith("fallback")))
-    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
+    .sort((left, right) => mode === "blind_generation"
+      ? SOLVING_REASONING_EFFORTS.indexOf(left.reasoningEffort) - SOLVING_REASONING_EFFORTS.indexOf(right.reasoningEffort)
+        || providerOrder(left.role) - providerOrder(right.role)
+      : providerOrder(left.role) - providerOrder(right.role));
   return {
     mode,
     target,
@@ -639,6 +675,8 @@ async function callProvider(provider, options) {
   const endpoint = `${provider.baseUrl.replace(/\/+$/, "")}/${endpointPath}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
+  const startedAt = Date.now();
+  const requestBody = JSON.stringify(buildAnswerRequestBody(provider, options));
   try {
     const response = await fetch(endpoint, {
       method: "POST",
@@ -649,12 +687,18 @@ async function callProvider(provider, options) {
         "Accept": "application/json",
         "User-Agent": "classroom-answer-toolkit-answer-generation/1.0"
       },
-      body: JSON.stringify(buildAnswerRequestBody(provider, options))
+      body: requestBody
     });
     const bodyText = await response.text();
     if (!response.ok) {
       return {
         provider: provider.role,
+        model: provider.visionModel,
+        reasoningEffort: provider.reasoningEffort || null,
+        attemptNumber: options.attemptNumber ?? 1,
+        durationMs: Date.now() - startedAt,
+        requestBytes: Buffer.byteLength(requestBody),
+        transport: options.transportPolicy,
         ok: false,
         retryable: isRetryableGatewayFailure(response.status),
         status: response.status,
@@ -667,6 +711,12 @@ async function callProvider(provider, options) {
     } catch (error) {
       return {
         provider: provider.role,
+        model: provider.visionModel,
+        reasoningEffort: provider.reasoningEffort || null,
+        attemptNumber: options.attemptNumber ?? 1,
+        durationMs: Date.now() - startedAt,
+        requestBytes: Buffer.byteLength(requestBody),
+        transport: options.transportPolicy,
         ok: false,
         retryable: false,
         status: response.status,
@@ -678,6 +728,10 @@ async function callProvider(provider, options) {
       provider: provider.role,
       model: provider.visionModel,
       reasoningEffort: provider.reasoningEffort || null,
+      attemptNumber: options.attemptNumber ?? 1,
+      durationMs: Date.now() - startedAt,
+      requestBytes: Buffer.byteLength(requestBody),
+      transport: options.transportPolicy,
       ok: answerMarkdown.length > 0,
       retryable: false,
       status: response.status,
@@ -687,6 +741,12 @@ async function callProvider(provider, options) {
   } catch (error) {
     return {
       provider: provider.role,
+      model: provider.visionModel,
+      reasoningEffort: provider.reasoningEffort || null,
+      attemptNumber: options.attemptNumber ?? 1,
+      durationMs: Date.now() - startedAt,
+      requestBytes: Buffer.byteLength(requestBody),
+      transport: options.transportPolicy,
       ok: false,
       retryable: true,
       status: null,
@@ -702,12 +762,13 @@ export async function requestAnswerWithFailover(config, options) {
   if (typeof fetch !== "function") {
     throw new Error("This Node.js runtime does not provide fetch.");
   }
+  const transportPolicy = configureAnswerTransport(options.timeoutMs);
   const mode = inferAnswerMode(options);
   const route = selectAnswerRoute(config, mode, options.provider);
   const providers = route.providers;
   if (providers.length === 0) {
     if (mode === "blind_generation") {
-      throw new Error(`Blind answer generation requires ${SOLVING_MODEL}/${SOLVING_REASONING_EFFORT}; no matching ${options.provider ?? "all"} provider is configured.`);
+      throw new Error(`Blind answer generation requires ${SOLVING_MODEL}/${SOLVING_REASONING_EFFORTS.join(" or ")}; no matching ${options.provider ?? "all"} provider is configured.`);
     }
     throw new Error(`No ${options.provider ?? "all"} AI provider is configured for answer generation.`);
   }
@@ -715,10 +776,11 @@ export async function requestAnswerWithFailover(config, options) {
   const attempts = [];
   const requestOptions = {
     ...options,
+    transportPolicy,
     imageDataUrls: resolveImageDataUrls(options)
   };
   for (const provider of providers) {
-    const attempt = await callProvider(provider, requestOptions);
+    const attempt = await callProvider(provider, { ...requestOptions, attemptNumber: 1 });
     attempts.push(attempt);
     if (attempt.ok) {
       return {
@@ -764,6 +826,10 @@ function redactAttempt(attempt) {
     status: attempt.status,
     ok: attempt.ok,
     retryable: attempt.retryable,
+    attemptNumber: attempt.attemptNumber ?? 1,
+    durationMs: attempt.durationMs ?? null,
+    requestBytes: attempt.requestBytes ?? null,
+    transport: attempt.transport ?? null,
     error: attempt.error ? attempt.error.slice(0, 500) : ""
   };
 }

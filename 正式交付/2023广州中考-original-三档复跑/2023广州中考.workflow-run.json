@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "2a9a8a99d5f94722bb79fce8635d6c2e",
+  "status": "succeeded",
+  "startedAt": "2026-08-19T22:31:30.1083949+08:00",
+  "finishedAt": "2026-08-19T22:36:25.0937665+08:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2023广州中考.pdf",
+      "bytes": 820220,
+      "sha256": "9422eb3c0542eeea3526717364de15288d74788c4a1348f64ff012233338acdc"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2023广州中考_参考答案.pdf",
+      "bytes": 185817,
+      "sha256": "f7c33a3e4525912de855f34e1d40e2853aa228da6d5f74be91f0627520c7d36a"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 103796,
+      "sha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 16000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": true,
+    "keepReview": false,
+    "useGatewayProxy": false
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考.blind-generation.summary.json",
+        "bytes": 3722,
+        "sha256": "9ffc7bcf398877244accd88ada2819960ae0b4b732ac8ee6b0fe04bb69df33da"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考盲答候选.md",
+        "bytes": 2718,
+        "sha256": "eabed3eebd2a8708137c5026c3efb1e10bb51521a5c5d13978b8dc92b9fd7f53"
+      }
+    },
+    "visualFindings": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考视觉审计发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualMerge": {
+      "status": "skipped",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考视觉审计候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考.reference-review.summary.json",
+        "bytes": 4751,
+        "sha256": "a0ebc7bddd3d582af836714ccc969d641d783feb4fde088e3fd3d306c3a3eefa"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.md",
+        "bytes": 2693,
+        "sha256": "2c625cee3c333028b98b5389687d0f9755396ddce4e5f2a4f3151a7372411f55"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.pdf",
+        "bytes": 147920,
+        "sha256": "3a19f33a31bc39f04481f794786c5947717d4e1ce743db66c641469392cad759"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.md",
+      "bytes": 2693,
+      "sha256": "2c625cee3c333028b98b5389687d0f9755396ddce4e5f2a4f3151a7372411f55"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.pdf",
+      "bytes": 147920,
+      "sha256": "3a19f33a31bc39f04481f794786c5947717d4e1ce743db66c641469392cad759"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.delivery-manifest.json",
+      "bytes": 2194,
+      "sha256": "235017e427861a1441ff42ae91501333244f4d3496a8ba87a0712818dae3c344"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "1b5101b8da56afac69b70fe08c7901743f153f5022b8b632759092447f7a2398"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2023广州中考-original-三档复跑\\2023广州中考答案自动复核文本差异报告.md",
+      "bytes": 5193,
+      "sha256": "acebeb52f5ae9d79daa78d52d090c94dd4879dd464e7039328fcce423b5b1fee"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}
