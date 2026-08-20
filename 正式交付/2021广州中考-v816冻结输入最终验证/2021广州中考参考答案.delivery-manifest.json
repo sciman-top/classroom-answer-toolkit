@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-20T14:15:28.028Z",
+  "snapshotId": "snapshot-96e6fed0b512a845",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-96e6fed0b512a845",
+    "version": "v8.16",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.md",
+      "bytes": 3257,
+      "sha256": "cdb5ee2b624bfd322d46053a17ae730800e650235ce8c906af38e50f5294198b"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.pdf",
+      "bytes": 171828,
+      "sha256": "663f0618fdada29f2770f1e46f442bb16a38d3e75a17bb1de6d88bcb1f2e82a6"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "89bfa2cafd2b04e6e69ec6fdb322dc3475d6b210706ccb914b77bf9c6273e7ae"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\2021广州中考参考答案.page-001.png",
+        "bytes": 229749,
+        "sha256": "d451f45836ad80d4cd73794a2b92068c52e55cba0499dc659cc24f1d0b651b03"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\2021广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 902,
+        "sha256": "d85d2aec860d36ac937c0d66ca29a7fabbeb31000e4c4b063f5b506d37627528"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\2021广州中考参考答案.page-002.png",
+        "bytes": 303239,
+        "sha256": "4606bcddf4689255fbad4a0283d884c0550862b5cc97d71ef5435076a71d0819"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\2021广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1269,
+        "sha256": "33f0b6b640231269e6b47629660ed2dfc1f71594bfeb9ecc6400bf97250c0c91"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\2021广州中考参考答案.page-003.png",
+        "bytes": 138235,
+        "sha256": "4985ddc327d1c297bb1bd68fcf9b6d5e7cc3a50b6b867364fdb1ab36cc71dfc5"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\2021广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 433,
+        "sha256": "5bc28e7e5d4ec5dbe8ae34f9b34f63d5bd8ea0f44f98f3cb122d040988701a46"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\manifest.json",
+        "bytes": 3351,
+        "sha256": "daf89aadb7d6ac1860f9b713bb1cfc2fa0906d3331fc6e5fc7b6d4078c472202"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816冻结输入最终验证__2021广州中考参考答案\\review.html",
+        "bytes": 1472,
+        "sha256": "6bbcb8d405e4dd26484d027c993db5db445459155faa22745b07aba5154ecc99"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

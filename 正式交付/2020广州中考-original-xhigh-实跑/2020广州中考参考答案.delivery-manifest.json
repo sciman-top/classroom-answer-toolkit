@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-20T12:12:03.728Z",
+  "snapshotId": "snapshot-1b94c28d0ccf490d",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-original-xhigh-实跑\\2020广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-1b94c28d0ccf490d",
+    "version": "v8.15",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-original-xhigh-实跑\\2020广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-original-xhigh-实跑\\2020广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-original-xhigh-实跑\\2020广州中考参考答案.md",
+      "bytes": 3001,
+      "sha256": "271c7d558f74d66b317ad82979b8985f878528f890952baab29b62e96de036d3"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-original-xhigh-实跑\\2020广州中考参考答案.pdf",
+      "bytes": 146131,
+      "sha256": "c2c9dbbf68990ce3b10e1c210a9e9618ef6448b80c64731b6d6b9d57dade19ba"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-original-xhigh-实跑\\2020广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "93d28228fcfd0d72c75f6bf2cdddfb306ebaa8f679190a78aebfbbf24cb2fcac"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\2020广州中考参考答案.page-001.png",
+        "bytes": 223956,
+        "sha256": "1b0b4282b6a677f1f806d153d2279f7fcd8beb91623f6d97ab6d2f9cbf26826c"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\2020广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 900,
+        "sha256": "e9bf8948a53b1d63de249bbd2927d602c2951f5fbdb5464802d635e3592ac24e"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\2020广州中考参考答案.page-002.png",
+        "bytes": 237040,
+        "sha256": "789e8436389b2297143e2f1a4026b749dbb582775dfe16b73e262c3fa15eaece"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\2020广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1039,
+        "sha256": "531b6df174615613195b6d9114eb109aa1eb7536eac8c56794a985328896c09c"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\2020广州中考参考答案.page-003.png",
+        "bytes": 96019,
+        "sha256": "f13005e8b84e04d54714a41daa7aa5b3064786d73c214d8f0ef5b3d9089507ea"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\2020广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 280,
+        "sha256": "a3fe04ca1328e0e47a626df37c1d4a08560e30151c9f025eb89d6b25021c9da1"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\manifest.json",
+        "bytes": 3288,
+        "sha256": "60bc37af11b4457dc9e5a2a20236dda100410954a641f09ddfc3b107ad3c4a2f"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-original-xhigh-实跑__2020广州中考参考答案\\review.html",
+        "bytes": 1465,
+        "sha256": "e0c3dcbc4b70f030b798c63385b2036a5b883f0d72f15469d92407ca880cb053"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

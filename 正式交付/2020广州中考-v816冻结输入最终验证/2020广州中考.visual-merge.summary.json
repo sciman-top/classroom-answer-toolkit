@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-20T13:55:49.230Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "b84928ea68f140b1cdf0afb30f4819ddbbc5dac3578b64f86ac48c3eb0b7b3f4",
+  "mode": "visual_audit_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_merge",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考盲答候选.md",
+  "candidateSha256": "a25309ee82f356516337f32cbe3284780894b8e4a45002c0182c51d624df7bf2",
+  "auditFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考视觉审计发现.md",
+  "auditFindingsSha256": "85ec3ebbc3ffe10728b45f256bccf2215d9e42ce02d0f42b486a0e0dc1f1f754",
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考视觉审计候选.md",
+  "outputSha256": "59d28711356ede384616c984742fdc1db0c1d38e59d19051fd4b8a51c4eb240f",
+  "answerCharacters": 1888,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 28214,
+      "requestBytes": 122086,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

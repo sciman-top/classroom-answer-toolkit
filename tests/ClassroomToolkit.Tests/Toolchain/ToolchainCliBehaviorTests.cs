@@ -31,7 +31,7 @@ public sealed class ToolchainCliBehaviorTests
             var snapshot = document.RootElement;
             snapshot.GetProperty("snapshotId").GetString().Should().StartWith("snapshot-");
             snapshot.GetProperty("subjectPack").GetProperty("assetId").GetString().Should().Be("junior-physics-answer");
-            snapshot.GetProperty("subjectPack").GetProperty("version").GetString().Should().Be("v8.15");
+            snapshot.GetProperty("subjectPack").GetProperty("version").GetString().Should().Be("v8.16");
             snapshot.GetProperty("activeProfile").GetProperty("name").GetString().Should().Be("classroom");
         }
         finally
@@ -252,7 +252,7 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public async Task LiveWorkflowWritesSuccessReceiptWithoutReusingDevelopmentArtifacts()
+    public async Task LiveWorkflowWritesSuccessReceiptAndBlocksPromptDrift()
     {
         var root = FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowSuccess", Guid.NewGuid().ToString("N"));
@@ -262,6 +262,7 @@ public sealed class ToolchainCliBehaviorTests
         var promptPath = Path.Combine(testRoot, "prompt.md");
         var envPath = Path.Combine(testRoot, ".env");
         var receiptPath = Path.Combine(outputDirectory, "exam.workflow-run.json");
+        string? retainedWorkRoot = null;
         Directory.CreateDirectory(fakeNodeDirectory);
         File.WriteAllText(sourcePath, "%PDF-source");
         File.WriteAllText(promptPath, "# prompt");
@@ -289,6 +290,9 @@ public sealed class ToolchainCliBehaviorTests
                     [IO.Directory]::CreateDirectory($out) | Out-Null
                     Write-Text (Join-Path $out "source.page-1.png") "png"
                     Write-Text (Join-Path $out "manifest.json") '{"pages":[{}]}'
+                    if ($env:CLASSROOM_TOOLKIT_TEST_MUTATE_PROMPT -eq "true") {
+                        Write-Text $env:CLASSROOM_TOOLKIT_TEST_PROMPT_PATH "# mutated prompt"
+                    }
                 }
                 "answer-request.mjs" {
                     Write-Text (Get-Option "--output") "# 物理试卷参考答案`n"
@@ -334,9 +338,44 @@ public sealed class ToolchainCliBehaviorTests
             phases.GetProperty("referenceReview").GetProperty("status").GetString().Should().Be("skipped");
             phases.GetProperty("delivery").GetProperty("status").GetString().Should().Be("completed");
             receipt.GetProperty("artifacts").GetArrayLength().Should().Be(4);
+
+            var driftOutputDirectory = Path.Combine(testRoot, "drift-delivery");
+            var driftReceiptPath = Path.Combine(driftOutputDirectory, "exam.workflow-run.json");
+            File.WriteAllText(promptPath, "# frozen prompt");
+            var frozenPromptSha = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(promptPath))).ToLowerInvariant();
+            var driftResult = await RunAsyncWithEnvironment(
+                "pwsh",
+                root,
+                new Dictionary<string, string?>
+                {
+                    ["PATH"] = pathValue,
+                    ["CLASSROOM_TOOLKIT_TEST_MUTATE_PROMPT"] = "true",
+                    ["CLASSROOM_TOOLKIT_TEST_PROMPT_PATH"] = promptPath
+                },
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/run-live-answer-workflow.ps1",
+                "-SourcePdf", sourcePath,
+                "-OutputDirectory", driftOutputDirectory,
+                "-PromptFile", promptPath,
+                "-ConfigEnvFile", envPath,
+                "-SkipVisualAudit");
+
+            driftResult.ExitCode.Should().NotBe(0);
+            driftResult.Output.Should().Contain("Workflow input drift detected for PromptFile");
+            using var driftDocument = JsonDocument.Parse(File.ReadAllText(driftReceiptPath));
+            var driftReceipt = driftDocument.RootElement;
+            driftReceipt.GetProperty("status").GetString().Should().Be("failed");
+            driftReceipt.GetProperty("inputs").GetProperty("prompt").GetProperty("sha256").GetString()
+                .Should().Be(frozenPromptSha);
+            retainedWorkRoot = driftReceipt.GetProperty("diagnostics").GetProperty("retainedWorkRoot").GetString();
         }
         finally
         {
+            if (!string.IsNullOrWhiteSpace(retainedWorkRoot) && Directory.Exists(retainedWorkRoot))
+            {
+                Directory.Delete(retainedWorkRoot, recursive: true);
+            }
             if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
         }
     }

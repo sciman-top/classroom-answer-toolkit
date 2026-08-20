@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "assetId": "junior-physics-answer",
   "displayName": "初中物理试卷参考答案生成与渲染",
-  "version": "v8.15",
+  "version": "v8.16",
   "status": "active",
   "locale": "zh-CN",
   "domain": "junior-high-school-physics",
@@ -11,7 +11,7 @@
     "../platform-core/manifest.json"
   ],
   "sourceOfTruth": {
-    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.15.md",
+    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.16.md",
     "mirroredSpec": "./spec.md",
     "runtimeConfig": "./config.json",
     "acceptanceChecklist": "./checklists/acceptance.md"

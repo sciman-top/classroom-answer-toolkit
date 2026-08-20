@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "3174c560530546d3a6960f4b2b78539d",
+  "status": "succeeded",
+  "startedAt": "2026-08-20T12:47:17.4563191+00:00",
+  "finishedAt": "2026-08-20T13:10:00.5654804+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2020广州中考.pdf",
+      "bytes": 912666,
+      "sha256": "95b86d3ae8415ab714ff775ae34c6ff695fd30e3fd1ef14caec5689114061800"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2020广州中考-参考答案.pdf",
+      "bytes": 225334,
+      "sha256": "d73824b34e222287286cb23caf3f5900b8509fd1e5088cf1190d6de5a79fc770"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 105139,
+      "sha256": "48d0c772cd91fae310b9092888e807ba49b747c182d8e4b96fd1fc069056cae5"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 30000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.blind-generation.summary.json",
+        "bytes": 4435,
+        "sha256": "2613665daa91f45b4bee6c195172f6d2d8f11109ff0f928d445d788115eedc29"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考盲答候选.md",
+        "bytes": 3039,
+        "sha256": "7f8f477be0f32a8851b924b89e1f35c67d768abdc27b29d6dd69fd332ebc8a7d"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.visual-findings.summary.json",
+        "bytes": 7866,
+        "sha256": "931f1916c6a088e8daeeece4bde175c41c7042ab7f500195af2319149c9ce4ac"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考视觉审计发现.md",
+        "bytes": 6574,
+        "sha256": "7824cc59e09109e7f0c6e5e178d54409fe637900d770a23453de97dfe95e0487"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.visual-merge.summary.json",
+        "bytes": 2177,
+        "sha256": "66eb817f4d9ce78f7beb68c5c1289fed4e9c690d701ea413a2816932aeaf3055"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考视觉审计候选.md",
+        "bytes": 3039,
+        "sha256": "b921899dd401328334e43f616d4259424df412a637ddeba187a6252e67765b73"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考.reference-review.summary.json",
+        "bytes": 5447,
+        "sha256": "464d757afb59720648e74ee63c127cb39cfd12fcdc2c63bdc921014756ef3675"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.md",
+        "bytes": 3212,
+        "sha256": "16ba8a2bd437a406e9dc8c0eb5766608f66b7d9bf98e3a278dd1f187a3b5b7e1"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.pdf",
+        "bytes": 168504,
+        "sha256": "9e8f7c434807c26bcbc8ba33c5e9db329bf65207b601dc36ca62e4dd3dbcca9f"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.md",
+      "bytes": 3212,
+      "sha256": "16ba8a2bd437a406e9dc8c0eb5766608f66b7d9bf98e3a278dd1f187a3b5b7e1"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.pdf",
+      "bytes": 168504,
+      "sha256": "9e8f7c434807c26bcbc8ba33c5e9db329bf65207b601dc36ca62e4dd3dbcca9f"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.delivery-manifest.json",
+      "bytes": 4812,
+      "sha256": "f0eb1e3fa73a743f2d264bf25110cecec8fb82804bd3fa1f679c83a35ea8ac92"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "5927161538f7d02d087113ff3488cb35c0a56850fcdd11083e996fbd1d75c4fb"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考答案自动复核文本差异报告.md",
+      "bytes": 6214,
+      "sha256": "53d533088331d7f5fffd219901b1a83c04569478d55fdc0102102a396d4913a8"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

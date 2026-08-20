@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-20T12:25:15.023Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "dc9ea72826fc228eda1dfbca44b1bcee4f49ed8e322481ce3bf49a38032602d0",
+  "mode": "visual_audit_findings",
+  "sourcePageCount": 0,
+  "auditImageCount": 16,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_findings",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-original-xhigh-实跑\\2021广州中考盲答候选.md",
+  "candidateSha256": "b789cbb463ee74135dde72419453677c5dff6e512b6bc4b111fdb9084db1423b",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 16,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-001.tile-01.x-01.png",
+      "sha256": "54b14f2d73497ba6ade2d99e321b22dffeeb3097bf3699371e415f1daa404f54"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-001.tile-01.x-02.png",
+      "sha256": "f8f0d28ffc9a611fd62c51efa8de85a6dd6707bd607d9165ffb0dd8b81c2c2a8"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-002.tile-01.x-01.png",
+      "sha256": "f2804d75280f16967b2f6c3307a1233a7c9b09d83a0d6516bfb61b3134684c58"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-002.tile-01.x-02.png",
+      "sha256": "436e7c71ebefaa8a8656366ed9ed08406957758d5baba8acd3e54e734588e14e"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-003.tile-01.x-01.png",
+      "sha256": "cd65f193e0ff2a97e5ef95fdc35d57ab66241e02da1b65c3ce5a42ce1b4ce5c6"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-003.tile-01.x-02.png",
+      "sha256": "3f0bc6bf42a39f62f9bb5a243e39e85bc019d41979f02f478515feaf26712b5a"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-004.tile-01.x-01.png",
+      "sha256": "3425ad6dc699a53ad9026ac85c31bae090576f9eff8f3674fc636c5b75c945bd"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-004.tile-01.x-02.png",
+      "sha256": "2e604ddc5f53e6a63634939c3d9f3be21ddc7c87f7469248a9b90e274b0921f0"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-005.tile-01.x-01.png",
+      "sha256": "24d3f53bd9b62102d86030c7656d5acadb161aa1c807f1fdabdea242ca47be26"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-005.tile-01.x-02.png",
+      "sha256": "2655fd05b93a2073c1e3c355b3ad5cab0107991e6725595e4cae7feaa7eab92a"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-006.tile-01.x-01.png",
+      "sha256": "da7c3ea16ffa593b686967499a35137cd18f0585e71d7a3fbe117b378a915a27"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-006.tile-01.x-02.png",
+      "sha256": "59982a494ec2ae894ad3bbbd0f5e28258ef7530a78193397bf9e5ad90541d92b"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-007.tile-01.x-01.png",
+      "sha256": "5107f7b91ea07bfdc6efb0f293fdee0d4bea2cccfbfcb092be756185b709d659"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-007.tile-01.x-02.png",
+      "sha256": "ce8af0f50abd37badd3ad884aae3248f639d3a390ec7c83a39369b84cee19d1c"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-008.tile-01.x-01.png",
+      "sha256": "b23ae74acde04bf5998858928ca798d485bf93c73021fc363133124cdbca4e44"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\514b9146eaab42b6bf1925d2266c6430\\visual-audit-pages\\2021广州中考.page-008.tile-01.x-02.png",
+      "sha256": "1536b7f412f7ad384484baf1e926b698ad95ffa875a699d49f2a42cc11c9d7d7"
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-original-xhigh-实跑\\2021广州中考视觉审计发现.md",
+  "outputSha256": "94784cb9c9956a8b467161a50fbb9df21dfd393e73d6d548bde1f8fd30eb569a",
+  "answerCharacters": 3942,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 385279,
+      "requestBytes": 8851851,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-20T13:08:07.960Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "48d0c772cd91fae310b9092888e807ba49b747c182d8e4b96fd1fc069056cae5",
+  "mode": "visual_audit_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_merge",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考盲答候选.md",
+  "candidateSha256": "7f8f477be0f32a8851b924b89e1f35c67d768abdc27b29d6dd69fd332ebc8a7d",
+  "auditFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考视觉审计发现.md",
+  "auditFindingsSha256": "7824cc59e09109e7f0c6e5e178d54409fe637900d770a23453de97dfe95e0487",
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考视觉审计候选.md",
+  "outputSha256": "b921899dd401328334e43f616d4259424df412a637ddeba187a6252e67765b73",
+  "answerCharacters": 1928,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 30887,
+      "requestBytes": 118254,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

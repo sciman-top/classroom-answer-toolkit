@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-20T13:27:34.213Z",
+  "snapshotId": "snapshot-96e6fed0b512a845",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816文本层修复验证\\2021广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-96e6fed0b512a845",
+    "version": "v8.16",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816文本层修复验证\\2021广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816文本层修复验证\\2021广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816文本层修复验证\\2021广州中考参考答案.md",
+      "bytes": 3135,
+      "sha256": "1f9d5f0acfd0b36d31764d139b8783b935b6ca6a0f50a286f2823bca6f1ee2b3"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816文本层修复验证\\2021广州中考参考答案.pdf",
+      "bytes": 168533,
+      "sha256": "363fafacac408d2e8f4175cdc0bdc8795c26c7c03ad05f2c668bdffa05693b18"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816文本层修复验证\\2021广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "f430b94ed7c111133de72ddbf5a3d7bb1081f66119bde41a00f544e1bfe68845"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\2021广州中考参考答案.page-001.png",
+        "bytes": 238998,
+        "sha256": "a133702081047427f2e886d94876f178542152abb82716992cc1490d7a4ecb28"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\2021广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 982,
+        "sha256": "3a16f91fbea96d1ac3c9d16db41dea288eba534c1aaa2012b678ab487f320fc8"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\2021广州中考参考答案.page-002.png",
+        "bytes": 324458,
+        "sha256": "3663086ff9d8bbbddbb27ef68b6f2513d8c92e05d2a2a2dda11e0133c32c020e"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\2021广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1375,
+        "sha256": "97558be1becd5aeffc91659bbc9ba41a009359fc75ba87af47025ffa6b781a37"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\2021广州中考参考答案.page-003.png",
+        "bytes": 78077,
+        "sha256": "b9bd05dcd1d3b832f2b2ca18b61fcce6e0e70093f9b89ed58820111dda86d9a8"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\2021广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 157,
+        "sha256": "0cf8cb0a8267d1760e4d8658cbea37baa697fabd27ee1705fe9f34b9a3f582f4"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\manifest.json",
+        "bytes": 3323,
+        "sha256": "6a7d174b0bb36b11b517ed40e4a2dd6aa5ae7a82e23eda78088742dacb8c25ac"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2021广州中考-v816文本层修复验证__2021广州中考参考答案\\review.html",
+        "bytes": 1469,
+        "sha256": "9d4d8cc867136e6b35a7a78f39476aefa8448c287a175c4c3c5c5c25b94bb771"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

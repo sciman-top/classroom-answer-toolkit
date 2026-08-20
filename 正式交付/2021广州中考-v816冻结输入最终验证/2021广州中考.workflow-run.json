@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "e2df3b5e2eb64fe2a3cfd98268fd790b",
+  "status": "succeeded",
+  "startedAt": "2026-08-20T13:58:02.0276881+00:00",
+  "finishedAt": "2026-08-20T14:15:28.2179917+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2021广州中考.pdf",
+      "bytes": 1108692,
+      "sha256": "d4abb8aa48663b772abb1ee5b15935b065b8931af47bd3c62d89bdef1f83989c"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2021广州中考-参考答案.pdf",
+      "bytes": 290114,
+      "sha256": "e157ab8a16233acd68000299b427f814687035ec1b76384f69f1cf446ed04578"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 105426,
+      "sha256": "b84928ea68f140b1cdf0afb30f4819ddbbc5dac3578b64f86ac48c3eb0b7b3f4"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 30000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.blind-generation.summary.json",
+        "bytes": 4165,
+        "sha256": "71ddb64a434b529cf8e0491403737269699efdef69119e80addb7492859a46f5"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考盲答候选.md",
+        "bytes": 3142,
+        "sha256": "70ad8bd93a0bced86ff4dd1f5b6d87717009406a35ccb2d10d175beef1460d4b"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.visual-findings.summary.json",
+        "bytes": 6788,
+        "sha256": "97506d0d01598c90c9eb68622344efde1dc8ccb6ad58337cd9b684ce6d1c43f6"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考视觉审计发现.md",
+        "bytes": 7837,
+        "sha256": "88a07179ce1b91ab20758e8b51805327df238c1eb7869d7300b42b297b4db2ec"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.visual-merge.summary.json",
+        "bytes": 2186,
+        "sha256": "3c6e90c14233f84a060c59a81729e775822b64aa7ffa2662e9befa0ce03c002a"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考视觉审计候选.md",
+        "bytes": 3142,
+        "sha256": "70ad8bd93a0bced86ff4dd1f5b6d87717009406a35ccb2d10d175beef1460d4b"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考.reference-review.summary.json",
+        "bytes": 5772,
+        "sha256": "41a9fad020f18a904f76b74fec7874bd5b25d4aa6de1013ec7dd01e7eb802796"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.md",
+        "bytes": 3257,
+        "sha256": "cdb5ee2b624bfd322d46053a17ae730800e650235ce8c906af38e50f5294198b"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.pdf",
+        "bytes": 171828,
+        "sha256": "663f0618fdada29f2770f1e46f442bb16a38d3e75a17bb1de6d88bcb1f2e82a6"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.md",
+      "bytes": 3257,
+      "sha256": "cdb5ee2b624bfd322d46053a17ae730800e650235ce8c906af38e50f5294198b"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.pdf",
+      "bytes": 171828,
+      "sha256": "663f0618fdada29f2770f1e46f442bb16a38d3e75a17bb1de6d88bcb1f2e82a6"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.delivery-manifest.json",
+      "bytes": 4860,
+      "sha256": "b6c703cf93bc1ed79ebd18cab62ec8788f25e2c9f1cba12c22f7cd7e7a89d6f2"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "89bfa2cafd2b04e6e69ec6fdb322dc3475d6b210706ccb914b77bf9c6273e7ae"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2021广州中考-v816冻结输入最终验证\\2021广州中考答案自动复核文本差异报告.md",
+      "bytes": 6182,
+      "sha256": "abed118b7761b0e9121490fdb65ff9b82092a047c371a7721e639078c4ab39db"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

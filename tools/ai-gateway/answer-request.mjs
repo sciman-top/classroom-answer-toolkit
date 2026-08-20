@@ -52,6 +52,7 @@ Options:
   --config-env-file <path>  Env file to read; defaults to .env
   --prompt-file <path>      Full answer specification; defaults to the active junior-physics spec
   --images-dir <dir>        Directory containing ordered page PNG/JPEG/WebP images
+  --source-text-file <path> Optional extracted text layer from the same source PDF
   --candidate-file <path>   Blind answer Markdown to review against a reference answer
   --audit-images-dir <dir>  High-resolution source crops/pages for a no-reference visual audit; requires --candidate-file
   --audit-findings-only     Emit visual findings without rewriting the candidate; requires --audit-images-dir
@@ -73,6 +74,7 @@ function parseArgs(argv) {
     envFile: path.join(repoRoot, ".env"),
     promptFile: defaultPromptPath,
     imagesDir: null,
+    sourceTextFile: null,
     auditImagesDir: null,
     auditFindingsOnly: false,
     auditFindingsFile: null,
@@ -113,6 +115,14 @@ function parseArgs(argv) {
     }
     if (arg.startsWith("--images-dir=")) {
       options.imagesDir = resolveCallerPath(arg.slice("--images-dir=".length));
+      continue;
+    }
+    if (arg === "--source-text-file") {
+      options.sourceTextFile = resolveCallerPath(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg.startsWith("--source-text-file=")) {
+      options.sourceTextFile = resolveCallerPath(arg.slice("--source-text-file=".length));
       continue;
     }
     if (arg === "--image") {
@@ -293,6 +303,9 @@ function validateOptions(options) {
   if (options.referenceTextFile && !fs.existsSync(options.referenceTextFile)) {
     throw new Error(`Reference text file not found: ${options.referenceTextFile}`);
   }
+  if (options.sourceTextFile && !fs.existsSync(options.sourceTextFile)) {
+    throw new Error(`Source text file not found: ${options.sourceTextFile}`);
+  }
 
 }
 
@@ -303,13 +316,14 @@ function validateOutputCollision(options) {
     options.promptFile,
     options.candidateFile,
     options.auditFindingsFile,
+    options.sourceTextFile,
     options.referenceTextFile,
     ...options.imagePaths
   ].filter(Boolean).map((inputPath) => path.resolve(inputPath));
   const normalizePath = (filePath) => process.platform === "win32" ? filePath.toLowerCase() : filePath;
   const protectedPathKeys = new Set(protectedInputs.map(normalizePath));
   if (protectedPathKeys.has(normalizePath(outputPath))) {
-    throw new Error("--output must not overwrite a prompt, candidate, findings, reference text, or source image input.");
+    throw new Error("--output must not overwrite a prompt, candidate, findings, source text, reference text, or source image input.");
   }
   if (summaryPath && (
     protectedPathKeys.has(normalizePath(summaryPath))
@@ -359,7 +373,8 @@ export function buildPrompt(promptFile, review = {}) {
       `所附 ${review.auditImageCount} 张图片是原始试卷的高分辨率重叠视窗，不是参考答案。` +
       "请对照第一次盲答候选，逐题独立检查所有选择题和包含滑轮、仪表、刻度尺、弹簧、钩码、电路、光路或方向关系的题目。\n" +
       "只输出视觉审计发现报告，不得重写整份答案。每项发现必须包含题号、候选结论、可见证据、独立计算或逐段追踪结果、建议修正；没有足够证据时写【视觉证据不足，需复核】。\n" +
-      "选择题逐项反证；滑轮逐段追踪承重绳；仪表先识别实际接线柱再按刻线间隔计数；刻度尺读取两端后相减；钩码逐个计数。\n\n" +
+      "选择题逐项反证；滑轮逐段追踪承重绳；仪表先识别实际接线柱再按刻线间隔计数；刻度尺读取两端后相减；钩码逐个计数。" +
+      "电磁力方向题若要确认或修正，必须逐个目标导体明确写出电流进入端、离开端、N→S磁场方向、与题内校准图的对应变换和最终受力方向；任一项无法从图中绑定时只能写【视觉证据不足，需复核】，不得声称候选正确。\n\n" +
       `## 第一次盲答候选\n\n${review.candidateMarkdown.trim()}`;
   }
   if (review.mode === "visual_audit_merge") {
@@ -383,6 +398,9 @@ export function buildPrompt(promptFile, review = {}) {
   }
   const generationTask = `${specification}\n\n---\n\n# 当前真实试卷生成任务\n\n` +
     "所附图片按文件名顺序构成同一份完整试卷。请严格按上述规范独立解答全部题目。\n" +
+    (review.sourceText
+      ? `下面的原卷 PDF 文本层只用于精确抄录题号、题干文字、表格数据和数量关系；原卷页图仍是图形、刻度、接线、方向和版式的最高依据。文本层与页图冲突时回查页图并标【疑】，不得用文本层猜图。\n\n## 原卷 PDF 文本层（辅助）\n\n${review.sourceText.trim()}\n\n`
+      : "") +
     "解题前先在内部建立逐题覆盖清单，枚举每个题号、括号小问、圈号小问和每个待填空；" +
     "输出前按该清单逐项核对，任何小问都不得遗漏；圈号小问编号必须与原卷逐项一一对应，不得跳号、重编号或错位。不要输出这份内部清单。\n" +
     "对电路、线圈、光路、受力图和仪表盘等视觉题，必须放大核对原图并独立复核：" +
@@ -840,7 +858,11 @@ export async function main() {
   if (loaded.validation.errors.length > 0) {
     throw new Error(loaded.validation.errors.join("; "));
   }
+  const promptContext = {
+    sourceText: options.sourceTextFile ? fs.readFileSync(options.sourceTextFile, "utf8") : ""
+  };
   const prompt = buildPrompt(options.promptFile, options.candidateFile ? {
+    ...promptContext,
     mode: options.auditFindingsOnly
       ? "visual_audit_findings"
       : options.auditFindingsFile
@@ -854,7 +876,7 @@ export async function main() {
     sourcePageCount: options.sourceImagePaths.length,
     auditImageCount: options.auditImagePaths.length,
     referencePageCount: options.referenceImagePaths.length
-  } : {});
+  } : promptContext);
   const result = await requestAnswerWithFailover(loaded.config, { ...options, prompt });
   if (!result.ok) {
     throw new Error(`${result.error}\n${JSON.stringify(result.attempts.map(redactAttempt), null, 2)}`);
@@ -893,6 +915,8 @@ export async function main() {
     candidateSha256: options.candidateFile ? sha256File(options.candidateFile) : null,
     auditFindingsPath: options.auditFindingsFile,
     auditFindingsSha256: options.auditFindingsFile ? sha256File(options.auditFindingsFile) : null,
+    sourceTextPath: options.sourceTextFile,
+    sourceTextSha256: options.sourceTextFile ? sha256File(options.sourceTextFile) : null,
     referenceTextPath: options.referenceTextFile,
     referenceTextSha256: options.referenceTextFile ? sha256File(options.referenceTextFile) : null,
     pageCount: options.imagePaths.length,

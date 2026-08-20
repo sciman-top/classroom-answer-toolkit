@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-20T13:10:00.341Z",
+  "snapshotId": "snapshot-96e6fed0b512a845",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-96e6fed0b512a845",
+    "version": "v8.16",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.md",
+      "bytes": 3212,
+      "sha256": "16ba8a2bd437a406e9dc8c0eb5766608f66b7d9bf98e3a278dd1f187a3b5b7e1"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.pdf",
+      "bytes": 168504,
+      "sha256": "9e8f7c434807c26bcbc8ba33c5e9db329bf65207b601dc36ca62e4dd3dbcca9f"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816文本层修复验证\\2020广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "5927161538f7d02d087113ff3488cb35c0a56850fcdd11083e996fbd1d75c4fb"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\2020广州中考参考答案.page-001.png",
+        "bytes": 280491,
+        "sha256": "316347891ca28cfb684584fb1d0603abb273a44e0241eab42f43d40af7352577"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\2020广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1181,
+        "sha256": "0a5da7aff0e095654ad17517734830976ba914c5dfc1d6e7b043cac90bd8f61d"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\2020广州中考参考答案.page-002.png",
+        "bytes": 251172,
+        "sha256": "5631a16d295d2c2594bc83de9b425a2b305725e510fd6432b0b07d3c64e308d9"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\2020广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1090,
+        "sha256": "fb7fc68399765252c3f6e054c5a7c50b4f70d9e04f4028f6c3a9ca6dd392e054"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\2020广州中考参考答案.page-003.png",
+        "bytes": 74506,
+        "sha256": "837cf6f6f1a7aead55aa5ded1595ca45d3b9e1b02f0a81e1d1b9ae484ac272df"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\2020广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 150,
+        "sha256": "e9d3745012a647f30c7beecbec52350f5c2f2c315dc2a3604e0f9cac68b780fc"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\manifest.json",
+        "bytes": 3323,
+        "sha256": "574c92e78e8b8c031c75bb55251ade851cdd0cb30897a3bd92d88333023e489a"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2020广州中考-v816文本层修复验证__2020广州中考参考答案\\review.html",
+        "bytes": 1469,
+        "sha256": "1407cde06b6383cbc730528928c2b78c97c1d4205b8c1ed88ddb3bc91ec7ada9"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

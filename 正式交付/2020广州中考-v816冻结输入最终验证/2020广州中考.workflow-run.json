@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "201223496dbe4fdf8ee0813e09a6b328",
+  "status": "succeeded",
+  "startedAt": "2026-08-20T13:42:44.4265186+00:00",
+  "finishedAt": "2026-08-20T13:57:25.0497693+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2020广州中考.pdf",
+      "bytes": 912666,
+      "sha256": "95b86d3ae8415ab714ff775ae34c6ff695fd30e3fd1ef14caec5689114061800"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2020广州中考-参考答案.pdf",
+      "bytes": 225334,
+      "sha256": "d73824b34e222287286cb23caf3f5900b8509fd1e5088cf1190d6de5a79fc770"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 105426,
+      "sha256": "b84928ea68f140b1cdf0afb30f4819ddbbc5dac3578b64f86ac48c3eb0b7b3f4"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 30000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.blind-generation.summary.json",
+        "bytes": 4438,
+        "sha256": "f945cfdeb78135fb6fd8e3c20dfea328be08cb8b37e65fb2d2203e5dd0074b88"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考盲答候选.md",
+        "bytes": 2959,
+        "sha256": "a25309ee82f356516337f32cbe3284780894b8e4a45002c0182c51d624df7bf2"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.visual-findings.summary.json",
+        "bytes": 7387,
+        "sha256": "7fc18a357810daab068e9928e9242680c8a1bb6b8cf5fc69032596275a1f9507"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考视觉审计发现.md",
+        "bytes": 10149,
+        "sha256": "85ec3ebbc3ffe10728b45f256bccf2215d9e42ce02d0f42b486a0e0dc1f1f754"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.visual-merge.summary.json",
+        "bytes": 2186,
+        "sha256": "f4786ee7940d16f9c24f79edd7dc436ca0530ce15119a5cda577f8df95ebec1f"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考视觉审计候选.md",
+        "bytes": 2959,
+        "sha256": "59d28711356ede384616c984742fdc1db0c1d38e59d19051fd4b8a51c4eb240f"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考.reference-review.summary.json",
+        "bytes": 5452,
+        "sha256": "693f8d2b4b080e0e00a729b547fba6694bb621737b844dc6695ca0ebaf652768"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.md",
+        "bytes": 3226,
+        "sha256": "bfa8e5f40ed9525acea948a212a4eab3075ccc7087f71b2d2d44ac05d92aea21"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.pdf",
+        "bytes": 170212,
+        "sha256": "4a374374298f64fd9a9fa540aeec4844592c15eba7c3969aefc70f440d831c0c"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.md",
+      "bytes": 3226,
+      "sha256": "bfa8e5f40ed9525acea948a212a4eab3075ccc7087f71b2d2d44ac05d92aea21"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.pdf",
+      "bytes": 170212,
+      "sha256": "4a374374298f64fd9a9fa540aeec4844592c15eba7c3969aefc70f440d831c0c"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.delivery-manifest.json",
+      "bytes": 4860,
+      "sha256": "5f2160867c574ba088a7f4dc8ba4b7bf9a81ca48b5f5fa346f4f39b942ed74f4"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "819b05f745348d0563a80a0b330010e09ca0185656157ad8a8c8a57f7eb8bb37"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2020广州中考-v816冻结输入最终验证\\2020广州中考答案自动复核文本差异报告.md",
+      "bytes": 5822,
+      "sha256": "71628096982252412782ddc716c01f67775d87a4f69d20c8a38144cf1c8c04ec"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

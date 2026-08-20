@@ -214,6 +214,9 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
 
     assert.match(findingsPrompt, /只输出视觉审计发现报告/);
     assert.match(findingsPrompt, /不得重写整份答案/);
+    assert.match(findingsPrompt, /电流进入端、离开端/);
+    assert.match(findingsPrompt, /N→S磁场方向/);
+    assert.match(findingsPrompt, /题内校准图/);
     assert.match(findingsPrompt, /n=2/);
     assert.match(mergePrompt, /视觉审计合并任务/);
     assert.match(mergePrompt, /n 应为 3/);
@@ -237,6 +240,25 @@ test("blind solving orders only gpt-5.6-sol xhigh, high, and medium tiers", () =
   assert.equal(route.providers[0].visionModel, "gpt-5.6-sol");
   assert.equal(route.providers[0].reasoningEffort, "xhigh");
   assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback").orderedRoles, ["fallback_1", "fallback_2"]);
+});
+
+test("blind generation prompt binds extracted source text as auxiliary evidence", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-source-text-prompt-"));
+  const promptPath = path.join(directory, "spec.md");
+  try {
+    writeFileSync(promptPath, "v8.16 production specification", "utf8");
+    const prompt = buildPrompt(promptPath, {
+      sourceText: "19. 甲瓶中的油比乙瓶中的多。\n23. 电压表 V1 的示数为____。"
+    });
+
+    assert.match(prompt, /原卷 PDF 文本层（辅助）/);
+    assert.match(prompt, /甲瓶中的油比乙瓶中的多/);
+    assert.match(prompt, /精确抄录.*数量关系/);
+    assert.match(prompt, /原卷页图仍是.*最高依据/);
+    assert.match(prompt, /不得用文本层猜图/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 function createConfig(surface = "responses") {

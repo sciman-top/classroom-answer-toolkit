@@ -93,6 +93,32 @@ function Get-WorkflowFileReceipt {
     }
 }
 
+function Assert-WorkflowInputUnchanged {
+    param(
+        [Parameter(Mandatory = $true)][string]$InputName,
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$ExpectedReceipt
+    )
+
+    $currentReceipt = Get-WorkflowFileReceipt -PathValue $ExpectedReceipt.path
+    if ($null -eq $currentReceipt -or
+        $currentReceipt.bytes -ne $ExpectedReceipt.bytes -or
+        $currentReceipt.sha256 -ne $ExpectedReceipt.sha256) {
+        $actualSha = if ($null -eq $currentReceipt) { "<missing>" } else { $currentReceipt.sha256 }
+        throw "Workflow input drift detected for $InputName`: expected SHA-256 $($ExpectedReceipt.sha256), actual $actualSha. Start a new run with frozen inputs."
+    }
+}
+
+function Assert-WorkflowInputsUnchanged {
+    param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$InputReceipts)
+
+    foreach ($inputName in $InputReceipts.Keys) {
+        $receipt = $InputReceipts[$inputName]
+        if ($null -ne $receipt) {
+            Assert-WorkflowInputUnchanged -InputName $inputName -ExpectedReceipt $receipt
+        }
+    }
+}
+
 function Write-JsonFileAtomic {
     param(
         [Parameter(Mandatory = $true)][string]$PathValue,
@@ -187,6 +213,7 @@ $workRoot = Join-Path $env:TEMP ("classroom-answer-toolkit\live-answer-workflow\
 $pageDirectory = Join-Path $workRoot "pages"
 $visualAuditPageDirectory = Join-Path $workRoot "visual-audit-pages"
 $referencePageDirectory = Join-Path $workRoot "reference-pages"
+$sourceTextPath = Join-Path $workRoot "source-exam-text.txt"
 $referenceTextPath = Join-Path $workRoot "reference-answer-text.txt"
 $workflowSucceeded = $false
 $previousCloudEgress = $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
@@ -199,6 +226,12 @@ $currentPhase = $null
 
 if ($referencePath -and -not (Test-Path -LiteralPath $referencePath -PathType Leaf)) {
     throw "Reference PDF not found: $referencePath"
+}
+
+$workflowInputReceipts = [ordered]@{
+    SourcePdf = Get-WorkflowFileReceipt -PathValue $sourcePath
+    ReferencePdf = Get-WorkflowFileReceipt -PathValue $referencePath
+    PromptFile = Get-WorkflowFileReceipt -PathValue $promptPath
 }
 
 Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
@@ -289,9 +322,9 @@ function Write-WorkflowReceipt {
         startedAt = $workflowStartedAt.ToString("O")
         finishedAt = [DateTimeOffset]::UtcNow.ToString("O")
         inputs = [ordered]@{
-            sourcePdf = Get-WorkflowFileReceipt -PathValue $sourcePath
-            referencePdf = Get-WorkflowFileReceipt -PathValue $referencePath
-            prompt = Get-WorkflowFileReceipt -PathValue $promptPath
+            sourcePdf = $workflowInputReceipts.SourcePdf
+            referencePdf = $workflowInputReceipts.ReferencePdf
+            prompt = $workflowInputReceipts.PromptFile
         }
         options = [ordered]@{
             provider = $Provider
@@ -361,6 +394,7 @@ function Invoke-NodeTool {
 }
 
 try {
+    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
     New-Item -ItemType Directory -Force -Path $pageDirectory | Out-Null
 
     Write-Host "[live-answer-workflow] render source PDF pages"
@@ -377,12 +411,18 @@ try {
     if ($pageImages.Count -eq 0) {
         throw "Source PDF rendering produced no page images: $pageDirectory"
     }
+    $sourceTextLayers = @(Get-ChildItem -LiteralPath $pageDirectory -Filter "*.text-layer.txt" -File | Sort-Object Name)
+    if ($sourceTextLayers.Count -gt 0) {
+        $sourceText = ($sourceTextLayers | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join "`n`n--- source page ---`n`n"
+        Set-Content -LiteralPath $sourceTextPath -Value $sourceText -Encoding utf8 -NoNewline
+    }
 
     Write-Host "[live-answer-workflow] generate answer Markdown from $($pageImages.Count) page(s)"
     $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
     $currentPhase = "blindGeneration"
     $phaseStates[$currentPhase].status = "in_progress"
-    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
+    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
+    $blindArguments = @(
         "--config-env-file", $envFilePath,
         "--prompt-file", $promptPath,
         "--images-dir", $pageDirectory,
@@ -394,6 +434,10 @@ try {
         "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--allow-cloud-egress"
     )
+    if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
+        $blindArguments += @("--source-text-file", $sourceTextPath)
+    }
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $blindArguments
     $phaseStates[$currentPhase].status = "completed"
     $currentPhase = $null
 
@@ -414,6 +458,7 @@ try {
         Write-Host "[live-answer-workflow] extract visual findings without rewriting the blind candidate"
         $currentPhase = "visualFindings"
         $phaseStates[$currentPhase].status = "in_progress"
+        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
@@ -433,6 +478,7 @@ try {
         Write-Host "[live-answer-workflow] merge visual findings into the complete answer Markdown"
         $currentPhase = "visualMerge"
         $phaseStates[$currentPhase].status = "in_progress"
+        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
@@ -476,6 +522,7 @@ try {
         Write-Host "[live-answer-workflow] review blind candidate against authoritative reference"
         $currentPhase = "referenceReview"
         $phaseStates[$currentPhase].status = "in_progress"
+        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
         $reviewArguments = @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
@@ -490,6 +537,9 @@ try {
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--allow-cloud-egress"
         )
+        if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
+            $reviewArguments += @("--source-text-file", $sourceTextPath)
+        }
         if (Test-Path -LiteralPath $referenceTextPath -PathType Leaf) {
             $reviewArguments += @("--reference-text-file", $referenceTextPath)
         }
@@ -506,6 +556,7 @@ try {
     Write-Host "[live-answer-workflow] validate and render answer delivery"
     $currentPhase = "delivery"
     $phaseStates[$currentPhase].status = "in_progress"
+    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
     $deliveryArguments = @(
         $answerMarkdownPath,
         $answerPdfPath,
@@ -532,6 +583,7 @@ try {
         Remove-Item -LiteralPath $blindMarkdownPath -Force -ErrorAction SilentlyContinue
     }
 
+    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
     Write-WorkflowReceipt -Status "succeeded"
 
     $workflowSucceeded = $true
