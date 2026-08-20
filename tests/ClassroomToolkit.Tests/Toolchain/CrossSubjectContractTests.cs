@@ -6,7 +6,7 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class CrossSubjectContractTests
 {
     [Theory]
-    [InlineData("junior-physics-answer", "v8.16")]
+    [InlineData("junior-physics-answer", "v8.18")]
     [InlineData("senior-physics-answer", "v1.1")]
     [InlineData("math-answer", "v0.2")]
     public void SubjectPackManifestDatasetAndMirroredSpecAreAligned(string subjectPack, string expectedVersion)

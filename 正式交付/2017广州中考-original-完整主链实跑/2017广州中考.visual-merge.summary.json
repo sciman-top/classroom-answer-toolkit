@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-20T15:02:39.316Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "b84928ea68f140b1cdf0afb30f4819ddbbc5dac3578b64f86ac48c3eb0b7b3f4",
+  "mode": "visual_audit_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_merge",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-original-完整主链实跑\\2017广州中考盲答候选.md",
+  "candidateSha256": "4adc8a8824936bdaa635ff137d21951819e52224f7e1da1dac5af962232aaa9f",
+  "auditFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-original-完整主链实跑\\2017广州中考视觉审计发现.md",
+  "auditFindingsSha256": "a21653cab8ed2537af6bca6adddd800b7c4435a3259a81f2bb5d7e5fdc96b775",
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-original-完整主链实跑\\2017广州中考视觉审计候选.md",
+  "outputSha256": "4adc8a8824936bdaa635ff137d21951819e52224f7e1da1dac5af962232aaa9f",
+  "answerCharacters": 2258,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 33588,
+      "requestBytes": 121288,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

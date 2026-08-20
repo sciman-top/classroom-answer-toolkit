@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-20T15:27:05.787Z",
+  "snapshotId": "snapshot-b86bb874071dc724",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-b86bb874071dc724",
+    "version": "v8.17",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.md",
+      "bytes": 3654,
+      "sha256": "642e2cdb8f292a1c10980e20adba60dc7b5e026d8c4fda5d184bd97346679580"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.pdf",
+      "bytes": 177555,
+      "sha256": "b78686ff1bc4b3fb3ffd8218f2bbfa7b238322fde9018c1ef42a557553324ba0"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "99c03950ae9b86b849917abb7f3dd399c5e6b5597a86aa282ba33621f1994bca"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\2017广州中考参考答案.page-001.png",
+        "bytes": 240016,
+        "sha256": "862f0544be8b8eb87b4dac84b48473734644bad44d48d8664c7305b0cedbf340"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\2017广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1005,
+        "sha256": "790edc5ff814bcc4e42ae4b3c00e6663a4e2124b803b96b30299cd5e08c838e5"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\2017广州中考参考答案.page-002.png",
+        "bytes": 288301,
+        "sha256": "bd006571be0f30310775b4ffa037a52b4cc1f75d2674f6d6d4dcc2f680e1693f"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\2017广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1259,
+        "sha256": "b6b4f1188eaba58677c0f3d94630d8b64fc818e3fc97514676dce307bf63a386"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\2017广州中考参考答案.page-003.png",
+        "bytes": 174946,
+        "sha256": "2fc612fa19f50fa67d3d0c5a498b0bdefd0a6479e9c544a90cbc3f6803b7b272"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\2017广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 622,
+        "sha256": "122a7cf94dbbf6f3ed05efcbe37029064941d384d594153a4a29e639d2798edf"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\manifest.json",
+        "bytes": 3324,
+        "sha256": "7fb97b0a1e735a8facd90d7a6e9c2be115776419449cb000b311c081fcd43343"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2017广州中考-v817修复后完整复跑__2017广州中考参考答案\\review.html",
+        "bytes": 1469,
+        "sha256": "ff7098cb49af7e88f44039433e616fa9841cee0641ebea7c84a7fa0f869d8362"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

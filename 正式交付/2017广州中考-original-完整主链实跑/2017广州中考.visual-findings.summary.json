@@ -1,0 +1,128 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-20T15:02:05.445Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "b84928ea68f140b1cdf0afb30f4819ddbbc5dac3578b64f86ac48c3eb0b7b3f4",
+  "mode": "visual_audit_findings",
+  "sourcePageCount": 0,
+  "auditImageCount": 16,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_findings",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-original-完整主链实跑\\2017广州中考盲答候选.md",
+  "candidateSha256": "4adc8a8824936bdaa635ff137d21951819e52224f7e1da1dac5af962232aaa9f",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 16,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-001.tile-01.x-01.png",
+      "sha256": "02253e911fe14b21417c2e405efe35230f79782303a33460c0644edab19e463e"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-001.tile-01.x-02.png",
+      "sha256": "3b0ec393bfa4ad085a574a41ff0f58266c437ad590bd9a993926486922e0b754"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-002.tile-01.x-01.png",
+      "sha256": "70e3f252db9c7ecb5998a04c251cd18a2b171400c819fe695cd439d390245c28"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-002.tile-01.x-02.png",
+      "sha256": "1b88cf5b22f9644cff74900e8fa668c9a7962274c9f879493459924742d192cd"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-003.tile-01.x-01.png",
+      "sha256": "6f95949f977a859bc57da33efea08ee6636268050ac45e25ea251a393635cc9f"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-003.tile-01.x-02.png",
+      "sha256": "527bfc4472ba1336c20bbfca1daf4c7a2013247a0c99b7b6d478913f430aa7f4"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-004.tile-01.x-01.png",
+      "sha256": "fc26a6a9374c247c25ac61d9bf256ad9b621a49d0994a87a06739dbfee0f6e4a"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-004.tile-01.x-02.png",
+      "sha256": "35c01c516880a6168c52842977be8c2957355dea1eac2e704e255067e030e9d4"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-005.tile-01.x-01.png",
+      "sha256": "bb7ac2c216d62aac23ae630a884461041d651d1f495481ba8ae88892e894df87"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-005.tile-01.x-02.png",
+      "sha256": "f8ffee5bbc7ae2e0ceb945d9a04549a4c4b32a754e3f31c4a508147c9c05a2f7"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-006.tile-01.x-01.png",
+      "sha256": "4d17da45ef16970074875ba3c35461d3b20c71c86353e17cb160675357a43226"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-006.tile-01.x-02.png",
+      "sha256": "b1652a1dc22b9268a44bad5513b020888418e4997967580fae6967861a2a840b"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-007.tile-01.x-01.png",
+      "sha256": "9484019779bcfc7988259f035bd9d09a43705cf316f83c8932f7a0efb90c5060"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-007.tile-01.x-02.png",
+      "sha256": "15f62431e6b60a2f92675f0fe40ff56643cbcab80605799c1f879ddd4eb5be0f"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-008.tile-01.x-01.png",
+      "sha256": "b5814d03f03268a37e1a90d82dd0f354a3b0f85f4c139e8145768aec324648e6"
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\192da74a18964a1eb2214958ca601cc5\\visual-audit-pages\\2017广州中考.page-008.tile-01.x-02.png",
+      "sha256": "7479c835537dd124e1e9fc3a484f132122229c6c8777aa12113f00515c2c1a9f"
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-original-完整主链实跑\\2017广州中考视觉审计发现.md",
+  "outputSha256": "a21653cab8ed2537af6bca6adddd800b7c4435a3259a81f2bb5d7e5fdc96b775",
+  "answerCharacters": 4251,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 392878,
+      "requestBytes": 9814835,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

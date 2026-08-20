@@ -1,6 +1,6 @@
 # Acceptance Checklist
 
-This checklist distills the most important runtime gates from the current v8.16 production spec.
+This checklist distills the most important runtime gates from the current v8.18 production spec.
 
 ## Hard gates
 

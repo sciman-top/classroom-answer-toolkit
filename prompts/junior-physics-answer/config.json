@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1.0",
   "assetId": "junior-physics-answer",
-  "version": "v8.16-derived",
+  "version": "v8.18-derived",
   "sourceOfTruth": {
-    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.16.md",
+    "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
     "mirroredSpec": "./spec.md",
     "acceptanceChecklist": "./checklists/acceptance.md"
   },
@@ -63,6 +63,10 @@
       "requireSecondaryRangeAndScaleCheck": true,
       "requireAnchorChain": true,
       "requireNeighborMajorTickCrossCheck": true,
+      "requireTerminalRangeScaleEvidenceChain": true,
+      "rejectContradictoryTerminalAndScaleClaims": true,
+      "bindReadingToExplicitTargetFigure": true,
+      "forbidCrossFigureTerminalImport": true,
       "triggerRecheckOnScaleDivisionDisagreement": true,
       "coveredInstrumentTypes": [
         "ammeter",

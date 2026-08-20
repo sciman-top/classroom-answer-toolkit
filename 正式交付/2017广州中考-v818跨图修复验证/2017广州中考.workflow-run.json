@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "bf085ca7e80140328b47097d8a1fbad2",
+  "status": "succeeded",
+  "startedAt": "2026-08-20T15:31:44.8733267+00:00",
+  "finishedAt": "2026-08-20T15:44:56.9522996+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2017广州中考.pdf",
+      "bytes": 1019691,
+      "sha256": "3f419b1779ebec02f74c694966924a2931611f3525d3d17701946bb63abfc4fa"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2017广州中考答案.pdf",
+      "bytes": 335295,
+      "sha256": "f87c3cb8ed02969137ba916184045052ec3efecbd6331dd1d192fe52de67d207"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 107775,
+      "sha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 30000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.blind-generation.summary.json",
+        "bytes": 4159,
+        "sha256": "77505fed7b911c1788599b140cb7d2c94993f6ea13113554afbd4e36cb0a17a7"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考盲答候选.md",
+        "bytes": 3438,
+        "sha256": "63112f8bce213303108904471904af0b038badc3fff952db4fe8f50b0363650b"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.visual-findings.summary.json",
+        "bytes": 6776,
+        "sha256": "7c21df92af5e8c02a5a0ca866f719ea6e3dd951fe27b9e2067e123eeb32d6443"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考视觉审计发现.md",
+        "bytes": 8471,
+        "sha256": "6287b918c85ce086626d8c9242255ff78869cbb1560043969dd9d9f3506c8c7f"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.visual-merge.summary.json",
+        "bytes": 2168,
+        "sha256": "005e128d65ecc57aea23a55d97cce9bc885d57be5248b395e4cdf6d3004e4b68"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考视觉审计候选.md",
+        "bytes": 3438,
+        "sha256": "63112f8bce213303108904471904af0b038badc3fff952db4fe8f50b0363650b"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考.reference-review.summary.json",
+        "bytes": 5731,
+        "sha256": "3962df13c1a0eddd48b2cf3baed7063855757e61204c6b214d1c50b751449fc3"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.md",
+        "bytes": 3744,
+        "sha256": "f7c0283b05e78641b9a505a3f7229d3ab69bf7c8131960494979f9fe8999a602"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.pdf",
+        "bytes": 172469,
+        "sha256": "b1c3b9def274293ceb9cefb424a31a77d9e8a506fb16ecea80b0c84ff9b3a215"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.md",
+      "bytes": 3744,
+      "sha256": "f7c0283b05e78641b9a505a3f7229d3ab69bf7c8131960494979f9fe8999a602"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.pdf",
+      "bytes": 172469,
+      "sha256": "b1c3b9def274293ceb9cefb424a31a77d9e8a506fb16ecea80b0c84ff9b3a215"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.delivery-manifest.json",
+      "bytes": 4764,
+      "sha256": "fa16d6f3de8576102ea73e19446ddf36727737fae3bdb31d90b068bbf665def3"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "6ccb35a34f90b08e4d3547d4dbac28f3c47370a6c3e80d50122c78915f102900"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v818跨图修复验证\\2017广州中考答案自动复核文本差异报告.md",
+      "bytes": 7023,
+      "sha256": "1312b1db92d06fc8994a0efd1deaa1a1496c33eb37c19dcee8c209fc48da5e93"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

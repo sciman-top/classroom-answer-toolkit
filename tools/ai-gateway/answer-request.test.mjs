@@ -101,7 +101,11 @@ test("live task prompt requires complete subquestion coverage and independent vi
 
     assert.match(prompt, /逐题覆盖清单/);
     assert.match(prompt, /括号小问、圈号小问和每个待填空/);
-    assert.match(prompt, /量程、接线柱、分度值和指针位置/);
+    assert.match(prompt, /量程、分度值和指针位置/);
+    assert.match(prompt, /结构化证据链/);
+    assert.match(prompt, /不得用 \$R=U\/I\$ 反推读数/);
+    assert.match(prompt, /小问明确引用的目标图/);
+    assert.match(prompt, /禁止借用同题另一图的接线或量程/);
     assert.match(prompt, /禁止仅凭题型惯例作答/);
     assert.match(prompt, /禁止照抄装置名称/);
     assert.match(prompt, /圈号小问编号/);
@@ -217,6 +221,11 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
     assert.match(findingsPrompt, /电流进入端、离开端/);
     assert.match(findingsPrompt, /N→S磁场方向/);
     assert.match(findingsPrompt, /题内校准图/);
+    assert.match(findingsPrompt, /仪表证据链/);
+    assert.match(findingsPrompt, /另一图的接线柱与目标图的指针拼接/);
+    assert.match(findingsPrompt, /不得写“建议保留候选”/);
+    assert.match(findingsPrompt, /端子写“不适用\/未显示”/);
+    assert.match(findingsPrompt, /另一幅电路图/);
     assert.match(findingsPrompt, /n=2/);
     assert.match(mergePrompt, /视觉审计合并任务/);
     assert.match(mergePrompt, /n 应为 3/);

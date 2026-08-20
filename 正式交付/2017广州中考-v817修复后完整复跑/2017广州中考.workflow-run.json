@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "235e0971843945ec987576dd34737202",
+  "status": "succeeded",
+  "startedAt": "2026-08-20T15:13:54.5341746+00:00",
+  "finishedAt": "2026-08-20T15:27:05.9599937+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2017广州中考.pdf",
+      "bytes": 1019691,
+      "sha256": "3f419b1779ebec02f74c694966924a2931611f3525d3d17701946bb63abfc4fa"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2017广州中考答案.pdf",
+      "bytes": 335295,
+      "sha256": "f87c3cb8ed02969137ba916184045052ec3efecbd6331dd1d192fe52de67d207"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 106579,
+      "sha256": "1d4b0c9a2a67038ad0e52c1a7b3d7715c4ebe0a12ae4a14d441bd7caf6e604cc"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 30000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.blind-generation.summary.json",
+        "bytes": 4162,
+        "sha256": "17ece974dd0ffde1f7673f75e258f3b708fab64febca809d0585d068ba489d6e"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考盲答候选.md",
+        "bytes": 3601,
+        "sha256": "909caba498592e067506728e79d39a33fe2b6069ff52508c2183f9e8c0617d6f"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.visual-findings.summary.json",
+        "bytes": 6782,
+        "sha256": "28f6d1004fbb6b88a07cbdfe9dfdeae303ebb8f36af0754adc342121a3c89254"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考视觉审计发现.md",
+        "bytes": 10621,
+        "sha256": "4c7fd6a252c86adbc61a6949c3dcba693c8dc5812ae6bf4d8c360f5a37853d3c"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.visual-merge.summary.json",
+        "bytes": 2177,
+        "sha256": "3ec1f0e5a72fbb47cc6f9bf6d6a166110b3a2df1dd84a9fa239044860098170d"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考视觉审计候选.md",
+        "bytes": 3598,
+        "sha256": "fc109cb2de79c3b2264934b6e6e2bec7400e6d31931c3ef620789438e5995b2e"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考.reference-review.summary.json",
+        "bytes": 5737,
+        "sha256": "e0f5b00edffebb5d132e8877c2183d2d1d82f2848478be79c041a8bc76d45e6f"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.md",
+        "bytes": 3654,
+        "sha256": "642e2cdb8f292a1c10980e20adba60dc7b5e026d8c4fda5d184bd97346679580"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.pdf",
+        "bytes": 177555,
+        "sha256": "b78686ff1bc4b3fb3ffd8218f2bbfa7b238322fde9018c1ef42a557553324ba0"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.md",
+      "bytes": 3654,
+      "sha256": "642e2cdb8f292a1c10980e20adba60dc7b5e026d8c4fda5d184bd97346679580"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.pdf",
+      "bytes": 177555,
+      "sha256": "b78686ff1bc4b3fb3ffd8218f2bbfa7b238322fde9018c1ef42a557553324ba0"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.delivery-manifest.json",
+      "bytes": 4813,
+      "sha256": "917a5cedf9dfadfa435c6351a565ab715be988d4ab8c4e772ddeed84ee29a36a"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "99c03950ae9b86b849917abb7f3dd399c5e6b5597a86aa282ba33621f1994bca"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v817修复后完整复跑\\2017广州中考答案自动复核文本差异报告.md",
+      "bytes": 7025,
+      "sha256": "fb524fc024611f5becbdcf30f507f448a2a1dab9750b17ee78a24e8709436291"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

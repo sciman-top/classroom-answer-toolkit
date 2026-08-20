@@ -31,7 +31,7 @@ public sealed class ToolchainCliBehaviorTests
             var snapshot = document.RootElement;
             snapshot.GetProperty("snapshotId").GetString().Should().StartWith("snapshot-");
             snapshot.GetProperty("subjectPack").GetProperty("assetId").GetString().Should().Be("junior-physics-answer");
-            snapshot.GetProperty("subjectPack").GetProperty("version").GetString().Should().Be("v8.16");
+            snapshot.GetProperty("subjectPack").GetProperty("version").GetString().Should().Be("v8.18");
             snapshot.GetProperty("activeProfile").GetProperty("name").GetString().Should().Be("classroom");
         }
         finally
