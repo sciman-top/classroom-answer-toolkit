@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-21T11:27:42.250Z",
+  "snapshotId": "snapshot-86a87353eccbba39",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦修复验证\\2018广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-86a87353eccbba39",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦修复验证\\2018广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦修复验证\\2018广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦修复验证\\2018广州中考参考答案.md",
+      "bytes": 4240,
+      "sha256": "c819d35db8486a8261947bfc2108f0af0b270b8981dc0698bd0ef2441cd29954"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦修复验证\\2018广州中考参考答案.pdf",
+      "bytes": 182979,
+      "sha256": "aef99395f133ff4c219991b79fa2424bfdaf366fbaa8ede6a74c9bb1a63be195"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦修复验证\\2018广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "5b0864fb35902e65a4611d10a34ddf43b99794fd9e324cc7589c45aa9fac3cb2"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-001.png",
+        "bytes": 225582,
+        "sha256": "8004ddb9864ea8f1e6d5fd4ff27690a06b4af054ef8a90048f49d6636e999e48"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 905,
+        "sha256": "c979c9936afcad52d5ca8a5182ed9b143edf212f924afeba6b237b214b1d7299"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-002.png",
+        "bytes": 296407,
+        "sha256": "82cb9067e20d2eda734ea89de3facfe8ce5eb0cf00c0ad17c3a732523f1cf093"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1237,
+        "sha256": "a5da543c6c4cdce4da275df9b3e50bbaca24228e6f1ca5855dabb3b9364199f2"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-003.png",
+        "bytes": 236409,
+        "sha256": "47df1cb9ba17a1008d4b1979f07598d4f5668ea206f9a3f07a9e8da5ed1f71d0"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 984,
+        "sha256": "2f99bb2a29da0de65519238c221bb121257a8593e2ebae6f7413c54c2b103547"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\manifest.json",
+        "bytes": 3897,
+        "sha256": "f9349cbcf8c4110b8b95e811365d9800032912de086329b6050adb74502ecd16"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦修复验证__2018广州中考参考答案\\review.html",
+        "bytes": 1472,
+        "sha256": "4e5902238c4572d7b47d5814b97f30ac1498daf47a787b7316952584f20964f7"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

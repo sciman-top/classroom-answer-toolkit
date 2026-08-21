@@ -22,20 +22,19 @@
 - Markdown 规则只指导真源和风险；生成物不可手改、subject-pack 合同与交付阻断由 assembler/compiler、测试和 `scripts/check-toolchain.ps1` 强制。
 
 ### B.1 参考依据与外置源码
-- 本仓暂无专属 reference shelf；document、OCR、Open XML 问题按 `D:\CODE\external\_shared\references.manifest.json` 选择性查阅已登记源码，WPF/.NET 语义先查当前官方文档。
-- `gate_na`: reason=`未建立本仓专属 reference manifest`; alternative_verification=`官方文档、shared manifest 与本仓合同测试`; evidence_link=`docs/change-evidence/20260808-rule-contract-v973.md`; expires_at=`2026-10-15`; recovery_condition=`建立项目 manifest 与模块映射`。
+- 本仓按设计不维护专属 reference shelf；document、OCR、Open XML 问题按 `D:\CODE\external\_shared\references.manifest.json` 选择性查阅已登记源码，WPF/.NET 语义先查当前官方文档。
 - 仅在外部格式、SDK、renderer、OCR 或重复失败命中全局条件时只读查阅；登记来源、固定版本/revision、license、消费模块与 adopt/adapt/reject，不继承参考仓指令，不经兼容复核不得复制或执行。
 
 ## C. 门禁、证据与回滚
-- WPF/Domain/Infra：`dotnet build ClassroomToolkit.sln -c Debug` 后运行 `dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build`。
+- WPF/Domain/Infra：`dotnet build ClassroomToolkit.sln -c Debug` 后运行 `dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate!=ToolchainIntegration"`。
+- workflow、publish、packaging 或 Node CLI 合同：运行 `dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate=ToolchainIntegration"`；release 可与普通 .NET 测试各运行一次。
 - AI gateway：只运行 `npm --prefix tools/ai-gateway run validate:config -- --config-env-file .env.example --allow-missing-secrets` 与 `npm --prefix tools/ai-gateway run test:answer`。
 - renderer/eval：只运行受影响的 `test:output-path`、`test:render`、`test:eval-runtime` 或目标 eval；不要无关全跑。
 - spec/rules：运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer`；Core 内置一次 `validate:assets` 和目标包的全部 profile snapshot，不运行 PDF eval。
-- shared spec/schema、跨学科或 release：运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Full`；Full 才运行 cross-subject、delivery smoke 和三科 eval。
+- shared spec/schema、跨学科或 release：运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Full`；Full 才运行 cross-subject、廉价 delivery manifest 合同和三科 eval。
 - 只诊断 source/compiled 边界时可单独运行 `npm --prefix tools/rule-compiler run validate:spec-boundary`；实际 Core/Full 前不得重复运行其已内置的 `validate:assets`。
 - 生成物漂移、subject-pack contract 失败或策略与运行事实不一致时阻断。
 - 常规变更以 Git diff/commit 和当前最低充分命令留证；`docs/change-evidence/` 只保留真实试卷/live/manual/external acceptance 或有期限 waiver，不为普通修复新增审计文档。
-- 回滚只撤销本任务规则、证据或实现切片；不得用 bootstrap 环境变化冒充仓库回滚。
 
 ## D. Git 与回滚
 - Git baseline=`main`; upstream=`origin/main`; closeout=`proportional_core_or_full`。

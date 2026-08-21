@@ -7,7 +7,7 @@
 ```text
 试卷 PDF
   -> 页面图
-  -> v8.15 完整提示词 + AI 作答
+  -> 当前 subject-pack 提示词 + AI 作答
   -> 4x 题目级左右重叠视窗 + 无参考答案视觉审计
   -> 可选：参考答案 PDF 复核与校正
   -> Markdown 规则校验
@@ -20,7 +20,7 @@
 
 ## 当前状态
 
-- 初中物理运行提示词：`prompts/junior-physics-answer/spec.md`，版本 `v8.15`。
+- 初中物理运行提示词：`prompts/junior-physics-answer/spec.md`；当前版本以 `prompts/junior-physics-answer/manifest.json` 为准。
 - 已真实跑通 2025 广州中考原卷到 Markdown/PDF 的完整链路。
 - 默认主链不再把单次整卷盲答直接送去排版：先以 4x 重渲染原卷，按 PDF.js 题号切成每题两个带重叠的高清视窗（续页继承题号）执行独立视觉审计，再进入可选参考答案复核。
 - 局部高清审计能降低滑轮、刻度尺和钩码计数错误，但不能保证消除所有仪表盘歧义；未经参考答案或人工复核仍不得声明答案可信。
@@ -61,7 +61,7 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 ## 核心目录
 
 - `prompts/specs/`：人类规范真源；compiled 文件由 assembler 生成。
-- `prompts/junior-physics-answer/`：v8.15 运行提示词、规则、排版 profile 和 manifest。
+- `prompts/junior-physics-answer/`：运行提示词、规则、排版 profile 和版本 manifest。
 - `tools/ai-gateway/`：显式云出网的答案生成请求。
 - `tools/rule-compiler/`：subject-pack、规则和 snapshot 编译与校验。
 - `tools/latex-renderer/`：Markdown 校验、PDF 渲染、review 页图和交付 manifest。
@@ -76,15 +76,15 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 ```powershell
 # WPF / Domain / Infra
 dotnet build ClassroomToolkit.sln -c Debug
-dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build
+dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate!=ToolchainIntegration"
 
 # subject-pack spec / rules
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer
 ```
 
-AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
+AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试；workflow、publish、packaging 或 Node CLI 合同再运行 `Gate=ToolchainIntegration` 的 8 项 .NET 集成测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
 
-Full 中共享 renderer/layout 回归只由 `junior-physics-answer` 承担一次；Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
+Full 中共享 renderer/layout/delivery 回归只由 `junior-physics-answer` eval 承担一次；廉价 manifest 合同独立验证负向边界。Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
 
 `scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；可选 OCR 由 renderer 的 `review-source-pdf --ocr` 显式启用。
 

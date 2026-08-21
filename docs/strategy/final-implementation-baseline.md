@@ -70,7 +70,7 @@ SourceExam
 
 1. `M0 truth-alignment`：PRD、基线、路线图、计划、backlog、spec 和 verifier 一致。
 2. `M1 dead-surface-removal`（verified）：退出主链的工具、专属 schema/eval、死 DTO、未使用 diagnostics 和空项目已删除。
-3. `M2 gate-tiering`（verified）：Fast/Core/Full 已分层、去重并解除 patch SDK 摩擦。
+3. `M2 gate-tiering`（verified）：Focused/Core/Full 已分层、去重并解除 patch SDK 摩擦。
 4. `M3 real-paper-regression`（verified）：2024/2025 真实错题已绑定 authority、输入/产物 hash 和独立阶段结果。
 5. `M4 targeted-visual-grounding`：在真实标注和稳定 provider 前提下接入有限部件定位。
 6. `M5 historical-rollout`：按同一主链推进 2015-2023 真实回归。

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-21T10:07:02.829Z",
+  "snapshotId": "snapshot-86a87353eccbba39",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-86a87353eccbba39",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.md",
+      "bytes": 3987,
+      "sha256": "e352abd78843f131b6312437bc7314921dc2f3106b9cb4a3e3a03d570cefac2c"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.pdf",
+      "bytes": 183527,
+      "sha256": "677755e5b5272e0bd5b427a24a198a16f4b16dc01ff1faded0671ebb82dddb9f"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "19559e1cb625e75c8e49707ac06a8a190ca0c2ad6c46c7c0b19a0dd5843259d8"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\2018广州中考参考答案.page-001.png",
+        "bytes": 229689,
+        "sha256": "a8fe0e2f34a080f569f7762be2589df93207342c3d0290c9111c8375f10978f8"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\2018广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 913,
+        "sha256": "5aeda3451d62d8c3bdd4560eb3c71448b29cda5fb37eccc12011382cc6c9b164"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\2018广州中考参考答案.page-002.png",
+        "bytes": 315594,
+        "sha256": "b7f16df16f8eb0da3ae2680659f5870f9abffe09eab4c58a3373e8bbfdc5d599"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\2018广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1396,
+        "sha256": "725592043d90b8fd6d4bacc4175349fccd95976bbcc93985d5a07be8bce8a67d"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\2018广州中考参考答案.page-003.png",
+        "bytes": 181341,
+        "sha256": "7f8cf54faead94afb0a699cb6e25e5d90807500915b043d848ae11442a8e6e81"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\2018广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 671,
+        "sha256": "b771fb42dc08b04656463b912d686aec4ee9cb9f04b0b4684cf978dc7fa537d5"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\manifest.json",
+        "bytes": 3789,
+        "sha256": "2c9c56e3464a127539b1f29050d97c740e2a31b77a02ded52335a1bc9a0ea27a"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819连续执行__2018广州中考参考答案\\review.html",
+        "bytes": 1460,
+        "sha256": "b2b4168b12a4b92564aa4f03ac41cfbe2c242be4ec27a844e6d94bddcaca53c1"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

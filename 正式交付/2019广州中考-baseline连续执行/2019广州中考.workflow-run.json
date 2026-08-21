@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "4ff69fae6b974a238c5b668c5eceb088",
+  "status": "succeeded",
+  "startedAt": "2026-08-21T12:31:44.1845147+00:00",
+  "finishedAt": "2026-08-21T12:47:46.1266236+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2019广州中考.pdf",
+      "bytes": 1254764,
+      "sha256": "85dd476db8eacd837f7a4590bac7c795ef5cf53f68a1c68a08f279e7d1731dba"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2019广州中考答案.pdf",
+      "bytes": 697141,
+      "sha256": "b4dfdef844f45be070eaf3db88961ede314eca829493b70e0ddbe17631c1d116"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 107775,
+      "sha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c"
+    },
+    "blindFocusRegions": null,
+    "visualAuditFocusRegions": null
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "blindFocusRegionsFile": null,
+    "visualAuditFocusRegionsFile": null,
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.blind-generation.summary.json",
+        "bytes": 5240,
+        "sha256": "5b25ff799f4e5569a149adfcf5791787cdae05a516fa3e0aa87beb79bd7c005e"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考盲答候选.md",
+        "bytes": 3103,
+        "sha256": "6c5a6c672739407336a2f2dfc655079c8959ddcf9f1be8b19543e470421924e6"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.visual-findings.summary.json",
+        "bytes": 9369,
+        "sha256": "422dd485ceefb3835aff09550871d7ac0a8e345665d6826cea3907df42a1450f"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考视觉审计发现.md",
+        "bytes": 2983,
+        "sha256": "8ea913a25fe318cc2a82fdf99e7a58d39afda7de0cfac7468d60ab015efa2670"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.visual-merge.summary.json",
+        "bytes": 2162,
+        "sha256": "c933bd72136a49e98f03ca452d43c4d23464a9d4b5a04f2c4bc2a3bc0fddd74a"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考视觉审计候选.md",
+        "bytes": 3105,
+        "sha256": "91bd3f4166d8d55a222750ec287c0260cdae3d98fba53a673f1258b9c39589d2"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考.reference-review.summary.json",
+        "bytes": 12578,
+        "sha256": "d1a013354fdd5eb752e5c57ab4cc4148cc66030e85d72dc3c64ee21781edc2e8"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.md",
+        "bytes": 3149,
+        "sha256": "ddbc42734b4b06d485b43c3136e6603698655faed0c44f325d69334e7c3b2120"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.pdf",
+        "bytes": 185841,
+        "sha256": "79c3800e92f1047018aed8235ad59c9b7da270410de15832405bd3d27335b6db"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.md",
+      "bytes": 3149,
+      "sha256": "ddbc42734b4b06d485b43c3136e6603698655faed0c44f325d69334e7c3b2120"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.pdf",
+      "bytes": 185841,
+      "sha256": "79c3800e92f1047018aed8235ad59c9b7da270410de15832405bd3d27335b6db"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.delivery-manifest.json",
+      "bytes": 4085,
+      "sha256": "bef0401e6efae1c435861c78178a2a0249f66fa13b592d811528dcd59401c3b8"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "08d7f8867a4abb64adbb954c133514793dc0b3d0d98857738c109f02cfa3a025"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考答案自动复核文本差异报告.md",
+      "bytes": 6799,
+      "sha256": "ed03638518555a5b8984ff66dd1793a328e94dc5120c5da4e9beb851972756d9"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

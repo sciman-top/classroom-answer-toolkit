@@ -67,6 +67,34 @@ npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-
 npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --pages 1 --ocr chi_sim
 ```
 
+For a measured real-paper failure, `--focus-regions-file <regions.json>` appends
+bounded, ordered focused crops to the normal page or question views. The
+descriptor uses normalized page rectangles, is bound to the exact source PDF
+SHA-256, and may contain neutral source labels but no expected answers.
+Focused crops are re-rendered from the PDF vector page at twice the requested
+base scale (capped at 8x); ordinary page and question views keep the requested
+scale.
+An optional `analogMeter` block may add bounded source geometry: range,
+division count, pivot, scale endpoint angles, and pointer search radii. The
+renderer measures the continuous pointer ray and emits a value only when line
+coverage and nearest-division residual both pass; otherwise it records
+`uncertain`. The block cannot contain an expected answer.
+Optional `linearScale` and `opticalRay` blocks cover the same narrow failure
+class for straight scales and lens-ray diagrams. They contain only source
+calibration endpoints or ray search segments. The renderer emits a calibrated
+division or a before/after convergence relation only when the required pixels
+are continuous and unambiguous; missing, disconnected, or competing evidence
+is recorded as `uncertain` and must not be converted into an answer.
+For straight scales, `indicatorMode: "continuous-fill"` follows a liquid
+column from the calibrated start, while `"perpendicular-stroke"` locates a
+single pointer crossing the calibrated axis and rejects a competing stroke.
+`scripts/run-live-answer-workflow.ps1 -BlindFocusRegionsFile <regions.json>`
+records the descriptor as a frozen workflow input and adds those source-bound
+crops to the first blind-generation image set. The separate
+`-VisualAuditFocusRegionsFile <regions.json>` option adds focused crops to the
+no-reference visual audit renderer. Either option remains source evidence and
+does not expose a reference answer.
+
 OCR is explicit and optional. It uses Tesseract.js on the rendered page images,
 with language data cached in `.tessdata/`, so it is suitable only as an
 auxiliary check. When OCR conflicts with the page image, the page image remains
@@ -125,19 +153,6 @@ Current checks focus on the most common hard failures:
 These automated checks are derived from the current v8.18 production spec and
 now anchor to structured assets under `prompts/junior-physics-answer/` plus fixed eval
 cases under `eval/junior-physics-answer/`.
-
-## Smoke test
-
-Run a minimal end-to-end smoke check for:
-
-- answer validation
-- classroom render
-- compact render
-- classroom review rendering
-
-```powershell
-npm --prefix tools/latex-renderer run smoke
-```
 
 ## Minimal visual regression
 

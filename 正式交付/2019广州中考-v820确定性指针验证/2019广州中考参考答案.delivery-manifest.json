@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-21T13:14:29.195Z",
+  "snapshotId": "snapshot-86a87353eccbba39",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v820确定性指针验证\\2019广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-86a87353eccbba39",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v820确定性指针验证\\2019广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v820确定性指针验证\\2019广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v820确定性指针验证\\2019广州中考参考答案.md",
+      "bytes": 3368,
+      "sha256": "76cbad7ab2c2d55b4359e0231348196cc34856f557ab9574a65dd76c0a84fbac"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v820确定性指针验证\\2019广州中考参考答案.pdf",
+      "bytes": 187667,
+      "sha256": "e2d4eeeb5949e607e264e4453812cde0ef2be3e51cef000b9de4c66f4e54169e"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v820确定性指针验证\\2019广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "27417ac5d4ea989c459d55b21cc561fec9aa5b9ce2e3b93c49b4b4753d23b6c3"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\2019广州中考参考答案.page-001.png",
+        "bytes": 238638,
+        "sha256": "c27b5987a58315f892154dfd833db891c69402c10af2015eedea67f75297a79d"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\2019广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 976,
+        "sha256": "0aaede863c5b24f13dd3885f599d180ef94d486f251ca39ede6c2103bcae2df0"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\2019广州中考参考答案.page-002.png",
+        "bytes": 290513,
+        "sha256": "947944df764419176edc2d571212a4c24bae484d2b1dcce2ac08f912f63af00d"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\2019广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1216,
+        "sha256": "363047dbfbc32d4416998ec2e29468c827ff6ba393c240cf1066580d1a83efd6"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\2019广州中考参考答案.page-003.png",
+        "bytes": 162407,
+        "sha256": "4efc84b82df7c4748a70e3a7f9a3328dd6b6b95febdc8937e40c2ec703810287"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\2019广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 564,
+        "sha256": "a634954c67ccc3eff7b792a6412eaf4be06924f93a11319d0a9d4a239c336dd5"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\manifest.json",
+        "bytes": 4074,
+        "sha256": "506bb87f860e11315b3d17073e1225921a0717bebfada1094be6c9fa76c84602"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v820确定性指针验证__2019广州中考参考答案\\review.html",
+        "bytes": 1469,
+        "sha256": "a9c1a58fff0156c2da3ea95106c726b1f146f9e8ca685b113e99279ab263f2e6"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

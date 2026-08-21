@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "sourcePdfSha256": "85dd476db8eacd837f7a4590bac7c795ef5cf53f68a1c68a08f279e7d1731dba",
+  "regions": [
+    {
+      "id": "q16-figure-16-dynamometer-scale",
+      "label": "Q16 Figures 16 and 17: inspect the spring dynamometer pointer tip on the 0-5 N scale and identify its nearest small division",
+      "page": 5,
+      "questionNumber": 16,
+      "x": 0.43,
+      "y": 0.70,
+      "width": 0.20,
+      "height": 0.22,
+      "linearScale": {
+        "rangeMin": 2,
+        "rangeMax": 3,
+        "divisions": 10,
+        "scaleStartX": 0.383,
+        "scaleStartY": 0.173,
+        "scaleEndX": 0.383,
+        "scaleEndY": 0.246,
+        "indicatorHalfWidth": 0.018,
+        "indicatorMode": "perpendicular-stroke",
+        "indicatorSearchHalfWidth": 0.15,
+        "minimumStrokeCoverage": 0.40,
+        "competitionGap": 0.03,
+        "darkThreshold": 120
+      }
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "4a6ffb38516248e6b12c55ef1e21882f",
+  "status": "succeeded",
+  "startedAt": "2026-08-21T10:52:22.2307165+00:00",
+  "finishedAt": "2026-08-21T11:07:11.1329461+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2018广州中考.pdf",
+      "bytes": 1291035,
+      "sha256": "c4feff77379271fbea32404b1ab3952800ff305639c8af446fa1c8c68a2fc794"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2018广州中考答案.pdf",
+      "bytes": 568229,
+      "sha256": "40b1a15e8b70c44e862eabf265cbe4d63062151742a126133388d31a4b666ed6"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 107775,
+      "sha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c"
+    },
+    "visualAuditFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2018-guangzhou.focus-regions.json",
+      "bytes": 710,
+      "sha256": "8ac6e8fbc76e661b1262c40307cb78e686f4a431f5580eb8f3f6d41a4a256d0f"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "visualAuditFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2018-guangzhou.focus-regions.json",
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.blind-generation.summary.json",
+        "bytes": 5978,
+        "sha256": "25fa4cc8cf2147ed3705679c363d809cc5f81bb2bf96b403d67432d6d5659d12"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考盲答候选.md",
+        "bytes": 4126,
+        "sha256": "c4e4374eef6e8a75ab2f566d4fc7bd818069f14889a21fc95e406533f59d179b"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.visual-findings.summary.json",
+        "bytes": 12275,
+        "sha256": "96eaf904bcc6f46950e4094ae9a7f45ccbfb838d2319d6fad950b73a08e88bca"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考视觉审计发现.md",
+        "bytes": 1598,
+        "sha256": "02be850cbef0c2b56d8b5cf817a7e23d1cffd2a8afaa36b9ea062ff402b02020"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.visual-merge.summary.json",
+        "bytes": 2186,
+        "sha256": "5103f4ff6dc96121b6adcba3f4416cd398db1e78d75b2df6e7eb110532c68e24"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考视觉审计候选.md",
+        "bytes": 4126,
+        "sha256": "c4e4374eef6e8a75ab2f566d4fc7bd818069f14889a21fc95e406533f59d179b"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考.reference-review.summary.json",
+        "bytes": 7552,
+        "sha256": "3f844eafc1b520bc17e30020d43ce1828bf264e2dc64aadf2dbe8931b2ca6fbb"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.md",
+        "bytes": 3980,
+        "sha256": "2c6564f363d8997b46bb5a5ae335d898330f4f25b8ebc732492808a07697c774"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.pdf",
+        "bytes": 176244,
+        "sha256": "70436bc425f137f45099997696b02bfaaaa682387ad1324f6491b5cbf35e7c24"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.md",
+      "bytes": 3980,
+      "sha256": "2c6564f363d8997b46bb5a5ae335d898330f4f25b8ebc732492808a07697c774"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.pdf",
+      "bytes": 176244,
+      "sha256": "70436bc425f137f45099997696b02bfaaaa682387ad1324f6491b5cbf35e7c24"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.delivery-manifest.json",
+      "bytes": 5523,
+      "sha256": "d38e3592bb39ae6a69879bcbda7d8d5ea200412f2a935cb5f9928b78165923dc"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "08966b56b16982982436819da38286c943cb8cbea32ceea3a956247466ea592c"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819视觉退化修复验证\\2018广州中考答案自动复核文本差异报告.md",
+      "bytes": 8155,
+      "sha256": "0e77368bc2d1210147eafdef3482ac5bfc39157f0e945699b494e0bfeea67859"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

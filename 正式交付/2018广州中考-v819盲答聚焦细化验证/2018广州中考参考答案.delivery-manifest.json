@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-21T11:49:38.228Z",
+  "snapshotId": "snapshot-86a87353eccbba39",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-86a87353eccbba39",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 4
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考参考答案.md",
+      "bytes": 4358,
+      "sha256": "31bc059237b28855f75232d3515076dbf09c4de7b728d55ae686b7d8489d9ca0"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考参考答案.pdf",
+      "bytes": 186505,
+      "sha256": "6e2e4337bceaf9d3b68af0599649e9cd973213f5fa647bdd8db14f26824e5c0b"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "b89f2e47c4051e0e3c11204129bd58a8391345103014d58f02c13f6bc316d4b9"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-001.png",
+        "bytes": 245569,
+        "sha256": "6432fc1591ada1ac66427d9872264b8667d68f70dcfe8c032476bc698ce7675f"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1022,
+        "sha256": "b971aef2f3989eb314fad0d87078e2c09be0694fc12a1ee6cfd80753cafecb6e"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-002.png",
+        "bytes": 239543,
+        "sha256": "c14bb257bcb9a5e447cda91f049a72ed1a5aef0d33830a0a44f40b2e94a65b67"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 963,
+        "sha256": "31d56d2da08a6a1fe7c50cfef89f635c66b60fa468ff8c92db6befe85be462e9"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-003.png",
+        "bytes": 292674,
+        "sha256": "a920fdeca0e4e53e385c46dc79782e168c9a1caad2ebfcc48bad328481328b24"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 1298,
+        "sha256": "df1bae1b9cea02d05c0017dab62cfd6206f8478d95f1a08ae81b0b03cc073986"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-004.png",
+        "bytes": 61533,
+        "sha256": "5fff4d95f8ffbd1e7e4186834a0601825348e9203820eb65afd49710217df7c7"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\2018广州中考参考答案.page-004.text-layer.txt",
+        "bytes": 58,
+        "sha256": "f19a92d67330605c71352d1b8022bafb52635ff0357f9547674321074c753228"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\manifest.json",
+        "bytes": 4818,
+        "sha256": "e479cb302c5f99276f9b4232606355e3a2cded1da3feeceb67f58a785b83c975"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819盲答聚焦细化验证__2018广州中考参考答案\\review.html",
+        "bytes": 1687,
+        "sha256": "3f299e5ca2545d310c3f4541a160353946f9d04aeb6d9c72a1b9d64fa80e2ae4"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

@@ -6,6 +6,11 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
+import { analyzeAnalogMeterCanvas } from "./analog-meter-reading.mjs";
+import { analyzeLinearScaleCanvas } from "./linear-scale-reading.mjs";
+import { analyzeOpticalRayCanvas } from "./optical-ray-geometry.mjs";
+import { loadFocusRegionSpec, resolveFocusRegionPixels } from "./focus-region-spec.mjs";
+
 const require = createRequire(import.meta.url);
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const tesseractPackageJson = require("tesseract.js/package.json");
@@ -103,7 +108,7 @@ const browserCandidates = [
 ];
 
 const usage = `Usage:
-  npm run review-source-pdf -- <input.pdf> [--out <dir>] [--pages all|1,3,5-7,last] [--scale 1.8] [--vertical-tiles 2] [--question-regions] [--horizontal-tiles 2] [--tile-overlap 0.15] [--ocr chi_sim]
+  npm run review-source-pdf -- <input.pdf> [--out <dir>] [--pages all|1,3,5-7,last] [--scale 1.8] [--vertical-tiles 2] [--question-regions] [--horizontal-tiles 2] [--tile-overlap 0.15] [--focus-regions-file <regions.json>] [--ocr chi_sim]
 
 Examples:
   npm run review-source-pdf -- "../../样例交付/能量-效率.pdf"
@@ -129,6 +134,7 @@ function parseArgs(argv) {
     horizontalTiles: 1,
     questionRegions: false,
     tileOverlap: 0.15,
+    focusRegionsFile: null,
     ocr: null
   };
 
@@ -201,6 +207,16 @@ function parseArgs(argv) {
 
     if (arg.startsWith("--tile-overlap=")) {
       options.tileOverlap = Number(arg.slice("--tile-overlap=".length));
+      continue;
+    }
+
+    if (arg === "--focus-regions-file") {
+      options.focusRegionsFile = requireValue(argv, ++index, arg);
+      continue;
+    }
+
+    if (arg.startsWith("--focus-regions-file=")) {
+      options.focusRegionsFile = arg.slice("--focus-regions-file=".length);
       continue;
     }
 
@@ -318,6 +334,9 @@ function writeReviewHtml({ outputDir, inputPath, manifest }) {
   fs.mkdirSync(outputDir, { recursive: true });
   const imageItems = manifest.pages.map((page) => {
     const imageName = path.basename(page.imagePath);
+    const heading = page.kind === "focus-region"
+      ? `Page ${page.pageNumber} focus: ${escapeHtml(page.focusLabel)}`
+      : `Page ${page.pageNumber}`;
     const textLayer = page.textLayerPath
       ? `<a href="${escapeHtml(path.basename(page.textLayerPath))}">text layer</a>`
       : "no text layer";
@@ -326,7 +345,7 @@ function writeReviewHtml({ outputDir, inputPath, manifest }) {
       : "";
 
     return `<section>
-  <h2>Page ${page.pageNumber}</h2>
+  <h2>${heading}</h2>
   <p>${page.width} x ${page.height}px · ${textLayer}${ocr}</p>
   <img src="${escapeHtml(imageName)}" alt="Page ${page.pageNumber}">
 </section>`;
@@ -504,6 +523,10 @@ async function main() {
   if (!fs.existsSync(inputPath)) {
     fail(`Input PDF not found: ${inputPath}`, 2);
   }
+  const focusRegionSpec = options.focusRegionsFile
+    ? loadFocusRegionSpec(path.resolve(callerCwd, options.focusRegionsFile), inputPath)
+    : null;
+  const focusScale = focusRegionSpec ? Math.min(8, options.scale * 2) : options.scale;
 
   const outputDir = options.out
     ? path.resolve(callerCwd, options.out)
@@ -526,10 +549,14 @@ async function main() {
     renderer: "pdfjs-dist + local Chrome/Edge via Playwright",
     browserPath: browserPath ?? "shared-browser-server",
     scale: options.scale,
+    focusScale,
     verticalTiles: options.verticalTiles,
     horizontalTiles: options.horizontalTiles,
     questionRegions: options.questionRegions,
     tileOverlap: options.tileOverlap,
+    focusRegionsFile: focusRegionSpec?.filePath ?? null,
+    focusRegionsSha256: focusRegionSpec?.fileSha256 ?? null,
+    focusRegionCount: focusRegionSpec?.regions.length ?? 0,
     requestedPages: options.pages,
     selectedPages: [],
     pageCount: 0,
@@ -587,6 +614,25 @@ async function main() {
     const inputBase = path.basename(inputPath, path.extname(inputPath));
     let lastQuestionNumber = 0;
     for (const pageNumber of manifest.selectedPages) {
+      const pageDimensions = await page.evaluate(async ({ pageNumber: pageNo, scale, focusScale: focusedScale }) => {
+        const pdfPage = await window.pdfReview.document.getPage(pageNo);
+        const viewport = pdfPage.getViewport({ scale });
+        const focusViewport = pdfPage.getViewport({ scale: focusedScale });
+        return {
+          width: Math.ceil(viewport.width),
+          height: Math.ceil(viewport.height),
+          focusWidth: Math.ceil(focusViewport.width),
+          focusHeight: Math.ceil(focusViewport.height)
+        };
+      }, { pageNumber, scale: options.scale, focusScale });
+      const focusRegions = focusRegionSpec
+        ? resolveFocusRegionPixels(
+            focusRegionSpec,
+            pageNumber,
+            pageDimensions.focusWidth,
+            pageDimensions.focusHeight
+          )
+        : [];
       const rendered = await page.evaluate(async ({
         pageNumber: pageNo,
         scale,
@@ -594,6 +640,8 @@ async function main() {
         horizontalTiles,
         questionRegions,
         tileOverlap,
+        focusRenderScale,
+        focusRegions,
         previousQuestionNumber
       }) => {
         const pdfPage = await window.pdfReview.document.getPage(pageNo);
@@ -689,6 +737,7 @@ async function main() {
               tileCanvas.height
             );
             tiles.push({
+              kind: "page-tile",
               dataUrl: tileCanvas.toDataURL("image/png"),
               tileIndex: regionIndex + 1,
               tileCount: regions.length,
@@ -698,9 +747,66 @@ async function main() {
               x,
               y,
               width: tileCanvas.width,
-              height: tileCanvas.height
+              height: tileCanvas.height,
+              sourcePageWidth: canvas.width,
+              sourcePageHeight: canvas.height,
+              focusRegionIndex: null,
+              focusRegionId: null,
+              focusLabel: null
             });
           }
+        }
+
+        let focusSourceCanvas = canvas;
+        if (focusRegions.length > 0 && focusRenderScale !== scale) {
+          const focusViewport = pdfPage.getViewport({ scale: focusRenderScale });
+          focusSourceCanvas = document.createElement("canvas");
+          focusSourceCanvas.width = Math.ceil(focusViewport.width);
+          focusSourceCanvas.height = Math.ceil(focusViewport.height);
+          const focusSourceContext = focusSourceCanvas.getContext("2d", { alpha: false });
+          focusSourceContext.fillStyle = "white";
+          focusSourceContext.fillRect(0, 0, focusSourceCanvas.width, focusSourceCanvas.height);
+          await pdfPage.render({ canvasContext: focusSourceContext, viewport: focusViewport }).promise;
+        }
+
+        window.pdfReview.focusCanvases = window.pdfReview.focusCanvases ?? {};
+        for (const focusRegion of focusRegions) {
+          const focusCanvas = document.createElement("canvas");
+          focusCanvas.width = focusRegion.width;
+          focusCanvas.height = focusRegion.height;
+          const focusContext = focusCanvas.getContext("2d", { alpha: false });
+          focusContext.fillStyle = "white";
+          focusContext.fillRect(0, 0, focusCanvas.width, focusCanvas.height);
+          focusContext.drawImage(
+            focusSourceCanvas,
+            focusRegion.x,
+            focusRegion.y,
+            focusRegion.width,
+            focusRegion.height,
+            0,
+            0,
+            focusRegion.width,
+            focusRegion.height
+          );
+          window.pdfReview.focusCanvases[focusRegion.id] = focusCanvas;
+          tiles.push({
+            kind: "focus-region",
+            dataUrl: focusCanvas.toDataURL("image/png"),
+            tileIndex: null,
+            tileCount: null,
+            horizontalIndex: null,
+            horizontalTileCount: null,
+            questionNumber: focusRegion.questionNumber,
+            x: focusRegion.x,
+            y: focusRegion.y,
+            width: focusRegion.width,
+            height: focusRegion.height,
+            sourcePageWidth: focusSourceCanvas.width,
+            sourcePageHeight: focusSourceCanvas.height,
+            focusRegionIndex: focusRegion.focusRegionIndex,
+            focusRegionId: focusRegion.id,
+            focusLabel: focusRegion.label
+          });
         }
 
         return {
@@ -717,8 +823,36 @@ async function main() {
         horizontalTiles: options.horizontalTiles,
         questionRegions: options.questionRegions,
         tileOverlap: options.tileOverlap,
+        focusRenderScale: focusScale,
+        focusRegions,
         previousQuestionNumber: lastQuestionNumber
       });
+      for (const focusRegion of focusRegions.filter((region) => region.analogMeter)) {
+        const analogMeterReading = await page.evaluate(analyzeAnalogMeterCanvas, {
+          regionId: focusRegion.id,
+          ...focusRegion.analogMeter
+        });
+        const tile = rendered.tiles.find((item) => item.focusRegionId === focusRegion.id);
+        if (tile) {
+          tile.analogMeterReading = analogMeterReading;
+        }
+      }
+      for (const focusRegion of focusRegions.filter((region) => region.linearScale)) {
+        const linearScaleReading = await page.evaluate(analyzeLinearScaleCanvas, {
+          regionId: focusRegion.id,
+          ...focusRegion.linearScale
+        });
+        const tile = rendered.tiles.find((item) => item.focusRegionId === focusRegion.id);
+        if (tile) tile.linearScaleReading = linearScaleReading;
+      }
+      for (const focusRegion of focusRegions.filter((region) => region.opticalRay)) {
+        const opticalRayGeometry = await page.evaluate(analyzeOpticalRayCanvas, {
+          regionId: focusRegion.id,
+          ...focusRegion.opticalRay
+        });
+        const tile = rendered.tiles.find((item) => item.focusRegionId === focusRegion.id);
+        if (tile) tile.opticalRayGeometry = opticalRayGeometry;
+      }
       lastQuestionNumber = rendered.detectedQuestionNumber;
 
       const pageLabel = String(pageNumber).padStart(3, "0");
@@ -733,13 +867,16 @@ async function main() {
         const questionSuffix = tile.questionNumber === null
           ? ""
           : `.q-${String(tile.questionNumber).padStart(3, "0")}`;
-        const tileSuffix = options.verticalTiles === 1 && options.horizontalTiles === 1 && !options.questionRegions
-          ? ""
-          : `.tile-${String(tile.tileIndex).padStart(2, "0")}.x-${String(tile.horizontalIndex).padStart(2, "0")}`;
+        const tileSuffix = tile.kind === "focus-region"
+          ? `.focus-${String(tile.focusRegionIndex).padStart(2, "0")}.${tile.focusRegionId}`
+          : options.verticalTiles === 1 && options.horizontalTiles === 1 && !options.questionRegions
+            ? ""
+            : `.tile-${String(tile.tileIndex).padStart(2, "0")}.x-${String(tile.horizontalIndex).padStart(2, "0")}`;
         const imagePath = path.join(outputDir, `${inputBase}.page-${pageLabel}${questionSuffix}${tileSuffix}.png`);
         fs.mkdirSync(path.dirname(imagePath), { recursive: true });
         fs.writeFileSync(imagePath, dataUrlToBuffer(tile.dataUrl));
         manifest.pages.push({
+          kind: tile.kind,
           pageNumber,
           questionNumber: tile.questionNumber,
           tileIndex: tile.tileIndex,
@@ -748,11 +885,17 @@ async function main() {
           horizontalTileCount: tile.horizontalTileCount,
           sourceY: tile.y,
           sourceX: tile.x,
-          sourcePageWidth: rendered.width,
-          sourcePageHeight: rendered.height,
+          sourcePageWidth: tile.sourcePageWidth,
+          sourcePageHeight: tile.sourcePageHeight,
           imagePath,
           width: tile.width,
           height: tile.height,
+          focusRegionIndex: tile.focusRegionIndex,
+          focusRegionId: tile.focusRegionId,
+          focusLabel: tile.focusLabel,
+          analogMeterReading: tile.analogMeterReading ?? null,
+          linearScaleReading: tile.linearScaleReading ?? null,
+          opticalRayGeometry: tile.opticalRayGeometry ?? null,
           textLayerPath,
           textLayerChars: rendered.text.length
         });
@@ -787,7 +930,7 @@ async function main() {
   const manifestPath = path.join(outputDir, "manifest.json");
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
-  console.log(`Rendered ${manifest.pages.length}/${manifest.pageCount} page(s).`);
+  console.log(`Rendered ${manifest.pages.length} image(s) from ${manifest.selectedPages.length}/${manifest.pageCount} selected page(s).`);
   console.log(`Review HTML: ${reviewHtmlPath}`);
   console.log(`Manifest: ${manifestPath}`);
   if (manifest.ocrStatus === "ok") {

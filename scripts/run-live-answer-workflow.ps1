@@ -32,6 +32,10 @@ param(
     [ValidateRange(2.0, 4.0)]
     [double]$VisualAuditScale = 4.0,
 
+    [string]$BlindFocusRegionsFile,
+
+    [string]$VisualAuditFocusRegionsFile,
+
     [switch]$SkipVisualAudit,
 
     [switch]$UseGatewayProxy,
@@ -181,6 +185,18 @@ $sourcePath = Resolve-WorkflowPath $SourcePdf
 $outputRoot = Resolve-WorkflowPath $OutputDirectory
 $promptPath = Resolve-WorkflowPath $PromptFile
 $envFilePath = Resolve-WorkflowPath $ConfigEnvFile
+$blindFocusRegionsPath = if ([string]::IsNullOrWhiteSpace($BlindFocusRegionsFile)) {
+    $null
+}
+else {
+    Resolve-WorkflowPath $BlindFocusRegionsFile
+}
+$visualAuditFocusRegionsPath = if ([string]::IsNullOrWhiteSpace($VisualAuditFocusRegionsFile)) {
+    $null
+}
+else {
+    Resolve-WorkflowPath $VisualAuditFocusRegionsFile
+}
 
 if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
     throw "Source PDF not found: $sourcePath"
@@ -194,15 +210,28 @@ if (-not (Test-Path -LiteralPath $envFilePath -PathType Leaf)) {
     throw "Gateway env file not found: $envFilePath"
 }
 
+if ($blindFocusRegionsPath -and -not (Test-Path -LiteralPath $blindFocusRegionsPath -PathType Leaf)) {
+    throw "Blind focus regions file not found: $blindFocusRegionsPath"
+}
+
+if ($visualAuditFocusRegionsPath -and -not (Test-Path -LiteralPath $visualAuditFocusRegionsPath -PathType Leaf)) {
+    throw "Visual audit focus regions file not found: $visualAuditFocusRegionsPath"
+}
+
 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($sourcePath)
 $answerMarkdownPath = Join-Path $outputRoot "${baseName}参考答案.md"
 $blindMarkdownPath = Join-Path $outputRoot "${baseName}盲答候选.md"
 $visualAuditMarkdownPath = Join-Path $outputRoot "${baseName}视觉审计候选.md"
 $visualAuditFindingsPath = Join-Path $outputRoot "${baseName}视觉审计发现.md"
+$semanticFindingsPath = Join-Path $outputRoot "${baseName}语义复核发现.md"
+$semanticReviewMarkdownPath = Join-Path $outputRoot "${baseName}语义复核候选.md"
 $answerPdfPath = Join-Path $outputRoot "${baseName}参考答案.pdf"
 $comparisonReportPath = Join-Path $outputRoot "${baseName}答案自动复核文本差异报告.md"
 $visualAuditReportPath = Join-Path $outputRoot "${baseName}盲答与视觉审计差异报告.md"
+$semanticReviewReportPath = Join-Path $outputRoot "${baseName}盲答与语义复核差异报告.md"
 $blindSummaryPath = Join-Path $outputRoot "${baseName}.blind-generation.summary.json"
+$semanticFindingsSummaryPath = Join-Path $outputRoot "${baseName}.semantic-findings.summary.json"
+$semanticMergeSummaryPath = Join-Path $outputRoot "${baseName}.semantic-merge.summary.json"
 $visualFindingsSummaryPath = Join-Path $outputRoot "${baseName}.visual-findings.summary.json"
 $visualMergeSummaryPath = Join-Path $outputRoot "${baseName}.visual-merge.summary.json"
 $referenceReviewSummaryPath = Join-Path $outputRoot "${baseName}.reference-review.summary.json"
@@ -232,6 +261,8 @@ $workflowInputReceipts = [ordered]@{
     SourcePdf = Get-WorkflowFileReceipt -PathValue $sourcePath
     ReferencePdf = Get-WorkflowFileReceipt -PathValue $referencePath
     PromptFile = Get-WorkflowFileReceipt -PathValue $promptPath
+    BlindFocusRegionsFile = Get-WorkflowFileReceipt -PathValue $blindFocusRegionsPath
+    VisualAuditFocusRegionsFile = Get-WorkflowFileReceipt -PathValue $visualAuditFocusRegionsPath
 }
 
 Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
@@ -239,15 +270,22 @@ Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
     ReferencePdf = $referencePath
     PromptFile = $promptPath
     ConfigEnvFile = $envFilePath
+    BlindFocusRegionsFile = $blindFocusRegionsPath
+    VisualAuditFocusRegionsFile = $visualAuditFocusRegionsPath
 } -Outputs @{
     AnswerMarkdown = $answerMarkdownPath
     BlindMarkdown = $blindMarkdownPath
     VisualAuditMarkdown = $visualAuditMarkdownPath
     VisualAuditFindings = $visualAuditFindingsPath
+    SemanticFindings = $semanticFindingsPath
+    SemanticReviewMarkdown = $semanticReviewMarkdownPath
     AnswerPdf = $answerPdfPath
     ComparisonReport = $comparisonReportPath
     VisualAuditReport = $visualAuditReportPath
+    SemanticReviewReport = $semanticReviewReportPath
     BlindSummary = $blindSummaryPath
+    SemanticFindingsSummary = $semanticFindingsSummaryPath
+    SemanticMergeSummary = $semanticMergeSummaryPath
     VisualFindingsSummary = $visualFindingsSummaryPath
     VisualMergeSummary = $visualMergeSummaryPath
     ReferenceReviewSummary = $referenceReviewSummaryPath
@@ -258,16 +296,18 @@ Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
 
 New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
-$generationOutputPath = if ($referencePath -or -not $SkipVisualAudit) { $blindMarkdownPath } else { $answerMarkdownPath }
+$generationOutputPath = $blindMarkdownPath
 $phaseStates = [ordered]@{
     blindGeneration = [ordered]@{ status = "pending"; summaryPath = $blindSummaryPath; artifactPath = $generationOutputPath }
+    semanticFindings = [ordered]@{ status = "pending"; summaryPath = $semanticFindingsSummaryPath; artifactPath = $semanticFindingsPath }
+    semanticMerge = [ordered]@{ status = "pending"; summaryPath = $semanticMergeSummaryPath; artifactPath = $semanticReviewMarkdownPath }
     visualFindings = [ordered]@{ status = $(if ($SkipVisualAudit) { "skipped" } else { "pending" }); summaryPath = $visualFindingsSummaryPath; artifactPath = $visualAuditFindingsPath }
     visualMerge = [ordered]@{ status = $(if ($SkipVisualAudit) { "skipped" } else { "pending" }); summaryPath = $visualMergeSummaryPath; artifactPath = $visualAuditMarkdownPath }
     referenceReview = [ordered]@{ status = $(if ($referencePath) { "pending" } else { "skipped" }); summaryPath = $referenceReviewSummaryPath; artifactPath = $answerMarkdownPath }
     delivery = [ordered]@{ status = "pending"; summaryPath = $null; artifactPath = $answerPdfPath }
 }
 
-foreach ($summaryPath in @($blindSummaryPath, $visualFindingsSummaryPath, $visualMergeSummaryPath, $referenceReviewSummaryPath, $workflowReceiptPath)) {
+foreach ($summaryPath in @($blindSummaryPath, $semanticFindingsSummaryPath, $semanticMergeSummaryPath, $visualFindingsSummaryPath, $visualMergeSummaryPath, $referenceReviewSummaryPath, $workflowReceiptPath)) {
     Remove-Item -LiteralPath $summaryPath -Force -ErrorAction SilentlyContinue
 }
 
@@ -304,7 +344,10 @@ function Write-WorkflowReceipt {
                 $answerPdfPath,
                 $deliveryManifestPath,
                 $deliverySnapshotPath,
-                $(if (-not $SkipVisualAudit) { $blindMarkdownPath; $visualAuditFindingsPath; $visualAuditMarkdownPath; $visualAuditReportPath }),
+                $semanticFindingsPath,
+                $semanticReviewMarkdownPath,
+                $semanticReviewReportPath,
+                $(if (-not $SkipVisualAudit) { $visualAuditFindingsPath; $visualAuditMarkdownPath; $visualAuditReportPath }),
                 $(if ($referencePath) { $comparisonReportPath })
             )) {
             $artifactReceipt = Get-WorkflowFileReceipt -PathValue $artifactPath
@@ -325,6 +368,8 @@ function Write-WorkflowReceipt {
             sourcePdf = $workflowInputReceipts.SourcePdf
             referencePdf = $workflowInputReceipts.ReferencePdf
             prompt = $workflowInputReceipts.PromptFile
+            blindFocusRegions = $workflowInputReceipts.BlindFocusRegionsFile
+            visualAuditFocusRegions = $workflowInputReceipts.VisualAuditFocusRegionsFile
         }
         options = [ordered]@{
             provider = $Provider
@@ -334,6 +379,8 @@ function Write-WorkflowReceipt {
             timeoutMs = $TimeoutMs
             reviewScale = $ReviewScale
             visualAuditScale = $VisualAuditScale
+            blindFocusRegionsFile = $blindFocusRegionsPath
+            visualAuditFocusRegionsFile = $visualAuditFocusRegionsPath
             skipVisualAudit = [bool]$SkipVisualAudit
             keepReview = [bool]$KeepReview
             useGatewayProxy = [bool]$UseGatewayProxy
@@ -398,12 +445,16 @@ try {
     New-Item -ItemType Directory -Force -Path $pageDirectory | Out-Null
 
     Write-Host "[live-answer-workflow] render source PDF pages"
-    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/review-source-pdf.mjs") -Arguments @(
+    $sourceRenderArguments = @(
         $sourcePath,
         "--out", $pageDirectory,
         "--pages", "all",
         "--scale", $ReviewScale.ToString([Globalization.CultureInfo]::InvariantCulture)
     )
+    if ($blindFocusRegionsPath) {
+        $sourceRenderArguments += @("--focus-regions-file", $blindFocusRegionsPath)
+    }
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/review-source-pdf.mjs") -Arguments $sourceRenderArguments
 
     $pageImages = @(Get-ChildItem -LiteralPath $pageDirectory -File |
         Where-Object { $_.Name -match '\.page-\d+\.(png|jpg|jpeg|webp)$' } |
@@ -441,11 +492,61 @@ try {
     $phaseStates[$currentPhase].status = "completed"
     $currentPhase = $null
 
-    $candidateForReference = $blindMarkdownPath
+    Write-Host "[live-answer-workflow] independently re-solve semantic questions without the reference answer"
+    $currentPhase = "semanticFindings"
+    $phaseStates[$currentPhase].status = "in_progress"
+    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
+    $semanticFindingsArguments = @(
+        "--config-env-file", $envFilePath,
+        "--prompt-file", $promptPath,
+        "--images-dir", $pageDirectory,
+        "--candidate-file", $blindMarkdownPath,
+        "--semantic-findings-only",
+        "--output", $semanticFindingsPath,
+        "--summary-out", $semanticFindingsSummaryPath,
+        "--provider", $Provider,
+        "--visual-detail", $VisualDetail,
+        "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
+        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
+        "--allow-cloud-egress"
+    )
+    if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
+        $semanticFindingsArguments += @("--source-text-file", $sourceTextPath)
+    }
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticFindingsArguments
+    $phaseStates[$currentPhase].status = "completed"
+    $currentPhase = $null
+
+    Write-Host "[live-answer-workflow] merge only independently confirmed semantic findings"
+    $currentPhase = "semanticMerge"
+    $phaseStates[$currentPhase].status = "in_progress"
+    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
+        "--config-env-file", $envFilePath,
+        "--prompt-file", $promptPath,
+        "--candidate-file", $blindMarkdownPath,
+        "--semantic-findings-file", $semanticFindingsPath,
+        "--output", $semanticReviewMarkdownPath,
+        "--summary-out", $semanticMergeSummaryPath,
+        "--provider", $Provider,
+        "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
+        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
+        "--allow-cloud-egress"
+    )
+    $phaseStates[$currentPhase].status = "completed"
+    $currentPhase = $null
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
+        $blindMarkdownPath,
+        $semanticReviewMarkdownPath,
+        $semanticReviewReportPath
+    )
+
+    $candidateForVisual = $semanticReviewMarkdownPath
+    $candidateForReference = $candidateForVisual
     if (-not $SkipVisualAudit) {
         New-Item -ItemType Directory -Force -Path $visualAuditPageDirectory | Out-Null
         Write-Host "[live-answer-workflow] render high-resolution source pages for no-reference visual audit"
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/review-source-pdf.mjs") -Arguments @(
+        $visualAuditRenderArguments = @(
             $sourcePath,
             "--out", $visualAuditPageDirectory,
             "--pages", "all",
@@ -454,6 +555,10 @@ try {
             "--horizontal-tiles", "2",
             "--tile-overlap", "0.15"
         )
+        if ($visualAuditFocusRegionsPath) {
+            $visualAuditRenderArguments += @("--focus-regions-file", $visualAuditFocusRegionsPath)
+        }
+        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/review-source-pdf.mjs") -Arguments $visualAuditRenderArguments
 
         Write-Host "[live-answer-workflow] extract visual findings without rewriting the blind candidate"
         $currentPhase = "visualFindings"
@@ -462,7 +567,7 @@ try {
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
-            "--candidate-file", $blindMarkdownPath,
+            "--candidate-file", $candidateForVisual,
             "--audit-images-dir", $visualAuditPageDirectory,
             "--audit-findings-only",
             "--output", $visualAuditFindingsPath,
@@ -482,7 +587,7 @@ try {
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
             "--config-env-file", $envFilePath,
             "--prompt-file", $promptPath,
-            "--candidate-file", $blindMarkdownPath,
+            "--candidate-file", $candidateForVisual,
             "--audit-findings-file", $visualAuditFindingsPath,
             "--output", $visualAuditMarkdownPath,
             "--summary-out", $visualMergeSummaryPath,
@@ -494,7 +599,7 @@ try {
         $phaseStates[$currentPhase].status = "completed"
         $currentPhase = $null
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
-            $blindMarkdownPath,
+            $candidateForVisual,
             $visualAuditMarkdownPath,
             $visualAuditReportPath
         )
@@ -502,6 +607,9 @@ try {
         if (-not $referencePath) {
             Copy-WorkflowFileAtomic -SourcePath $visualAuditMarkdownPath -DestinationPath $answerMarkdownPath
         }
+    }
+    if ($SkipVisualAudit -and -not $referencePath) {
+        Copy-WorkflowFileAtomic -SourcePath $semanticReviewMarkdownPath -DestinationPath $answerMarkdownPath
     }
 
     if ($referencePath) {
@@ -591,8 +699,11 @@ try {
     Write-Host "Markdown: $answerMarkdownPath"
     if ($referencePath) {
         Write-Host "Blind candidate: $blindMarkdownPath"
+        Write-Host "Semantic findings: $semanticFindingsPath"
+        Write-Host "Semantic review candidate: $semanticReviewMarkdownPath"
         Write-Host "Comparison report: $comparisonReportPath"
     }
+    Write-Host "Semantic review report: $semanticReviewReportPath"
     if (-not $SkipVisualAudit) {
         Write-Host "Visual audit findings: $visualAuditFindingsPath"
         Write-Host "Visual audit candidate: $visualAuditMarkdownPath"

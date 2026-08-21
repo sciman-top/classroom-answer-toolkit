@@ -133,6 +133,20 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
+function deliverySnapshotMatches(compiledSnapshot, deliverySnapshot, snapshotMode) {
+  if (!deliverySnapshot) {
+    return false;
+  }
+
+  if (snapshotMode === "compiled") {
+    return JSON.stringify(deliverySnapshot) === JSON.stringify(compiledSnapshot);
+  }
+
+  const { generatedAt: _compiledAt, ...compiledStable } = compiledSnapshot;
+  const { generatedAt: _deliveryAt, ...deliveryStable } = deliverySnapshot;
+  return JSON.stringify(deliveryStable) === JSON.stringify(compiledStable);
+}
+
 function loadSubjectPackManifest(subjectPack) {
   const manifestPath = path.join(repoRoot, "prompts", subjectPack, "manifest.json");
   if (!fs.existsSync(manifestPath)) {
@@ -365,6 +379,14 @@ async function main() {
         if (expectation.delivery) {
           deliveryPipelineCount += 1;
           const deliverPdfPath = path.join(workDir, `${caseEntry.id}.${profile}.deliver.pdf`);
+          const snapshotMode = expectation.delivery.snapshotMode === "default" ? "default" : "compiled";
+          const snapshotArgs = snapshotMode === "default"
+            ? []
+            : [
+                "--snapshot-path",
+                path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
+                "--skip-validate"
+              ];
           const deliverRun = await runNodeTool("deliver-answer.mjs", [
             path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
             path.relative(repoRoot, deliverPdfPath),
@@ -372,9 +394,7 @@ async function main() {
             profile,
             "--subject-pack",
             options.subjectPack,
-            "--snapshot-path",
-            path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
-            "--skip-validate",
+            ...snapshotArgs,
             ...(expectation.delivery.keepReview ? ["--keep-review"] : [])
           ]);
 
@@ -405,7 +425,7 @@ async function main() {
               && deliveryManifest.snapshot?.version === compiledSnapshot.subjectPack?.version
               && deliveryManifest.snapshot?.profile === profile
               && deliverySnapshotPath === expectedDeliverySnapshotPath
-              && JSON.stringify(deliverySnapshot) === JSON.stringify(compiledSnapshot);
+              && deliverySnapshotMatches(compiledSnapshot, deliverySnapshot, snapshotMode);
             const expectedGraphics = expectation.delivery.expectedGraphics ?? [];
             const actualGraphics = (deliveryManifest.graphics?.items ?? [])
               .map((item) => item?.graphicId)
@@ -443,6 +463,7 @@ async function main() {
               expectedOcr,
               actualOcr,
               ocrMatch,
+              snapshotMode,
               keepReview: Boolean(expectation.delivery.keepReview)
             };
           } else {
@@ -468,6 +489,7 @@ async function main() {
               expectedOcr: expectation.delivery.expectedOcr ?? null,
               actualOcr: null,
               ocrMatch: false,
+              snapshotMode,
               keepReview: Boolean(expectation.delivery.keepReview)
             };
           }

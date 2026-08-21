@@ -54,6 +54,8 @@ Options:
   --images-dir <dir>        Directory containing ordered page PNG/JPEG/WebP images
   --source-text-file <path> Optional extracted text layer from the same source PDF
   --candidate-file <path>   Blind answer Markdown to review against a reference answer
+  --semantic-findings-only  Independently re-solve semantic questions without a reference answer
+  --semantic-findings-file <path>  Merge a prior no-reference semantic findings report
   --audit-images-dir <dir>  High-resolution source crops/pages for a no-reference visual audit; requires --candidate-file
   --audit-findings-only     Emit visual findings without rewriting the candidate; requires --audit-images-dir
   --audit-findings-file <path>  Merge a prior visual findings report into the candidate without image input
@@ -75,6 +77,8 @@ function parseArgs(argv) {
     promptFile: defaultPromptPath,
     imagesDir: null,
     sourceTextFile: null,
+    semanticFindingsOnly: false,
+    semanticFindingsFile: null,
     auditImagesDir: null,
     auditFindingsOnly: false,
     auditFindingsFile: null,
@@ -131,6 +135,18 @@ function parseArgs(argv) {
     }
     if (arg === "--candidate-file") {
       options.candidateFile = resolveCallerPath(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg === "--semantic-findings-only") {
+      options.semanticFindingsOnly = true;
+      continue;
+    }
+    if (arg === "--semantic-findings-file") {
+      options.semanticFindingsFile = resolveCallerPath(requireValue(argv, ++index, arg));
+      continue;
+    }
+    if (arg.startsWith("--semantic-findings-file=")) {
+      options.semanticFindingsFile = resolveCallerPath(arg.slice("--semantic-findings-file=".length));
       continue;
     }
     if (arg === "--audit-images-dir") {
@@ -251,6 +267,11 @@ function parseArgs(argv) {
     ...options.auditImagePaths,
     ...options.referenceImagePaths
   ];
+  options.imageEvidenceLabels = [
+    ...resolveImageEvidenceLabels(options.sourceImagePaths, "source"),
+    ...resolveImageEvidenceLabels(options.auditImagePaths, "audit"),
+    ...resolveImageEvidenceLabels(options.referenceImagePaths, "reference")
+  ];
   validateOutputCollision(options);
   return options;
 }
@@ -266,8 +287,8 @@ function validateOptions(options) {
   if (options.imagesDir && options.imagePaths.length > 0) {
     throw new Error("Use --images-dir or repeated --image values, not both.");
   }
-  if (!options.imagesDir && options.imagePaths.length === 0 && !options.auditImagesDir && !options.auditFindingsFile) {
-    throw new Error("--images-dir, --audit-images-dir, --audit-findings-file, or at least one --image is required.");
+  if (!options.imagesDir && options.imagePaths.length === 0 && !options.semanticFindingsFile && !options.auditImagesDir && !options.auditFindingsFile) {
+    throw new Error("--images-dir, --semantic-findings-file, --audit-images-dir, --audit-findings-file, or at least one --image is required.");
   }
   if (!["primary", "fallback", "all"].includes(options.provider)) {
     throw new Error("--provider must be primary, fallback, or all.");
@@ -281,18 +302,29 @@ function validateOptions(options) {
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
     throw new Error("--timeout-ms must be an integer >= 1000.");
   }
-  if ([options.auditImagesDir, options.referenceImagesDir, options.auditFindingsFile].filter(Boolean).length > 1) {
-    throw new Error("--audit-images-dir, --audit-findings-file, and --reference-images-dir are mutually exclusive.");
+  if ([options.semanticFindingsFile, options.auditImagesDir, options.referenceImagesDir, options.auditFindingsFile].filter(Boolean).length > 1) {
+    throw new Error("--semantic-findings-file, --audit-images-dir, --audit-findings-file, and --reference-images-dir are mutually exclusive.");
   }
-  const candidateMode = Boolean(options.auditImagesDir || options.auditFindingsFile || options.referenceImagesDir);
+  const candidateMode = Boolean(options.semanticFindingsOnly || options.semanticFindingsFile
+    || options.auditImagesDir || options.auditFindingsFile || options.referenceImagesDir);
   if (Boolean(options.candidateFile) !== candidateMode) {
-    throw new Error("--candidate-file must be used with exactly one of --audit-images-dir or --reference-images-dir.");
+    throw new Error("--candidate-file must be used with exactly one semantic, visual-audit, or reference-review mode.");
   }
   if (options.candidateFile && !fs.existsSync(options.candidateFile)) {
     throw new Error(`Candidate Markdown not found: ${options.candidateFile}`);
   }
   if (options.auditFindingsOnly && !options.auditImagesDir) {
     throw new Error("--audit-findings-only requires --audit-images-dir.");
+  }
+  if (options.semanticFindingsOnly && (!options.imagesDir && options.imagePaths.length === 0)) {
+    throw new Error("--semantic-findings-only requires --images-dir or at least one --image.");
+  }
+  if (options.semanticFindingsOnly && (options.semanticFindingsFile || options.auditImagesDir
+      || options.auditFindingsOnly || options.auditFindingsFile || options.referenceImagesDir)) {
+    throw new Error("--semantic-findings-only cannot be combined with another review mode.");
+  }
+  if (options.semanticFindingsFile && !fs.existsSync(options.semanticFindingsFile)) {
+    throw new Error(`Semantic findings file not found: ${options.semanticFindingsFile}`);
   }
   if (options.auditFindingsFile && !fs.existsSync(options.auditFindingsFile)) {
     throw new Error(`Visual audit findings file not found: ${options.auditFindingsFile}`);
@@ -315,6 +347,7 @@ function validateOutputCollision(options) {
   const protectedInputs = [
     options.promptFile,
     options.candidateFile,
+    options.semanticFindingsFile,
     options.auditFindingsFile,
     options.sourceTextFile,
     options.referenceTextFile,
@@ -363,24 +396,108 @@ function resolveImagesFromDirectory(directory) {
   return imagePaths;
 }
 
+export function resolveImageEvidenceLabels(imagePaths, role = "source") {
+  const roleLabel = role === "reference"
+    ? "Reference answer"
+    : role === "audit"
+      ? "No-reference visual audit source"
+      : "Source exam";
+  const manifestMaps = new Map();
+  return imagePaths.map((imagePath) => {
+    const directory = path.dirname(imagePath);
+    if (!manifestMaps.has(directory)) {
+      const manifestPath = path.join(directory, "manifest.json");
+      if (!fs.existsSync(manifestPath)) {
+        manifestMaps.set(directory, null);
+      } else {
+        let manifest;
+        try {
+          manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+        } catch (error) {
+          throw new Error(`Image evidence manifest is invalid: ${manifestPath}: ${error.message}`);
+        }
+        const entries = Array.isArray(manifest.pages) ? manifest.pages : [];
+        manifestMaps.set(directory, new Map(entries
+          .filter((entry) => typeof entry?.imagePath === "string")
+          .map((entry) => [path.resolve(entry.imagePath), entry])));
+      }
+    }
+    const entry = manifestMaps.get(directory)?.get(path.resolve(imagePath));
+    if (!entry) {
+      return null;
+    }
+    if (entry.kind === "focus-region") {
+      const question = entry.questionNumber ? `; question ${entry.questionNumber}` : "";
+      const analogReading = entry.analogMeterReading?.status === "measured"
+        ? ` Deterministic source-pixel geometry measured range ${entry.analogMeterReading.rangeMin}-${entry.analogMeterReading.rangeMax}`
+          + ` across ${entry.analogMeterReading.divisions} divisions, pointer at division ${entry.analogMeterReading.nearestDivision}`
+          + ` (raw ${entry.analogMeterReading.rawDivision}), giving ${entry.analogMeterReading.value}.`
+        : entry.analogMeterReading
+          ? " Deterministic analog-meter geometry was uncertain; do not infer a value from it."
+          : "";
+      const linearScaleReading = entry.linearScaleReading?.status === "measured"
+        ? ` Deterministic source-pixel linear-scale geometry measured range ${entry.linearScaleReading.rangeMin}-${entry.linearScaleReading.rangeMax}`
+          + ` across ${entry.linearScaleReading.divisions} divisions, indicator at division ${entry.linearScaleReading.nearestDivision}`
+          + ` (raw ${entry.linearScaleReading.rawDivision}), giving ${entry.linearScaleReading.value}.`
+        : entry.linearScaleReading
+          ? " Deterministic linear-scale geometry was uncertain; do not infer a value from it."
+          : "";
+      const opticalRayGeometry = entry.opticalRayGeometry?.status === "measured"
+        ? ` Deterministic source-pixel ray geometry found the post-lens rays ${entry.opticalRayGeometry.relation.replaceAll("_", " ")}`
+          + ` than the pre-lens continuation (intersection positions ${entry.opticalRayGeometry.beforeIntersectionY} and ${entry.opticalRayGeometry.afterIntersectionY}).`
+        : entry.opticalRayGeometry
+          ? " Deterministic optical-ray geometry was uncertain; do not infer a lens type from it."
+          : "";
+      return `${roleLabel} focused crop: ${entry.focusLabel}; source page ${entry.pageNumber}${question}.`
+        + analogReading
+        + linearScaleReading
+        + opticalRayGeometry
+        + " Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key.";
+    }
+    const question = entry.questionNumber ? `; question ${entry.questionNumber}` : "";
+    const tile = entry.tileIndex && entry.horizontalIndex
+      ? `; region ${entry.tileIndex}/${entry.tileCount}, horizontal tile ${entry.horizontalIndex}/${entry.horizontalTileCount}`
+      : "";
+    return `${roleLabel} page crop: page ${entry.pageNumber}${question}${tile}.`;
+  });
+}
+
 export function buildPrompt(promptFile, review = {}) {
   if (!fs.existsSync(promptFile)) {
     throw new Error(`Prompt file not found: ${promptFile}`);
   }
   const specification = fs.readFileSync(promptFile, "utf8").trim();
+  if (review.mode === "semantic_review_findings") {
+    return `${specification}\n\n---\n\n# 无参考答案语义复核任务\n\n` +
+      `所附 ${review.sourcePageCount} 张图片和可选文本层来自原始试卷，不是参考答案。下面的盲答候选不可信，只能用于定位待复核题号；不得沿用其结论作为证据。\n` +
+      "抛开候选结论，重新独立解答全部选择题，以及所有涉及状态变化、惯性方向、故障电路、能量分段、物态变化、透镜类型、受力和定性比较的小问。只输出语义复核发现报告，不得重写完整答案。\n" +
+      "每个选择题必须逐项核对 A、B、C、D：分别写一句最短的成立或不成立依据，再给独立结论。过程或图像题必须按题型写出可检查的中间结构：状态题列初态—变化—终态；方向题列坐标系—相对位移—物理关系—方向；故障电路列故障前后各支路状态、仪表测量对象和比较量；图像题按横轴区间分段；透镜题先写入射与折射光线发散或会聚变化。\n" +
+      "若独立结论与候选不同，只有同时具备【语义确认修正】、候选具体字段、原题可见事实、完整的上述题型结构和“建议修正”时才可进入合并；任一环节无法确认则标【语义证据不足，需复核】，不得猜测。与候选一致的题写【语义一致】并给最短依据。\n" +
+      "图片标签中的 measured 确定性几何结果属于原卷像素测量，可直接作为对应读数或几何事实；标签为 uncertain 时不得推断数值。不要输出参考答案、内部思维过程、JSON 或代码围栏。\n\n" +
+      `## 盲答候选\n\n${review.candidateMarkdown.trim()}`;
+  }
+  if (review.mode === "semantic_review_merge") {
+    return `${specification}\n\n---\n\n# 无参考答案语义复核合并任务\n\n` +
+      "下面给出原始盲答候选和独立语义复核发现报告。只应用明确标为【语义确认修正】、同时包含候选具体字段、原题可见事实、题型要求的完整可检查结构和“建议修正”的项目。标为【语义一致】或【语义证据不足，需复核】的项目必须保留候选原文。\n" +
+      "选择题若未逐项核对 A、B、C、D，不得修改；状态题缺初态—变化—终态、方向题缺坐标系或相对位移、故障电路缺前后状态、图像题缺分段、透镜题缺光线发散或会聚变化时，一律不得修改。不得利用候选与报告的多数关系猜答案。\n" +
+      "保持所有题号、小问、公式和 Markdown 结构完整，仅返回合并后的完整答案 Markdown，不要输出报告、分析、JSON 或代码围栏。\n\n" +
+      `## 语义复核发现报告\n\n${review.semanticFindings.trim()}\n\n` +
+      `## 原始盲答候选\n\n${review.candidateMarkdown.trim()}`;
+  }
   if (review.mode === "visual_audit_findings") {
     return `${specification}\n\n---\n\n# 无参考答案视觉发现任务\n\n` +
       `所附 ${review.auditImageCount} 张图片是原始试卷的高分辨率重叠视窗，不是参考答案。` +
-      "请对照第一次盲答候选，逐题独立检查所有选择题和包含滑轮、仪表、刻度尺、弹簧、钩码、电路、光路或方向关系的题目。\n" +
-      "只输出视觉审计发现报告，不得重写整份答案。每项发现必须包含题号、候选结论、可见证据、独立计算或逐段追踪结果、建议修正；没有足够证据时写【视觉证据不足，需复核】。\n" +
-      "选择题逐项反证；滑轮逐段追踪承重绳；仪表先识别实际接线柱再按刻线间隔计数；刻度尺读取两端后相减；钩码逐个计数。" +
+      "请对照第一次盲答候选，逐题检查选择题和包含滑轮、仪表、刻度尺、弹簧、钩码、电路、光路或方向关系的题目，但本阶段只负责原图直接取证，不代替第二次完整物理作答。\n" +
+      "只输出视觉审计发现报告，不得重写整份答案。每项发现先分类：只有候选明确陈述或依赖的标签、数字、刻度、数量、连接拓扑、几何位置等与原图直接可观察事实矛盾时，才能标【直接视觉不一致】，并写出候选中的具体字段、原图可见事实和建议修正；没有足够证据时写【视觉证据不足，需复核】。\n" +
+      "凡修正必须重新运用左手定则、受力平衡、惯性、机械能守恒、物态变化、折射成像等物理规律才能得到，均标【语义复算分歧，仅供参考复核】，可以记录推理疑点，但不得写“建议修正”。选择字母或定性方向本身不是直接视觉事实。\n" +
+      "选择题逐项核对题干、选项与图号绑定；滑轮逐段追踪承重绳；仪表先识别实际接线柱再按刻线间隔计数；刻度尺读取两端后相减；钩码逐个计数。" +
       "每个仪表数值必须附结构化【仪表证据链】：小问明确要求读数的目标图号；该目标图是否显示实际导线；仅在同一目标图显示导线时列每根导线连接的端子；选定量程；对应刻度圈；分度值；指针相邻刻线；从左右相邻标注刻度双向数格得到的读数；最后才给一致性计算。目标图是无连接导线的独立表盘时，端子写“不适用/未显示”，按本图印刷数字刻度和单位确定量程，禁止借用同题另一幅电路图的接线或量程。候选数值不得作为证据。若任一字段缺失，或把另一图的接线柱与目标图的指针拼接，必须写【视觉证据不足，需复核】，不得写“建议保留候选”。" +
       "电磁力方向题若要确认或修正，必须逐个目标导体明确写出电流进入端、离开端、N→S磁场方向、与题内校准图的对应变换和最终受力方向；任一项无法从图中绑定时只能写【视觉证据不足，需复核】，不得声称候选正确。\n\n" +
       `## 第一次盲答候选\n\n${review.candidateMarkdown.trim()}`;
   }
   if (review.mode === "visual_audit_merge") {
     return `${specification}\n\n---\n\n# 视觉审计合并任务\n\n` +
-      "下面给出第一次盲答候选和独立视觉审计发现报告。只应用同时具有明确视觉证据、计算链和“建议修正”的项目；标记为“无需修正”或证据不足的项目必须保留候选原文，不得改写为占位文本或猜测。仪表读数只有在完整【仪表证据链】绑定小问明确引用的目标图，并列出该图自身可见的量程、刻度圈、分度值、相邻刻线和左右双向读数时才算明确视觉证据；目标图没有导线时不得要求或借用另一图的端子。证据链缺失、跨图拼接或自相矛盾时一律视为证据不足，禁止用候选值反证审计结论。" +
+      "下面给出第一次盲答候选和独立视觉审计发现报告。只应用明确标为【直接视觉不一致】、同时列出候选具体字段、原图直接可观察事实和“建议修正”的项目；标记为【语义复算分歧，仅供参考复核】、无需修正或证据不足的项目必须保留候选原文，不得改写为占位文本或猜测。需要重新运用左手定则、受力平衡、惯性、机械能守恒、物态变化、折射成像等物理规律才能得出的选择字母或定性方向，即使报告写了计算链或“建议修正”，也不属于直接视觉证据，禁止在本阶段覆盖候选。仪表读数只有在完整【仪表证据链】绑定小问明确引用的目标图，并列出该图自身可见的量程、刻度圈、分度值、相邻刻线和左右双向读数时才算明确视觉证据；目标图没有导线时不得要求或借用另一图的端子。证据链缺失、跨图拼接或自相矛盾时一律视为证据不足，禁止用候选值反证审计结论。" +
       "保持所有题号、小问、公式和 Markdown 结构完整，仅返回修正后的完整 Markdown，不要输出差异说明或代码围栏。\n\n" +
       `## 视觉审计发现报告\n\n${review.auditFindings.trim()}\n\n` +
       `## 第一次盲答候选\n\n${review.candidateMarkdown.trim()}`;
@@ -407,6 +524,7 @@ export function buildPrompt(promptFile, review = {}) {
     "对电路、线圈、光路、受力图和仪表盘等视觉题，必须放大核对原图并独立复核：" +
     "先绑定小问明确引用的目标图，再追踪该图内的接线或方向关系，随后确认量程、分度值和指针位置，禁止仅凭题型惯例作答。电压表/电流表的确定数值必须在内部完成结构化证据链（目标图号、该图是否显示实际导线、该图自身可见的端子或“不适用/未显示”、量程、刻度圈、分度值、相邻刻线、左右双向读数、最后的计算校验）。独立表盘按本图印刷刻度读数，禁止借用同题另一图的接线或量程；若任一步无法从目标图确认，输出【视觉证据不足，需复核】，不得用 $R=U/I$ 反推读数。\n" +
     "对概念填空先判断题目所问的物理量或能量形式，再填写对应物理术语，禁止照抄装置名称。\n" +
+    "图片标签中 status=measured 的确定性 source-pixel geometry 是从原卷像素得到的测量事实：对应读数或几何关系必须采用该测量，除非同一原卷存在可明确指出的直接矛盾；status=uncertain 时不得据此猜测。\n" +
     "`$...$` 只用于真实物理量、公式或带 LaTeX 单位的量；选项字母、图中点名和中文标点必须写在正文，不得放入数学模式。\n" +
     "本阶段只生成答案 Markdown：仅返回最终 Markdown 正文，不要使用代码围栏，不要描述处理过程，" +
     "不要声称已经生成 PDF。作图题若无法直接嵌入答图，必须按规范给出精确文字描述。";
@@ -433,7 +551,7 @@ export function normalizeAnswerMarkdown(value) {
   const headingIndex = unfenced.search(/#\s+(?:物理试卷参考答案|参考答案|答案)(?=\s|$)/u);
   const answerOnly = headingIndex >= 0 ? unfenced.slice(headingIndex) : unfenced;
   return answerOnly
-    .replace(/\$([A-D](?:['′])?(?:[、，][A-D](?:['′])?)*)\$/g, "$1")
+    .replace(/\$([A-Z](?:['′])?(?:[、，][A-Z](?:['′])?)+)\$/g, "$1")
     .replace(/([_^]\{)([^{}]*[\u3400-\u9fff][^{}]*)(\})/gu, (_match, open, body, close) =>
       `${open}${body.replace(/[\u3400-\u9fff]+/gu, (label) => `\\text{${label}}`)}${close}`);
 }
@@ -529,9 +647,29 @@ function resolveImageDataUrls(options) {
   return options.imagePaths.map(imageDataUrl);
 }
 
+function buildImageContentParts(surface, imageDataUrls, imageEvidenceLabels, detail) {
+  if (imageEvidenceLabels.length > 0 && imageEvidenceLabels.length !== imageDataUrls.length) {
+    throw new Error("Image evidence labels must align one-to-one with ordered images.");
+  }
+  return imageDataUrls.flatMap((imageUrl, index) => {
+    const label = imageEvidenceLabels[index];
+    if (surface === "chat_completions") {
+      return [
+        ...(label ? [{ type: "text", text: `[Image evidence ${index + 1}/${imageDataUrls.length}] ${label}` }] : []),
+        { type: "image_url", image_url: { url: imageUrl, detail } }
+      ];
+    }
+    return [
+      ...(label ? [{ type: "input_text", text: `[Image evidence ${index + 1}/${imageDataUrls.length}] ${label}` }] : []),
+      { type: "input_image", image_url: imageUrl, detail }
+    ];
+  });
+}
+
 export function buildAnswerRequestBody(provider, options) {
   const detail = normalizeDetailForProvider(options.visualDetailMode, provider.visionModel);
   const imageDataUrls = resolveImageDataUrls(options);
+  const imageEvidenceLabels = Array.isArray(options.imageEvidenceLabels) ? options.imageEvidenceLabels : [];
   if (provider.visionSurface === "chat_completions") {
     return {
       model: provider.visionModel,
@@ -541,10 +679,7 @@ export function buildAnswerRequestBody(provider, options) {
           role: "user",
           content: [
             { type: "text", text: options.prompt },
-            ...imageDataUrls.map((imageUrl) => ({
-              type: "image_url",
-              image_url: { url: imageUrl, detail }
-            }))
+            ...buildImageContentParts("chat_completions", imageDataUrls, imageEvidenceLabels, detail)
           ]
         }
       ],
@@ -560,11 +695,7 @@ export function buildAnswerRequestBody(provider, options) {
         role: "user",
         content: [
           { type: "input_text", text: options.prompt },
-          ...imageDataUrls.map((imageUrl) => ({
-            type: "input_image",
-            image_url: imageUrl,
-            detail
-          }))
+          ...buildImageContentParts("responses", imageDataUrls, imageEvidenceLabels, detail)
         ]
       }
     ],
@@ -574,6 +705,8 @@ export function buildAnswerRequestBody(provider, options) {
 
 const TASK_MODES = new Set([
   "blind_generation",
+  "semantic_review_findings",
+  "semantic_review_merge",
   "visual_audit",
   "visual_audit_findings",
   "visual_audit_merge",
@@ -586,6 +719,12 @@ const SOLVING_REASONING_EFFORTS = ["xhigh", "high", "medium"];
 function inferAnswerMode(options = {}) {
   if (TASK_MODES.has(options.mode)) {
     return options.mode;
+  }
+  if (options.semanticFindingsOnly) {
+    return "semantic_review_findings";
+  }
+  if (options.semanticFindingsFile || options.semanticFindings) {
+    return "semantic_review_merge";
   }
   if (options.auditFindingsOnly) {
     return "visual_audit_findings";
@@ -604,15 +743,18 @@ function inferAnswerMode(options = {}) {
 
 export function selectAnswerRoute(config, modeOrOptions = {}, target = "all") {
   const mode = typeof modeOrOptions === "string" ? modeOrOptions : inferAnswerMode(modeOrOptions);
+  const requiresSolvingModel = mode === "blind_generation"
+    || mode === "semantic_review_findings"
+    || mode === "semantic_review_merge";
   const providers = config.providers
     .filter((provider) => provider.lane === "ai")
-    .filter((provider) => mode !== "blind_generation"
+    .filter((provider) => !requiresSolvingModel
       || (provider.visionModel === SOLVING_MODEL
         && SOLVING_REASONING_EFFORTS.includes(provider.reasoningEffort)))
     .filter((provider) => target === "all"
       || (target === "primary" && provider.role === "primary")
       || (target === "fallback" && provider.role.startsWith("fallback")))
-    .sort((left, right) => mode === "blind_generation"
+    .sort((left, right) => requiresSolvingModel
       ? SOLVING_REASONING_EFFORTS.indexOf(left.reasoningEffort) - SOLVING_REASONING_EFFORTS.indexOf(right.reasoningEffort)
         || providerOrder(left.role) - providerOrder(right.role)
       : providerOrder(left.role) - providerOrder(right.role));
@@ -855,6 +997,7 @@ function redactAttempt(attempt) {
 
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
+  const mode = inferAnswerMode(options);
   const loaded = loadGatewayConfig({ envFile: options.envFile, allowMissingSecrets: false });
   if (loaded.validation.errors.length > 0) {
     throw new Error(loaded.validation.errors.join("; "));
@@ -864,14 +1007,9 @@ export async function main() {
   };
   const prompt = buildPrompt(options.promptFile, options.candidateFile ? {
     ...promptContext,
-    mode: options.auditFindingsOnly
-      ? "visual_audit_findings"
-      : options.auditFindingsFile
-        ? "visual_audit_merge"
-        : options.auditImagesDir
-          ? "visual_audit"
-          : "reference_review",
+    mode,
     candidateMarkdown: fs.readFileSync(options.candidateFile, "utf8"),
+    semanticFindings: options.semanticFindingsFile ? fs.readFileSync(options.semanticFindingsFile, "utf8") : "",
     auditFindings: options.auditFindingsFile ? fs.readFileSync(options.auditFindingsFile, "utf8") : "",
     referenceText: options.referenceTextFile ? fs.readFileSync(options.referenceTextFile, "utf8") : "",
     sourcePageCount: options.sourceImagePaths.length,
@@ -897,15 +1035,7 @@ export async function main() {
     reasoningEffort: result.reasoningEffort,
     promptPath: path.relative(repoRoot, options.promptFile).replace(/\\/g, "/"),
     promptSha256: sha256File(options.promptFile),
-    mode: options.auditFindingsOnly
-      ? "visual_audit_findings"
-      : options.auditFindingsFile
-        ? "visual_audit_merge"
-        : options.auditImagesDir
-          ? "visual_audit"
-          : options.candidateFile
-            ? "reference_review"
-            : "blind_generation",
+    mode,
     sourcePageCount: options.sourceImagePaths.length,
     auditImageCount: options.auditImagePaths.length,
     referencePageCount: options.referenceImagePaths.length,
@@ -914,6 +1044,8 @@ export async function main() {
     routing: result.routing,
     candidatePath: options.candidateFile,
     candidateSha256: options.candidateFile ? sha256File(options.candidateFile) : null,
+    semanticFindingsPath: options.semanticFindingsFile,
+    semanticFindingsSha256: options.semanticFindingsFile ? sha256File(options.semanticFindingsFile) : null,
     auditFindingsPath: options.auditFindingsFile,
     auditFindingsSha256: options.auditFindingsFile ? sha256File(options.auditFindingsFile) : null,
     sourceTextPath: options.sourceTextFile,
@@ -921,9 +1053,10 @@ export async function main() {
     referenceTextPath: options.referenceTextFile,
     referenceTextSha256: options.referenceTextFile ? sha256File(options.referenceTextFile) : null,
     pageCount: options.imagePaths.length,
-    pageImages: options.imagePaths.map((imagePath) => ({
+    pageImages: options.imagePaths.map((imagePath, index) => ({
       path: imagePath,
-      sha256: sha256File(imagePath)
+      sha256: sha256File(imagePath),
+      evidenceLabel: options.imageEvidenceLabels[index] ?? null
     })),
     outputPath: options.outputPath,
     outputSha256: sha256File(options.outputPath),

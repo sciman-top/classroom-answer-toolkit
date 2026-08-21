@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "1.0",
+  "sourcePdfSha256": "c4feff77379271fbea32404b1ab3952800ff305639c8af446fa1c8c68a2fc794",
+  "regions": [
+    {
+      "id": "q9-figure-8-phase-transition-arrows",
+      "label": "Q9 Figure 8: inspect arrow directions and heat labels, including M→乙 放热, 乙→丙 吸热, and 丙→甲 bottom arrow 吸热",
+      "page": 3,
+      "questionNumber": 9,
+      "x": 0.42,
+      "y": 0.75,
+      "width": 0.50,
+      "height": 0.18
+    },
+    {
+      "id": "q9-question-and-options",
+      "label": "Question 9 stem and four ordered phase-state options",
+      "page": 4,
+      "questionNumber": 9,
+      "x": 0.12,
+      "y": 0.07,
+      "width": 0.76,
+      "height": 0.13
+    },
+    {
+      "id": "q13-figure-13-lens-rays",
+      "label": "Q13 Figure 13: compare rays before/after lens; record converging, parallel or diverging and whether convergence increases or decreases",
+      "page": 5,
+      "questionNumber": 13,
+      "x": 0.12,
+      "y": 0.08,
+      "width": 0.43,
+      "height": 0.39,
+      "opticalRay": {
+        "lensY": 0.58,
+        "beforeLeft": { "x1": 0.18, "y1": 0.44, "x2": 0.30, "y2": 0.53 },
+        "beforeRight": { "x1": 0.58, "y1": 0.44, "x2": 0.47, "y2": 0.53 },
+        "afterLeft": { "x1": 0.342, "y1": 0.590, "x2": 0.373, "y2": 0.628 },
+        "afterRight": { "x1": 0.418, "y1": 0.590, "x2": 0.387, "y2": 0.628 },
+        "lineHalfWidth": 0.006
+      }
+    },
+    {
+      "id": "q22-figures-21-22-circuit-and-components",
+      "label": "Question 22 Figures 21 and 22 circuit topology, meters, resistor, rheostat, switch, and battery",
+      "page": 9,
+      "questionNumber": 22,
+      "x": 0.10,
+      "y": 0.08,
+      "width": 0.80,
+      "height": 0.38
+    },
+    {
+      "id": "q23-figure-25-thermometer-inset",
+      "label": "Q23 Figure 25: count equal small divisions between 50 and 60 and align red liquid top to the directly visible tick",
+      "page": 10,
+      "questionNumber": 23,
+      "x": 0.38,
+      "y": 0.47,
+      "width": 0.18,
+      "height": 0.19,
+      "linearScale": {
+        "rangeMin": 50,
+        "rangeMax": 60,
+        "divisions": 10,
+        "scaleStartX": 0.591,
+        "scaleStartY": 0.488,
+        "scaleEndX": 0.591,
+        "scaleEndY": 0.362,
+        "indicatorHalfWidth": 0.022,
+        "darkThreshold": 80
+      }
+    }
+  ]
+}

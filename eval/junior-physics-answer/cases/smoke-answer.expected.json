@@ -6,7 +6,8 @@
       "maxWarnings": 0,
       "visualBaseline": "baselines/visual/smoke-classroom.page-001.png",
       "delivery": {
-        "keepReview": false
+        "keepReview": true,
+        "snapshotMode": "default"
       }
     },
     "compact": {

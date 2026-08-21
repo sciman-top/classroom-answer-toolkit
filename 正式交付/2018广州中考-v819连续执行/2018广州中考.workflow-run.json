@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "5d0eca712e7a400180a36b22712d7cb6",
+  "status": "succeeded",
+  "startedAt": "2026-08-21T09:48:00.9062241+00:00",
+  "finishedAt": "2026-08-21T10:07:02.9939938+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2018广州中考.pdf",
+      "bytes": 1291035,
+      "sha256": "c4feff77379271fbea32404b1ab3952800ff305639c8af446fa1c8c68a2fc794"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2018广州中考答案.pdf",
+      "bytes": 568229,
+      "sha256": "40b1a15e8b70c44e862eabf265cbe4d63062151742a126133388d31a4b666ed6"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 107775,
+      "sha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c"
+    },
+    "visualAuditFocusRegions": null
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "visualAuditFocusRegionsFile": null,
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.blind-generation.summary.json",
+        "bytes": 5966,
+        "sha256": "0d51fc6ebe221a1de6ab8b813327e4edddf08b1fbe8ca50946ccf14698b70ddf"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考盲答候选.md",
+        "bytes": 4581,
+        "sha256": "53000dcfcc8fbccbf018f56781f9a8e1dd9629523ade9f7d74a286c6f87966db"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.visual-findings.summary.json",
+        "bytes": 11005,
+        "sha256": "30cbf5292e9f76c1a8f06da627163964543f1f84d723c36942893206c1660343"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考视觉审计发现.md",
+        "bytes": 11209,
+        "sha256": "14f909f01c1dfaba086d45e4b58cd835dea38b386b290ae76ddd0332837ca3f0"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.visual-merge.summary.json",
+        "bytes": 2150,
+        "sha256": "2bb199bcdecc4b3d4623e2826036b3b8d117f97edd75bf58c1e395f072b2a2fc"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考视觉审计候选.md",
+        "bytes": 4342,
+        "sha256": "de752bbcadb8469eac5075f3ee9f375aea8dc02a040b0e8a605a9ff7648c20ed"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考.reference-review.summary.json",
+        "bytes": 7528,
+        "sha256": "1c13793e834b10e9d572ca1f7a01c499569bc3e0f134087550c3c3f1472f6616"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.md",
+        "bytes": 3987,
+        "sha256": "e352abd78843f131b6312437bc7314921dc2f3106b9cb4a3e3a03d570cefac2c"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.pdf",
+        "bytes": 183527,
+        "sha256": "677755e5b5272e0bd5b427a24a198a16f4b16dc01ff1faded0671ebb82dddb9f"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.md",
+      "bytes": 3987,
+      "sha256": "e352abd78843f131b6312437bc7314921dc2f3106b9cb4a3e3a03d570cefac2c"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.pdf",
+      "bytes": 183527,
+      "sha256": "677755e5b5272e0bd5b427a24a198a16f4b16dc01ff1faded0671ebb82dddb9f"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.delivery-manifest.json",
+      "bytes": 4668,
+      "sha256": "3561fa8826c1e1640d8cc0abf3804ad39a40eea6b999e50c104e6e043f42992f"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "19559e1cb625e75c8e49707ac06a8a190ca0c2ad6c46c7c0b19a0dd5843259d8"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819连续执行\\2018广州中考答案自动复核文本差异报告.md",
+      "bytes": 8805,
+      "sha256": "f1fe0d665213f6ebd69240205106e09ef8e2cbdd28a4d4b860c590ad75e98903"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

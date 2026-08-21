@@ -14,6 +14,7 @@ import {
   applyReferenceChoiceAnswers,
   normalizeAnswerMarkdown,
   resolveAnswerTransportPolicy,
+  resolveImageEvidenceLabels,
   selectAnswerRoute,
   requestAnswerWithFailover
 } from "./answer-request.mjs";
@@ -226,10 +227,17 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
     assert.match(findingsPrompt, /不得写“建议保留候选”/);
     assert.match(findingsPrompt, /端子写“不适用\/未显示”/);
     assert.match(findingsPrompt, /另一幅电路图/);
+    assert.match(findingsPrompt, /直接视觉不一致/);
+    assert.match(findingsPrompt, /语义复算分歧，仅供参考复核/);
+    assert.match(findingsPrompt, /选择字母或定性方向本身不是直接视觉事实/);
+    assert.match(findingsPrompt, /左手定则、受力平衡、惯性、机械能守恒/);
     assert.match(findingsPrompt, /n=2/);
     assert.match(mergePrompt, /视觉审计合并任务/);
     assert.match(mergePrompt, /n 应为 3/);
     assert.match(mergePrompt, /证据不足.*保留候选原文/);
+    assert.match(mergePrompt, /只应用明确标为【直接视觉不一致】/);
+    assert.match(mergePrompt, /语义复算分歧，仅供参考复核/);
+    assert.match(mergePrompt, /即使报告写了计算链或“建议修正”.*禁止在本阶段覆盖候选/);
     assert.match(mergePrompt, /仅返回修正后的完整 Markdown/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -249,6 +257,37 @@ test("blind solving orders only gpt-5.6-sol xhigh, high, and medium tiers", () =
   assert.equal(route.providers[0].visionModel, "gpt-5.6-sol");
   assert.equal(route.providers[0].reasoningEffort, "xhigh");
   assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback").orderedRoles, ["fallback_1", "fallback_2"]);
+  assert.deepEqual(selectAnswerRoute({ providers }, "semantic_review_findings", "all").orderedRoles, ["primary", "fallback_1", "fallback_2"]);
+});
+
+test("semantic findings and merge prompts create an observable no-reference review gate", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-semantic-review-prompt-"));
+  const promptPath = path.join(directory, "spec.md");
+  try {
+    writeFileSync(promptPath, "v8.18 production specification", "utf8");
+    const candidateMarkdown = "# 参考答案\n\n1—5：D、C、D、D、C\n\n12. C";
+    const findingsPrompt = buildPrompt(promptPath, {
+      mode: "semantic_review_findings",
+      candidateMarkdown,
+      sourcePageCount: 10
+    });
+    const mergePrompt = buildPrompt(promptPath, {
+      mode: "semantic_review_merge",
+      candidateMarkdown,
+      semanticFindings: "Q12【语义确认修正】：逐项核对 A、B、C、D；建议修正为 A。"
+    });
+
+    assert.match(findingsPrompt, /不是参考答案/);
+    assert.match(findingsPrompt, /不得沿用其结论作为证据/);
+    assert.match(findingsPrompt, /逐项核对 A、B、C、D/);
+    assert.match(findingsPrompt, /故障前后各支路状态/);
+    assert.match(findingsPrompt, /【语义确认修正】/);
+    assert.match(mergePrompt, /只应用明确标为【语义确认修正】/);
+    assert.match(mergePrompt, /未逐项核对 A、B、C、D，不得修改/);
+    assert.match(mergePrompt, /原始盲答候选/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("blind generation prompt binds extracted source text as auxiliary evidence", () => {
@@ -462,6 +501,71 @@ test("reference review tries every configured AI tier in provider order", async 
     ]);
   } finally {
     globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("focused crop manifest labels are interleaved before the matching ordered images", () => {
+  const { directory, imagePaths } = createPageImages(2);
+  try {
+    writeFileSync(path.join(directory, "manifest.json"), JSON.stringify({
+      pages: [
+        {
+          kind: "page-tile",
+          imagePath: imagePaths[0],
+          pageNumber: 8,
+          questionNumber: 23,
+          tileIndex: 1,
+          tileCount: 1,
+          horizontalIndex: 1,
+          horizontalTileCount: 2
+        },
+        {
+          kind: "focus-region",
+          imagePath: imagePaths[1],
+          pageNumber: 8,
+          questionNumber: 23,
+          focusRegionId: "q23-figure-25-current-meter",
+          focusLabel: "Question 23 Figure 25 current meter dial and visible terminals",
+          analogMeterReading: {
+            status: "measured",
+            rangeMin: 0,
+            rangeMax: 0.6,
+            divisions: 30,
+            nearestDivision: 5,
+            rawDivision: 5.12,
+            value: 0.1
+          },
+          linearScaleReading: {
+            status: "measured", rangeMin: 50, rangeMax: 60, divisions: 10,
+            nearestDivision: 8, rawDivision: 8.012, value: 58
+          },
+          opticalRayGeometry: {
+            status: "measured", relation: "converging_less",
+            beforeIntersectionY: 0.5965, afterIntersectionY: 0.6366
+          }
+        }
+      ]
+    }), "utf8");
+    const imageEvidenceLabels = resolveImageEvidenceLabels(imagePaths, "audit");
+    const body = buildAnswerRequestBody(createConfig().providers[0], {
+      prompt: "audit",
+      imagePaths,
+      imageEvidenceLabels,
+      visualDetailMode: "high",
+      maxOutputTokens: 4000
+    });
+
+    assert.deepEqual(
+      body.input[0].content.map((part) => part.type),
+      ["input_text", "input_text", "input_image", "input_text", "input_image"]
+    );
+    assert.match(body.input[0].content[1].text, /page 8; question 23; region 1\/1/u);
+    assert.match(body.input[0].content[3].text, /focused crop.*current meter.*not an answer/u);
+    assert.match(body.input[0].content[3].text, /division 5.*giving 0\.1/u);
+    assert.match(body.input[0].content[3].text, /indicator at division 8.*giving 58/u);
+    assert.match(body.input[0].content[3].text, /post-lens rays converging less/u);
+  } finally {
     rmSync(directory, { recursive: true, force: true });
   }
 });
@@ -801,6 +905,10 @@ test("Markdown normalization removes math fences around simple point-label lists
   assert.equal(
     normalizeAnswerMarkdown("13. 作 $A、B$ 关于平面镜的对称点 $A'、B'$。"),
     "13. 作 A、B 关于平面镜的对称点 A'、B'。"
+  );
+  assert.equal(
+    normalizeAnswerMarkdown("13. 连接 $O、A$，箭头由 $O$ 指向 A。"),
+    "13. 连接 O、A，箭头由 $O$ 指向 A。"
   );
 });
 

@@ -5,6 +5,7 @@ using FluentAssertions;
 
 namespace ClassroomToolkit.Tests.Toolchain;
 
+[Trait("Gate", "ToolchainIntegration")]
 public sealed class ToolchainCliBehaviorTests
 {
     [Fact]

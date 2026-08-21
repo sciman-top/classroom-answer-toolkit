@@ -57,4 +57,4 @@
 
 - 参考复核后的未决差异数可追踪且不被静默丢弃。
 - 2024/2025 固定错题分别报告 Blind Candidate、Visual Audit 和 Reference Review 结果。
-- Fast/Core/Full verifier 能按影响范围提供可解释反馈，不要求每次局部修改运行三科全量 PDF eval。
+- Focused/Core/Full 验证能按影响范围提供可解释反馈，不要求每次局部修改运行三科全量 PDF eval。

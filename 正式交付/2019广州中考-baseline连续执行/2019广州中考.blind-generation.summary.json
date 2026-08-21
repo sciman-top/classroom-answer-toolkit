@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-21T12:38:15.065Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c",
+  "mode": "blind_generation",
+  "sourcePageCount": 9,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "blind_generation",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2"
+    ],
+    "target": "all"
+  },
+  "candidatePath": null,
+  "candidateSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\source-exam-text.txt",
+  "sourceTextSha256": "cf4f2440a6c7466ae9a5c283ee8f17bb6ef6029a13e8575a9217cb8f158ec782",
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 9,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-001.png",
+      "sha256": "fdc8d8fa76beff540a8834431e778027d060c671bef4627d233ab7688315780a",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-002.png",
+      "sha256": "c337ebbc1d4268849e3cde5c578470b32e2fd3a0a2c18e2437611b8e2c3bd52e",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-003.png",
+      "sha256": "fe9ec92be2d76aadd94fa46809c4393a49863587abfd35b4aee8cc24d3d6ca1a",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-004.png",
+      "sha256": "ddda6139a7a514c31af090266267f6d5b87f3862dcdca77f26e4a61c21e3ed05",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-005.png",
+      "sha256": "18315ac53dadb23a9048c5bb924c0089228b2d2e52ed67d3163cd39c7f058597",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-006.png",
+      "sha256": "612c1672ce8e29482daa70671cef5f6407027f70121669321888786f0619fcae",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-007.png",
+      "sha256": "100351db198ae9980b7758f0652643d100fdbfff41ef8cb1344a2ca00b5b855e",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-008.png",
+      "sha256": "fe8304018fbc7e48e1849a5d822c3739cc0bd8517bc2216f7d886b97a2a5ff16",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\476dc25606004129811014b00852a88b\\pages\\2019广州中考.page-009.png",
+      "sha256": "cdebaa864e6387c5255b80855ed08350d0e5e20bc92f6c47eb06015ba3f9dca2",
+      "evidenceLabel": "Source exam page crop: page 9; region 1/1, horizontal tile 1/1."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-baseline连续执行\\2019广州中考盲答候选.md",
+  "outputSha256": "6c5a6c672739407336a2f2dfc655079c8959ddcf9f1be8b19543e470421924e6",
+  "answerCharacters": 1636,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 388022,
+      "requestBytes": 5046501,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-21T10:31:46.926Z",
+  "snapshotId": "snapshot-86a87353eccbba39",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819聚焦修复验证\\2018广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-86a87353eccbba39",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819聚焦修复验证\\2018广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819聚焦修复验证\\2018广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819聚焦修复验证\\2018广州中考参考答案.md",
+      "bytes": 4566,
+      "sha256": "3a37fbe2718b7b0541031449241d9b2fe6de1c22de45c9f4c100bd360dfbd795"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819聚焦修复验证\\2018广州中考参考答案.pdf",
+      "bytes": 140457,
+      "sha256": "b7d1d85fdda771482a5eefc9f50603967c65f2ea0f748f1cc0bb3705bc8cc9c2"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819聚焦修复验证\\2018广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "4ff46d5b9d9acae26aebd36a02948652850425266d8712ef95cc6f5978346394"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-001.png",
+        "bytes": 254178,
+        "sha256": "606cbf53e7ca5bb5d2c355fa7980ee133fd4865e61077aadde3518c90d9ede3e"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1215,
+        "sha256": "05b039c44061fda0e149737f5b83021200f20dc6a3d62c5b7c0fee83293bd3b5"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-002.png",
+        "bytes": 378872,
+        "sha256": "a486896dac92197c81eebbda3e728aac652a54fa7c7636729cdcf950ad3f65af"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1890,
+        "sha256": "84e0ea447cabfc2e722f853d6e389214c300a9228d4bc56e95ce36e8e4c2fd53"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-003.png",
+        "bytes": 239996,
+        "sha256": "5fd7b5672c4d3bd114a22803aca22609cf3f88b6499d18c593f9c63a652115e8"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\2018广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 1106,
+        "sha256": "520a62dbec3ecb46eab7bb3a24a3a2abdc7a9fcdfc5489b44e050310a75c8c45"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\manifest.json",
+        "bytes": 3844,
+        "sha256": "f62b5e95666ce5d09b0a691c22640255ca63cb6a0bc4302b71ce13a8149a7584"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2018广州中考-v819聚焦修复验证__2018广州中考参考答案\\review.html",
+        "bytes": 1466,
+        "sha256": "4a61cdcdee01dc13bb79c79304d9a3b5cfb207b201b41382fe5be6e73c39c0a0"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

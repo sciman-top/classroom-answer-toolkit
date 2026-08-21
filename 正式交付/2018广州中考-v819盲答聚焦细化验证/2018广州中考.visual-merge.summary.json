@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-21T11:47:03.259Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c",
+  "mode": "visual_audit_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_merge",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考盲答候选.md",
+  "candidateSha256": "60f044fbb9a34f54286eee34b58c9928ddebe388387b6df00c44e250d56f0f98",
+  "auditFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考视觉审计发现.md",
+  "auditFindingsSha256": "18474f32da3a01b91ae2e519a9d12cbdda5a7e58a7e3545ce061d6937f0b9a06",
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考视觉审计候选.md",
+  "outputSha256": "2436e06e8d5d3b7c37ebeffa87eb87080b0a889c932353b546ad291d00fbf70c",
+  "answerCharacters": 2862,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 176930,
+      "requestBytes": 118522,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

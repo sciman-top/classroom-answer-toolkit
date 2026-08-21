@@ -65,9 +65,9 @@ if ($Mode -eq "Full") {
     Invoke-GateStep "cross-subject" {
         npm --prefix tools/rule-compiler run validate:cross-subject
     } "Cross-subject validation failed."
-    Invoke-GateStep "delivery-smoke" {
-        npm --prefix tools/latex-renderer run smoke
-    } "Renderer smoke failed."
+    Invoke-GateStep "delivery-contract" {
+        npm --prefix tools/latex-renderer run test:delivery-contract
+    } "Delivery manifest contract tests failed."
 
     foreach ($selectedSubjectPack in $selectedSubjectPacks) {
         if (-not (Test-Path -LiteralPath $selectedSubjectPack.EvalDatasetPath)) {

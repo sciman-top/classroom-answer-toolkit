@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-21T11:49:33.047Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c",
+  "mode": "reference_review",
+  "sourcePageCount": 16,
+  "auditImageCount": 0,
+  "referencePageCount": 3,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "reference_review",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考视觉审计候选.md",
+  "candidateSha256": "2436e06e8d5d3b7c37ebeffa87eb87080b0a889c932353b546ad291d00fbf70c",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\source-exam-text.txt",
+  "sourceTextSha256": "31c39a66c80442634d89008b73f8a3de97487feeb3e664bfa0c688c84e6a437e",
+  "referenceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\reference-answer-text.txt",
+  "referenceTextSha256": "c6367aace308472fcb2bc742eebd1438afff7395e84b9ad454ca761b5ebeaf53",
+  "pageCount": 19,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-001.png",
+      "sha256": "6d132d7065299babe07cd3a99496608f89bceb62f45884a1364fa43ea9325ca8",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-002.png",
+      "sha256": "58dad81e484c015129d80bedda155eb7680fdaf51a3f2508bd6fa404ce8c19b2",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-003.png",
+      "sha256": "54b5b6607bf3aa77f91d7b86127c573dd36844e3933fe1e4e74afcdf0d819406",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-003.q-009.focus-01.q9-figure-8-phase-transition-arrows.png",
+      "sha256": "1ee7ebe764522fbaca4a5925ffe62c85afc32e20643e3dca241d8ac59e4f49aa",
+      "evidenceLabel": "Source exam focused crop: Q9 Figure 8: inspect arrow directions and heat labels, including M→乙 放热, 乙→丙 吸热, and 丙→甲 bottom arrow 吸热; source page 3; question 9. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-004.png",
+      "sha256": "43feb369cab572a9359d2ae9e338e020bdd0c419c82691269d75182a2897becf",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-004.q-009.focus-01.q9-question-and-options.png",
+      "sha256": "fea9b17f2d88fc46497467a2ed88ef7ec4d23478ebf3f68e483bc6079df548fb",
+      "evidenceLabel": "Source exam focused crop: Question 9 stem and four ordered phase-state options; source page 4; question 9. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-005.png",
+      "sha256": "2e0300c02882e84fd100e5bc74cfcfdf5e9ea4ffe7d3a98b576edc8535253f36",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-005.q-013.focus-01.q13-figure-13-lens-rays.png",
+      "sha256": "913905acd50a05926ae9b437721161ab7c166889ee432f7750336c536b5a9a6f",
+      "evidenceLabel": "Source exam focused crop: Q13 Figure 13: compare rays before/after lens; record converging, parallel or diverging and whether convergence increases or decreases; source page 5; question 13. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-006.png",
+      "sha256": "c4ce9415c6d5fe4b55f5a7c666d50ef2cb0425b7aa73dceaf7e6c352c7d80704",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-007.png",
+      "sha256": "cb81e3ca4b50666c5949d43e5d51a74b5c8a45d3810714ab3caf24294fda8e55",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-008.png",
+      "sha256": "6b4f1a18eefee8f07ce379307c49e587a85b2c7d7190484af893aafb9a0813c9",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-009.png",
+      "sha256": "c0dac97c066b08035dec8c207990649dafdb8438b239da9a1228dc12a7630363",
+      "evidenceLabel": "Source exam page crop: page 9; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-009.q-022.focus-01.q22-figures-21-22-circuit-and-components.png",
+      "sha256": "4c1e7f555024af0f7a94a6291eb6a5154cfb74de217493f48492db617b0cb451",
+      "evidenceLabel": "Source exam focused crop: Question 22 Figures 21 and 22 circuit topology, meters, resistor, rheostat, switch, and battery; source page 9; question 22. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-010.png",
+      "sha256": "5412fde8a4891f359e780ca4a23d2e1e7c4b93bbc59b567fd3111529f2a1c5e8",
+      "evidenceLabel": "Source exam page crop: page 10; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-010.q-023.focus-01.q23-figure-25-thermometer-inset.png",
+      "sha256": "1c73c9f9ff7ba5e8ccea3f40be6f8a0ecfc352988ae3d6b5adec124ba62bdff0",
+      "evidenceLabel": "Source exam focused crop: Q23 Figure 25: count equal small divisions between 50 and 60 and align red liquid top to the directly visible tick; source page 10; question 23. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\pages\\2018广州中考.page-011.png",
+      "sha256": "b3cff4b7f14b3fd58f8cf32d0324c106cd2cfb3ae2809be458f0be50338813ba",
+      "evidenceLabel": "Source exam page crop: page 11; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\reference-pages\\2018广州中考答案.page-001.png",
+      "sha256": "6b9e68d0df6d176d04ba781ff5fda90c51697c4e0db1dbb3c53d6ce5a4399f54",
+      "evidenceLabel": "Reference answer page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\reference-pages\\2018广州中考答案.page-002.png",
+      "sha256": "d21cf1c2da0e124e1ca415ed82d8559844db3fc1b0b60958e02ccccd035c3397",
+      "evidenceLabel": "Reference answer page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\fa8f2f8781934a598578a33f9c80f89f\\reference-pages\\2018广州中考答案.page-003.png",
+      "sha256": "e12c54d4816432ef168b9ded0fb80062f399def8e22f01600c6504a71e23806f",
+      "evidenceLabel": "Reference answer page crop: page 3; region 1/1, horizontal tile 1/1."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2018广州中考-v819盲答聚焦细化验证\\2018广州中考参考答案.md",
+  "outputSha256": "31bc059237b28855f75232d3515076dbf09c4de7b728d55ae686b7d8489d9ca0",
+  "answerCharacters": 2729,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 147499,
+      "requestBytes": 5358754,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

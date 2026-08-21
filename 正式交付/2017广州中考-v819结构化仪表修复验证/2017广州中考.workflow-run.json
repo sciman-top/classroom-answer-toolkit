@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "60f70f775bf145a795898f046481f6e2",
+  "status": "succeeded",
+  "startedAt": "2026-08-21T09:27:44.3187902+00:00",
+  "finishedAt": "2026-08-21T09:46:05.2720544+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2017广州中考.pdf",
+      "bytes": 1019691,
+      "sha256": "3f419b1779ebec02f74c694966924a2931611f3525d3d17701946bb63abfc4fa"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2017广州中考答案.pdf",
+      "bytes": 335295,
+      "sha256": "f87c3cb8ed02969137ba916184045052ec3efecbd6331dd1d192fe52de67d207"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 107775,
+      "sha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c"
+    },
+    "visualAuditFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2017-guangzhou.focus-regions.json",
+      "bytes": 1342,
+      "sha256": "ea2e7b91a88302359904fa9986db24452e623cd6e7fdee58f423a289f1832391"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "visualAuditFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2017-guangzhou.focus-regions.json",
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.blind-generation.summary.json",
+        "bytes": 4888,
+        "sha256": "c484a6ef25eb9bf37c9e90a5ab8cf115597a0ccdb184d885f7f1f5ea9de88df2"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考盲答候选.md",
+        "bytes": 3667,
+        "sha256": "4c93870a4727f4a601719029e75e10a2e83814f1af22cf2d6b15b4ba12641264"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.visual-findings.summary.json",
+        "bytes": 10043,
+        "sha256": "59f4c770f40ed5fdba9622c4b543d9afb6b71fec8c5c2063fbe96120203e59df"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考视觉审计发现.md",
+        "bytes": 1649,
+        "sha256": "547fa363341476447ff5e53129fd399828c98409f5052354a602d3739c4557a6"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.visual-merge.summary.json",
+        "bytes": 2195,
+        "sha256": "b47274d2cfdf9f022696cc5243228343e73e13cfc5bfb96aebeb0017f7859db8"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考视觉审计候选.md",
+        "bytes": 3556,
+        "sha256": "44338c9d135b6e3b718ba7a7531b52c242a8691506df160e0e0bb96e3e5dce7a"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考.reference-review.summary.json",
+        "bytes": 6850,
+        "sha256": "3b8669fd0ab4c8bee17813b4c19dec3d3147db7ebe19d03fbba9dcfdf7556ba2"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.md",
+        "bytes": 3947,
+        "sha256": "b4c08f839a5ec12d1a6418d94f0f5aab23ea4e1fa1f0ef3492f2cccc95629b75"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.pdf",
+        "bytes": 175651,
+        "sha256": "8738080ab69fac918ed5c46ab7edf1f2424f3882af397298e41faf00a50ec67d"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.md",
+      "bytes": 3947,
+      "sha256": "b4c08f839a5ec12d1a6418d94f0f5aab23ea4e1fa1f0ef3492f2cccc95629b75"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.pdf",
+      "bytes": 175651,
+      "sha256": "8738080ab69fac918ed5c46ab7edf1f2424f3882af397298e41faf00a50ec67d"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.delivery-manifest.json",
+      "bytes": 4908,
+      "sha256": "8402ae8e260d8a42b94c4cd66bd937436ee1fbbfd020127e4a7974acb0eaf5a3"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "1d8bef51278ff9d80be2f429ca80d21f909edd52f95b6f6321e899a51a14fe1a"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2017广州中考-v819结构化仪表修复验证\\2017广州中考答案自动复核文本差异报告.md",
+      "bytes": 7022,
+      "sha256": "cfa8d4cfd6f9ec00a491c58a44f575b0701f7871221f181ede285afe3d7717cf"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}
