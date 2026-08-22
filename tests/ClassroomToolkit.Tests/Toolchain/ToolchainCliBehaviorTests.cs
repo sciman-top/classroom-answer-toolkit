@@ -253,6 +253,86 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
+    public async Task LiveWorkflowFailureReceiptPreservesNodeDiagnostics()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowNodeFailure", Guid.NewGuid().ToString("N"));
+        var fakeNodeDirectory = Path.Combine(testRoot, "fake-node");
+        var outputDirectory = Path.Combine(testRoot, "delivery");
+        var sourcePath = Path.Combine(testRoot, "exam.pdf");
+        var promptPath = Path.Combine(testRoot, "prompt.md");
+        var envPath = Path.Combine(testRoot, ".env");
+        var receiptPath = Path.Combine(outputDirectory, "exam.workflow-run.json");
+        string? retainedWorkRoot = null;
+        Directory.CreateDirectory(fakeNodeDirectory);
+        File.WriteAllText(sourcePath, "%PDF-source");
+        File.WriteAllText(promptPath, "# prompt");
+        File.WriteAllText(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false");
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
+            "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"),
+            """
+            $ErrorActionPreference = "Stop"
+            $tool = [IO.Path]::GetFileName($args[0])
+            $toolArgs = @($args | Select-Object -Skip 1)
+            function Get-Option([string]$Name) {
+                for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
+                    if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
+                }
+                return $null
+            }
+            switch ($tool) {
+                "review-source-pdf.mjs" {
+                    $out = Get-Option "--out"
+                    [IO.Directory]::CreateDirectory($out) | Out-Null
+                    [IO.File]::WriteAllText((Join-Path $out "exam.page-1.png"), "png")
+                    [IO.File]::WriteAllText((Join-Path $out "manifest.json"), '{"pages":[{}]}')
+                }
+                "answer-request.mjs" {
+                    [Console]::Error.WriteLine("provider diagnostics: status=503; attemptedRoles=primary,fallback_1")
+                    exit 1
+                }
+                default { throw "Unexpected fake node tool: $tool" }
+            }
+            """);
+
+        try
+        {
+            var pathValue = fakeNodeDirectory + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+            var result = await RunAsyncWithEnvironment(
+                "pwsh",
+                root,
+                new Dictionary<string, string?> { ["PATH"] = pathValue },
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/run-live-answer-workflow.ps1",
+                "-SourcePdf", sourcePath,
+                "-OutputDirectory", outputDirectory,
+                "-PromptFile", promptPath,
+                "-ConfigEnvFile", envPath,
+                "-SkipVisualAudit");
+
+            result.ExitCode.Should().NotBe(0, result.Output);
+            var receiptText = File.ReadAllText(receiptPath);
+            using var document = JsonDocument.Parse(receiptText);
+            var receipt = document.RootElement;
+            receipt.GetProperty("status").GetString().Should().Be("failed");
+            receipt.GetProperty("phases").GetProperty("blindGeneration").GetProperty("error").GetString()
+                .Should().Contain("status=503");
+            receipt.GetProperty("error").GetString().Should().Contain("attemptedRoles=primary,fallback_1");
+            retainedWorkRoot = receipt.GetProperty("diagnostics").GetProperty("retainedWorkRoot").GetString();
+        }
+        finally
+        {
+            if (!string.IsNullOrWhiteSpace(retainedWorkRoot) && Directory.Exists(retainedWorkRoot))
+            {
+                Directory.Delete(retainedWorkRoot, recursive: true);
+            }
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task LiveWorkflowWritesSuccessReceiptAndBlocksPromptDrift()
     {
         var root = FindRepoRoot();
@@ -338,7 +418,7 @@ public sealed class ToolchainCliBehaviorTests
             phases.GetProperty("visualFindings").GetProperty("status").GetString().Should().Be("skipped");
             phases.GetProperty("referenceReview").GetProperty("status").GetString().Should().Be("skipped");
             phases.GetProperty("delivery").GetProperty("status").GetString().Should().Be("completed");
-            receipt.GetProperty("artifacts").GetArrayLength().Should().Be(4);
+            receipt.GetProperty("artifacts").GetArrayLength().Should().Be(7);
 
             var driftOutputDirectory = Path.Combine(testRoot, "drift-delivery");
             var driftReceiptPath = Path.Combine(driftOutputDirectory, "exam.workflow-run.json");

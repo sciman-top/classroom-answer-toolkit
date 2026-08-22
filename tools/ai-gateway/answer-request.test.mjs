@@ -10,8 +10,12 @@ import { fileURLToPath } from "node:url";
 
 import {
   buildPrompt,
+  buildIndexedChoiceCandidate,
   buildAnswerRequestBody,
   applyReferenceChoiceAnswers,
+  applySemanticChoiceFindings,
+  parseSemanticChoiceFindings,
+  buildAnswerRoutingSummary,
   normalizeAnswerMarkdown,
   resolveAnswerTransportPolicy,
   resolveImageEvidenceLabels,
@@ -265,7 +269,7 @@ test("semantic findings and merge prompts create an observable no-reference revi
   const promptPath = path.join(directory, "spec.md");
   try {
     writeFileSync(promptPath, "v8.18 production specification", "utf8");
-    const candidateMarkdown = "# 参考答案\n\n1—5：D、C、D、D、C\n\n12. C";
+    const candidateMarkdown = "# 参考答案\n\n1—5：D、C、D、D、C\n6—10：A、B、C、D、A\n11—12：B、C";
     const findingsPrompt = buildPrompt(promptPath, {
       mode: "semantic_review_findings",
       candidateMarkdown,
@@ -281,6 +285,8 @@ test("semantic findings and merge prompts create an observable no-reference revi
     assert.match(findingsPrompt, /不得沿用其结论作为证据/);
     assert.match(findingsPrompt, /逐项核对 A、B、C、D/);
     assert.match(findingsPrompt, /故障前后各支路状态/);
+    assert.match(findingsPrompt, /第7题候选结论：B/);
+    assert.match(findingsPrompt, /每个选择题必须以 `### 第N题` 开头/);
     assert.match(findingsPrompt, /【语义确认修正】/);
     assert.match(mergePrompt, /只应用明确标为【语义确认修正】/);
     assert.match(mergePrompt, /未逐项核对 A、B、C、D，不得修改/);
@@ -288,6 +294,54 @@ test("semantic findings and merge prompts create an observable no-reference revi
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("grouped choice lines are deterministically expanded into question-indexed candidates", () => {
+  assert.equal(
+    buildIndexedChoiceCandidate("1—5：D、C、D、D、A\n6—10：D、B、C、A、B\n11—12：C、D"),
+    [
+      "## 程序展开的选择题候选索引",
+      "",
+      "第1题候选结论：D",
+      "第2题候选结论：C",
+      "第3题候选结论：D",
+      "第4题候选结论：D",
+      "第5题候选结论：A",
+      "第6题候选结论：D",
+      "第7题候选结论：B",
+      "第8题候选结论：C",
+      "第9题候选结论：A",
+      "第10题候选结论：B",
+      "第11题候选结论：C",
+      "第12题候选结论：D"
+    ].join("\n")
+  );
+});
+
+test("answer routing summary distinguishes planned and resolved provider roles", () => {
+  assert.deepEqual(
+    buildAnswerRoutingSummary({
+      provider: "fallback_1",
+      routing: {
+        mode: "semantic_review_findings",
+        selectedRole: "primary",
+        orderedRoles: ["primary", "fallback_1"],
+        target: "all"
+      },
+      attempts: [
+        { provider: "primary" },
+        { provider: "fallback_1" }
+      ]
+    }),
+    {
+      mode: "semantic_review_findings",
+      selectedRole: "primary",
+      orderedRoles: ["primary", "fallback_1"],
+      target: "all",
+      resolvedRole: "fallback_1",
+      attemptedRoles: ["primary", "fallback_1"]
+    }
+  );
 });
 
 test("blind generation prompt binds extracted source text as auxiliary evidence", () => {
@@ -919,6 +973,13 @@ test("Markdown normalization wraps bare CJK script labels in LaTeX text", () => 
   );
 });
 
+test("Markdown normalization keeps Chinese punctuation out of math mode", () => {
+  assert.equal(
+    normalizeAnswerMarkdown("# 参考答案\n\n23. 电表接入 $a、b$，短路 $c、d$。"),
+    "# 参考答案\n\n23. 电表接入 $a\\text{、}b$，短路 $c\\text{、}d$。"
+  );
+});
+
 test("reference review deterministically overwrites the two ten-question choice lines", () => {
   const reviewed = applyReferenceChoiceAnswers(
     "# 物理试卷参考答案\n\n1—5：C、B、D、D、D\n6—10：C、B、C、D、D",
@@ -928,6 +989,84 @@ test("reference review deterministically overwrites the two ten-question choice 
   assert.equal(reviewed.applied, true);
   assert.match(reviewed.markdown, /1—5：B、A、A、D、A/);
   assert.match(reviewed.markdown, /6—10：C、B、B、D、D/);
+});
+
+test("semantic findings deterministically apply only explicit confirmed choice corrections", () => {
+  const baseline = [
+    "# 物理试卷参考答案",
+    "",
+    "1—5：D、B、D、D、D",
+    "6—10：D、A、B、A、C",
+    "11—12：C、C"
+  ].join("\n");
+  const mergedByModel = [
+    "# 物理试卷参考答案",
+    "",
+    "1—5：A、A、A、A、A",
+    "6—10：B、B、B、B、B",
+    "11—12：D、D"
+  ].join("\n");
+  const findings = [
+    "### 第2题",
+    "标签：【语义确认修正】",
+    "独立结论：C",
+    "候选结论：B",
+    "建议修正：改为 C",
+    "",
+    "### 第5题",
+    "标签：【语义确认修正】",
+    "独立结论：A",
+    "候选结论：D",
+    "建议修正：改为 A",
+    "",
+    "### 第8题",
+    "标签：【语义确认修正】",
+    "独立结论：B",
+    "候选结论：D",
+    "建议修正：改为 B",
+    "",
+    "### 第12题",
+    "标签：语义一致",
+    "独立结论：B",
+    "候选结论：C"
+  ].join("\n");
+  const result = applySemanticChoiceFindings(mergedByModel, findings, baseline);
+  assert.equal(result.applied, true);
+  assert.deepEqual(result.questions, [2, 5, 8]);
+  assert.match(result.markdown, /1—5：D、C、D、D、A/);
+  assert.match(result.markdown, /6—10：D、A、B、A、C/);
+  assert.match(result.markdown, /11—12：C、C/);
+});
+
+test("semantic findings ignore incomplete or unconfirmed corrections", () => {
+  const result = applySemanticChoiceFindings(
+    "# 参考答案\n\n1—5：A、B、C、D、A",
+    "### 第1题\n标签：语义一致\n独立结论：C\n候选结论：A\n### 第2题\n【语义确认修正】\n候选结论：B"
+  );
+  assert.equal(result.applied, false);
+  assert.deepEqual(result.questions, []);
+  assert.match(result.markdown, /1—5：A、B、C、D、A/);
+});
+
+test("semantic choice parser rejects missing, duplicated, or inconsistent correction fields", () => {
+  const findings = [
+    "### 第1题\n【语义确认修正】\n独立结论：B\n候选结论：A",
+    "### 第2题\n【语义确认修正】\n独立结论：B\n独立结论：C\n候选结论：A\n建议修正：改为 C",
+    "### 第3题\n【语义确认修正】【语义一致】\n独立结论：B\n候选结论：A\n建议修正：改为 B",
+    "### 第4题\n【语义确认修正】\n独立结论：B\n候选结论：A\n建议修正：改为 B"
+  ].join("\n");
+  const corrections = parseSemanticChoiceFindings(findings);
+  assert.deepEqual([...corrections.entries()], [[4, "B"]]);
+});
+
+test("semantic findings fail closed on a self-contradictory correction block", () => {
+  const result = applySemanticChoiceFindings(
+    "# 参考答案\n\n1—5：A、C、C、D、A",
+    "### 第2题\n【语义确认修正】\n独立结论：D\n候选结论：C\n建议修正：D\n注：题干显示为原子核，应改为 C。"
+  );
+  assert.equal(result.applied, false);
+  assert.deepEqual(result.questions, []);
+  assert.match(result.markdown, /1—5：A、C、C、D、A/);
 });
 
 test("reference review extracts numbered choices from an explained answer PDF text layer", () => {
@@ -953,4 +1092,51 @@ test("reference review extracts numbered choices from an explained answer PDF te
   assert.equal(reviewed.answers, "BCCBCADDAD");
   assert.match(reviewed.markdown, /1—5：B、C、C、B、C/);
   assert.match(reviewed.markdown, /6—10：A、D、D、A、D/);
+});
+
+test("reference review extracts choices when PDF text uses full-width question punctuation", () => {
+  const referenceText = [
+    "1．题目【答案】D",
+    "2．题目【答案】C",
+    "3．题目【答案】D",
+    "4．题目【答案】D",
+    "5．题目【答案】A",
+    "6．题目【答案】D",
+    "7．题目【答案】A",
+    "8．题目【答案】B",
+    "9．题目【答案】A",
+    "10．题目【答案】B",
+    "11．非选择题"
+  ].join("\n");
+  const reviewed = applyReferenceChoiceAnswers(
+    "# 参考答案\n\n1—5：A、A、A、A、A\n6—10：B、B、B、B、B",
+    referenceText
+  );
+  assert.equal(reviewed.applied, true);
+  assert.equal(reviewed.answers, "DCDDADABAB");
+  assert.match(reviewed.markdown, /1—5：D、C、D、D、A/);
+  assert.match(reviewed.markdown, /6—10：D、A、B、A、B/);
+});
+
+test("reference review extracts answer choices from Chinese explained-answer markers", () => {
+  const referenceText = Array.from({ length: 10 }, (_, index) => `${index + 1}．题目\n故选：${"DCDDADABAB"[index]}`).join("\n");
+  const reviewed = applyReferenceChoiceAnswers(
+    "# 参考答案\n\n1—5：A、A、A、A、A\n6—10：B、B、B、B、B",
+    referenceText
+  );
+  assert.equal(reviewed.applied, true);
+  assert.equal(reviewed.answers, "DCDDADABAB");
+});
+
+test("reference review does not let question 11 explanation bleed into question 10", () => {
+  const referenceText = [
+    "1．题目\n故选：D", "2．题目\n故选：C", "3．题目\n故选：D", "4．题目\n故选：D", "5．题目\n故选：A",
+    "6．题目\n故选：D", "7．题目\n故选：A", "8．题目\n故选：B", "9．题目\n故选：A", "10．题目\n故选：B",
+    "11．非选择题\n故选：A"
+  ].join("\n");
+  const reviewed = applyReferenceChoiceAnswers(
+    "# 参考答案\n\n1—5：A、A、A、A、A\n6—10：B、B、B、B、B",
+    referenceText
+  );
+  assert.equal(reviewed.answers, "DCDDADABAB");
 });

@@ -468,11 +468,14 @@ export function buildPrompt(promptFile, review = {}) {
   }
   const specification = fs.readFileSync(promptFile, "utf8").trim();
   if (review.mode === "semantic_review_findings") {
+    const indexedChoiceCandidate = buildIndexedChoiceCandidate(review.candidateMarkdown);
     return `${specification}\n\n---\n\n# 无参考答案语义复核任务\n\n` +
       `所附 ${review.sourcePageCount} 张图片和可选文本层来自原始试卷，不是参考答案。下面的盲答候选不可信，只能用于定位待复核题号；不得沿用其结论作为证据。\n` +
       "抛开候选结论，重新独立解答全部选择题，以及所有涉及状态变化、惯性方向、故障电路、能量分段、物态变化、透镜类型、受力和定性比较的小问。只输出语义复核发现报告，不得重写完整答案。\n" +
-      "每个选择题必须逐项核对 A、B、C、D：分别写一句最短的成立或不成立依据，再给独立结论。过程或图像题必须按题型写出可检查的中间结构：状态题列初态—变化—终态；方向题列坐标系—相对位移—物理关系—方向；故障电路列故障前后各支路状态、仪表测量对象和比较量；图像题按横轴区间分段；透镜题先写入射与折射光线发散或会聚变化。\n" +
-      "若独立结论与候选不同，只有同时具备【语义确认修正】、候选具体字段、原题可见事实、完整的上述题型结构和“建议修正”时才可进入合并；任一环节无法确认则标【语义证据不足，需复核】，不得猜测。与候选一致的题写【语义一致】并给最短依据。\n" +
+      "每个选择题必须逐项核对 A、B、C、D：分别写一句最短的成立或不成立依据，再给独立结论。过程或图像题必须按题型写出可检查的中间结构：状态题列初态—变化—终态；方向题列坐标系—相对位移—物理关系—方向；故障电路列故障前后各支路状态、仪表测量对象和比较量；图像题必须按横轴所有拐点划分每个区间，逐段写自变量趋势、因变量趋势以及由此推出的物理量变化，禁止把先变化后恒定压缩为单一趋势；透镜题先写入射与折射光线发散或会聚变化。\n" +
+      "下面的逐题候选索引由程序从分组答案串确定性展开，比较时必须使用它，不得凭记忆、位置直觉或正文重建候选字母。每个选择题必须以 `### 第N题` 开头，并分别输出独立行 `独立结论：X`、`候选结论：Y` 和标签。\n" +
+      `${indexedChoiceCandidate}\n\n` +
+      "若独立结论与候选不同，只有同时具备【语义确认修正】、候选具体字段、原题可见事实、完整的上述题型结构和“建议修正”时才可进入合并；任一环节无法确认则标【语义证据不足，需复核】，不得猜测。标签必须与正文结论一致：正文推理一旦推出候选需要变化，禁止标【语义一致】，必须按证据充分程度标【语义确认修正】或【语义证据不足，需复核】。与候选一致的题写【语义一致】并给最短依据。\n" +
       "图片标签中的 measured 确定性几何结果属于原卷像素测量，可直接作为对应读数或几何事实；标签为 uncertain 时不得推断数值。不要输出参考答案、内部思维过程、JSON 或代码围栏。\n\n" +
       `## 盲答候选\n\n${review.candidateMarkdown.trim()}`;
   }
@@ -550,21 +553,54 @@ export function normalizeAnswerMarkdown(value) {
   const unfenced = (match ? match[1] : normalized).trim();
   const headingIndex = unfenced.search(/#\s+(?:物理试卷参考答案|参考答案|答案)(?=\s|$)/u);
   const answerOnly = headingIndex >= 0 ? unfenced.slice(headingIndex) : unfenced;
+  const normalizeMathPunctuation = (match, body) => {
+    const normalizedBody = body.replace(/[、，。；：]/gu, (punctuation) => `\\text{${punctuation}}`);
+    return match.startsWith("$") ? `$${normalizedBody}$` : `\\(${normalizedBody}\\)`;
+  };
   return answerOnly
     .replace(/\$([A-Z](?:['′])?(?:[、，][A-Z](?:['′])?)+)\$/g, "$1")
+    .replace(/\$([^$\n]*)\$/gu, normalizeMathPunctuation)
+    .replace(/\\\(([^\n]*?)\\\)/gu, normalizeMathPunctuation)
     .replace(/([_^]\{)([^{}]*[\u3400-\u9fff][^{}]*)(\})/gu, (_match, open, body, close) =>
       `${open}${body.replace(/[\u3400-\u9fff]+/gu, (label) => `\\text{${label}}`)}${close}`);
 }
 
+export function buildIndexedChoiceCandidate(markdown) {
+  const lines = String(markdown ?? "").split(/\r?\n/u);
+  const ranges = [
+    { start: 1, end: 5, pattern: /^\s*1\s*[—–-]\s*5\s*[:：]/u },
+    { start: 6, end: 10, pattern: /^\s*6\s*[—–-]\s*10\s*[:：]/u },
+    { start: 11, end: 12, pattern: /^\s*11\s*[—–-]\s*12\s*[:：]/u }
+  ];
+  const indexed = [];
+  for (const range of ranges) {
+    const line = lines.find((candidateLine) => range.pattern.test(candidateLine));
+    const answers = [...(line?.match(/[A-D](?=[、，,\s]|$)/gu) ?? [])];
+    if (answers.length !== range.end - range.start + 1) {
+      continue;
+    }
+    for (let question = range.start; question <= range.end; question += 1) {
+      indexed.push(`第${question}题候选结论：${answers[question - range.start]}`);
+    }
+  }
+  return indexed.length > 0
+    ? `## 程序展开的选择题候选索引\n\n${indexed.join("\n")}`
+    : "## 程序展开的选择题候选索引\n\n未检测到可安全展开的分组答案；对应题必须标【语义证据不足，需复核】。";
+}
+
 function extractNumberedChoiceAnswers(referenceText) {
   const text = String(referenceText ?? "").replace(/\r\n?/g, "\n");
-  const markers = [...text.matchAll(/(?<!\d)(10|[1-9])\.\s+/gu)];
+  // Only treat a line-start question marker as a question boundary. Inline
+  // references such as “图 2．…” occur in explanations and must not split the
+  // preceding question's answer segment.
+  const markers = [...text.matchAll(/(?:^|\n|\f)\s*(1[0-2]|[1-9])[\.．]\s*/gmu)];
   const answersByQuestion = new Map();
   for (let index = 0; index < markers.length; index += 1) {
     const questionNumber = Number(markers[index][1]);
     const segmentStart = markers[index].index + markers[index][0].length;
     const segmentEnd = markers[index + 1]?.index ?? text.length;
-    const answer = text.slice(segmentStart, segmentEnd).match(/【\s*答案\s*】\s*([A-D])/iu)?.[1]?.toUpperCase();
+    const answerMatches = [...text.slice(segmentStart, segmentEnd).matchAll(/(?:【\s*答案\s*】|故选\s*[：:])\s*([A-D])/igu)];
+    const answer = answerMatches.at(-1)?.[1]?.toUpperCase();
     if (!answer) {
       continue;
     }
@@ -619,6 +655,68 @@ export function applyReferenceChoiceAnswers(markdown, referenceText) {
   lines[firstRange[0].index] = `1—5：${formatChoiceAnswers(answers.slice(0, 5))}`;
   lines[secondRange[0].index] = `6—10：${formatChoiceAnswers(answers.slice(5))}`;
   return { markdown: lines.join("\n"), applied: true, answers };
+}
+
+export function parseSemanticChoiceFindings(findings) {
+  const text = String(findings ?? "").replace(/\r\n?/g, "\n");
+  const corrections = new Map();
+  const blocks = [...text.matchAll(/###\s*第\s*(\d+)\s*题([\s\S]*?)(?=\n###\s*第|\n---|$)/gu)];
+  for (const block of blocks) {
+    const body = block[2];
+    const correctionTag = /【语义确认修正】/u.test(body);
+    const consistencyTag = /【语义一致】/u.test(body);
+    if (!correctionTag || consistencyTag) {
+      continue;
+    }
+    // A self-contradictory report is not a safe deterministic input. Keep the
+    // baseline candidate until a fresh review resolves the contradiction.
+    if (/最终建议|应标.*语义一致|需以原图.*确认|题干.*(?:显示|辨识).*应改/us.test(body)) {
+      continue;
+    }
+    const independentMatches = [...body.matchAll(/独立结论\s*：\s*([A-D])/igu)];
+    const candidateMatches = [...body.matchAll(/候选结论\s*：\s*([A-D])/igu)];
+    const independent = independentMatches.length === 1 ? independentMatches[0][1].toUpperCase() : null;
+    const candidate = candidateMatches.length === 1 ? candidateMatches[0][1].toUpperCase() : null;
+    if (independent && candidate && independent !== candidate && /建议修正\s*：/u.test(body)) {
+      corrections.set(Number(block[1]), independent);
+    }
+  }
+  return corrections;
+}
+
+export function applySemanticChoiceFindings(markdown, findings, baselineMarkdown = markdown) {
+  const corrections = parseSemanticChoiceFindings(findings);
+  if (corrections.size === 0) {
+    return { markdown, applied: false, questions: [] };
+  }
+  const lines = String(markdown).split("\n");
+  const baselineLines = String(baselineMarkdown).split("\n");
+  const ranges = [
+    { start: 1, end: 5, pattern: /^\s*1\s*[—–-]\s*5\s*[:：]/u },
+    { start: 6, end: 10, pattern: /^\s*6\s*[—–-]\s*10\s*[:：]/u },
+    { start: 11, end: 12, pattern: /^\s*11\s*[—–-]\s*12\s*[:：]/u }
+  ];
+  const applied = [];
+  for (const range of ranges) {
+    const lineIndex = lines.findIndex((line) => range.pattern.test(line));
+    const baselineLineIndex = baselineLines.findIndex((line) => range.pattern.test(line));
+    if (lineIndex < 0 || baselineLineIndex < 0) {
+      continue;
+    }
+    const current = [...(baselineLines[baselineLineIndex].match(/[A-D](?=[、，,\s]|$)/gu) ?? [])];
+    if (current.length !== range.end - range.start + 1) {
+      continue;
+    }
+    for (let question = range.start; question <= range.end; question += 1) {
+      const answer = corrections.get(question);
+      if (answer) {
+        current[question - range.start] = answer;
+        applied.push(question);
+      }
+    }
+    lines[lineIndex] = `${range.start}—${range.end}：${current.join("、")}`;
+  }
+  return { markdown: lines.join("\n"), applied: applied.length > 0, questions: applied };
 }
 
 function normalizeDetailForProvider(detail, visionModel) {
@@ -995,6 +1093,14 @@ function redactAttempt(attempt) {
   };
 }
 
+export function buildAnswerRoutingSummary(result) {
+  return {
+    ...result.routing,
+    resolvedRole: result.provider,
+    attemptedRoles: result.attempts.map((attempt) => attempt.provider)
+  };
+}
+
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
   const mode = inferAnswerMode(options);
@@ -1021,13 +1127,24 @@ export async function main() {
     throw new Error(`${result.error}\n${JSON.stringify(result.attempts.map(redactAttempt), null, 2)}`);
   }
 
-  const choiceOverride = options.referenceTextFile
+  const semanticChoiceOverride = options.semanticFindingsFile
+    ? applySemanticChoiceFindings(
+        result.answerMarkdown,
+        fs.readFileSync(options.semanticFindingsFile, "utf8"),
+        options.candidateFile ? fs.readFileSync(options.candidateFile, "utf8") : result.answerMarkdown
+      )
+    : { markdown: result.answerMarkdown, applied: false, questions: [] };
+  // Reference Review is authoritative when a reference text is present; otherwise
+  // only explicitly confirmed semantic choice corrections may be applied.
+  const referenceChoiceOverride = options.referenceTextFile
     ? applyReferenceChoiceAnswers(result.answerMarkdown, fs.readFileSync(options.referenceTextFile, "utf8"))
-    : { markdown: result.answerMarkdown, applied: false, answers: null };
-  const answerMarkdown = choiceOverride.markdown;
+    : { markdown: semanticChoiceOverride.markdown, applied: false, answers: null };
+  const answerMarkdown = options.referenceTextFile
+    ? referenceChoiceOverride.markdown
+    : semanticChoiceOverride.markdown;
   writeTextFileAtomic(options.outputPath, `${answerMarkdown}\n`);
   const summary = {
-    schemaVersion: "1.0",
+    schemaVersion: "1.1",
     kind: "live-answer-generation-summary",
     generatedAt: new Date().toISOString(),
     provider: result.provider,
@@ -1041,7 +1158,7 @@ export async function main() {
     referencePageCount: options.referenceImagePaths.length,
     requestedVisualDetailMode: options.visualDetailMode,
     providerVisualDetailMode: normalizeDetailForProvider(options.visualDetailMode, result.model),
-    routing: result.routing,
+    routing: buildAnswerRoutingSummary(result),
     candidatePath: options.candidateFile,
     candidateSha256: options.candidateFile ? sha256File(options.candidateFile) : null,
     semanticFindingsPath: options.semanticFindingsFile,
@@ -1061,9 +1178,13 @@ export async function main() {
     outputPath: options.outputPath,
     outputSha256: sha256File(options.outputPath),
     answerCharacters: answerMarkdown.length,
-    referenceChoiceOverride: choiceOverride.applied
-      ? { applied: true, answers: choiceOverride.answers }
+    referenceChoiceOverride: referenceChoiceOverride.applied
+      ? { applied: true, answers: referenceChoiceOverride.answers }
       : { applied: false },
+    semanticChoiceOverride: {
+      applied: semanticChoiceOverride.applied,
+      questions: semanticChoiceOverride.questions
+    },
     attempts: result.attempts.map(redactAttempt)
   };
   const summaryJson = `${JSON.stringify(summary, null, 2)}\n`;

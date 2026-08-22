@@ -434,9 +434,19 @@ function Invoke-NodeTool {
         [string[]]$Arguments
     )
 
-    & node $ScriptPath @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Node tool failed with exit code $LASTEXITCODE`: $ScriptPath"
+    $toolOutput = @(& node $ScriptPath @Arguments 2>&1)
+    $toolExitCode = $LASTEXITCODE
+    $toolOutput | ForEach-Object { Write-Output $_ }
+    if ($toolExitCode -ne 0) {
+        $diagnostics = (($toolOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine).Trim()
+        if ([string]::IsNullOrWhiteSpace($diagnostics)) {
+            $diagnostics = "<node tool produced no diagnostic output>"
+        }
+        if ($diagnostics.Length -gt 12000) {
+            $diagnostics = "[node tool output truncated; showing the final 12000 characters]`n" +
+                $diagnostics.Substring($diagnostics.Length - 12000)
+        }
+        throw "Node tool failed with exit code $toolExitCode`: $ScriptPath`n$diagnostics"
     }
 }
 
