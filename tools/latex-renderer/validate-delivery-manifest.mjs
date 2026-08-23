@@ -139,7 +139,11 @@ function validateFileIntegrity(errors, entry, expectedPath, label, manifestDir) 
 }
 
 function validateIntegrity(errors, manifest, manifestDir) {
+  if (manifest.schemaVersion === "1.0") {
+    return; // Legacy 1.0 manifests predate integrity metadata.
+  }
   if (manifest.schemaVersion !== "1.1") {
+    errors.push(`Unsupported delivery manifest schemaVersion: ${JSON.stringify(manifest.schemaVersion)} (expected "1.0" or "1.1").`);
     return;
   }
 

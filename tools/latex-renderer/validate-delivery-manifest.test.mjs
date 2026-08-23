@@ -150,6 +150,22 @@ test("delivery manifest rejects incomplete successful OCR metadata", () => {
   });
 });
 
+test("legacy delivery manifest 1.0 is accepted without integrity metadata", () => {
+  withFixture(({ manifest, manifestPath }) => {
+    manifest.schemaVersion = "1.0";
+    delete manifest.integrity;
+    assert.deepEqual(validateDeliveryManifest(manifest, manifestPath), []);
+  });
+});
+
+test("delivery manifest rejects an unsupported schemaVersion", () => {
+  withFixture(({ manifest, manifestPath }) => {
+    manifest.schemaVersion = "1.2";
+    const errors = validateDeliveryManifest(manifest, manifestPath);
+    assert.ok(errors.some((error) => error.includes("Unsupported delivery manifest schemaVersion")));
+  });
+});
+
 test("delivery manifest rejects a referenced snapshot mismatch", () => {
   withFixture(({ manifest, manifestPath, root, snapshot }) => {
     const mismatchedSnapshotPath = path.join(root, "mismatched.snapshot.json");
