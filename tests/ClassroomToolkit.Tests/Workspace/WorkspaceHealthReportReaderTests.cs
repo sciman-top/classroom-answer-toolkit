@@ -96,9 +96,10 @@ public sealed class WorkspaceHealthReportReaderTests
     public void Read_AddsIssue_WhenLatestProductionSpecIsNewerThanAssetVersion()
     {
         using var workspace = new TemporaryWorkspace();
-        workspace.WriteRootSpec("11.0");
-        workspace.WriteRootSpec("11.1");
-        workspace.WriteManifest("junior-physics-answer", "v11.0", "../../physics-spec.md");
+        workspace.WriteManifest(
+            "junior-physics-answer",
+            "v11.0",
+            "../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v11.1.md");
         workspace.WriteConfig("junior-physics-answer", "../../.snapshot-cache/resolved-snapshot.json");
         workspace.WriteSnapshot("junior-physics-answer", "v11.0", "classroom");
         workspace.WriteEval("junior-physics-answer", "v11.0", ok: true, caseCount: 4);
@@ -179,13 +180,6 @@ public sealed class WorkspaceHealthReportReaderTests
         }
 
         public string Root { get; }
-
-        public void WriteRootSpec(string version)
-        {
-            File.WriteAllText(
-                Path.Combine(Root, $"spec_v{version}_release.md"),
-                $"# v{version}\n");
-        }
 
         public void WriteManifest(string subjectPack, string version, string? humanSpec = null)
         {

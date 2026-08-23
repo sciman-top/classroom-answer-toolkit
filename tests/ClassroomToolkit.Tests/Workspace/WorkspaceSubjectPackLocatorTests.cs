@@ -7,33 +7,6 @@ namespace ClassroomToolkit.Tests.Workspace;
 public sealed class WorkspaceSubjectPackLocatorTests
 {
     [Fact]
-    public void FindPrimarySubjectPack_PrefersActivePack()
-    {
-        using var workspace = new TemporaryWorkspace();
-        workspace.WritePack("math-answer", status: "experimental", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.math.json");
-        workspace.WritePack("junior-physics-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.json");
-
-        var pack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(workspace.Root);
-
-        pack.Should().NotBeNull();
-        pack!.AssetId.Should().Be("junior-physics-answer");
-        pack.SnapshotPath.Should().EndWith("resolved-snapshot.json");
-    }
-
-    [Fact]
-    public void FindPrimarySubjectPack_FallsBackToPhysicsAnswer_WhenMultipleActivePacksExist()
-    {
-        using var workspace = new TemporaryWorkspace();
-        workspace.WritePack("math-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.math.json");
-        workspace.WritePack("junior-physics-answer", status: "active", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.json");
-
-        var pack = WorkspaceSubjectPackLocator.FindPrimarySubjectPack(workspace.Root);
-
-        pack.Should().NotBeNull();
-        pack!.AssetId.Should().Be("junior-physics-answer");
-    }
-
-    [Fact]
     public void ResolveSnapshotPath_UsesConfiguredRelativePath()
     {
         using var workspace = new TemporaryWorkspace();

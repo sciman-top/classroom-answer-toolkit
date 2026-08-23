@@ -7,10 +7,7 @@ public sealed record WorkspaceSubjectPackPaths(
     string Status,
     string ManifestPath,
     string ConfigPath,
-    string EvalResultsPath)
-{
-    public string SnapshotPath => WorkspaceSubjectPackLocator.ResolveSnapshotPath(ConfigPath, ManifestPath);
-}
+    string EvalResultsPath);
 
 public static class WorkspaceSubjectPackLocator
 {
@@ -52,12 +49,6 @@ public static class WorkspaceSubjectPackLocator
             .ThenByDescending(pack => string.Equals(pack.AssetId, "junior-physics-answer", StringComparison.OrdinalIgnoreCase))
             .ThenBy(pack => pack.AssetId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
-    }
-
-    public static WorkspaceSubjectPackPaths? FindPrimarySubjectPack(string repositoryRoot)
-    {
-        var subjectPacks = FindSubjectPacks(repositoryRoot);
-        return subjectPacks.FirstOrDefault();
     }
 
     public static string ResolveSnapshotPath(string configPath)

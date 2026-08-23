@@ -40,7 +40,7 @@ public sealed class WorkspaceHealthReportReader
             issues.Add("未发现有效的 subject pack manifest。");
         }
 
-        var latestVersion = FindLatestProductionSpecVersion(manifestPath, issues);
+        var latestVersion = TryReadHumanSpecVersion(manifestPath, issues);
         var manifestVersion = ReadManifestVersion(manifestPath, issues);
         var snapshotPath = ResolveSnapshotPath(configPath, manifestPath, issues);
         var snapshotStatus = ReadSnapshotStatus(snapshotPath, issues);
@@ -118,11 +118,6 @@ public sealed class WorkspaceHealthReportReader
             Issues: uniqueIssues);
     }
 
-    private string? FindLatestProductionSpecVersion(string manifestPath, ICollection<string> issues)
-    {
-        return TryReadHumanSpecVersion(manifestPath, issues) ?? FindLatestRootSpecVersion();
-    }
-
     private string? TryReadHumanSpecVersion(string manifestPath, ICollection<string> issues)
     {
         if (!File.Exists(manifestPath))
@@ -151,18 +146,6 @@ public sealed class WorkspaceHealthReportReader
 
         var humanSpecPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(manifestPath)!, humanSpecRelativePath));
         return TryParseVersionFromFileName(humanSpecPath);
-    }
-
-    private string? FindLatestRootSpecVersion()
-    {
-        return Directory
-            .EnumerateFiles(_repositoryRoot, "*.md", SearchOption.TopDirectoryOnly)
-            .Select(Path.GetFileName)
-            .Select(fileName => TryParseVersionFromFileName(fileName))
-            .Where(static version => version is not null)
-            .Select(static version => version!)
-            .OrderBy(version => version, VersionComparer.Instance)
-            .LastOrDefault();
     }
 
     private static string? TryParseVersionFromFileName(string? fileName)
@@ -317,44 +300,6 @@ public sealed class WorkspaceHealthReportReader
         {
             issues.Add($"无法读取 {label} {filePath}: {ex.Message}");
             return null;
-        }
-    }
-
-    private sealed class VersionComparer : IComparer<string>
-    {
-        public static readonly VersionComparer Instance = new();
-
-        public int Compare(string? x, string? y)
-        {
-            if (x is null && y is null)
-            {
-                return 0;
-            }
-
-            if (x is null)
-            {
-                return -1;
-            }
-
-            if (y is null)
-            {
-                return 1;
-            }
-
-            var left = x.Split('.').Select(static part => int.TryParse(part, out var value) ? value : 0).ToArray();
-            var right = y.Split('.').Select(static part => int.TryParse(part, out var value) ? value : 0).ToArray();
-            var length = Math.Max(left.Length, right.Length);
-            for (var index = 0; index < length; index += 1)
-            {
-                var leftValue = index < left.Length ? left[index] : 0;
-                var rightValue = index < right.Length ? right[index] : 0;
-                if (leftValue != rightValue)
-                {
-                    return leftValue.CompareTo(rightValue);
-                }
-            }
-
-            return 0;
         }
     }
 }
