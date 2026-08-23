@@ -86,6 +86,7 @@ function parseArgs(argv) {
     referenceTextFile: null,
     candidateFile: null,
     imagePaths: [],
+    usedDeprecatedImageFlag: false,
     outputPath: null,
     summaryPath: null,
     provider: "all",
@@ -131,6 +132,7 @@ function parseArgs(argv) {
     }
     if (arg === "--image") {
       options.imagePaths.push(resolveCallerPath(requireValue(argv, ++index, arg)));
+      options.usedDeprecatedImageFlag = true;
       continue;
     }
     if (arg === "--candidate-file") {
@@ -191,6 +193,7 @@ function parseArgs(argv) {
     }
     if (arg.startsWith("--image=")) {
       options.imagePaths.push(resolveCallerPath(arg.slice("--image=".length)));
+      options.usedDeprecatedImageFlag = true;
       continue;
     }
     if (arg === "--output") {
@@ -1104,7 +1107,7 @@ export function buildAnswerRoutingSummary(result) {
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
   const mode = inferAnswerMode(options);
-  if ((options.imagePaths?.length ?? 0) > 0) {
+  if (options.usedDeprecatedImageFlag) {
     console.error("[deprecated] --image is deprecated and will be removed on 2026-09-30; use --images-dir.");
   }
   if (mode === "visual_audit") {

@@ -1140,3 +1140,50 @@ test("reference review does not let question 11 explanation bleed into question 
   );
   assert.equal(reviewed.answers, "DCDDADABAB");
 });
+
+test("explicit --image prints the deprecation warning", () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const missingEnvFile = path.join(directory, "missing.env");
+  try {
+    const result = spawnSync(process.execPath, [
+      fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
+      "--config-env-file", missingEnvFile,
+      "--image", imagePaths[0],
+      "--output", path.join(directory, "answer.md")
+    ], {
+      cwd: directory,
+      encoding: "utf8"
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /\[deprecated\] --image is deprecated/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("directory-based image inputs print no deprecation warning", () => {
+  const { directory } = createPageImages(1);
+  const missingEnvFile = path.join(directory, "missing.env");
+  try {
+    const invocations = [
+      ["--images-dir", directory, "--output", path.join(directory, "blind.md")],
+      ["--audit-images-dir", directory, "--audit-findings-only", "--output", path.join(directory, "findings.md")]
+    ];
+    for (const invocationArgs of invocations) {
+      const result = spawnSync(process.execPath, [
+        fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
+        "--config-env-file", missingEnvFile,
+        ...invocationArgs
+      ], {
+        cwd: directory,
+        encoding: "utf8"
+      });
+
+      assert.notEqual(result.status, 0);
+      assert.doesNotMatch(result.stderr, /\[deprecated\]/);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
