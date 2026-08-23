@@ -1165,10 +1165,12 @@ test("explicit --image prints the deprecation warning", () => {
 test("directory-based image inputs print no deprecation warning", () => {
   const { directory } = createPageImages(1);
   const missingEnvFile = path.join(directory, "missing.env");
+  const candidatePath = path.join(directory, "candidate.md");
+  writeFileSync(candidatePath, "# 候选\n", "utf8");
   try {
     const invocations = [
       ["--images-dir", directory, "--output", path.join(directory, "blind.md")],
-      ["--audit-images-dir", directory, "--audit-findings-only", "--output", path.join(directory, "findings.md")]
+      ["--audit-images-dir", directory, "--audit-findings-only", "--candidate-file", candidatePath, "--output", path.join(directory, "findings.md")]
     ];
     for (const invocationArgs of invocations) {
       const result = spawnSync(process.execPath, [
@@ -1181,6 +1183,8 @@ test("directory-based image inputs print no deprecation warning", () => {
       });
 
       assert.notEqual(result.status, 0);
+      // 到达配置加载层才证明参数校验已通过、弃用告警逻辑已执行，断言不空真。
+      assert.match(result.stderr, /Env file not found/);
       assert.doesNotMatch(result.stderr, /\[deprecated\]/);
     }
   } finally {
