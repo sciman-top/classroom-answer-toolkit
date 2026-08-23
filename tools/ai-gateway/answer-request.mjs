@@ -943,6 +943,38 @@ function summarizeRequestError(error) {
   return detail ? `${message} (${detail})` : message;
 }
 
+function detectTruncation(parsed, provider, maxOutputTokens) {
+  if (provider.visionSurface === "chat_completions") {
+    const finishReason = Array.isArray(parsed.choices)
+      ? parsed.choices[0]?.finish_reason
+      : parsed.finish_reason;
+    return finishReason === "length"
+      ? `chat_completions finish_reason=length: answer truncated at max_tokens=${maxOutputTokens}.`
+      : null;
+  }
+  if (parsed.status === "incomplete") {
+    const reason = typeof parsed.incomplete_details?.reason === "string"
+      ? parsed.incomplete_details.reason
+      : "unknown";
+    return `responses status=incomplete (${reason}): answer truncated before completion.`;
+  }
+  return null;
+}
+
+const defaultRateLimitBackoffMs = 2000;
+
+function parseRetryAfterMs(headers) {
+  const raw = headers?.get?.("retry-after");
+  if (raw == null) {
+    return 0;
+  }
+  const seconds = Number(raw);
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return 0;
+  }
+  return Math.min(seconds * 1000, 30_000);
+}
+
 async function callProvider(provider, options) {
   const endpointPath = provider.visionSurface === "chat_completions" ? "chat/completions" : "responses";
   const endpoint = `${provider.baseUrl.replace(/\/+$/, "")}/${endpointPath}`;
@@ -975,6 +1007,7 @@ async function callProvider(provider, options) {
         ok: false,
         retryable: isRetryableGatewayFailure(response.status),
         status: response.status,
+        retryAfterMs: parseRetryAfterMs(response.headers),
         error: summarizeBody(bodyText)
       };
     }
@@ -991,9 +1024,26 @@ async function callProvider(provider, options) {
         requestBytes: Buffer.byteLength(requestBody),
         transport: options.transportPolicy,
         ok: false,
-        retryable: false,
+        retryable: true,
         status: response.status,
         error: `Provider response was not JSON: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+    const truncationError = detectTruncation(parsed, provider, options.maxOutputTokens);
+    if (truncationError) {
+      return {
+        provider: provider.role,
+        model: provider.visionModel,
+        reasoningEffort: provider.reasoningEffort || null,
+        attemptNumber: options.attemptNumber ?? 1,
+        durationMs: Date.now() - startedAt,
+        requestBytes: Buffer.byteLength(requestBody),
+        transport: options.transportPolicy,
+        ok: false,
+        retryable: true,
+        status: response.status,
+        answerMarkdown: "",
+        error: truncationError
       };
     }
     const answerMarkdown = normalizeAnswerMarkdown(extractTextOutput(parsed));
@@ -1006,7 +1056,7 @@ async function callProvider(provider, options) {
       requestBytes: Buffer.byteLength(requestBody),
       transport: options.transportPolicy,
       ok: answerMarkdown.length > 0,
-      retryable: false,
+      retryable: answerMarkdown.length === 0,
       status: response.status,
       answerMarkdown,
       error: answerMarkdown.length > 0 ? "" : "Provider response did not contain answer Markdown."
@@ -1076,6 +1126,12 @@ export async function requestAnswerWithFailover(config, options) {
         error: attempt.error
       };
     }
+    const backoffMs = attempt.status === 429
+      ? (attempt.retryAfterMs > 0 ? attempt.retryAfterMs : defaultRateLimitBackoffMs)
+      : 0;
+    if (backoffMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
   }
   return {
     ok: false,
@@ -1097,6 +1153,7 @@ function redactAttempt(attempt) {
     model: attempt.model ?? null,
     reasoningEffort: attempt.reasoningEffort ?? null,
     status: attempt.status,
+    retryAfterMs: attempt.retryAfterMs ?? null,
     ok: attempt.ok,
     retryable: attempt.retryable,
     attemptNumber: attempt.attemptNumber ?? 1,
@@ -1142,6 +1199,10 @@ export async function main() {
     auditImageCount: options.auditImagePaths.length,
     referencePageCount: options.referenceImagePaths.length
   } : promptContext);
+  if (options.referenceTextFile) {
+    // A self-contradictory reference input is a local error: reject it before any paid request.
+    extractTenChoiceAnswers(fs.readFileSync(options.referenceTextFile, "utf8"));
+  }
   const result = await requestAnswerWithFailover(loaded.config, { ...options, prompt });
   if (!result.ok) {
     throw new Error(`${result.error}\n${JSON.stringify(result.attempts.map(redactAttempt), null, 2)}`);

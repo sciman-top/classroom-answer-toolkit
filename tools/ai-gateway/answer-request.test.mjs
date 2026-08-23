@@ -799,6 +799,210 @@ test("blind solving reaches medium only after xhigh and high retryable failures"
   }
 });
 
+test("blind solving fails closed on a truncated responses payload and recovers on a lower tier", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (_url, request) => {
+    const body = JSON.parse(request.body);
+    calls.push(body.reasoning.effort);
+    if (calls.length === 1) {
+      return new Response(JSON.stringify({
+        status: "incomplete",
+        incomplete_details: { reason: "max_output_tokens" },
+        output_text: "# 参考答案\n\n1. B" // Non-empty but truncated: must never be accepted.
+      }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+  const providers = ["xhigh", "high", "medium"].map((reasoningEffort, index) => ({
+    lane: "ai",
+    role: index === 0 ? "primary" : `fallback_${index}`,
+    baseUrl: "https://primary.example.com/v1",
+    apiKey: "key",
+    visionSurface: "responses",
+    visionModel: "gpt-5.6-sol",
+    reasoningEffort
+  }));
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "blind_generation",
+      prompt: "truncation fail-closed",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.reasoningEffort, "high");
+    assert.deepEqual(calls, ["xhigh", "high"]);
+    assert.equal(result.attempts.length, 2);
+    assert.match(result.attempts[0].error, /status=incomplete \(max_output_tokens\).*truncated/);
+    assert.equal(result.attempts[0].ok, false);
+    assert.equal(result.attempts[0].answerMarkdown, "");
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("chat completions finish_reason=length is rejected instead of delivered", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    choices: [{
+      message: { content: "# 参考答案\n\n1. B" },
+      finish_reason: "length"
+    }]
+  }), { status: 200 });
+  const providers = [{
+    lane: "ai",
+    role: "primary",
+    baseUrl: "https://primary.example.com/v1",
+    apiKey: "key",
+    visionSurface: "chat_completions",
+    visionModel: "gpt-5.6-sol",
+    reasoningEffort: "xhigh"
+  }];
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "blind_generation",
+      prompt: "chat completions truncation",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.answerMarkdown, "");
+    assert.match(result.attempts[0].error, /finish_reason=length.*truncated at max_tokens=1000/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("a 200 non-JSON body is retryable and failover continues to the next provider", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (_url, request) => {
+    calls.push(JSON.parse(request.body).model);
+    if (calls.length === 1) {
+      return new Response("<html>gateway soft error page</html>", {
+        status: 200,
+        headers: { "Content-Type": "text/html" }
+      });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+  const providers = [
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" }
+  ];
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "reference_review",
+      prompt: "non-JSON recovery",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.attempts.length, 2);
+    assert.equal(result.attempts[0].retryable, true);
+    assert.match(result.attempts[0].error, /was not JSON/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("an empty 200 output is retryable and failover continues to the next provider", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async () => {
+    calls.push(1);
+    if (calls.length === 1) {
+      return new Response(JSON.stringify({}), { status: 200 });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+  const providers = [
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" }
+  ];
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "reference_review",
+      prompt: "empty output recovery",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.attempts[0].ok, false);
+    assert.equal(result.attempts[0].retryable, true);
+    assert.match(result.attempts[0].error, /did not contain answer Markdown/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("a 429 with Retry-After stays retryable and failover continues to the next provider", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async () => {
+    calls.push(1);
+    if (calls.length === 1) {
+      return new Response(JSON.stringify({ error: "rate limited" }), {
+        status: 429,
+        headers: { "retry-after": "0" }
+      });
+    }
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+  const providers = [
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" }
+  ];
+  try {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+      allowCloudEgress: true,
+      provider: "all",
+      mode: "reference_review",
+      prompt: "rate limit recovery",
+      imagePaths,
+      visualDetailMode: "original",
+      maxOutputTokens: 1000,
+      timeoutMs: 1000
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.attempts[0].status, 429);
+    assert.equal(result.attempts[0].retryable, true);
+    assert.equal(result.attempts[0].retryAfterMs, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("reference review switches provider after one headers timeout", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
