@@ -72,6 +72,55 @@ test("analog meter geometry measures the nearest calibrated division from the po
   }
 });
 
+test("analog meter geometry fails closed when a competing radial line matches the pointer coverage", () => {
+  const width = 600;
+  const height = 600;
+  const data = new Uint8ClampedArray(width * height * 4).fill(255);
+  const pivotX = 300;
+  const pivotY = 420;
+  const drawRadial = (angleDegrees) => {
+    const radians = angleDegrees * Math.PI / 180;
+    drawLine(
+      data,
+      width,
+      height,
+      pivotX,
+      pivotY,
+      pivotX + 260 * Math.cos(radians),
+      pivotY + 260 * Math.sin(radians),
+      4
+    );
+  };
+  drawRadial(-90); // Pointer at division 15: true reading 0.3 A.
+  drawRadial(-122); // Full-length competing radial line at division 7 (0.14 A if trusted).
+  const canvas = {
+    width,
+    height,
+    getContext: () => ({ getImageData: () => ({ data }) })
+  };
+  globalThis.window = { pdfReview: { focusCanvases: { meter: canvas } } };
+  try {
+    const result = analyzeAnalogMeterCanvas({
+      regionId: "meter",
+      rangeMin: 0,
+      rangeMax: 0.6,
+      divisions: 30,
+      pivotX: pivotX / width,
+      pivotY: pivotY / height,
+      scaleStartAngleDegrees: -150,
+      scaleEndAngleDegrees: -30,
+      pointerRadiusMin: 0.08,
+      pointerRadiusMax: 0.40
+    });
+
+    assert.equal(result.status, "uncertain");
+    assert.equal(result.value, null);
+    assert.ok(result.competingLineCoverage >= 0.9);
+  } finally {
+    delete globalThis.window;
+  }
+});
+
 test("analog meter geometry fails closed when no continuous pointer ray is present", () => {
   const width = 300;
   const height = 300;

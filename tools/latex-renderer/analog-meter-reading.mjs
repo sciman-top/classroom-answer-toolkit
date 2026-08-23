@@ -104,7 +104,9 @@ export function analyzeAnalogMeterCanvas(config) {
   const divisionResidual = Math.abs(rawDivision - nearestDivision);
   const value = config.rangeMin
     + (config.rangeMax - config.rangeMin) * nearestDivision / config.divisions;
-  const status = best.coverage >= 0.55 && divisionResidual <= 0.35
+  const status = best.coverage >= 0.55
+    && best.coverage - runnerUp.coverage >= (config.competitionGap ?? 0.08)
+    && divisionResidual <= 0.35
     ? "measured"
     : "uncertain";
 

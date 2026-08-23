@@ -100,6 +100,10 @@ async function main() {
     fail(usage);
   }
 
+  if (!Number.isFinite(options.maxDiffRatio) || options.maxDiffRatio < 0 || options.maxDiffRatio > 1) {
+    fail(`--max-diff-ratio must be a number between 0 and 1, got ${JSON.stringify(options.maxDiffRatio)}.\n${usage}`);
+  }
+
   const actualPath = path.resolve(repoRoot, positional[0]);
   const baselinePath = path.resolve(repoRoot, positional[1]);
 
