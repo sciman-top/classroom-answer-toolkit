@@ -8,7 +8,7 @@ param(
 
     [string]$ReferencePdf,
 
-    [string]$PromptFile = "prompts/junior-physics-answer/spec.md",
+    [string]$PromptFile = "",
     [string]$ConfigEnvFile = ".env",
 
     [ValidateSet("primary", "fallback", "all")]
@@ -183,7 +183,18 @@ function Get-GatewayHostnames {
 
 $sourcePath = Resolve-WorkflowPath $SourcePdf
 $outputRoot = Resolve-WorkflowPath $OutputDirectory
-$promptPath = Resolve-WorkflowPath $PromptFile
+if ([string]::IsNullOrWhiteSpace($PromptFile)) {
+    $defaultManifestPath = Join-Path $repoRoot "prompts/junior-physics-answer/manifest.json"
+    $defaultManifest = Get-Content -LiteralPath $defaultManifestPath -Raw | ConvertFrom-Json
+    $defaultHumanSpec = $defaultManifest.sourceOfTruth.humanSpec
+    if ([string]::IsNullOrWhiteSpace($defaultHumanSpec)) {
+        throw "Default subject pack manifest lacks sourceOfTruth.humanSpec: $defaultManifestPath"
+    }
+    $promptPath = Resolve-WorkflowPath (Join-Path "prompts/junior-physics-answer" $defaultHumanSpec)
+}
+else {
+    $promptPath = Resolve-WorkflowPath $PromptFile
+}
 $envFilePath = Resolve-WorkflowPath $ConfigEnvFile
 $blindFocusRegionsPath = if ([string]::IsNullOrWhiteSpace($BlindFocusRegionsFile)) {
     $null

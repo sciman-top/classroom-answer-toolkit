@@ -14,7 +14,17 @@ import {
 } from "./validate-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const defaultPromptPath = path.join(repoRoot, "prompts", "junior-physics-answer", "spec.md");
+
+export function resolveDefaultPromptPath() {
+  const manifestPath = path.join(repoRoot, "prompts", "junior-physics-answer", "manifest.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  const humanSpec = manifest?.sourceOfTruth?.humanSpec;
+  if (typeof humanSpec !== "string" || humanSpec.length === 0) {
+    throw new Error(`Default subject pack manifest lacks sourceOfTruth.humanSpec: ${manifestPath}`);
+  }
+  return path.resolve(path.dirname(manifestPath), humanSpec);
+}
+
 const TRANSPORT_TIMEOUT_GRACE_MS = 5000;
 let activeTransportKey = null;
 
@@ -74,7 +84,7 @@ Options:
 function parseArgs(argv) {
   const options = {
     envFile: path.join(repoRoot, ".env"),
-    promptFile: defaultPromptPath,
+    promptFile: null,
     imagesDir: null,
     sourceTextFile: null,
     semanticFindingsOnly: false,
@@ -255,6 +265,7 @@ function parseArgs(argv) {
     throw new Error(`Unknown argument: ${arg}\n\n${usage}`);
   }
 
+  options.promptFile ??= resolveDefaultPromptPath();
   validateOptions(options);
   options.sourceImagePaths = options.imagesDir || options.imagePaths.length > 0
     ? resolveOrderedImages(options)

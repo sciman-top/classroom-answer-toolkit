@@ -178,14 +178,12 @@ export function generateAssemblyOutputs(assemblyFilePath) {
 
   const fullOutputPath = path.resolve(assemblyDir, assembly.fullOutput);
   const entryOutputPath = path.resolve(assemblyDir, assembly.entryOutput);
-  const mirroredSpecOutputPath = path.resolve(assemblyDir, assembly.mirroredSpecOutput);
 
   return {
     assembly,
     outputs: [
       { path: fullOutputPath, content: fullContent },
-      { path: entryOutputPath, content: entryContent },
-      { path: mirroredSpecOutputPath, content: fullContent }
+      { path: entryOutputPath, content: entryContent }
     ]
   };
 }

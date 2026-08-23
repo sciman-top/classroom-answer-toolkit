@@ -64,7 +64,6 @@ export function collectSpecBoundaryErrors() {
     const manifest = readJsonFile(manifestPath);
     const config = readJsonFile(configPath);
     const fullOutputPath = path.resolve(assemblyDir, assembly.fullOutput);
-    const mirroredOutputPath = path.resolve(assemblyDir, assembly.mirroredSpecOutput);
     const manifestHumanSpecPath = path.resolve(path.dirname(manifestPath), manifest.sourceOfTruth.humanSpec);
     const configHumanSpecPath = path.resolve(path.dirname(configPath), config.sourceOfTruth.humanSpec);
 
@@ -83,7 +82,7 @@ export function collectSpecBoundaryErrors() {
       }
     }
 
-    for (const outputPath of [fullOutputPath, mirroredOutputPath]) {
+    for (const outputPath of [fullOutputPath]) {
       if (!fs.existsSync(outputPath)) {
         errors.push(`${assembly.subjectPack}: missing generated spec ${relative(outputPath)}`);
         continue;

@@ -22,7 +22,7 @@ SourceExam
 - 产品和执行真值：`docs/strategy/` 中 Strategy Index 列出的 Current truth。
 - 提示词人类真源：`prompts/specs/platform|commons|subjects/`。
 - 汇编真值：`prompts/specs/assemblies/`。
-- 生成提示词：`prompts/specs/compiled/` 与 `prompts/<subject-pack>/spec.md`，禁止手改。
+- 生成提示词：`prompts/specs/compiled/`，禁止手改；运行时经各 subject-pack manifest 的 `sourceOfTruth.humanSpec` 解析。
 - 规则真源：`prompts/platform-core/` 与 `prompts/<subject-pack>/rules|profiles/`。
 - 编译缓存快照：`.snapshot-cache/`；它可被后续编译替换，不能直接充当长期交付证据。
 - 真实交付：用户指定输出目录；每个 PDF 同目录保留交付专属 snapshot，manifest 1.1 绑定输入 Markdown、PDF、snapshot 和当前 review 文件集合的字节数与 SHA-256。
@@ -61,7 +61,7 @@ SourceExam
 ## Compatibility and versioning
 
 - 人类 spec 行为变化必须提升组合规范版本并重新汇编 generated artifacts。
-- manifest、runtime config、compiled spec、mirrored spec 和 acceptance checklist 的版本口径必须一致。
+- manifest、runtime config、compiled spec 和 acceptance checklist 的版本口径必须一致。
 - delivery manifest `1.0` 保持读取兼容；新交付只写 `1.1`，并由运行 validator 强制 integrity 字段和实际文件哈希。
 - 删除 frozen schema/tool 前先证明 active workflow、tests、package scripts 和 verifier 无消费者。
 - 回滚只恢复本切片的 spec、工具、测试和文档，不覆盖用户原卷、`.env` 或真实交付目录。

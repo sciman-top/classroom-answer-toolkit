@@ -20,7 +20,7 @@
 
 ## 当前状态
 
-- 初中物理运行提示词：`prompts/junior-physics-answer/spec.md`；当前版本以 `prompts/junior-physics-answer/manifest.json` 为准。
+- 初中物理运行提示词：`prompts/specs/compiled/` 的完整版汇编产物，经 `prompts/junior-physics-answer/manifest.json` 的 `sourceOfTruth.humanSpec` 解析；当前版本以该 manifest 为准。
 - 已真实跑通 2025 广州中考原卷到 Markdown/PDF 的完整链路。
 - 默认主链不再把单次整卷盲答直接送去排版：先以 4x 重渲染原卷，按 PDF.js 题号切成每题两个带重叠的高清视窗（续页继承题号）执行独立视觉审计，再进入可选参考答案复核。
 - 局部高清审计能降低滑轮、刻度尺和钩码计数错误，但不能保证消除所有仪表盘歧义；未经参考答案或人工复核仍不得声明答案可信。
@@ -61,7 +61,7 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 ## 核心目录
 
 - `prompts/specs/`：人类规范真源；compiled 文件由 assembler 生成。
-- `prompts/junior-physics-answer/`：运行提示词、规则、排版 profile 和版本 manifest。
+- `prompts/junior-physics-answer/`：规则、排版 profile 和版本 manifest；运行提示词由 `prompts/specs/compiled/` 的汇编产物承担。
 - `tools/ai-gateway/`：显式云出网的答案生成请求。
 - `tools/rule-compiler/`：subject-pack、规则和 snapshot 编译与校验。
 - `tools/latex-renderer/`：Markdown 校验、PDF 渲染、review 页图和交付 manifest。

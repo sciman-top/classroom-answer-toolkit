@@ -8,13 +8,13 @@
 - `commons/`：只放跨多个学科或多个学段可复用的规则。
 - `subjects/`：只放学段学科特异性源规范，以及必要的调用版源文件。
 - `compiled/`：只放自动汇编产物，禁止手改。
-- `assemblies/`：汇编真值，决定完整版、调用版与 `prompts/<subject-pack>/spec.md` 如何生成。
+- `assemblies/`：汇编真值，决定完整版与调用版如何生成。
 
 ## 使用规则
 
 1. 修改规范时，先改 `platform/`、`commons/` 或 `subjects/` 下的源文件。
-2. 运行汇编工具生成 `compiled/` 与对应 subject-pack 下的 `spec.md`。
-3. `compiled/` 下文件与 `prompts/<subject-pack>/spec.md` 视为 generated artifacts，不直接手改。
+2. 运行汇编工具生成 `compiled/` 下的完整版与调用版。
+3. `compiled/` 下文件视为 generated artifacts，不直接手改。
 4. 新增学段或学科时，先补 `subjects/` 与 `assemblies/`；只有确认可复用时才上移到 `commons/`。
 5. `subject-pack` 的 `humanSpec` 一律指向 `compiled/` 下的完整版，不指向源规范。
 6. schema、compatibility 与回滚边界统一看 [final-implementation-baseline.md](../../docs/strategy/final-implementation-baseline.md)。

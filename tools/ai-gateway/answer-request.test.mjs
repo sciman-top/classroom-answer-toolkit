@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -18,6 +18,7 @@ import {
   buildAnswerRoutingSummary,
   normalizeAnswerMarkdown,
   resolveAnswerTransportPolicy,
+  resolveDefaultPromptPath,
   resolveImageEvidenceLabels,
   selectAnswerRoute,
   requestAnswerWithFailover
@@ -1139,6 +1140,12 @@ test("reference review does not let question 11 explanation bleed into question 
     referenceText
   );
   assert.equal(reviewed.answers, "DCDDADABAB");
+});
+
+test("default prompt resolves to the compiled full spec via the manifest", () => {
+  const resolved = resolveDefaultPromptPath();
+  assert.match(resolved.replace(/\\/g, "/"), /prompts\/specs\/compiled\/[^/]+\.md$/);
+  assert.equal(existsSync(resolved), true);
 });
 
 test("explicit --image prints the deprecation warning", () => {

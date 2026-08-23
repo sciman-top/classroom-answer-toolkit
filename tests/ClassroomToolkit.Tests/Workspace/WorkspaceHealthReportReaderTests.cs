@@ -196,7 +196,6 @@ public sealed class WorkspaceHealthReportReaderTests
                 sourceOfTruth = new
                 {
                     humanSpec,
-                    mirroredSpec = "./spec.md",
                     acceptanceChecklist = "./checklists/acceptance.md",
                     runtimeConfig = "./config.json"
                 },

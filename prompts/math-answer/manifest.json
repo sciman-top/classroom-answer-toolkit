@@ -12,7 +12,6 @@
   ],
   "sourceOfTruth": {
     "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.2.md",
-    "mirroredSpec": "./spec.md",
     "acceptanceChecklist": "./checklists/acceptance.md",
     "runtimeConfig": "./config.json"
   },

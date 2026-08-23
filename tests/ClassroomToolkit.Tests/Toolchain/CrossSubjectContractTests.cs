@@ -9,7 +9,7 @@ public sealed class CrossSubjectContractTests
     [InlineData("junior-physics-answer", "v8.18")]
     [InlineData("senior-physics-answer", "v1.1")]
     [InlineData("math-answer", "v0.2")]
-    public void SubjectPackManifestDatasetAndMirroredSpecAreAligned(string subjectPack, string expectedVersion)
+    public void SubjectPackManifestDatasetAndCompiledSpecAreAligned(string subjectPack, string expectedVersion)
     {
         var root = FindRepoRoot();
         var packRoot = Path.Combine(root, "prompts", subjectPack);
@@ -29,8 +29,8 @@ public sealed class CrossSubjectContractTests
 
         var source = manifest.GetProperty("sourceOfTruth");
         var humanSpec = Path.GetFullPath(Path.Combine(packRoot, source.GetProperty("humanSpec").GetString()!));
-        var mirroredSpec = Path.GetFullPath(Path.Combine(packRoot, source.GetProperty("mirroredSpec").GetString()!));
-        File.ReadAllBytes(mirroredSpec).Should().Equal(File.ReadAllBytes(humanSpec));
+        File.Exists(humanSpec).Should().BeTrue();
+        humanSpec.Replace('\\', '/').Should().Contain("prompts/specs/compiled/");
     }
 
     [Fact]

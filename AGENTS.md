@@ -10,7 +10,7 @@
 
 ## A. 仓库事实与模块边界
 - `docs/strategy/` 是规划真源；先读 `README.md`、`product-prd.md` 与 `final-implementation-baseline.md`。
-- `prompts/specs/` 是人类规范真源，只手改 `platform/`、`commons/`、`subjects/`；`prompts/specs/compiled/`、`prompts/<subject-pack>/spec.md` 和 `snapshot` 是生成或运行真相，禁止手改。
+- `prompts/specs/` 是人类规范真源，只手改 `platform/`、`commons/`、`subjects/`；`prompts/specs/compiled/` 和 `snapshot` 是生成或运行真相，禁止手改。
 - `ClassroomToolkit.sln`、`src/`、`tests/` 承载 App/Domain/Infra 三项目 WPF、编排与 xUnit 合同；无独立发布或变化率证据不得恢复 Application/Services 空壳程序集。
 - retained `tools/` 为 spec-assembler、rule-compiler、ai-gateway、latex-renderer 与按需 OCR；visual-evidence、sample-flywheel、review-queue、synthetic visual 和 answer-graphics 已从 active tree 删除。`tmp/`、`.answer-graphics/` 与旧根提示词只由 Git 历史追溯，不得重新提交。
 - 真实主链是“人类 spec -> compile/snapshot -> 答案生成 -> renderer -> 资产合同 -> 教师复核交付”；先跑通一个 subject-pack 的最薄闭环，再扩学科或恢复实验工具。
