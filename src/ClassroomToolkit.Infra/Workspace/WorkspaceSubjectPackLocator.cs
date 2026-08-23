@@ -22,7 +22,14 @@ public static class WorkspaceSubjectPackLocator
         }
 
         var subjectPacks = new List<WorkspaceSubjectPackPaths>();
-        foreach (var manifestPath in Directory.EnumerateFiles(promptsRoot, "manifest.json", SearchOption.AllDirectories))
+        // ACL/AV/sync-tool locked subdirectories must degrade to an issue note instead of
+        // aborting the enumeration (and with it app startup).
+        var enumerationOptions = new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            IgnoreInaccessible = true
+        };
+        foreach (var manifestPath in Directory.EnumerateFiles(promptsRoot, "manifest.json", enumerationOptions))
         {
             WorkspaceSubjectPackPaths? subjectPack;
             try

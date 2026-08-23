@@ -201,13 +201,21 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void RefreshHealth()
     {
-        var health = _toolchainOrchestrator.GetWorkspaceHealthReport(SelectedSubjectPack);
-        StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
-        StatusCards.Clear();
-        StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现", health.SubjectPacks.Count > 0));
-        StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath, health.SnapshotExists));
-        StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases", health.EvalOk));
-        StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现", health.AssetVersion == health.LatestProductionSpecVersion));
+        try
+        {
+            var health = _toolchainOrchestrator.GetWorkspaceHealthReport(SelectedSubjectPack);
+            StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
+            StatusCards.Clear();
+            StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现", health.SubjectPacks.Count > 0));
+            StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath, health.SnapshotExists));
+            StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases", health.EvalOk));
+            StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现", health.AssetVersion == health.LatestProductionSpecVersion));
+        }
+        catch (Exception ex)
+        {
+            // Keep the previous status cards visible and surface the failure as a diagnostic.
+            StatusMessage = $"工作区健康检查失败：{ex.Message}";
+        }
     }
 
     private void OpenPath(string path)

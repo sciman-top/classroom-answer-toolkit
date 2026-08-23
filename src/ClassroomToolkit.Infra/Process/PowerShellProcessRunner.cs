@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using ClassroomToolkit.Infra.Abstractions;
 
 namespace ClassroomToolkit.Infra.Process;
@@ -19,6 +20,10 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            // pwsh and node emit UTF-8; without this the host code page (GBK on zh-CN)
+            // garbles Chinese file names in captured diagnostics.
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
             CreateNoWindow = true
         };
 
