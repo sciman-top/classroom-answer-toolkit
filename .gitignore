@@ -37,6 +37,14 @@ artifacts/
 eval/**/results/*
 !eval/**/results/README.md
 
+# Archived live-run outputs (policy: archive via scripts/archive-delivery-run.ps1; Git admission only for explicit baselines)
+正式交付/2017广州中考-v823仪表证据复核/
+正式交付/2019广州中考-v821语义复核验证/
+正式交付/2019广州中考-v822语义复核确定性合并验证/
+正式交付/2019广州中考-v823语义候选索引验证/
+正式交付/2019广州中考-v824-parser-schema回归/
+正式交付/2019广州中考-v825-parser-schema回归重试/
+
 # OS/editor noise
 Thumbs.db
 .DS_Store
