@@ -69,6 +69,8 @@ function validateObject(value, schema, currentPath, state) {
 
     if (schema.additionalProperties === false) {
       state.errors.push(`${formatPath(currentPath)} contains unsupported property "${key}".`);
+    } else if (schema.additionalProperties && typeof schema.additionalProperties === "object") {
+      validateValue(propertyValue, schema.additionalProperties, `${currentPath}/${key}`, state);
     }
   }
 }

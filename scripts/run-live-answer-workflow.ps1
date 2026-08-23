@@ -9,6 +9,7 @@ param(
     [string]$ReferencePdf,
 
     [string]$PromptFile = "",
+    [string]$SubjectPack = "junior-physics-answer",
     [string]$ConfigEnvFile = ".env",
 
     [ValidateSet("primary", "fallback", "all")]
@@ -184,13 +185,16 @@ function Get-GatewayHostnames {
 $sourcePath = Resolve-WorkflowPath $SourcePdf
 $outputRoot = Resolve-WorkflowPath $OutputDirectory
 if ([string]::IsNullOrWhiteSpace($PromptFile)) {
-    $defaultManifestPath = Join-Path $repoRoot "prompts/junior-physics-answer/manifest.json"
+    $defaultManifestPath = Join-Path $repoRoot "prompts/$SubjectPack/manifest.json"
+    if (-not (Test-Path -LiteralPath $defaultManifestPath -PathType Leaf)) {
+        throw "Subject pack manifest not found: $defaultManifestPath"
+    }
     $defaultManifest = Get-Content -LiteralPath $defaultManifestPath -Raw | ConvertFrom-Json
     $defaultHumanSpec = $defaultManifest.sourceOfTruth.humanSpec
     if ([string]::IsNullOrWhiteSpace($defaultHumanSpec)) {
         throw "Default subject pack manifest lacks sourceOfTruth.humanSpec: $defaultManifestPath"
     }
-    $promptPath = Resolve-WorkflowPath (Join-Path "prompts/junior-physics-answer" $defaultHumanSpec)
+    $promptPath = Resolve-WorkflowPath (Join-Path "prompts/$SubjectPack" $defaultHumanSpec)
 }
 else {
     $promptPath = Resolve-WorkflowPath $PromptFile
@@ -320,6 +324,16 @@ $phaseStates = [ordered]@{
 
 foreach ($summaryPath in @($blindSummaryPath, $semanticFindingsSummaryPath, $semanticMergeSummaryPath, $visualFindingsSummaryPath, $visualMergeSummaryPath, $referenceReviewSummaryPath, $workflowReceiptPath)) {
     Remove-Item -LiteralPath $summaryPath -Force -ErrorAction SilentlyContinue
+}
+
+# Previous-run finals must never survive into a failed rerun as a seemingly complete
+# delivery set; quarantine them under .stale-runs/<runId> before this run writes anything.
+$staleRunDirectory = Join-Path $outputRoot (".stale-runs/" + $workflowRunId)
+foreach ($finalPath in @($answerMarkdownPath, $answerPdfPath, $deliveryManifestPath, $deliverySnapshotPath)) {
+    if (Test-Path -LiteralPath $finalPath -PathType Leaf) {
+        New-Item -ItemType Directory -Force -Path $staleRunDirectory | Out-Null
+        Move-Item -LiteralPath $finalPath -Destination $staleRunDirectory -Force
+    }
 }
 
 function Write-WorkflowReceipt {
@@ -689,7 +703,7 @@ try {
     $deliveryArguments = @(
         $answerMarkdownPath,
         $answerPdfPath,
-        "--subject-pack", "junior-physics-answer",
+        "--subject-pack", $SubjectPack,
         "--profile", $Profile,
         "--review-scale", $ReviewScale.ToString([Globalization.CultureInfo]::InvariantCulture)
     )

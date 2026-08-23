@@ -28,8 +28,18 @@ export function mergeRulePacks(packs) {
 export function mergeProfiles(profileFiles) {
   const profilesByPath = new Map();
   const aliases = new Map();
+  const namesByDirectory = new Map();
 
   for (const profileFile of profileFiles) {
+    // Same-name profiles across layers (platform vs subject pack) intentionally
+    // override by caller order; only same-directory duplicates are ambiguous.
+    const directory = path.posix.dirname(profileFile.relativePath);
+    const nameKey = `${profileFile.name} @ ${directory}`;
+    const conflictingPath = namesByDirectory.get(nameKey);
+    if (conflictingPath && conflictingPath !== profileFile.relativePath) {
+      throw new Error(`Duplicate profile name "${profileFile.name}" in ${directory}: ${conflictingPath}, ${profileFile.relativePath}`);
+    }
+    namesByDirectory.set(nameKey, profileFile.relativePath);
     const profile = profileFile.profile;
     profilesByPath.set(profileFile.relativePath, profile);
     aliases.set(profileFile.relativePath, profileFile.relativePath);
@@ -81,7 +91,8 @@ function listProfileFiles(directoryPath) {
         name: profile.name ?? path.basename(entry.name, ".json"),
         profile
       };
-    });
+    })
+    .sort((left, right) => left.relativePath.localeCompare(right.relativePath, "en"));
 }
 
 function normalizeInheritedProfileKey(inheritRef, currentProfileKey) {
