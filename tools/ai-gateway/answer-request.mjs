@@ -61,7 +61,7 @@ Options:
   --audit-findings-file <path>  Merge a prior visual findings report into the candidate without image input
   --reference-images-dir <dir>  Ordered reference-answer page images; requires --candidate-file
   --reference-text-file <path>  Optional extracted text layer from the same reference PDF
-  --image <path>            Add one page image; repeat for multiple pages
+  --image <path>            Add one page image; deprecated, use --images-dir
   --output <path>           Markdown output path
   --summary-out <path>      Optional atomic JSON receipt for this generation stage
   --provider <target>       primary, fallback, or all; default all
@@ -1104,6 +1104,12 @@ export function buildAnswerRoutingSummary(result) {
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
   const mode = inferAnswerMode(options);
+  if ((options.imagePaths?.length ?? 0) > 0) {
+    console.error("[deprecated] --image is deprecated and will be removed on 2026-09-30; use --images-dir.");
+  }
+  if (mode === "visual_audit") {
+    console.error("[deprecated] full visual_audit rewrite mode is deprecated and will be removed on 2026-09-30; pass --audit-findings-only with --audit-images-dir.");
+  }
   const loaded = loadGatewayConfig({ envFile: options.envFile, allowMissingSecrets: false });
   if (loaded.validation.errors.length > 0) {
     throw new Error(loaded.validation.errors.join("; "));

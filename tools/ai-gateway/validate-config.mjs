@@ -668,8 +668,14 @@ function extractTextOutput(parsed) {
 
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
+  if (options.live) {
+    console.error("[deprecated] --live text probes (npm run probe:text) are deprecated and will be removed on 2026-09-30.");
+  }
   const { env, parseErrors } = loadEnvironment(options);
   const config = normalizeConfig(env);
+  if (config.providers.some((provider) => provider.source === "legacy")) {
+    console.error("[deprecated] TEXT_PROVIDER_* legacy env prefixes are deprecated and will be removed on 2026-09-30; migrate to CLASSROOM_TOOLKIT_AI_*.");
+  }
   const validation = validateConfig(config, options, parseErrors);
   const liveResults = validation.errors.length === 0 ? await runLiveTextProbes(config, options) : [];
   const liveFailed = liveResults.some((result) => !result.ok);

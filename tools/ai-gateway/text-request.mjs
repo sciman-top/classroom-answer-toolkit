@@ -113,6 +113,7 @@ function printHuman(result) {
 }
 
 async function main() {
+  console.error("[deprecated] request:text (text-request.mjs) is deprecated and will be removed on 2026-09-30; use answer-request.mjs.");
   const options = parseArgs(process.argv.slice(2));
   const loaded = loadGatewayConfig({
     envFile: options.envFile,

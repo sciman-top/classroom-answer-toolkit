@@ -51,6 +51,7 @@ function firstPageImagePath(reviewDir) {
 }
 
 function main() {
+  console.error("[deprecated] visual:smoke (visual-regression-smoke.mjs) is deprecated and will be removed on 2026-09-30.");
   ensureDir(smokeDir);
   fs.mkdirSync(baselineDir, { recursive: true });
 

@@ -44,6 +44,7 @@ function parseArgs(argv) {
 }
 
 function main() {
+  console.error("[deprecated] resolve:profile (resolve-profile.mjs) is deprecated and will be removed on 2026-09-30; use compile:snapshot --profile.");
   const options = parseArgs(process.argv.slice(2));
   options.subjectPack = normalizeSubjectPackName(options.subjectPack, defaultSubjectPack);
   const snapshot = compileResolvedSnapshot({

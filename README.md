@@ -88,6 +88,14 @@ Full 中共享 renderer/layout/delivery 回归只由 `junior-physics-answer` eva
 
 `scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；可选 OCR 由 renderer 的 `review-source-pdf --ocr` 显式启用。
 
+## 弃用入口（2026-09-30 移除）
+
+以下手动入口无主链调用方，已进入弃用窗口；期限后再无依赖即删除，删除方案与证据另行走独立切片：
+
+- ai-gateway：`request:text`（text-request.mjs）、`probe:text`（validate-config `--live`）、`TEXT_PROVIDER_*` 旧环境变量前缀、answer-request 的 `--image` flag、不带 `--audit-findings-only` 的整卷 `visual_audit` 模式。
+- rule-compiler：`resolve:profile`。
+- latex-renderer：`visual:smoke`（移除时连同各 subject-pack manifest 的 `visualSmoke` 字段一起处理）。
+
 ## 桌面发布边界
 
 WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓库以及其中的 Node/npm、PowerShell、prompt、snapshot 和 eval 状态。`scripts/publish-app.ps1` 会清空准确的 publish 目录，以 Release 生成应用，并在仓库外复制发布树执行隔离启动 smoke；该 smoke 只验收“应用可启动且缺少仓库时正确 fail closed”，回执绑定 source commit、EXE SHA-256 和 publish-tree SHA-256。
