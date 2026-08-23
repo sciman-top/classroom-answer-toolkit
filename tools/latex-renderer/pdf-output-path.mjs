@@ -19,13 +19,13 @@ export function makeBrowserPdfOutputPath(outputPath, token = `${process.pid}-${D
   );
 }
 
-export function makeRenderTempHtmlPath(outputPath) {
+export function makeRenderTempHtmlPath(outputPath, token = `${process.pid}-${Date.now()}`) {
   const outputKey = crypto
     .createHash("sha256")
     .update(path.resolve(outputPath).toLowerCase())
     .digest("hex")
     .slice(0, 16);
-  return path.join(path.dirname(outputPath), `.classroom-toolkit-render-${outputKey}.html`);
+  return path.join(path.dirname(outputPath), `.classroom-toolkit-render-${outputKey}-${sanitizeToken(token)}.html`);
 }
 
 export function makeReviewOutputDir(repositoryRoot, outputPath) {

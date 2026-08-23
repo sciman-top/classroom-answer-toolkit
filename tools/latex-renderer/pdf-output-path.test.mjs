@@ -24,14 +24,15 @@ test("browser PDF output always uses an ASCII temporary file name", () => {
   assert.match(path.basename(temporary), /^[\x00-\x7F]+$/);
 });
 
-test("render HTML uses a stable ASCII file name for Unicode targets", () => {
+test("render HTML uses a per-run ASCII temp file name for Unicode targets", () => {
   const target = path.join("D:\\repo\\正式交付", "2025广州中考参考答案.pdf");
-  const temporary = makeRenderTempHtmlPath(target);
+  const first = makeRenderTempHtmlPath(target, "run-a");
+  const second = makeRenderTempHtmlPath(target, "run-b");
 
-  assert.equal(path.dirname(temporary), path.dirname(target));
-  assert.match(path.basename(temporary), /^\.classroom-toolkit-render-[a-f0-9]{16}\.html$/);
-  assert.match(path.basename(temporary), /^[\x00-\x7F]+$/);
-  assert.equal(makeRenderTempHtmlPath(target), temporary);
+  assert.equal(path.dirname(first), path.dirname(target));
+  assert.match(path.basename(first), /^\.classroom-toolkit-render-[a-f0-9]{16}-run-a\.html$/);
+  assert.match(path.basename(first), /^[\x00-\x7F]+$/);
+  assert.notEqual(first, second);
 });
 
 test("committing browser output replaces the final Unicode target after rendering", () => {

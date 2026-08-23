@@ -83,6 +83,14 @@ const inputPath = path.resolve(callerCwd, inputArg);
 const outputPath = path.resolve(
   outputArg ? path.resolve(callerCwd, outputArg) : inputPath.replace(/\.md$/i, ".pdf")
 );
+if (!/\.md$/i.test(inputPath)) {
+  console.error(`Refusing to render: input must be a Markdown file ending in .md (got ${inputArg}).`);
+  process.exit(2);
+}
+if (outputPath.toLowerCase() === inputPath.toLowerCase()) {
+  console.error("Refusing to render: output PDF path must differ from the input Markdown path.");
+  process.exit(2);
+}
 const snapshot = loadRequiredResolvedSnapshot(
   resolveSnapshotPath(options.snapshot, {
     subjectPack: options.subjectPack,
@@ -253,10 +261,34 @@ function injectAnswerGraphics(html, graphics) {
   return output;
 }
 
+// The temp HTML lives in the output directory, so relative image URLs would resolve
+// against the wrong base when output differs from the source directory. Resolve every
+// local image against the Markdown source and fail closed when it does not exist.
+function resolveLocalImageRefs(markdown, sourcePath) {
+  return markdown.replace(/(!\[[^\]]*\]\()([^)\s]+)([^)]*\))/g, (match, lead, url, tail) => {
+    if (/^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|\/\/|#)/.test(url)) {
+      return match;
+    }
+    const sourceDir = path.dirname(sourcePath);
+    const candidates = [path.resolve(sourceDir, url)];
+    try {
+      candidates.push(path.resolve(sourceDir, decodeURIComponent(url)));
+    } catch {
+      // Keep the raw-path candidate only.
+    }
+    const imagePath = candidates.find((candidate) => fs.existsSync(candidate));
+    if (!imagePath) {
+      throw new Error(`Image reference not found relative to ${sourceDir}: ${url}`);
+    }
+    return `${lead}${pathToFileURL(imagePath).href}${tail}`;
+  });
+}
+
 const source = fs.readFileSync(inputPath, "utf8");
 const normalizedSource = normalizeQuestionLeadLines(source);
 const expanded = expandAnswerGraphicMarkers(normalizedSource, inputPath);
-const renderedMarkdown = md.render(replaceMath(expanded.expandedMarkdown));
+const withResolvedImages = resolveLocalImageRefs(expanded.expandedMarkdown, inputPath);
+const renderedMarkdown = md.render(replaceMath(withResolvedImages));
 const body = injectAnswerGraphics(injectMath(renderedMarkdown), expanded.graphics);
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -373,18 +405,18 @@ ${body}
 const tempHtmlPath = makeRenderTempHtmlPath(outputPath);
 fs.writeFileSync(tempHtmlPath, html, "utf8");
 
-const browser = sharedBrowserWsEndpoint
-  ? await chromium.connect(sharedBrowserWsEndpoint)
-  : await chromium.launch({
-      executablePath: browserPath,
-      headless: true
-    });
 const browserPdfOutputPath = makeBrowserPdfOutputPath(outputPath);
-if (fs.existsSync(browserPdfOutputPath)) {
-  fs.unlinkSync(browserPdfOutputPath);
-}
-
+let browser = null;
 try {
+  if (fs.existsSync(browserPdfOutputPath)) {
+    fs.unlinkSync(browserPdfOutputPath);
+  }
+  browser = sharedBrowserWsEndpoint
+    ? await chromium.connect(sharedBrowserWsEndpoint)
+    : await chromium.launch({
+        executablePath: browserPath,
+        headless: true
+      });
   const page = await browser.newPage({ viewport: { width: 1280, height: 1600 } });
   await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: "load" });
   await page.pdf({
@@ -399,13 +431,16 @@ try {
       left: `${renderProfile.page.margin.leftMm}mm`
     }
   });
+  commitBrowserPdfOutput(browserPdfOutputPath, outputPath);
 } finally {
-  await browser.close();
-  if (fs.existsSync(tempHtmlPath)) {
-    fs.unlinkSync(tempHtmlPath);
+  if (browser) {
+    await browser.close().catch(() => {});
+  }
+  for (const temporaryPath of [tempHtmlPath, browserPdfOutputPath]) {
+    if (fs.existsSync(temporaryPath)) {
+      fs.unlinkSync(temporaryPath);
+    }
   }
 }
-
-commitBrowserPdfOutput(browserPdfOutputPath, outputPath);
 
 console.log(outputPath);

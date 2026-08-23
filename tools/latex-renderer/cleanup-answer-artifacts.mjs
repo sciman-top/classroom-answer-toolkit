@@ -19,7 +19,7 @@ Behavior:
   - Deletes repository-local transient artifacts created during source review, OCR, and visual QA.
   - Keeps final deliverables such as source PDFs, answer Markdown, answer PDFs, and tool dependencies.
   - Preserves everything when render/review fails unless you run this cleanup command explicitly.
-  - Loose temp files such as *.render.html are deleted only when passed explicitly.
+  - Loose temp files such as .classroom-toolkit-render-*.html/.pdf are deleted only when passed explicitly.
 `;
 
 function parseArgs(argv) {
@@ -74,7 +74,8 @@ function isAllowedExtraPath(candidatePath) {
     normalized.includes(`${path.sep}_ocr_work${path.sep}`) ||
     normalized.endsWith(`${path.sep}_ocr_work`) ||
     baseName.startsWith("_tmp_") ||
-    baseName.endsWith(".render.html")
+    (baseName.startsWith(".classroom-toolkit-render-")
+      && (baseName.endsWith(".html") || baseName.endsWith(".pdf")))
   );
 }
 

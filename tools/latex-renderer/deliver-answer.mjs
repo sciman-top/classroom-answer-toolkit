@@ -119,6 +119,8 @@ function parseArgs(argv) {
   return { positional, options };
 }
 
+const childStepTimeoutMs = 10 * 60 * 1000;
+
 function runNodeScript(scriptFileName, scriptArgs) {
   const filteredArgs = scriptArgs.filter((value) => value !== undefined && value !== null && value !== "");
   const result = spawnSync(
@@ -127,6 +129,7 @@ function runNodeScript(scriptFileName, scriptArgs) {
     {
       cwd: toolDir,
       stdio: "inherit",
+      timeout: childStepTimeoutMs,
       env: {
         ...process.env,
         INIT_CWD: repoRoot
@@ -140,7 +143,11 @@ function runNodeScript(scriptFileName, scriptArgs) {
 
   if (result.status !== 0) {
     if (result.signal) {
-      console.error(`${scriptFileName} terminated by signal ${result.signal}.`);
+      const timedOut = result.signal === "SIGTERM" && result.status === null;
+      console.error(
+        `${scriptFileName} terminated by signal ${result.signal}`
+        + `${timedOut ? ` (step exceeded ${childStepTimeoutMs / 60000} minutes)` : ""}.`
+      );
     }
     process.exit(typeof result.status === "number" ? result.status : 2);
   }
