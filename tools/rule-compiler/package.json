@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "compile:snapshot": "node compile-snapshot.mjs",
-    "merge:rules": "node merge-rules.mjs",
     "validate:assets": "node validate-assets.mjs",
     "validate:spec-boundary": "node validate-spec-boundary.mjs",
     "test:spec-boundary": "node --test validate-spec-boundary.test.mjs",
