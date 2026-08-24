@@ -556,9 +556,10 @@ try {
     $currentPhase = "semanticMerge"
     $phaseStates[$currentPhase].status = "in_progress"
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
+    $semanticMergeArguments = @(
         "--config-env-file", $envFilePath,
         "--prompt-file", $promptPath,
+        "--images-dir", $pageDirectory,
         "--candidate-file", $blindMarkdownPath,
         "--semantic-findings-file", $semanticFindingsPath,
         "--output", $semanticReviewMarkdownPath,
@@ -568,6 +569,10 @@ try {
         "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--allow-cloud-egress"
     )
+    if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
+        $semanticMergeArguments += @("--source-text-file", $sourceTextPath)
+    }
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticMergeArguments
     $phaseStates[$currentPhase].status = "completed"
     $currentPhase = $null
     Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(

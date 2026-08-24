@@ -134,7 +134,10 @@ test("reference review prompt separates source pages, reference pages, and blind
     });
 
     assert.match(prompt, /前 8 张图片是原卷，随后 3 张图片是权威参考答案/);
-    assert.match(prompt, /参考答案是答案取值的权威来源/);
+    assert.match(prompt, /参考答案是答案取值的默认权威来源/);
+    assert.match(prompt, /参考答案不得静默覆盖原卷可直接复算的冲突/);
+    assert.match(prompt, /## 疑点清单/);
+    assert.match(prompt, /待人工复核/);
     assert.match(prompt, /BAADA CBBDD/);
     assert.match(prompt, /逐字符抄录完整答案串/);
     assert.match(prompt, /1\. C/);
@@ -274,22 +277,31 @@ test("semantic findings and merge prompts create an observable no-reference revi
     const findingsPrompt = buildPrompt(promptPath, {
       mode: "semantic_review_findings",
       candidateMarkdown,
-      sourcePageCount: 10
+      sourcePageCount: 10,
+      sourceText: "13. 图11中明确标注为凸透镜。\n21. 电流表示数为0.2A时，电压 UDE=____。"
     });
     const mergePrompt = buildPrompt(promptPath, {
       mode: "semantic_review_merge",
       candidateMarkdown,
-      semanticFindings: "Q12【语义确认修正】：逐项核对 A、B、C、D；建议修正为 A。"
+      semanticFindings: "Q12【语义确认修正】：逐项核对 A、B、C、D；建议修正为 A。",
+      sourcePageCount: 10,
+      sourceText: "13. 图11中明确标注为凸透镜。\n21. 电流表示数为0.2A时，电压 UDE=____。"
     });
 
     assert.match(findingsPrompt, /不是参考答案/);
     assert.match(findingsPrompt, /不得沿用其结论作为证据/);
+    assert.match(findingsPrompt, /原卷 PDF 文本层（辅助）/);
+    assert.match(findingsPrompt, /图11中明确标注为凸透镜/);
+    assert.match(findingsPrompt, /不得只校验最后一问/);
     assert.match(findingsPrompt, /逐项核对 A、B、C、D/);
     assert.match(findingsPrompt, /故障前后各支路状态/);
     assert.match(findingsPrompt, /第7题候选结论：B/);
     assert.match(findingsPrompt, /每个选择题必须以 `### 第N题` 开头/);
     assert.match(findingsPrompt, /【语义确认修正】/);
     assert.match(mergePrompt, /只应用明确标为【语义确认修正】/);
+    assert.match(mergePrompt, /发现报告都不是证据/);
+    assert.match(mergePrompt, /每一项建议修正必须再次与原卷图文核对/);
+    assert.match(mergePrompt, /图11中明确标注为凸透镜/);
     assert.match(mergePrompt, /未逐项核对 A、B、C、D，不得修改/);
     assert.match(mergePrompt, /原始盲答候选/);
   } finally {
