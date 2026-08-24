@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "sourcePdfSha256": "534d8eee3b99446d514af736aaf4cd8e36f2803154f7778c0f656f1832b7510c",
+  "regions": [
+    {
+      "id": "q23-figure-28-voltage-meter",
+      "label": "Question 23 Figure 28 voltage meter: inspect only this printed 0-3 V dial, its pointer, numbered scale, small divisions, and visible terminals",
+      "page": 7,
+      "questionNumber": 23,
+      "x": 0.47,
+      "y": 0.47,
+      "width": 0.24,
+      "height": 0.18
+    },
+    {
+      "id": "q23-figure-28-current-meter",
+      "label": "Question 23 Figure 28 current meter: inspect only this printed 0-0.6 A dial, its pointer, numbered scale, small divisions, and visible terminals",
+      "page": 7,
+      "questionNumber": 23,
+      "x": 0.68,
+      "y": 0.47,
+      "width": 0.25,
+      "height": 0.18
+    }
+  ]
+}

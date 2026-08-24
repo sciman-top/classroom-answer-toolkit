@@ -1237,7 +1237,7 @@ test("semantic findings deterministically apply only explicit confirmed choice c
   ].join("\n");
   const result = applySemanticChoiceFindings(mergedByModel, findings, baseline);
   assert.equal(result.applied, true);
-  assert.deepEqual(result.questions, [2, 5, 8]);
+  assert.deepEqual(result.questions, [2, 5]);
   assert.match(result.markdown, /1—5：D、C、D、D、A/);
   assert.match(result.markdown, /6—10：D、A、B、A、C/);
   assert.match(result.markdown, /11—12：C、C/);
@@ -1261,7 +1261,29 @@ test("semantic choice parser rejects missing, duplicated, or inconsistent correc
     "### 第4题\n【语义确认修正】\n独立结论：B\n候选结论：A\n建议修正：改为 B"
   ].join("\n");
   const corrections = parseSemanticChoiceFindings(findings);
-  assert.deepEqual([...corrections.entries()], [[4, "B"]]);
+  assert.deepEqual([...corrections.entries()], [[4, { candidate: "A", answer: "B" }]]);
+});
+
+test("semantic choice parser rejects an ambiguous multi-answer conclusion", () => {
+  const findings = [
+    "### 第4题",
+    "【语义确认修正】",
+    "独立结论：A、B（题面出现双正确）",
+    "候选结论：B",
+    "建议修正：改为 A；若为单选则不能唯一判定。"
+  ].join("\n");
+  const corrections = parseSemanticChoiceFindings(findings);
+  assert.deepEqual([...corrections.entries()], []);
+});
+
+test("semantic findings reject a correction whose candidate does not match the frozen baseline", () => {
+  const result = applySemanticChoiceFindings(
+    "# 参考答案\n\n6—10：D、A、D、B、C",
+    "### 第7题\n【语义确认修正】\n独立结论：A\n候选结论：D\n建议修正：改为 A"
+  );
+  assert.equal(result.applied, false);
+  assert.deepEqual(result.questions, []);
+  assert.match(result.markdown, /6—10：D、A、D、B、C/);
 });
 
 test("semantic findings fail closed on a self-contradictory correction block", () => {

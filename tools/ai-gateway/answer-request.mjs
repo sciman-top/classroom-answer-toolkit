@@ -687,12 +687,13 @@ export function parseSemanticChoiceFindings(findings) {
     if (/最终建议|应标.*语义一致|需以原图.*确认|题干.*(?:显示|辨识).*应改/us.test(body)) {
       continue;
     }
-    const independentMatches = [...body.matchAll(/独立结论\s*：\s*([A-D])/igu)];
-    const candidateMatches = [...body.matchAll(/候选结论\s*：\s*([A-D])/igu)];
+    const independentMatches = [...body.matchAll(/^\s*独立结论\s*：\s*([A-D])\s*[。.]?\s*$/imgu)];
+    const candidateMatches = [...body.matchAll(/^\s*候选结论\s*：\s*([A-D])\s*[。.]?\s*$/imgu)];
     const independent = independentMatches.length === 1 ? independentMatches[0][1].toUpperCase() : null;
     const candidate = candidateMatches.length === 1 ? candidateMatches[0][1].toUpperCase() : null;
-    if (independent && candidate && independent !== candidate && /建议修正\s*：/u.test(body)) {
-      corrections.set(Number(block[1]), independent);
+    const suggestedAnswer = body.match(/建议修正\s*：[^\n]*?(?:改为\s*)?([A-D])(?:\s|[。.]|$)/iu)?.[1]?.toUpperCase() ?? null;
+    if (independent && candidate && independent !== candidate && suggestedAnswer === independent) {
+      corrections.set(Number(block[1]), { candidate, answer: independent });
     }
   }
   return corrections;
@@ -722,9 +723,10 @@ export function applySemanticChoiceFindings(markdown, findings, baselineMarkdown
       continue;
     }
     for (let question = range.start; question <= range.end; question += 1) {
-      const answer = corrections.get(question);
-      if (answer) {
-        current[question - range.start] = answer;
+      const correction = corrections.get(question);
+      const currentAnswer = current[question - range.start];
+      if (correction && currentAnswer === correction.candidate) {
+        current[question - range.start] = correction.answer;
         applied.push(question);
       }
     }
