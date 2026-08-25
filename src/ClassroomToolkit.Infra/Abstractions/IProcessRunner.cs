@@ -6,7 +6,8 @@ public interface IProcessRunner
         string fileName,
         IReadOnlyList<string> arguments,
         string workingDirectory,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        TimeSpan? timeout = null);
 }
 
 public sealed record ProcessRunResult(

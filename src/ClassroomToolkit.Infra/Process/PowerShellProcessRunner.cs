@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using ClassroomToolkit.Infra.Abstractions;
@@ -10,7 +11,8 @@ public sealed class PowerShellProcessRunner : IProcessRunner
         string fileName,
         IReadOnlyList<string> arguments,
         string workingDirectory,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        TimeSpan? timeout = null)
     {
         var start = DateTimeOffset.Now;
         var startInfo = new ProcessStartInfo
@@ -34,12 +36,28 @@ public sealed class PowerShellProcessRunner : IProcessRunner
 
         using var process = new System.Diagnostics.Process { StartInfo = startInfo };
         cancellationToken.ThrowIfCancellationRequested();
-        if (!process.Start())
+        try
         {
-            throw new InvalidOperationException($"Failed to start process: {fileName}");
+            if (!process.Start())
+            {
+                throw new InvalidOperationException($"Failed to start process: {fileName}");
+            }
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode is 2 or 3)
+        {
+            // A missing pwsh/node is the most likely teacher-machine failure; turn the
+            // bare Win32 error into an actionable diagnostic instead of a crash.
+            throw new InvalidOperationException(
+                $"未找到可执行文件 {fileName}（Win32 错误 {ex.NativeErrorCode}）。"
+                + "请先安装它并确认已加入 PATH（pwsh 需要 PowerShell 7+，node 需要 Node.js 18+）。",
+                ex);
         }
 
-        using var registration = cancellationToken.Register(() =>
+        using var timeoutCts = timeout is null ? null : new CancellationTokenSource(timeout.Value);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            timeoutCts?.Token ?? CancellationToken.None);
+        using var registration = linkedCts.Token.Register(() =>
         {
             if (!process.HasExited)
             {
@@ -56,8 +74,22 @@ public sealed class PowerShellProcessRunner : IProcessRunner
 
         var standardOutputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
         var standardErrorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        try
+        {
+            await process.WaitForExitAsync(linkedCts.Token);
+        }
+        catch (OperationCanceledException) when (IsTimeout())
+        {
+            throw TimeoutException();
+        }
 
-        await process.WaitForExitAsync(cancellationToken);
+        if (IsTimeout())
+        {
+            // The kill can race ahead of the linked token: the process exited, but
+            // because the deadline passed, not because the work finished.
+            throw TimeoutException();
+        }
+
         var standardOutput = await standardOutputTask;
         var standardError = await standardErrorTask;
 
@@ -66,5 +98,13 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             standardOutput,
             standardError,
             DateTimeOffset.Now - start);
+
+        bool IsTimeout() =>
+            timeoutCts is not null
+            && timeoutCts.IsCancellationRequested
+            && !cancellationToken.IsCancellationRequested;
+
+        TimeoutException TimeoutException() => new(
+            $"Process exceeded the {timeout!.Value.TotalMinutes:0.#} minute limit and was terminated: {fileName}");
     }
 }

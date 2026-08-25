@@ -9,6 +9,12 @@ namespace ClassroomToolkit.App.Services;
 
 public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
 {
+    // Generous hang guards only: bootstrap installs SDKs over slow networks, Full
+    // checks run three-subject evals, and deliver drives a headless browser.
+    private static readonly TimeSpan BootstrapTimeout = TimeSpan.FromMinutes(45);
+    private static readonly TimeSpan CheckTimeout = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan DeliverTimeout = TimeSpan.FromMinutes(30);
+
     private readonly RepositoryRootResolver _repositoryRootResolver;
     private readonly IProcessRunner _processRunner;
 
@@ -106,7 +112,12 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             arguments.Add("--keep-review");
         }
 
-        var process = await _processRunner.RunAsync("node", arguments, workspace.RepositoryRoot, cancellationToken);
+        var process = await _processRunner.RunAsync(
+            "node",
+            arguments,
+            workspace.RepositoryRoot,
+            cancellationToken,
+            DeliverTimeout);
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(process.StandardOutput, process.StandardError);
         var execution = process.ExitCode == 0
@@ -255,7 +266,13 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             "pwsh",
             arguments,
             repositoryRoot,
-            cancellationToken);
+            cancellationToken,
+            kind switch
+            {
+                ToolchainScriptKind.Bootstrap => BootstrapTimeout,
+                ToolchainScriptKind.Check => CheckTimeout,
+                _ => DeliverTimeout
+            });
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(process.StandardOutput, process.StandardError);
         return process.ExitCode == 0

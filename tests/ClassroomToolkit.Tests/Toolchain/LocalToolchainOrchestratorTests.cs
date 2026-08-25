@@ -160,7 +160,7 @@ public sealed class LocalToolchainOrchestratorTests
         public string FileName { get; private set; } = string.Empty;
         public int CallCount { get; private set; }
 
-        public Task<ProcessRunResult> RunAsync(string fileName, IReadOnlyList<string> arguments, string workingDirectory, CancellationToken cancellationToken = default)
+        public Task<ProcessRunResult> RunAsync(string fileName, IReadOnlyList<string> arguments, string workingDirectory, CancellationToken cancellationToken = default, TimeSpan? timeout = null)
         {
             CallCount += 1;
             FileName = fileName;

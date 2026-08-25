@@ -18,6 +18,17 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void ConstructorDegradesToFallbackPack_WhenWorkspaceScanThrows()
+    {
+        var viewModel = new MainViewModel(new FakeOrchestrator(throwOnWorkspaceInfo: true), new FakePathOpener());
+
+        viewModel.SelectedSubjectPack.Should().Be("junior-physics-answer");
+        viewModel.AvailableSubjectPacks.Should().ContainSingle().Which.Should().Be("junior-physics-answer");
+        viewModel.ActivityLog.Should().Contain("工作区扫描失败");
+        viewModel.StatusMessage.Should().Contain("健康检查失败");
+    }
+
+    [Fact]
     public void SelectingSubjectPackRefreshesItsHealthStatus()
     {
         var orchestrator = new FakeOrchestrator();
@@ -84,23 +95,38 @@ public sealed class MainViewModelTests
     {
         private readonly bool _blockCheck;
         private readonly string _checkOutput;
+        private readonly bool _throwOnWorkspaceInfo;
 
-        public FakeOrchestrator(bool blockCheck = false, string checkOutput = "ok")
+        public FakeOrchestrator(bool blockCheck = false, string checkOutput = "ok", bool throwOnWorkspaceInfo = false)
         {
             _blockCheck = blockCheck;
             _checkOutput = checkOutput;
+            _throwOnWorkspaceInfo = throwOnWorkspaceInfo;
         }
 
         public AnswerDeliveryRequest? LastDeliveryRequest { get; private set; }
         public string? LastHealthSubjectPack { get; private set; }
         public TaskCompletionSource CheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public ToolchainWorkspaceInfo GetWorkspaceInfo() => new(
-            @"D:\repo", @"D:\repo\scripts\bootstrap.ps1", @"D:\repo\scripts\check-toolchain.ps1",
-            true, true, "junior-physics-answer", ["junior-physics-answer", "math-answer"]);
+        public ToolchainWorkspaceInfo GetWorkspaceInfo()
+        {
+            if (_throwOnWorkspaceInfo)
+            {
+                throw new IOException("prompts 目录被占用");
+            }
+
+            return new(
+                @"D:\repo", @"D:\repo\scripts\bootstrap.ps1", @"D:\repo\scripts\check-toolchain.ps1",
+                true, true, "junior-physics-answer", ["junior-physics-answer", "math-answer"]);
+        }
 
         public WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null)
         {
+            if (_throwOnWorkspaceInfo)
+            {
+                throw new IOException("prompts 目录被占用");
+            }
+
             LastHealthSubjectPack = subjectPack;
             var selected = subjectPack ?? "junior-physics-answer";
             return new(

@@ -13,6 +13,7 @@ namespace ClassroomToolkit.App.ViewModels;
 public partial class MainViewModel : ObservableObject, IDisposable
 {
     private const int MaxActivityLogCharacters = 64 * 1024;
+    private const string FallbackSubjectPack = "junior-physics-answer";
     private readonly IToolchainOrchestrator _toolchainOrchestrator;
     private readonly IPathOpener _pathOpener;
     private readonly StringBuilder _activityLog = new();
@@ -25,16 +26,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
         AvailableSubjectPacks = new ObservableCollection<string>();
         StatusCards = new ObservableCollection<StatusCardViewModel>();
 
-        var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
-        foreach (var subjectPack in workspace.SubjectPacks)
+        // A locked or damaged prompts/ tree must degrade to the default pack view
+        // instead of crashing application startup.
+        try
         {
-            AvailableSubjectPacks.Add(subjectPack);
+            var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
+            foreach (var subjectPack in workspace.SubjectPacks)
+            {
+                AvailableSubjectPacks.Add(subjectPack);
+            }
+            SelectedSubjectPack = workspace.PrimarySubjectPack ?? DefaultSubjectPackFallback();
         }
-        if (AvailableSubjectPacks.Count == 0)
+        catch (Exception ex)
         {
-            AvailableSubjectPacks.Add("junior-physics-answer");
+            AppendLog($"工作区扫描失败：{ex.Message}");
+            SelectedSubjectPack = DefaultSubjectPackFallback();
         }
-        SelectedSubjectPack = workspace.PrimarySubjectPack ?? AvailableSubjectPacks[0];
 
         RefreshHealth();
     }
@@ -62,6 +69,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string lastDeliveryManifestPath = string.Empty;
     [ObservableProperty] private string lastReviewDirectoryPath = string.Empty;
     [ObservableProperty] private string lastSnapshotId = string.Empty;
+
+    private string DefaultSubjectPackFallback()
+    {
+        if (AvailableSubjectPacks.Count == 0)
+        {
+            AvailableSubjectPacks.Add(FallbackSubjectPack);
+        }
+        return AvailableSubjectPacks[0];
+    }
 
     private bool CanDeliver() => !IsBusy && File.Exists(SelectedAnswerMarkdownPath);
     private bool CanRunToolchain() => !IsBusy;
