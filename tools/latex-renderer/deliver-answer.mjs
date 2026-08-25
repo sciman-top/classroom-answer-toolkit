@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
+import { parseArgvFlags } from "../shared.mjs";
 import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -39,84 +40,31 @@ function resolveToolScript(scriptFileName) {
 }
 
 function parseArgs(argv) {
-  const positional = [];
-  const options = {
-    profile: null,
-    snapshotPath: null,
-    keepReview: false,
-    keepOcr: false,
-    reviewScale: "2",
-    skipValidate: false,
-    subjectPack: getDefaultSubjectPack()
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--help" || arg === "-h") {
-      options.help = true;
-      continue;
-    }
-
-    if (arg === "--keep-review") {
-      options.keepReview = true;
-      continue;
-    }
-
-    if (arg === "--skip-validate") {
-      options.skipValidate = true;
-      continue;
-    }
-
-    if (arg === "--keep-ocr") {
-      options.keepOcr = true;
-      continue;
-    }
-
-    if (arg === "--profile") {
-      options.profile = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--profile=")) {
-      options.profile = arg.slice("--profile=".length);
-      continue;
-    }
-
-    if (arg === "--snapshot-path") {
-      options.snapshotPath = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--snapshot-path=")) {
-      options.snapshotPath = arg.slice("--snapshot-path=".length);
-      continue;
-    }
-
-    if (arg === "--review-scale") {
-      options.reviewScale = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--review-scale=")) {
-      options.reviewScale = arg.slice("--review-scale=".length);
-      continue;
-    }
-
-    if (arg === "--subject-pack") {
-      options.subjectPack = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--subject-pack=")) {
-      options.subjectPack = arg.slice("--subject-pack=".length);
-      continue;
-    }
-
-    positional.push(arg);
-  }
-
-  return { positional, options };
+  return parseArgvFlags(argv, {
+    stringFlags: {
+      profile: true,
+      "snapshot-path": "snapshotPath",
+      "review-scale": "reviewScale",
+      "subject-pack": true
+    },
+    booleanFlags: {
+      "keep-review": "keepReview",
+      "keep-ocr": "keepOcr",
+      "skip-validate": "skipValidate"
+    },
+    defaults: {
+      profile: null,
+      snapshotPath: null,
+      keepReview: false,
+      keepOcr: false,
+      reviewScale: "2",
+      skipValidate: false,
+      subjectPack: getDefaultSubjectPack()
+    },
+    help: true,
+    unknownFlag: "positional",
+    positional: true
+  });
 }
 
 const childStepTimeoutMs = 10 * 60 * 1000;

@@ -1,7 +1,7 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { parseArgvFlags, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
@@ -16,41 +16,11 @@ function fail(message, code = 2) {
 }
 
 function parseArgs(argv) {
-  const options = {
-    manifest: null,
-    schema: defaultSchemaPath
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--help" || arg === "-h") {
-      options.help = true;
-      continue;
-    }
-
-    if (arg === "--manifest") {
-      options.manifest = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--manifest=")) {
-      options.manifest = arg.slice("--manifest=".length);
-      continue;
-    }
-
-    if (arg === "--schema") {
-      options.schema = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--schema=")) {
-      options.schema = arg.slice("--schema=".length);
-      continue;
-    }
-  }
-
-  return options;
+  return parseArgvFlags(argv, {
+    stringFlags: { manifest: true, schema: true },
+    defaults: { manifest: null, schema: defaultSchemaPath },
+    help: true
+  });
 }
 
 function resolveManifestRelativePath(filePath, manifestDir) {
@@ -132,7 +102,7 @@ function validateFileIntegrity(errors, entry, expectedPath, label, manifestDir) 
     errors.push(`integrity.${label}.bytes does not match the current file.`);
   }
 
-  const sha256 = crypto.createHash("sha256").update(bytes).digest("hex");
+  const sha256 = sha256Hex(bytes);
   if (entry.sha256 !== sha256) {
     errors.push(`integrity.${label}.sha256 does not match the current file.`);
   }

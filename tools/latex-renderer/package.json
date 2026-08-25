@@ -11,7 +11,7 @@
     "test:delivery-contract": "node --test validate-delivery-manifest.test.mjs",
     "test:eval-runtime": "node --test eval-answer-fixtures.test.mjs",
     "render": "node render-md-latex.mjs",
-    "test:output-path": "node --test pdf-output-path.test.mjs focus-region-spec.test.mjs analog-meter-reading.test.mjs linear-scale-reading.test.mjs optical-ray-geometry.test.mjs",
+    "test:output-path": "node --test ../shared.test.mjs pdf-output-path.test.mjs focus-region-spec.test.mjs analog-meter-reading.test.mjs linear-scale-reading.test.mjs optical-ray-geometry.test.mjs",
     "test:render": "node --test render-md-latex.test.mjs validate-answer-markdown.test.mjs",
     "review-source-pdf": "node review-source-pdf.mjs",
     "validate:answer": "node validate-answer-markdown.mjs",

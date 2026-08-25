@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { deepMerge } from "../shared.mjs";
 import { createSnapshotId, getDefaultSubjectPackName, listJsonFiles, normalizeSubjectPackName, readJsonFile, resolveRepoPath, writeJsonFile } from "./shared.mjs";
 
 export function loadRulePackFiles(directoryRelativePath) {
@@ -48,29 +49,6 @@ export function mergeProfiles(profileFiles) {
   }
 
   return { profilesByPath, aliases };
-}
-
-function deepMerge(base, override) {
-  if (!override || typeof override !== "object" || Array.isArray(override)) {
-    return base;
-  }
-
-  const merged = { ...base };
-  for (const [key, value] of Object.entries(override)) {
-    if (
-      value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      base[key] &&
-      typeof base[key] === "object" &&
-      !Array.isArray(base[key])
-    ) {
-      merged[key] = deepMerge(base[key], value);
-    } else {
-      merged[key] = value;
-    }
-  }
-  return merged;
 }
 
 function listProfileFiles(directoryPath) {

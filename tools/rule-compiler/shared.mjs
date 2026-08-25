@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
+
+import { writeTextFileAtomic } from "../atomic-write.mjs";
+import { sha256Hex } from "../shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -31,8 +33,7 @@ export function readJsonFile(filePath) {
 }
 
 export function writeJsonFile(filePath, value) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  writeTextFileAtomic(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 export function stableStringify(value) {
@@ -57,7 +58,7 @@ export function stableStringify(value) {
 }
 
 export function createSnapshotId(payload) {
-  return `snapshot-${crypto.createHash("sha256").update(stableStringify(payload)).digest("hex").slice(0, 16)}`;
+  return `snapshot-${sha256Hex(stableStringify(payload)).slice(0, 16)}`;
 }
 
 export function readJsonIfExists(filePath) {

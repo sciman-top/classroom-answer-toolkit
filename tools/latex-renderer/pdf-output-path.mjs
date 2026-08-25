@@ -1,6 +1,7 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+
+import { sha256Hex } from "../shared.mjs";
 
 function sanitizeToken(value) {
   const token = String(value ?? "")
@@ -20,11 +21,7 @@ export function makeBrowserPdfOutputPath(outputPath, token = `${process.pid}-${D
 }
 
 export function makeRenderTempHtmlPath(outputPath, token = `${process.pid}-${Date.now()}`) {
-  const outputKey = crypto
-    .createHash("sha256")
-    .update(path.resolve(outputPath).toLowerCase())
-    .digest("hex")
-    .slice(0, 16);
+  const outputKey = sha256Hex(path.resolve(outputPath).toLowerCase()).slice(0, 16);
   return path.join(path.dirname(outputPath), `.classroom-toolkit-render-${outputKey}-${sanitizeToken(token)}.html`);
 }
 
@@ -35,11 +32,7 @@ export function makeReviewOutputDir(repositoryRoot, outputPath) {
   const isExternal = path.isAbsolute(relativeOutput)
     || relativeOutput === ".."
     || relativeOutput.startsWith(`..${path.sep}`);
-  const outputKey = crypto
-    .createHash("sha256")
-    .update(resolvedOutput.toLowerCase())
-    .digest("hex")
-    .slice(0, 16);
+  const outputKey = sha256Hex(resolvedOutput.toLowerCase()).slice(0, 16);
   const parent = path.dirname(relativeOutput);
   const flattenedParent = parent === "."
     ? ""

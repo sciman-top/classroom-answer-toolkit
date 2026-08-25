@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { removePathRecursive } from "../safe-remove.mjs";
+import { parseArgvFlags } from "../shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -23,39 +24,14 @@ Behavior:
 `;
 
 function parseArgs(argv) {
-  const options = {
-    dryRun: false,
-    keepReview: false,
-    keepOcr: false,
-    extraPaths: []
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--help" || arg === "-h") {
-      options.help = true;
-      continue;
-    }
-
-    if (arg === "--dry-run") {
-      options.dryRun = true;
-      continue;
-    }
-
-    if (arg === "--keep-review") {
-      options.keepReview = true;
-      continue;
-    }
-
-    if (arg === "--keep-ocr") {
-      options.keepOcr = true;
-      continue;
-    }
-
-    options.extraPaths.push(arg);
-  }
-
+  const { options, positional } = parseArgvFlags(argv, {
+    booleanFlags: { "dry-run": "dryRun", "keep-review": "keepReview", "keep-ocr": "keepOcr" },
+    defaults: { dryRun: false, keepReview: false, keepOcr: false },
+    help: true,
+    unknownFlag: "positional",
+    positional: true
+  });
+  options.extraPaths = positional;
   return options;
 }
 

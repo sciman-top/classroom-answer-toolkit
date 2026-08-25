@@ -1,6 +1,9 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+
+import { sha256File } from "../shared.mjs";
+
+export { sha256File };
 
 const ROOT_FIELDS = new Set(["schemaVersion", "sourcePdfSha256", "regions"]);
 const REGION_FIELDS = new Set([
@@ -185,10 +188,6 @@ function parseOpticalRay(value, regionId) {
     lineHalfWidth: value.lineHalfWidth ?? 0.004,
     darkThreshold: value.darkThreshold ?? 90
   };
-}
-
-export function sha256File(filePath) {
-  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
 }
 
 export function parseFocusRegionSpec(value, { sourcePdfSha256 } = {}) {

@@ -9,6 +9,7 @@ import { chromium } from "playwright-core";
 import { analyzeAnalogMeterCanvas } from "./analog-meter-reading.mjs";
 import { analyzeLinearScaleCanvas } from "./linear-scale-reading.mjs";
 import { analyzeOpticalRayCanvas } from "./optical-ray-geometry.mjs";
+import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 import { loadFocusRegionSpec, resolveFocusRegionPixels } from "./focus-region-spec.mjs";
 
 const require = createRequire(import.meta.url);
@@ -97,15 +98,6 @@ const restrictedPorts = new Set([
   6697,
   10080
 ]);
-
-const browserCandidates = [
-  process.env.CLASSROOM_TOOLKIT_BROWSER_PATH,
-  path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-];
 
 const usage = `Usage:
   npm run review-source-pdf -- <input.pdf> [--out <dir>] [--pages all|1,3,5-7,last] [--scale 1.8] [--vertical-tiles 2] [--question-regions] [--horizontal-tiles 2] [--tile-overlap 0.15] [--focus-regions-file <regions.json>] [--ocr chi_sim]
@@ -533,7 +525,7 @@ async function main() {
     : makeDefaultOutputDir(inputPath);
   fs.mkdirSync(outputDir, { recursive: true });
 
-  const browserPath = browserCandidates.find((candidate) => candidate && fs.existsSync(candidate));
+  const browserPath = resolveLocalBrowserPath();
   const sharedBrowserWsEndpoint = process.env.CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT?.trim() || null;
   if (!sharedBrowserWsEndpoint && !browserPath) {
     fail("No local Chromium, Chrome, or Edge executable found for PDF source review.", 3);

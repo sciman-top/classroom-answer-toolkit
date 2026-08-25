@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import katex from "katex";
+import { parseArgvFlags } from "../shared.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const usage = `Usage:
@@ -23,55 +24,13 @@ function fail(message, code = 2) {
 }
 
 function parseArgs(argv) {
-  const positional = [];
-  const options = {
-    profile: null,
-    snapshot: null,
-    subjectPack: getDefaultSubjectPack()
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--help" || arg === "-h") {
-      options.help = true;
-      continue;
-    }
-
-    if (arg === "--profile") {
-      options.profile = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--profile=")) {
-      options.profile = arg.slice("--profile=".length);
-      continue;
-    }
-
-    if (arg === "--snapshot") {
-      options.snapshot = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--snapshot=")) {
-      options.snapshot = arg.slice("--snapshot=".length);
-      continue;
-    }
-
-    if (arg === "--subject-pack") {
-      options.subjectPack = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--subject-pack=")) {
-      options.subjectPack = arg.slice("--subject-pack=".length);
-      continue;
-    }
-
-    positional.push(arg);
-  }
-
-  return { positional, options };
+  return parseArgvFlags(argv, {
+    stringFlags: { profile: true, snapshot: true, "subject-pack": true },
+    defaults: { profile: null, snapshot: null, subjectPack: getDefaultSubjectPack() },
+    help: true,
+    unknownFlag: "positional",
+    positional: true
+  });
 }
 
 function countCjkCharacters(text) {

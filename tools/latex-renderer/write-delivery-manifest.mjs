@@ -1,8 +1,8 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
+import { parseArgvFlags, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
@@ -11,84 +11,26 @@ const repoRoot = path.resolve(toolDir, "..", "..");
 const deliveryManifestSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
 
 function parseArgs(argv) {
-  const options = {
-    input: null,
-    output: null,
-    snapshotPath: null,
-    reviewDir: null,
-    reviewManifestPath: null,
-    reviewScale: null,
-    out: null
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--input") {
-      options.input = argv[++index];
-      continue;
+  return parseArgvFlags(argv, {
+    stringFlags: {
+      input: true,
+      output: true,
+      "snapshot-path": "snapshotPath",
+      "review-dir": "reviewDir",
+      "review-manifest": "reviewManifestPath",
+      "review-scale": "reviewScale",
+      out: true
+    },
+    defaults: {
+      input: null,
+      output: null,
+      snapshotPath: null,
+      reviewDir: null,
+      reviewManifestPath: null,
+      reviewScale: null,
+      out: null
     }
-    if (arg.startsWith("--input=")) {
-      options.input = arg.slice("--input=".length);
-      continue;
-    }
-
-    if (arg === "--output") {
-      options.output = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--output=")) {
-      options.output = arg.slice("--output=".length);
-      continue;
-    }
-
-    if (arg === "--snapshot-path") {
-      options.snapshotPath = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--snapshot-path=")) {
-      options.snapshotPath = arg.slice("--snapshot-path=".length);
-      continue;
-    }
-
-    if (arg === "--review-dir") {
-      options.reviewDir = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--review-dir=")) {
-      options.reviewDir = arg.slice("--review-dir=".length);
-      continue;
-    }
-
-    if (arg === "--review-manifest") {
-      options.reviewManifestPath = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--review-manifest=")) {
-      options.reviewManifestPath = arg.slice("--review-manifest=".length);
-      continue;
-    }
-
-    if (arg === "--review-scale") {
-      options.reviewScale = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--review-scale=")) {
-      options.reviewScale = arg.slice("--review-scale=".length);
-      continue;
-    }
-
-    if (arg === "--out") {
-      options.out = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--out=")) {
-      options.out = arg.slice("--out=".length);
-      continue;
-    }
-  }
-
-  return options;
+  });
 }
 
 function fail(message, code = 2) {
@@ -178,7 +120,7 @@ function createFileIntegrity(filePath) {
   return {
     path: filePath,
     bytes: bytes.byteLength,
-    sha256: crypto.createHash("sha256").update(bytes).digest("hex")
+    sha256: sha256Hex(bytes)
   };
 }
 

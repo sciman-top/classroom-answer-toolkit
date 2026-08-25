@@ -5,64 +5,24 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
+import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 import {
   commitBrowserPdfOutput,
   makeBrowserPdfOutputPath,
   makeRenderTempHtmlPath
 } from "./pdf-output-path.mjs";
 import { loadRenderProfile } from "./render-profiles.mjs";
+import { parseArgvFlags } from "../shared.mjs";
 import { getDefaultSubjectPack, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 function parseArgs(argv) {
-  const positional = [];
-  const options = {
-    profile: null,
-    snapshot: null,
-    subjectPack: getDefaultSubjectPack()
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--help" || arg === "-h") {
-      options.help = true;
-      continue;
-    }
-
-    if (arg === "--profile") {
-      options.profile = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--profile=")) {
-      options.profile = arg.slice("--profile=".length);
-      continue;
-    }
-
-    if (arg === "--snapshot") {
-      options.snapshot = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--snapshot=")) {
-      options.snapshot = arg.slice("--snapshot=".length);
-      continue;
-    }
-
-    if (arg === "--subject-pack") {
-      options.subjectPack = argv[++index];
-      continue;
-    }
-
-    if (arg.startsWith("--subject-pack=")) {
-      options.subjectPack = arg.slice("--subject-pack=".length);
-      continue;
-    }
-
-    positional.push(arg);
-  }
-
-  return { positional, options };
+  return parseArgvFlags(argv, {
+    stringFlags: { profile: true, snapshot: true, "subject-pack": true },
+    defaults: { profile: null, snapshot: null, subjectPack: getDefaultSubjectPack() },
+    help: true,
+    unknownFlag: "positional",
+    positional: true
+  });
 }
 
 const { positional, options } = parseArgs(process.argv.slice(2));
@@ -100,16 +60,7 @@ const snapshot = loadRequiredResolvedSnapshot(
 const renderProfile = loadRenderProfile(options.profile, snapshot);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
-const browserCandidates = [
-  process.env.CLASSROOM_TOOLKIT_BROWSER_PATH,
-  path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-];
-
-const browserPath = browserCandidates.find((candidate) => candidate && fs.existsSync(candidate));
+const browserPath = resolveLocalBrowserPath();
 const sharedBrowserWsEndpoint = process.env.CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT?.trim() || null;
 if (!sharedBrowserWsEndpoint && !browserPath) {
   console.error("No local Chromium, Chrome, or Edge executable found for PDF rendering.");

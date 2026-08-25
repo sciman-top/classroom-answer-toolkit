@@ -2,38 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { parseArgvFlags } from "../shared.mjs";
+
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
 const assembliesRoot = path.join(repoRoot, "prompts", "specs", "assemblies");
 
 function parseArgs(argv) {
-  const options = {
-    all: false,
-    assembly: null,
-    check: false
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--all") {
-      options.all = true;
-      continue;
-    }
-    if (arg === "--assembly") {
-      options.assembly = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--assembly=")) {
-      options.assembly = arg.slice("--assembly=".length);
-      continue;
-    }
-    if (arg === "--check") {
-      options.check = true;
-      continue;
-    }
-  }
-
-  return options;
+  return parseArgvFlags(argv, {
+    stringFlags: { assembly: true },
+    booleanFlags: { all: true, check: true },
+    defaults: { all: false, assembly: null, check: false }
+  });
 }
 
 function normalizeNewlines(text) {

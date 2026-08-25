@@ -1,3 +1,4 @@
+import { deepMerge } from "../shared.mjs";
 import { getSnapshotActiveProfile, listSnapshotProfileNames } from "./runtime-config.mjs";
 
 const fallbackRenderProfile = {
@@ -33,29 +34,6 @@ const fallbackRenderProfile = {
     maxPlainTextCjkPerLine: 24
   }
 };
-
-function deepMerge(base, override) {
-  if (!override || typeof override !== "object" || Array.isArray(override)) {
-    return base;
-  }
-
-  const merged = { ...base };
-  for (const [key, value] of Object.entries(override)) {
-    if (
-      value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      base[key] &&
-      typeof base[key] === "object" &&
-      !Array.isArray(base[key])
-    ) {
-      merged[key] = deepMerge(base[key], value);
-    } else {
-      merged[key] = value;
-    }
-  }
-  return merged;
-}
 
 export function loadRenderProfile(profileNameOrPath, snapshot = null) {
   if (!snapshot) {

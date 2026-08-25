@@ -4,6 +4,8 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
+import { parseArgvFlags } from "../shared.mjs";
+import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -15,32 +17,10 @@ function fail(message, code = 2) {
 }
 
 function parseArgs(argv) {
-  const options = {
-    subjectPack: getDefaultSubjectPackName(),
-    dataset: null
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--subject-pack") {
-      options.subjectPack = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--subject-pack=")) {
-      options.subjectPack = arg.slice("--subject-pack=".length);
-      continue;
-    }
-    if (arg === "--dataset") {
-      options.dataset = argv[++index];
-      continue;
-    }
-    if (arg.startsWith("--dataset=")) {
-      options.dataset = arg.slice("--dataset=".length);
-      continue;
-    }
-  }
-
-  return options;
+  return parseArgvFlags(argv, {
+    stringFlags: { "subject-pack": true, dataset: true },
+    defaults: { subjectPack: getDefaultSubjectPackName(), dataset: null }
+  });
 }
 
 function runValidator(relativeInputPath, profile, snapshotRelativePath, subjectPack) {
@@ -94,16 +74,7 @@ function runNodeTool(scriptFileName, args, options = {}) {
 }
 
 function resolveBrowserPath() {
-  const candidates = [
-    process.env.CLASSROOM_TOOLKIT_BROWSER_PATH,
-    path.join(process.env.LOCALAPPDATA ?? "", "Chromium", "Application", "chrome.exe"),
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
-  ];
-
-  return candidates.find((candidate) => candidate && fs.existsSync(candidate)) ?? null;
+  return resolveLocalBrowserPath();
 }
 
 function sameStringSet(expectedValues, actualValues) {

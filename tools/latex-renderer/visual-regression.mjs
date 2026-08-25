@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { parseArgvFlags } from "../shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -16,32 +17,16 @@ function fail(message, code = 2) {
 }
 
 function parseArgs(argv) {
-  const positional = [];
-  const options = {
-    maxDiffRatio: 0.005
-  };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--help" || arg === "-h") {
-      options.help = true;
-      continue;
-    }
-
-    if (arg === "--max-diff-ratio") {
-      options.maxDiffRatio = Number(argv[++index]);
-      continue;
-    }
-
-    if (arg.startsWith("--max-diff-ratio=")) {
-      options.maxDiffRatio = Number(arg.slice("--max-diff-ratio=".length));
-      continue;
-    }
-
-    positional.push(arg);
+  const { options, positional } = parseArgvFlags(argv, {
+    stringFlags: { "max-diff-ratio": "maxDiffRatio" },
+    defaults: { maxDiffRatio: 0.005 },
+    help: true,
+    unknownFlag: "positional",
+    positional: true
+  });
+  if (typeof options.maxDiffRatio === "string") {
+    options.maxDiffRatio = Number(options.maxDiffRatio);
   }
-
   return { positional, options };
 }
 

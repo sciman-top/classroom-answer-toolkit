@@ -1,14 +1,11 @@
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { sha256Hex as sha256 } from "../shared.mjs";
+
 function normalize(value) {
   return String(value).replace(/\r\n?/g, "\n").trimEnd();
-}
-
-function sha256(value) {
-  return crypto.createHash("sha256").update(value).digest("hex");
 }
 
 export function lineDiff(before, after) {
