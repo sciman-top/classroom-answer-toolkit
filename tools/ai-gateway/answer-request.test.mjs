@@ -156,12 +156,12 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
     CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_TEXT_MODEL: "gpt-5.6-sol",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "high",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "medium",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_INHERIT_PRIMARY: "true",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_BASE_URL: "https://stale.example.com/v1",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_API_KEY: "stale-key",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-5.6-sol",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "medium",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-5.6-terra",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "xhigh",
     CLASSROOM_TOOLKIT_AI_FALLBACK_3_TEXT_MODEL: "gpt-5.6-terra",
     CLASSROOM_TOOLKIT_AI_FALLBACK_3_REASONING_EFFORT: "high"
   });
@@ -171,8 +171,8 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
     aiProviders.map(({ role, textModel, reasoningEffort }) => ({ role, textModel, reasoningEffort })),
     [
       { role: "primary", textModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-      { role: "fallback_1", textModel: "gpt-5.6-sol", reasoningEffort: "high" },
-      { role: "fallback_2", textModel: "gpt-5.6-sol", reasoningEffort: "medium" },
+      { role: "fallback_1", textModel: "gpt-5.6-sol", reasoningEffort: "medium" },
+      { role: "fallback_2", textModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
       { role: "fallback_3", textModel: "gpt-5.6-terra", reasoningEffort: "high" }
     ]
   );
@@ -252,20 +252,19 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
   }
 });
 
-test("blind solving orders only gpt-5.6-sol xhigh, high, and medium tiers", () => {
+test("quality profiles select only their exact configured model and effort", () => {
   const providers = [
     { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
     { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
     { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_4", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" }
+    { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" }
   ];
-  const route = selectAnswerRoute({ providers }, "blind_generation", "all");
-  assert.deepEqual(route.orderedRoles, ["primary", "fallback_1", "fallback_2"]);
-  assert.equal(route.providers[0].visionModel, "gpt-5.6-sol");
-  assert.equal(route.providers[0].reasoningEffort, "xhigh");
-  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback").orderedRoles, ["fallback_1", "fallback_2"]);
-  assert.deepEqual(selectAnswerRoute({ providers }, "semantic_review_findings", "all").orderedRoles, ["primary", "fallback_1", "fallback_2"]);
+  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "all").orderedRoles, ["primary"]);
+  assert.equal(selectAnswerRoute({ providers }, "blind_generation", "all").qualityProfile, "sol-xhigh");
+  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "all", "sol-medium").orderedRoles, ["fallback_2"]);
+  assert.deepEqual(selectAnswerRoute({ providers }, "visual_audit_findings", "all", "terra-xhigh").orderedRoles, ["fallback_1"]);
+  assert.deepEqual(selectAnswerRoute({ providers }, "reference_review", "all", "terra-high").orderedRoles, ["fallback_3"]);
+  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback", "sol-xhigh").orderedRoles, []);
 });
 
 test("semantic findings and merge prompts create an observable no-reference review gate", () => {
@@ -385,18 +384,18 @@ function createConfig(surface = "responses") {
         role: "primary",
         baseUrl: "https://primary.example.com/v1",
         apiKey: "primary-key",
-        visionModel: "gpt-5",
+        visionModel: "gpt-5.6-sol",
         visionSurface: surface,
-        reasoningEffort: "medium"
+        reasoningEffort: "xhigh"
       },
       {
         lane: "ai",
         role: "fallback_1",
         baseUrl: "https://fallback.example.com/v1",
         apiKey: "fallback-key",
-        visionModel: "gpt-5",
+        visionModel: "gpt-5.6-sol",
         visionSurface: surface,
-        reasoningEffort: "medium"
+        reasoningEffort: "xhigh"
       }
     ]
   };
@@ -427,16 +426,16 @@ test("responses request sends the full prompt followed by every ordered page ima
       maxOutputTokens: 16000
     });
 
-    assert.equal(body.model, "gpt-5");
+    assert.equal(body.model, "gpt-5.6-sol");
     assert.equal(body.max_output_tokens, 16000);
-    assert.deepEqual(body.reasoning, { effort: "medium" });
+    assert.deepEqual(body.reasoning, { effort: "xhigh" });
     assert.equal(body.input[0].content[0].type, "input_text");
     assert.match(body.input[0].content[0].text, /v8\.14/);
     assert.deepEqual(
       body.input[0].content.slice(1).map((part) => part.type),
       ["input_image", "input_image", "input_image"]
     );
-    assert.ok(body.input[0].content.slice(1).every((part) => part.detail === "high"));
+    assert.ok(body.input[0].content.slice(1).every((part) => part.detail === "original"));
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -452,7 +451,7 @@ test("request body records the provider-supported detail mode", () => {
       maxOutputTokens: 4000
     });
 
-    assert.equal(body.input[0].content[1].detail, "high");
+    assert.equal(body.input[0].content[1].detail, "original");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -470,7 +469,7 @@ test("chat completions request keeps page order and uses multimodal content", ()
     });
 
     assert.equal(body.max_tokens, 12000);
-    assert.equal(body.reasoning_effort, "medium");
+    assert.equal(body.reasoning_effort, "xhigh");
     assert.deepEqual(
       body.messages[0].content.map((part) => part.type),
       ["text", "image_url", "image_url"]
@@ -480,13 +479,13 @@ test("chat completions request keeps page order and uses multimodal content", ()
   }
 });
 
-test("reference review retries a retryable primary failure and returns fallback Markdown", async () => {
+test("reference review retries the same quality profile before using its matching fallback", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
   globalThis.fetch = async (url) => {
     calls.push(String(url));
-    if (String(url).startsWith("https://primary.example.com")) {
+    if (calls.length <= 2) {
       return new Response(JSON.stringify({ error: "temporary" }), { status: 502 });
     }
     return new Response(JSON.stringify({ output_text: "```markdown\n# 参考答案\n\n1. B\n```" }), { status: 200 });
@@ -508,34 +507,34 @@ test("reference review retries a retryable primary failure and returns fallback 
 
     assert.equal(result.ok, true);
     assert.equal(result.provider, "fallback_1");
-    assert.equal(result.reasoningEffort, "medium");
+    assert.equal(result.reasoningEffort, "xhigh");
     assert.equal(result.answerMarkdown, "# 参考答案\n\n1. B");
-    assert.equal(calls.length, 2);
+    assert.equal(calls.length, 3);
+    assert.equal(result.routing.qualityProfile, "sol-xhigh");
+    assert.equal(result.routing.qualityDegraded, false);
     assert.deepEqual(result.routing.orderedRoles, ["primary", "fallback_1"]);
+    assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 2, 1]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("reference review tries every configured AI tier in provider order", async () => {
+test("reference review uses an explicitly selected Terra profile without crossing to another tier", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
   globalThis.fetch = async (_url, request) => {
     const body = JSON.parse(request.body);
     calls.push({ model: body.model, effort: body.reasoning.effort });
-    if (calls.length < 4) {
-      return new Response(JSON.stringify({ error: "temporary" }), { status: 503 });
-    }
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
 
   const providers = [
     { role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
     { role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
-    { role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "high" }
+    { role: "fallback_2", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+    { role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ].map((provider) => ({
     lane: "ai",
     baseUrl: "https://primary.example.com/v1",
@@ -548,6 +547,7 @@ test("reference review tries every configured AI tier in provider order", async 
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
       allowCloudEgress: true,
       provider: "all",
+      qualityProfile: "terra-xhigh",
       mode: "reference_review",
       sourcePageCount: 8,
       referencePageCount: 8,
@@ -559,12 +559,9 @@ test("reference review tries every configured AI tier in provider order", async 
     });
 
     assert.equal(result.ok, true);
-    assert.equal(result.provider, "fallback_3");
+    assert.equal(result.provider, "fallback_2");
     assert.deepEqual(calls, [
-      { model: "gpt-5.6-sol", effort: "xhigh" },
-      { model: "gpt-5.6-sol", effort: "high" },
-      { model: "gpt-5.6-sol", effort: "medium" },
-      { model: "gpt-5.6-terra", effort: "high" }
+      { model: "gpt-5.6-terra", effort: "xhigh" }
     ]);
   } finally {
     globalThis.fetch = originalFetch;
@@ -680,7 +677,7 @@ test("failover reuses pre-encoded page images instead of reading them for every 
     });
 
     assert.equal(result.ok, true);
-    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.provider, "primary");
     assert.equal(callCount, 2);
   } finally {
     globalThis.fetch = originalFetch;
@@ -688,7 +685,7 @@ test("failover reuses pre-encoded page images instead of reading them for every 
   }
 });
 
-test("blind solving tries sol/xhigh, sol/high, and sol/medium once before failing closed", async () => {
+test("blind solving retries sol/xhigh twice and fails closed without a quality downgrade", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -717,17 +714,16 @@ test("blind solving tries sol/xhigh, sol/high, and sol/medium once before failin
     assert.equal(result.ok, false);
     assert.deepEqual(calls, [
       { model: "gpt-5.6-sol", effort: "xhigh" },
-      { model: "gpt-5.6-sol", effort: "high" },
-      { model: "gpt-5.6-sol", effort: "medium" }
+      { model: "gpt-5.6-sol", effort: "xhigh" }
     ]);
-    assert.deepEqual(result.routing.orderedRoles, ["primary", "fallback_1", "fallback_2"]);
+    assert.deepEqual(result.routing.orderedRoles, ["primary"]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("blind solving switches from xhigh to high after one headers timeout", async () => {
+test("blind solving retries sol/xhigh after one headers timeout", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -758,19 +754,19 @@ test("blind solving switches from xhigh to high after one headers timeout", asyn
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.reasoningEffort, "high");
+    assert.equal(result.reasoningEffort, "xhigh");
     assert.deepEqual(calls, [
       { url: "https://primary.example.com/v1/responses", effort: "xhigh" },
-      { url: "https://primary.example.com/v1/responses", effort: "high" }
+      { url: "https://primary.example.com/v1/responses", effort: "xhigh" }
     ]);
-    assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 1]);
+    assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 2]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("blind solving reaches medium only after xhigh and high retryable failures", async () => {
+test("blind solving does not reach sol-medium after sol-xhigh retryable failures", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -802,16 +798,15 @@ test("blind solving reaches medium only after xhigh and high retryable failures"
       maxOutputTokens: 1000,
       timeoutMs: 1000
     });
-    assert.equal(result.ok, true);
-    assert.equal(result.reasoningEffort, "medium");
-    assert.deepEqual(calls, ["xhigh", "high", "medium"]);
+    assert.equal(result.ok, false);
+    assert.deepEqual(calls, ["xhigh", "xhigh"]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("blind solving fails closed on a truncated responses payload and recovers on a lower tier", async () => {
+test("blind solving rejects a truncated payload and retries the same profile", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -848,8 +843,8 @@ test("blind solving fails closed on a truncated responses payload and recovers o
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.reasoningEffort, "high");
-    assert.deepEqual(calls, ["xhigh", "high"]);
+    assert.equal(result.reasoningEffort, "xhigh");
+    assert.deepEqual(calls, ["xhigh", "xhigh"]);
     assert.equal(result.attempts.length, 2);
     assert.match(result.attempts[0].error, /status=incomplete \(max_output_tokens\).*truncated/);
     assert.equal(result.attempts[0].ok, false);
@@ -898,7 +893,7 @@ test("chat completions finish_reason=length is rejected instead of delivered", a
   }
 });
 
-test("a 200 non-JSON body is retryable and failover continues to the next provider", async () => {
+test("a 200 non-JSON body is retryable and the same profile retries", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -913,8 +908,8 @@ test("a 200 non-JSON body is retryable and failover continues to the next provid
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" }
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
   ];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
@@ -928,7 +923,7 @@ test("a 200 non-JSON body is retryable and failover continues to the next provid
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.provider, "primary");
     assert.equal(result.attempts.length, 2);
     assert.equal(result.attempts[0].retryable, true);
     assert.match(result.attempts[0].error, /was not JSON/);
@@ -938,7 +933,7 @@ test("a 200 non-JSON body is retryable and failover continues to the next provid
   }
 });
 
-test("an empty 200 output is retryable and failover continues to the next provider", async () => {
+test("an empty 200 output is retryable and the same profile retries", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -950,8 +945,8 @@ test("an empty 200 output is retryable and failover continues to the next provid
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" }
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
   ];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
@@ -965,7 +960,7 @@ test("an empty 200 output is retryable and failover continues to the next provid
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.provider, "primary");
     assert.equal(result.attempts[0].ok, false);
     assert.equal(result.attempts[0].retryable, true);
     assert.match(result.attempts[0].error, /did not contain answer Markdown/);
@@ -975,7 +970,7 @@ test("an empty 200 output is retryable and failover continues to the next provid
   }
 });
 
-test("a 429 with Retry-After stays retryable and failover continues to the next provider", async () => {
+test("a 429 with Retry-After stays retryable and the same profile retries", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -990,8 +985,8 @@ test("a 429 with Retry-After stays retryable and failover continues to the next 
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "review-model", reasoningEffort: "high" }
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
   ];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
@@ -1005,7 +1000,7 @@ test("a 429 with Retry-After stays retryable and failover continues to the next 
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.provider, "primary");
     assert.equal(result.attempts[0].status, 429);
     assert.equal(result.attempts[0].retryable, true);
     assert.equal(result.attempts[0].retryAfterMs, 0);
@@ -1015,7 +1010,7 @@ test("a 429 with Retry-After stays retryable and failover continues to the next 
   }
 });
 
-test("reference review switches provider after one headers timeout", async () => {
+test("reference review retries the same provider after one headers timeout", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -1041,12 +1036,12 @@ test("reference review switches provider after one headers timeout", async () =>
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.provider, "fallback_1");
+    assert.equal(result.provider, "primary");
     assert.deepEqual(calls, [
-      { url: "https://primary.example.com/v1/responses", effort: "medium" },
-      { url: "https://fallback.example.com/v1/responses", effort: "medium" }
+      { url: "https://primary.example.com/v1/responses", effort: "xhigh" },
+      { url: "https://primary.example.com/v1/responses", effort: "xhigh" }
     ]);
-    assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 1]);
+    assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 2]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });

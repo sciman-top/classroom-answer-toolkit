@@ -75,6 +75,7 @@ Options:
   --output <path>           Markdown output path
   --summary-out <path>      Optional atomic JSON receipt for this generation stage
   --provider <target>       primary, fallback, or all; default all
+  --quality-profile <name>  auto, sol-xhigh, sol-medium, terra-xhigh, or terra-high; default auto
   --visual-detail <mode>    low, high, or original; default original
   --max-output-tokens <n>   Maximum answer tokens; default 24000
   --timeout-ms <ms>         Per-provider timeout; default 600000
@@ -100,6 +101,7 @@ function parseArgs(argv) {
     outputPath: null,
     summaryPath: null,
     provider: "all",
+    qualityProfile: "auto",
     visualDetailMode: "original",
     maxOutputTokens: 24000,
     timeoutMs: 600000,
@@ -230,6 +232,14 @@ function parseArgs(argv) {
       options.provider = arg.slice("--provider=".length);
       continue;
     }
+    if (arg === "--quality-profile") {
+      options.qualityProfile = requireValue(argv, ++index, arg);
+      continue;
+    }
+    if (arg.startsWith("--quality-profile=")) {
+      options.qualityProfile = arg.slice("--quality-profile=".length);
+      continue;
+    }
     if (arg === "--visual-detail") {
       options.visualDetailMode = requireValue(argv, ++index, arg);
       continue;
@@ -306,6 +316,9 @@ function validateOptions(options) {
   }
   if (!["primary", "fallback", "all"].includes(options.provider)) {
     throw new Error("--provider must be primary, fallback, or all.");
+  }
+  if (!QUALITY_PROFILE_NAMES.has(normalizeQualityProfile(options.qualityProfile))) {
+    throw new Error("--quality-profile must be auto, sol-xhigh, sol-medium, terra-xhigh, or terra-high.");
   }
   if (!["low", "high", "original"].includes(options.visualDetailMode)) {
     throw new Error("--visual-detail must be low, high, or original.");
@@ -835,8 +848,29 @@ const TASK_MODES = new Set([
   "reference_review"
 ]);
 
-const SOLVING_MODEL = "gpt-5.6-sol";
-const SOLVING_REASONING_EFFORTS = ["xhigh", "high", "medium"];
+const QUALITY_PROFILES = Object.freeze({
+  "sol-xhigh": Object.freeze({ model: "gpt-5.6-sol", reasoningEffort: "xhigh" }),
+  "sol-medium": Object.freeze({ model: "gpt-5.6-sol", reasoningEffort: "medium" }),
+  "terra-xhigh": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "xhigh" }),
+  "terra-high": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "high" })
+});
+const QUALITY_PROFILE_NAMES = new Set(["auto", ...Object.keys(QUALITY_PROFILES)]);
+const DEFAULT_QUALITY_PROFILE_BY_MODE = Object.freeze(Object.fromEntries(
+  [...TASK_MODES].map((mode) => [mode, "sol-xhigh"])
+));
+const RETRYABLE_ATTEMPTS_PER_PROVIDER = 2;
+
+function normalizeQualityProfile(value = "auto") {
+  return String(value).trim().toLowerCase();
+}
+
+function resolveQualityProfile(mode, requestedQualityProfile = "auto") {
+  const normalized = normalizeQualityProfile(requestedQualityProfile);
+  if (!QUALITY_PROFILE_NAMES.has(normalized)) {
+    throw new Error("qualityProfile must be auto, sol-xhigh, sol-medium, terra-xhigh, or terra-high.");
+  }
+  return normalized === "auto" ? DEFAULT_QUALITY_PROFILE_BY_MODE[mode] : normalized;
+}
 
 function inferAnswerMode(options = {}) {
   if (TASK_MODES.has(options.mode)) {
@@ -863,26 +897,23 @@ function inferAnswerMode(options = {}) {
   return "blind_generation";
 }
 
-export function selectAnswerRoute(config, modeOrOptions = {}, target = "all") {
+export function selectAnswerRoute(config, modeOrOptions = {}, target = "all", requestedQualityProfile = "auto") {
   const mode = typeof modeOrOptions === "string" ? modeOrOptions : inferAnswerMode(modeOrOptions);
-  const requiresSolvingModel = mode === "blind_generation"
-    || mode === "semantic_review_findings"
-    || mode === "semantic_review_merge";
+  const qualityProfile = resolveQualityProfile(mode, requestedQualityProfile);
+  const requiredProfile = QUALITY_PROFILES[qualityProfile];
   const providers = config.providers
     .filter((provider) => provider.lane === "ai")
-    .filter((provider) => !requiresSolvingModel
-      || (provider.visionModel === SOLVING_MODEL
-        && SOLVING_REASONING_EFFORTS.includes(provider.reasoningEffort)))
+    .filter((provider) => provider.visionModel === requiredProfile.model
+      && provider.reasoningEffort === requiredProfile.reasoningEffort)
     .filter((provider) => target === "all"
       || (target === "primary" && provider.role === "primary")
       || (target === "fallback" && provider.role.startsWith("fallback")))
-    .sort((left, right) => requiresSolvingModel
-      ? SOLVING_REASONING_EFFORTS.indexOf(left.reasoningEffort) - SOLVING_REASONING_EFFORTS.indexOf(right.reasoningEffort)
-        || providerOrder(left.role) - providerOrder(right.role)
-      : providerOrder(left.role) - providerOrder(right.role));
+    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
   return {
     mode,
     target,
+    qualityProfile,
+    qualityDegraded: false,
     selectedRole: providers[0]?.role ?? null,
     orderedRoles: providers.map((provider) => provider.role),
     providers
@@ -892,6 +923,8 @@ export function selectAnswerRoute(config, modeOrOptions = {}, target = "all") {
 function routingReceipt(route) {
   return {
     mode: route.mode,
+    qualityProfile: route.qualityProfile,
+    qualityDegraded: route.qualityDegraded,
     selectedRole: route.selectedRole,
     orderedRoles: route.orderedRoles,
     target: route.target
@@ -1097,13 +1130,10 @@ export async function requestAnswerWithFailover(config, options) {
   }
   const transportPolicy = configureAnswerTransport(options.timeoutMs);
   const mode = inferAnswerMode(options);
-  const route = selectAnswerRoute(config, mode, options.provider);
+  const route = selectAnswerRoute(config, mode, options.provider, options.qualityProfile);
   const providers = route.providers;
   if (providers.length === 0) {
-    if (mode === "blind_generation") {
-      throw new Error(`Blind answer generation requires ${SOLVING_MODEL}/${SOLVING_REASONING_EFFORTS.join(" or ")}; no matching ${options.provider ?? "all"} provider is configured.`);
-    }
-    throw new Error(`No ${options.provider ?? "all"} AI provider is configured for answer generation.`);
+    throw new Error(`No ${options.provider ?? "all"} AI provider is configured for quality profile ${route.qualityProfile}.`);
   }
 
   const attempts = [];
@@ -1113,34 +1143,38 @@ export async function requestAnswerWithFailover(config, options) {
     imageDataUrls: resolveImageDataUrls(options)
   };
   for (const provider of providers) {
-    const attempt = await callProvider(provider, { ...requestOptions, attemptNumber: 1 });
-    attempts.push(attempt);
-    if (attempt.ok) {
-      return {
-        ok: true,
-        provider: provider.role,
-        model: attempt.model,
-        reasoningEffort: attempt.reasoningEffort,
-        answerMarkdown: attempt.answerMarkdown,
-        attempts,
-        routing: routingReceipt(route)
-      };
-    }
-    if (!attempt.retryable) {
-      return {
-        ok: false,
-        provider: provider.role,
-        answerMarkdown: "",
-        attempts,
-        routing: routingReceipt(route),
-        error: attempt.error
-      };
-    }
-    const backoffMs = attempt.status === 429
-      ? (attempt.retryAfterMs > 0 ? attempt.retryAfterMs : defaultRateLimitBackoffMs)
-      : 0;
-    if (backoffMs > 0) {
-      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    for (let attemptNumber = 1; attemptNumber <= RETRYABLE_ATTEMPTS_PER_PROVIDER; attemptNumber += 1) {
+      const attempt = await callProvider(provider, { ...requestOptions, attemptNumber });
+      attempts.push(attempt);
+      if (attempt.ok) {
+        return {
+          ok: true,
+          provider: provider.role,
+          model: attempt.model,
+          reasoningEffort: attempt.reasoningEffort,
+          answerMarkdown: attempt.answerMarkdown,
+          attempts,
+          routing: routingReceipt(route)
+        };
+      }
+      if (!attempt.retryable) {
+        return {
+          ok: false,
+          provider: provider.role,
+          answerMarkdown: "",
+          attempts,
+          routing: routingReceipt(route),
+          error: attempt.error
+        };
+      }
+      if (attemptNumber < RETRYABLE_ATTEMPTS_PER_PROVIDER) {
+        const backoffMs = attempt.status === 429
+          ? (attempt.retryAfterMs > 0 ? attempt.retryAfterMs : defaultRateLimitBackoffMs)
+          : 0;
+        if (backoffMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        }
+      }
     }
   }
   return {

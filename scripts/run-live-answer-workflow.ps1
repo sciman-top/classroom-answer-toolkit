@@ -15,6 +15,18 @@ param(
     [ValidateSet("primary", "fallback", "all")]
     [string]$Provider = "all",
 
+    [ValidateSet("auto", "sol-xhigh", "sol-medium", "terra-xhigh", "terra-high")]
+    [string]$BlindQualityProfile = "sol-xhigh",
+
+    [ValidateSet("auto", "sol-xhigh", "sol-medium", "terra-xhigh", "terra-high")]
+    [string]$SemanticQualityProfile = "sol-xhigh",
+
+    [ValidateSet("auto", "sol-xhigh", "sol-medium", "terra-xhigh", "terra-high")]
+    [string]$VisualQualityProfile = "sol-xhigh",
+
+    [ValidateSet("auto", "sol-xhigh", "sol-medium", "terra-xhigh", "terra-high")]
+    [string]$ReferenceQualityProfile = "sol-xhigh",
+
     [ValidateSet("classroom", "compact")]
     [string]$Profile = "classroom",
 
@@ -515,6 +527,7 @@ try {
         "--output", $generationOutputPath,
         "--summary-out", $blindSummaryPath,
         "--provider", $Provider,
+        "--quality-profile", $BlindQualityProfile,
         "--visual-detail", $VisualDetail,
         "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
@@ -540,6 +553,7 @@ try {
         "--output", $semanticFindingsPath,
         "--summary-out", $semanticFindingsSummaryPath,
         "--provider", $Provider,
+        "--quality-profile", $SemanticQualityProfile,
         "--visual-detail", $VisualDetail,
         "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
@@ -565,6 +579,7 @@ try {
         "--output", $semanticReviewMarkdownPath,
         "--summary-out", $semanticMergeSummaryPath,
         "--provider", $Provider,
+        "--quality-profile", $SemanticQualityProfile,
         "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
         "--allow-cloud-egress"
@@ -613,6 +628,7 @@ try {
             "--output", $visualAuditFindingsPath,
             "--summary-out", $visualFindingsSummaryPath,
             "--provider", $Provider,
+            "--quality-profile", $VisualQualityProfile,
             "--visual-detail", $VisualDetail,
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
@@ -632,6 +648,7 @@ try {
             "--output", $visualAuditMarkdownPath,
             "--summary-out", $visualMergeSummaryPath,
             "--provider", $Provider,
+            "--quality-profile", $VisualQualityProfile,
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--allow-cloud-egress"
@@ -680,6 +697,7 @@ try {
             "--output", $answerMarkdownPath,
             "--summary-out", $referenceReviewSummaryPath,
             "--provider", $Provider,
+            "--quality-profile", $ReferenceQualityProfile,
             "--visual-detail", $VisualDetail,
             "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
             "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
