@@ -1,0 +1,103 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { resolveDefaultOutputRelativePath } from "./compile-snapshot.mjs";
+import { readJsonFile } from "./shared.mjs";
+
+const toolDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(toolDir, "..", "..");
+
+// The platform's primary subject pack: sorts first and is the default
+// selection for gates and the desktop shell. This is the single place that
+// encodes that policy for PowerShell, Node, and the WPF health surface.
+const primarySubjectPackAssetId = "junior-physics-answer";
+
+function listSubjectPackDirectories(promptRoot) {
+  if (!fs.existsSync(promptRoot)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(promptRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => fs.existsSync(path.join(promptRoot, name, "manifest.json")))
+    .map((name) => path.join(promptRoot, name, "manifest.json"))
+    .sort();
+}
+
+function resolvePackProfiles(config) {
+  const defaultProfile = typeof config?.profiles?.default === "string" && config.profiles.default.trim().length > 0
+    ? config.profiles.default
+    : "classroom";
+
+  const profileNames = config?.profiles && typeof config.profiles === "object"
+    ? Object.keys(config.profiles).filter((name) => name !== "default")
+    : [];
+
+  if (profileNames.length === 0) {
+    return { defaultProfile, profiles: [defaultProfile] };
+  }
+  return {
+    defaultProfile,
+    profiles: profileNames.includes(defaultProfile)
+      ? [defaultProfile, ...profileNames.filter((name) => name !== defaultProfile)]
+      : [defaultProfile, ...profileNames]
+  };
+}
+
+function describeSubjectPack(manifestPath) {
+  const manifest = readJsonFile(manifestPath);
+  if (manifest?.kind !== "subject-pack" || typeof manifest.assetId !== "string" || manifest.assetId.length === 0) {
+    return null;
+  }
+
+  const packRoot = path.dirname(manifestPath);
+  const configRelativePath = typeof manifest?.sourceOfTruth?.runtimeConfig === "string"
+    && manifest.sourceOfTruth.runtimeConfig.trim().length > 0
+    ? manifest.sourceOfTruth.runtimeConfig
+    : "./config.json";
+  const configPath = path.resolve(packRoot, configRelativePath);
+  const config = fs.existsSync(configPath) ? readJsonFile(configPath) : null;
+
+  const { defaultProfile, profiles } = resolvePackProfiles(config);
+
+  const evalDatasetRelativePath = typeof config?.evaluation?.dataset === "string"
+    && config.evaluation.dataset.trim().length > 0
+    ? config.evaluation.dataset
+    : `../../eval/${manifest.assetId}/dataset.json`;
+  const evalDatasetPath = path.resolve(path.dirname(configPath), evalDatasetRelativePath);
+
+  return {
+    assetId: manifest.assetId,
+    status: typeof manifest.status === "string" ? manifest.status : "",
+    active: String(manifest.status ?? "").toLowerCase() === "active",
+    primary: manifest.assetId === primarySubjectPackAssetId,
+    manifestPath,
+    configPath,
+    defaultProfile,
+    profiles,
+    snapshotPath: path.resolve(repoRoot, resolveDefaultOutputRelativePath(manifest.assetId)),
+    evalDatasetPath
+  };
+}
+
+export function listSubjectPacks({ repositoryRoot = repoRoot } = {}) {
+  const promptRoot = path.join(repositoryRoot, "prompts");
+  return listSubjectPackDirectories(promptRoot)
+    .map((manifestPath) => {
+      try {
+        return describeSubjectPack(manifestPath);
+      } catch (error) {
+        throw new Error(`Unable to read subject pack manifest ${manifestPath}: ${error.message}`);
+      }
+    })
+    .filter((pack) => pack !== null)
+    .sort((left, right) =>
+      Number(right.active) - Number(left.active)
+      || Number(right.primary) - Number(left.primary)
+      || left.assetId.localeCompare(right.assetId));
+}
+
+export { primarySubjectPackAssetId };

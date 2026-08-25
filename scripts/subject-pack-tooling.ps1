@@ -18,97 +18,40 @@ function Get-RelativePath {
     return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString()).Replace('/', [System.IO.Path]::DirectorySeparatorChar)
 }
 
-function Resolve-SubjectPackSnapshotPath {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$RepositoryRoot,
-        [Parameter(Mandatory = $true)]
-        [string]$ConfigPath,
-        [Parameter()]
-        $Config
-    )
-
-    if ($null -ne $Config -and $null -ne $Config.snapshot -and -not [string]::IsNullOrWhiteSpace([string]$Config.snapshot.cachePath)) {
-        return [System.IO.Path]::GetFullPath((Join-Path (Split-Path -Path $ConfigPath -Parent) ([string]$Config.snapshot.cachePath)))
-    }
-
-    return Join-Path $RepositoryRoot ".snapshot-cache\resolved-snapshot.json"
-}
-
+# Subject pack discovery, ordering, snapshot naming, and eval dataset resolution
+# have exactly one implementation: tools/rule-compiler/subject-pack-registry.mjs.
+# PowerShell only consumes its JSON output so the two languages cannot drift.
 function Get-SubjectPackMetadata {
     param(
         [Parameter(Mandatory = $true)]
         [string]$RepositoryRoot
     )
 
-    $promptsRoot = Join-Path $RepositoryRoot "prompts"
-    if (-not (Test-Path -LiteralPath $promptsRoot)) {
-        return @()
+    $registryScript = Join-Path $RepositoryRoot "tools/rule-compiler/list-subject-packs.mjs"
+    if (-not (Test-Path -LiteralPath $registryScript -PathType Leaf)) {
+        throw "Subject pack registry tool not found: $registryScript"
     }
 
-    $subjectPacks = foreach ($manifestFile in Get-ChildItem -Path $promptsRoot -Filter manifest.json -Recurse -File) {
-        $manifest = Get-Content -LiteralPath $manifestFile.FullName -Raw | ConvertFrom-Json
-        if ($null -eq $manifest -or [string]$manifest.kind -ne "subject-pack" -or [string]::IsNullOrWhiteSpace([string]$manifest.assetId)) {
-            continue
-        }
-
-        $packRoot = Split-Path -Path $manifestFile.FullName -Parent
-        $configRelativePath = if ($null -ne $manifest.sourceOfTruth -and -not [string]::IsNullOrWhiteSpace([string]$manifest.sourceOfTruth.runtimeConfig)) {
-            [string]$manifest.sourceOfTruth.runtimeConfig
-        } else {
-            ".\config.json"
-        }
-
-        $configPath = [System.IO.Path]::GetFullPath((Join-Path $packRoot $configRelativePath))
-        $config = if (Test-Path -LiteralPath $configPath) {
-            Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
-        } else {
-            $null
-        }
-
-        $defaultProfile = if ($null -ne $config -and $null -ne $config.profiles -and -not [string]::IsNullOrWhiteSpace([string]$config.profiles.default)) {
-            [string]$config.profiles.default
-        } else {
-            "classroom"
-        }
-
-        $profileNames = if ($null -ne $config -and $null -ne $config.profiles) {
-            @($config.profiles.PSObject.Properties.Name | Where-Object { $_ -ne "default" })
-        } else {
-            @()
-        }
-
-        if ($profileNames.Count -eq 0) {
-            $profileNames = @($defaultProfile)
-        } elseif ($profileNames -contains $defaultProfile) {
-            $profileNames = @($defaultProfile) + @($profileNames | Where-Object { $_ -ne $defaultProfile })
-        } else {
-            $profileNames = @($defaultProfile) + $profileNames
-        }
-
-        $evalDatasetPath = if ($null -ne $config -and $null -ne $config.evaluation -and -not [string]::IsNullOrWhiteSpace([string]$config.evaluation.dataset)) {
-            [System.IO.Path]::GetFullPath((Join-Path (Split-Path -Path $configPath -Parent) ([string]$config.evaluation.dataset)))
-        } else {
-            Join-Path $RepositoryRoot ("eval\{0}\dataset.json" -f [string]$manifest.assetId)
-        }
-
-        [pscustomobject]@{
-            AssetId = [string]$manifest.assetId
-            Status = if ($null -ne $manifest.status) { [string]$manifest.status } else { "" }
-            ConfigPath = $configPath
-            SnapshotPath = Resolve-SubjectPackSnapshotPath -RepositoryRoot $RepositoryRoot -ConfigPath $configPath -Config $config
-            DefaultProfile = $defaultProfile
-            Profiles = $profileNames
-            EvalDatasetPath = $evalDatasetPath
-        }
+    $registryOutput = @(& node $registryScript 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        $diagnostics = (($registryOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine).Trim()
+        throw "Subject pack registry failed with exit code $LASTEXITCODE`: $registryScript`n$diagnostics"
     }
 
+    $registryJson = ($registryOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+    $packs = @($registryJson | ConvertFrom-Json)
     return @(
-        $subjectPacks |
-            Sort-Object `
-                @{ Expression = { [string]$_.Status -ne "active" } }, `
-                @{ Expression = { [string]$_.AssetId -ne "junior-physics-answer" } }, `
-                @{ Expression = { [string]$_.AssetId } }
+        $packs | ForEach-Object {
+            [pscustomobject]@{
+                AssetId = [string]$_.assetId
+                Status = [string]$_.status
+                ConfigPath = [string]$_.configPath
+                SnapshotPath = [string]$_.snapshotPath
+                DefaultProfile = [string]$_.defaultProfile
+                Profiles = @($_.profiles)
+                EvalDatasetPath = [string]$_.evalDatasetPath
+            }
+        }
     )
 }
 

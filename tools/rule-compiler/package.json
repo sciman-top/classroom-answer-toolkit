@@ -11,6 +11,8 @@
     "validate:cross-subject": "node validate-cross-subject.mjs",
     "resolve:profile": "node resolve-profile.mjs",
     "validate:json": "node validate-json.mjs",
-    "test:validate-json": "node --test validate-json.test.mjs"
+    "test:validate-json": "node --test validate-json.test.mjs",
+    "list:subject-packs": "node list-subject-packs.mjs",
+    "test:registry": "node --test subject-pack-registry.test.mjs"
   }
 }
