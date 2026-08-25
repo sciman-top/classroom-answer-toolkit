@@ -494,6 +494,74 @@ function Invoke-NodeTool {
     }
 }
 
+# Common answer-request arguments for the six AI stages. Stage deltas only:
+# --visual-detail applies to image-inspection stages, --images-dir/-source-text
+# to whole-paper stages, and reference inputs only to reference review.
+function New-AnswerRequestArguments {
+    param(
+        [Parameter(Mandatory = $true)][string]$OutputPath,
+        [Parameter(Mandatory = $true)][string]$SummaryPath,
+        [Parameter(Mandatory = $true)][string]$QualityProfile,
+        [string]$ImagesDir,
+        [string]$CandidateFile,
+        [string]$SemanticFindingsFile,
+        [string]$AuditImagesDir,
+        [string]$AuditFindingsFile,
+        [string]$ReferenceImagesDir,
+        [string]$ReferenceTextFile,
+        [switch]$SemanticFindingsOnly,
+        [switch]$AuditFindingsOnly,
+        [switch]$IncludeVisualDetail,
+        [switch]$IncludeSourceText
+    )
+
+    $arguments = @(
+        "--config-env-file", $envFilePath,
+        "--prompt-file", $promptPath,
+        "--output", $OutputPath,
+        "--summary-out", $SummaryPath,
+        "--provider", $Provider,
+        "--quality-profile", $QualityProfile,
+        "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
+        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
+        "--allow-cloud-egress"
+    )
+    if ($IncludeVisualDetail) {
+        $arguments += @("--visual-detail", $VisualDetail)
+    }
+    if ($ImagesDir) {
+        $arguments += @("--images-dir", $ImagesDir)
+    }
+    if ($CandidateFile) {
+        $arguments += @("--candidate-file", $CandidateFile)
+    }
+    if ($SemanticFindingsOnly) {
+        $arguments += "--semantic-findings-only"
+    }
+    if ($SemanticFindingsFile) {
+        $arguments += @("--semantic-findings-file", $SemanticFindingsFile)
+    }
+    if ($AuditImagesDir) {
+        $arguments += @("--audit-images-dir", $AuditImagesDir)
+    }
+    if ($AuditFindingsOnly) {
+        $arguments += "--audit-findings-only"
+    }
+    if ($AuditFindingsFile) {
+        $arguments += @("--audit-findings-file", $AuditFindingsFile)
+    }
+    if ($ReferenceImagesDir) {
+        $arguments += @("--reference-images-dir", $ReferenceImagesDir)
+    }
+    if ($IncludeSourceText -and (Test-Path -LiteralPath $sourceTextPath -PathType Leaf)) {
+        $arguments += @("--source-text-file", $sourceTextPath)
+    }
+    if ($ReferenceTextFile -and (Test-Path -LiteralPath $ReferenceTextFile -PathType Leaf)) {
+        $arguments += @("--reference-text-file", $ReferenceTextFile)
+    }
+    return $arguments
+}
+
 try {
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
     New-Item -ItemType Directory -Force -Path $pageDirectory | Out-Null
@@ -527,22 +595,13 @@ try {
     $currentPhase = "blindGeneration"
     $phaseStates[$currentPhase].status = "in_progress"
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-    $blindArguments = @(
-        "--config-env-file", $envFilePath,
-        "--prompt-file", $promptPath,
-        "--images-dir", $pageDirectory,
-        "--output", $generationOutputPath,
-        "--summary-out", $blindSummaryPath,
-        "--provider", $Provider,
-        "--quality-profile", $BlindQualityProfile,
-        "--visual-detail", $VisualDetail,
-        "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--allow-cloud-egress"
-    )
-    if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
-        $blindArguments += @("--source-text-file", $sourceTextPath)
-    }
+    $blindArguments = New-AnswerRequestArguments `
+        -OutputPath $generationOutputPath `
+        -SummaryPath $blindSummaryPath `
+        -QualityProfile $BlindQualityProfile `
+        -ImagesDir $pageDirectory `
+        -IncludeVisualDetail `
+        -IncludeSourceText
     Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $blindArguments
     $phaseStates[$currentPhase].status = "completed"
     $currentPhase = $null
@@ -551,24 +610,15 @@ try {
     $currentPhase = "semanticFindings"
     $phaseStates[$currentPhase].status = "in_progress"
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-    $semanticFindingsArguments = @(
-        "--config-env-file", $envFilePath,
-        "--prompt-file", $promptPath,
-        "--images-dir", $pageDirectory,
-        "--candidate-file", $blindMarkdownPath,
-        "--semantic-findings-only",
-        "--output", $semanticFindingsPath,
-        "--summary-out", $semanticFindingsSummaryPath,
-        "--provider", $Provider,
-        "--quality-profile", $SemanticQualityProfile,
-        "--visual-detail", $VisualDetail,
-        "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--allow-cloud-egress"
-    )
-    if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
-        $semanticFindingsArguments += @("--source-text-file", $sourceTextPath)
-    }
+    $semanticFindingsArguments = New-AnswerRequestArguments `
+        -OutputPath $semanticFindingsPath `
+        -SummaryPath $semanticFindingsSummaryPath `
+        -QualityProfile $SemanticQualityProfile `
+        -ImagesDir $pageDirectory `
+        -CandidateFile $blindMarkdownPath `
+        -SemanticFindingsOnly `
+        -IncludeVisualDetail `
+        -IncludeSourceText
     Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticFindingsArguments
     $phaseStates[$currentPhase].status = "completed"
     $currentPhase = $null
@@ -577,23 +627,14 @@ try {
     $currentPhase = "semanticMerge"
     $phaseStates[$currentPhase].status = "in_progress"
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-    $semanticMergeArguments = @(
-        "--config-env-file", $envFilePath,
-        "--prompt-file", $promptPath,
-        "--images-dir", $pageDirectory,
-        "--candidate-file", $blindMarkdownPath,
-        "--semantic-findings-file", $semanticFindingsPath,
-        "--output", $semanticReviewMarkdownPath,
-        "--summary-out", $semanticMergeSummaryPath,
-        "--provider", $Provider,
-        "--quality-profile", $SemanticQualityProfile,
-        "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--allow-cloud-egress"
-    )
-    if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
-        $semanticMergeArguments += @("--source-text-file", $sourceTextPath)
-    }
+    $semanticMergeArguments = New-AnswerRequestArguments `
+        -OutputPath $semanticReviewMarkdownPath `
+        -SummaryPath $semanticMergeSummaryPath `
+        -QualityProfile $SemanticQualityProfile `
+        -ImagesDir $pageDirectory `
+        -CandidateFile $blindMarkdownPath `
+        -SemanticFindingsFile $semanticFindingsPath `
+        -IncludeSourceText
     Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticMergeArguments
     $phaseStates[$currentPhase].status = "completed"
     $currentPhase = $null
@@ -626,40 +667,28 @@ try {
         $currentPhase = "visualFindings"
         $phaseStates[$currentPhase].status = "in_progress"
         Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
-            "--config-env-file", $envFilePath,
-            "--prompt-file", $promptPath,
-            "--candidate-file", $candidateForVisual,
-            "--audit-images-dir", $visualAuditPageDirectory,
-            "--audit-findings-only",
-            "--output", $visualAuditFindingsPath,
-            "--summary-out", $visualFindingsSummaryPath,
-            "--provider", $Provider,
-            "--quality-profile", $VisualQualityProfile,
-            "--visual-detail", $VisualDetail,
-            "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
-            "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
-            "--allow-cloud-egress"
-        )
+        $visualFindingsArguments = New-AnswerRequestArguments `
+            -OutputPath $visualAuditFindingsPath `
+            -SummaryPath $visualFindingsSummaryPath `
+            -QualityProfile $VisualQualityProfile `
+            -CandidateFile $candidateForVisual `
+            -AuditImagesDir $visualAuditPageDirectory `
+            -AuditFindingsOnly `
+            -IncludeVisualDetail
+        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $visualFindingsArguments
         $phaseStates[$currentPhase].status = "completed"
         $currentPhase = $null
         Write-Host "[live-answer-workflow] merge visual findings into the complete answer Markdown"
         $currentPhase = "visualMerge"
         $phaseStates[$currentPhase].status = "in_progress"
         Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments @(
-            "--config-env-file", $envFilePath,
-            "--prompt-file", $promptPath,
-            "--candidate-file", $candidateForVisual,
-            "--audit-findings-file", $visualAuditFindingsPath,
-            "--output", $visualAuditMarkdownPath,
-            "--summary-out", $visualMergeSummaryPath,
-            "--provider", $Provider,
-            "--quality-profile", $VisualQualityProfile,
-            "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
-            "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
-            "--allow-cloud-egress"
-        )
+        $visualMergeArguments = New-AnswerRequestArguments `
+            -OutputPath $visualAuditMarkdownPath `
+            -SummaryPath $visualMergeSummaryPath `
+            -QualityProfile $VisualQualityProfile `
+            -CandidateFile $candidateForVisual `
+            -AuditFindingsFile $visualAuditFindingsPath
+        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $visualMergeArguments
         $phaseStates[$currentPhase].status = "completed"
         $currentPhase = $null
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
@@ -695,27 +724,16 @@ try {
         $currentPhase = "referenceReview"
         $phaseStates[$currentPhase].status = "in_progress"
         Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        $reviewArguments = @(
-            "--config-env-file", $envFilePath,
-            "--prompt-file", $promptPath,
-            "--images-dir", $pageDirectory,
-            "--candidate-file", $candidateForReference,
-            "--reference-images-dir", $referencePageDirectory,
-            "--output", $answerMarkdownPath,
-            "--summary-out", $referenceReviewSummaryPath,
-            "--provider", $Provider,
-            "--quality-profile", $ReferenceQualityProfile,
-            "--visual-detail", $VisualDetail,
-            "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
-            "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
-            "--allow-cloud-egress"
-        )
-        if (Test-Path -LiteralPath $sourceTextPath -PathType Leaf) {
-            $reviewArguments += @("--source-text-file", $sourceTextPath)
-        }
-        if (Test-Path -LiteralPath $referenceTextPath -PathType Leaf) {
-            $reviewArguments += @("--reference-text-file", $referenceTextPath)
-        }
+        $reviewArguments = New-AnswerRequestArguments `
+            -OutputPath $answerMarkdownPath `
+            -SummaryPath $referenceReviewSummaryPath `
+            -QualityProfile $ReferenceQualityProfile `
+            -ImagesDir $pageDirectory `
+            -CandidateFile $candidateForReference `
+            -ReferenceImagesDir $referencePageDirectory `
+            -ReferenceTextFile $referenceTextPath `
+            -IncludeVisualDetail `
+            -IncludeSourceText
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $reviewArguments
         $phaseStates[$currentPhase].status = "completed"
         $currentPhase = $null
