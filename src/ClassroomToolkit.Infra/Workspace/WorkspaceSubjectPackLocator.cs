@@ -58,63 +58,6 @@ public static class WorkspaceSubjectPackLocator
             .ToArray();
     }
 
-    public static string ResolveSnapshotPath(string configPath)
-    {
-        if (!File.Exists(configPath))
-        {
-            return Path.Combine(Path.GetTempPath(), ".snapshot-cache", "resolved-snapshot.json");
-        }
-
-        using var document = JsonDocument.Parse(File.ReadAllText(configPath));
-        if (document.RootElement.TryGetProperty("snapshot", out var snapshotElement)
-            && snapshotElement.TryGetProperty("cachePath", out var cachePathElement)
-            && !string.IsNullOrWhiteSpace(cachePathElement.GetString()))
-        {
-            return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, cachePathElement.GetString()!));
-        }
-
-        return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(configPath)!, "..", "..", ".snapshot-cache", "resolved-snapshot.json"));
-    }
-
-    public static string ResolveSnapshotPath(string? configPath, string? manifestPath)
-    {
-        if (!string.IsNullOrWhiteSpace(configPath) && File.Exists(configPath))
-        {
-            return ResolveSnapshotPath(configPath);
-        }
-
-        if (!string.IsNullOrWhiteSpace(manifestPath) && File.Exists(manifestPath))
-        {
-            using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
-            if (document.RootElement.TryGetProperty("entry", out var entryElement)
-                && entryElement.TryGetProperty("snapshotCache", out var snapshotCacheElement)
-                && !string.IsNullOrWhiteSpace(snapshotCacheElement.GetString()))
-            {
-                return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(manifestPath)!, snapshotCacheElement.GetString()!));
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(configPath))
-        {
-            var configDirectory = Path.GetDirectoryName(configPath);
-            if (!string.IsNullOrWhiteSpace(configDirectory))
-            {
-                return Path.GetFullPath(Path.Combine(configDirectory, "..", "..", ".snapshot-cache", "resolved-snapshot.json"));
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(manifestPath))
-        {
-            var manifestDirectory = Path.GetDirectoryName(manifestPath);
-            if (!string.IsNullOrWhiteSpace(manifestDirectory))
-            {
-                return Path.GetFullPath(Path.Combine(manifestDirectory, "..", "..", ".snapshot-cache", "resolved-snapshot.json"));
-            }
-        }
-
-        return Path.Combine(Path.GetTempPath(), ".snapshot-cache", "resolved-snapshot.json");
-    }
-
     private static WorkspaceSubjectPackPaths? TryReadSubjectPack(string manifestPath)
     {
         using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));

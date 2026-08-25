@@ -7,26 +7,34 @@ namespace ClassroomToolkit.Tests.Workspace;
 public sealed class WorkspaceSubjectPackLocatorTests
 {
     [Fact]
-    public void ResolveSnapshotPath_UsesConfiguredRelativePath()
+    public void FindSubjectPacks_ListsPacks_ActiveAndPrimaryFirst()
     {
         using var workspace = new TemporaryWorkspace();
-        var configPath = workspace.WriteConfig("math-answer", "../../.snapshot-cache/resolved-snapshot.math.json");
+        workspace.WritePack("math-answer", status: "experimental");
+        workspace.WritePack("senior-physics-answer", status: "active");
+        workspace.WritePack("junior-physics-answer", status: "active");
 
-        var resolved = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath);
+        var packs = WorkspaceSubjectPackLocator.FindSubjectPacks(workspace.Root);
 
-        resolved.Should().EndWith("resolved-snapshot.math.json");
+        packs.Select(pack => pack.AssetId).Should().Equal(
+            "junior-physics-answer", "senior-physics-answer", "math-answer");
+        packs[0].EvalResultsPath.Should().EndWith(Path.Combine("eval", "junior-physics-answer", "results", "latest.json"));
     }
 
     [Fact]
-    public void ResolveSnapshotPath_FallsBackToManifestSnapshotCache_WhenConfigIsMissing()
+    public void FindSubjectPacks_DegradesBrokenManifestsToIssues()
     {
         using var workspace = new TemporaryWorkspace();
-        var manifestPath = workspace.WritePack("math-answer", status: "experimental", snapshotCachePath: "../../.snapshot-cache/resolved-snapshot.math.json");
-        var configPath = Path.Combine(workspace.Root, "prompts", "math-answer", "missing-config.json");
+        workspace.WritePack("junior-physics-answer", status: "active");
+        var brokenPath = Path.Combine(workspace.Root, "prompts", "broken-pack", "manifest.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(brokenPath)!);
+        File.WriteAllText(brokenPath, "{ invalid json");
+        var issues = new List<string>();
 
-        var resolved = WorkspaceSubjectPackLocator.ResolveSnapshotPath(configPath, manifestPath);
+        var packs = WorkspaceSubjectPackLocator.FindSubjectPacks(workspace.Root, issues);
 
-        resolved.Should().EndWith("resolved-snapshot.math.json");
+        packs.Select(pack => pack.AssetId).Should().Equal("junior-physics-answer");
+        issues.Should().ContainSingle(issue => issue.Contains("broken-pack"));
     }
 
     private sealed class TemporaryWorkspace : IDisposable
@@ -41,7 +49,7 @@ public sealed class WorkspaceSubjectPackLocatorTests
 
         public string Root { get; }
 
-        public string WritePack(string assetId, string status, string snapshotCachePath)
+        public void WritePack(string assetId, string status)
         {
             var manifestPath = Path.Combine(Root, "prompts", assetId, "manifest.json");
             Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
@@ -53,25 +61,8 @@ public sealed class WorkspaceSubjectPackLocatorTests
                 version = "v0.1",
                 status,
                 sourceOfTruth = new { runtimeConfig = "./config.json" },
-                entry = new { snapshotCache = snapshotCachePath },
                 evaluation = new { resultsDir = $"../../eval/{assetId}/results" }
             });
-
-            WriteConfig(assetId, snapshotCachePath);
-            return manifestPath;
-        }
-
-        public string WriteConfig(string assetId, string snapshotCachePath)
-        {
-            var configPath = Path.Combine(Root, "prompts", assetId, "config.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-
-            WriteJson(configPath, new
-            {
-                snapshot = new { cachePath = snapshotCachePath }
-            });
-
-            return configPath;
         }
 
         private static void WriteJson(string path, object value)

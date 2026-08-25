@@ -10,6 +10,53 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class LocalToolchainOrchestratorTests
 {
     [Fact]
+    public void GetWorkspaceHealthReport_ParsesTheNodeRegistryReport()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var runner = new DeliveryRunner(workspace.Root, healthJson: """
+            {
+              "primarySubjectPack": "junior-physics-answer",
+              "subjectPacks": ["junior-physics-answer", "math-answer"],
+              "latestProductionSpecVersion": "v8.18",
+              "assetVersion": "v8.18",
+              "snapshotExists": true,
+              "snapshotPath": "D:\\repo\\.snapshot-cache\\resolved-snapshot.json",
+              "snapshotVersion": "v8.18",
+              "snapshotProfile": "classroom",
+              "evalExists": true,
+              "evalOk": true,
+              "evalCaseCount": 15,
+              "summary": "规则快照、评测结果与最新规范已对齐。",
+              "issues": []
+            }
+            """);
+        var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
+
+        var health = orchestrator.GetWorkspaceHealthReport("junior-physics-answer");
+
+        health.IsHealthy.Should().BeTrue(health.Summary);
+        health.PrimarySubjectPack.Should().Be("junior-physics-answer");
+        health.SnapshotVersion.Should().Be("v8.18");
+        health.EvalCaseCount.Should().Be(15);
+        runner.Arguments[0].Should().EndWith("workspace-health.mjs");
+        runner.Arguments.Should().Contain("--subject-pack");
+    }
+
+    [Fact]
+    public void GetWorkspaceHealthReport_DegradesToDiagnostics_WhenNodeToolFails()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var runner = new DeliveryRunner(workspace.Root, healthExitCode: 1, healthError: "node unavailable");
+        var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
+
+        var health = orchestrator.GetWorkspaceHealthReport();
+
+        health.IsHealthy.Should().BeFalse();
+        health.Issues.Should().ContainSingle(issue => issue.Contains("健康检查工具失败"));
+        health.SubjectPacks.Should().Contain("junior-physics-answer");
+    }
+
+    [Fact]
     public async Task DeliverInvokesRendererAndReadsManifest()
     {
         using var workspace = new TemporaryWorkspace();
@@ -138,6 +185,9 @@ public sealed class LocalToolchainOrchestratorTests
         private readonly string _manifestProfile;
         private readonly DateTimeOffset? _generatedAt;
         private readonly string? _manifestInputPath;
+        private readonly string? _healthJson;
+        private readonly int _healthExitCode;
+        private readonly string? _healthError;
 
         public DeliveryRunner(
             string root,
@@ -146,7 +196,10 @@ public sealed class LocalToolchainOrchestratorTests
             string manifestSubjectPack = "junior-physics-answer",
             string manifestProfile = "classroom",
             DateTimeOffset? generatedAt = null,
-            string? manifestInputPath = null)
+            string? manifestInputPath = null,
+            string? healthJson = null,
+            int healthExitCode = 0,
+            string? healthError = null)
         {
             _root = root;
             _writeManifest = writeManifest;
@@ -155,6 +208,9 @@ public sealed class LocalToolchainOrchestratorTests
             _manifestProfile = manifestProfile;
             _generatedAt = generatedAt;
             _manifestInputPath = manifestInputPath;
+            _healthJson = healthJson;
+            _healthExitCode = healthExitCode;
+            _healthError = healthError;
         }
         public IReadOnlyList<string> Arguments { get; private set; } = [];
         public string FileName { get; private set; } = string.Empty;
@@ -165,6 +221,15 @@ public sealed class LocalToolchainOrchestratorTests
             CallCount += 1;
             FileName = fileName;
             Arguments = arguments;
+            if (arguments.Count > 0 && arguments[0].EndsWith("workspace-health.mjs", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult(new ProcessRunResult(
+                    _healthExitCode,
+                    _healthJson ?? "{}",
+                    _healthError ?? "",
+                    TimeSpan.Zero));
+            }
+
             var pdfPath = arguments[2];
             File.WriteAllText(pdfPath, "%PDF-test");
             var manifestPath = Path.Combine(Path.GetDirectoryName(pdfPath)!, $"{Path.GetFileNameWithoutExtension(pdfPath)}.delivery-manifest.json");

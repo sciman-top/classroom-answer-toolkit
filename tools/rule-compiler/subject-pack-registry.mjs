@@ -47,7 +47,7 @@ function resolvePackProfiles(config) {
   };
 }
 
-function describeSubjectPack(manifestPath) {
+function describeSubjectPack(manifestPath, repositoryRoot) {
   const manifest = readJsonFile(manifestPath);
   if (manifest?.kind !== "subject-pack" || typeof manifest.assetId !== "string" || manifest.assetId.length === 0) {
     return null;
@@ -69,6 +69,12 @@ function describeSubjectPack(manifestPath) {
     : `../../eval/${manifest.assetId}/dataset.json`;
   const evalDatasetPath = path.resolve(path.dirname(configPath), evalDatasetRelativePath);
 
+  const evalResultsRelativePath = typeof manifest?.evaluation?.resultsDir === "string"
+    && manifest.evaluation.resultsDir.trim().length > 0
+    ? manifest.evaluation.resultsDir
+    : `../../eval/${manifest.assetId}/results`;
+  const evalResultsPath = path.join(path.resolve(packRoot, evalResultsRelativePath), "latest.json");
+
   return {
     assetId: manifest.assetId,
     status: typeof manifest.status === "string" ? manifest.status : "",
@@ -78,8 +84,9 @@ function describeSubjectPack(manifestPath) {
     configPath,
     defaultProfile,
     profiles,
-    snapshotPath: path.resolve(repoRoot, resolveDefaultOutputRelativePath(manifest.assetId)),
-    evalDatasetPath
+    snapshotPath: path.resolve(repositoryRoot, resolveDefaultOutputRelativePath(manifest.assetId, repositoryRoot)),
+    evalDatasetPath,
+    evalResultsPath
   };
 }
 
@@ -88,7 +95,7 @@ export function listSubjectPacks({ repositoryRoot = repoRoot } = {}) {
   return listSubjectPackDirectories(promptRoot)
     .map((manifestPath) => {
       try {
-        return describeSubjectPack(manifestPath);
+        return describeSubjectPack(manifestPath, repositoryRoot);
       } catch (error) {
         throw new Error(`Unable to read subject pack manifest ${manifestPath}: ${error.message}`);
       }

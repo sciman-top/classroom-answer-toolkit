@@ -14,6 +14,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     private static readonly TimeSpan BootstrapTimeout = TimeSpan.FromMinutes(45);
     private static readonly TimeSpan CheckTimeout = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan DeliverTimeout = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan HealthCheckTimeout = TimeSpan.FromMinutes(2);
 
     private readonly RepositoryRootResolver _repositoryRootResolver;
     private readonly IProcessRunner _processRunner;
@@ -46,8 +47,103 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     public WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null)
     {
         var workspace = GetWorkspaceInfo();
-        return new WorkspaceHealthReportReader(workspace.RepositoryRoot).Read(subjectPack);
+        var toolPath = Path.Combine(workspace.RepositoryRoot, "tools", "rule-compiler", "workspace-health.mjs");
+        try
+        {
+            var arguments = new List<string> { toolPath };
+            if (!string.IsNullOrWhiteSpace(subjectPack))
+            {
+                arguments.Add("--subject-pack");
+                arguments.Add(subjectPack);
+            }
+
+            var process = _processRunner.RunAsync(
+                "node",
+                arguments,
+                workspace.RepositoryRoot,
+                timeout: HealthCheckTimeout).GetAwaiter().GetResult();
+            if (process.ExitCode != 0)
+            {
+                return DegradedHealthReport(workspace, subjectPack,
+                    $"健康检查工具失败（exit {process.ExitCode}）：{BuildOutput(process.StandardOutput, process.StandardError)}");
+            }
+
+            return ReadHealthReport(process.StandardOutput, workspace, subjectPack);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or TimeoutException or OperationCanceledException
+            or IOException or JsonException)
+        {
+            // node missing, hung, or emitting garbage must degrade to a visible
+            // diagnostic instead of breaking the health surface.
+            return DegradedHealthReport(workspace, subjectPack, $"健康检查工具不可用：{ex.Message}");
+        }
     }
+
+    private static WorkspaceHealthReport ReadHealthReport(
+        string json,
+        ToolchainWorkspaceInfo workspace,
+        string? subjectPack)
+    {
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        return new WorkspaceHealthReport(
+            ReadOptionalString(root, "primarySubjectPack"),
+            ReadStringArray(root, "subjectPacks"),
+            ReadOptionalString(root, "latestProductionSpecVersion"),
+            ReadOptionalString(root, "assetVersion"),
+            ReadBool(root, "snapshotExists"),
+            root.TryGetProperty("snapshotPath", out var snapshotPath) && snapshotPath.ValueKind == JsonValueKind.String
+                ? snapshotPath.GetString()!
+                : string.Empty,
+            ReadOptionalString(root, "snapshotVersion"),
+            ReadOptionalString(root, "snapshotProfile"),
+            ReadBool(root, "evalExists"),
+            ReadBool(root, "evalOk"),
+            root.TryGetProperty("evalCaseCount", out var caseCount) && caseCount.ValueKind == JsonValueKind.Number
+                ? caseCount.GetInt32()
+                : 0,
+            root.TryGetProperty("summary", out var summary) && summary.ValueKind == JsonValueKind.String
+                ? summary.GetString()!
+                : string.Empty,
+            ReadStringArray(root, "issues"));
+    }
+
+    private static WorkspaceHealthReport DegradedHealthReport(
+        ToolchainWorkspaceInfo workspace,
+        string? subjectPack,
+        string issue)
+    {
+        return new WorkspaceHealthReport(
+            workspace.PrimarySubjectPack,
+            workspace.SubjectPacks,
+            null,
+            null,
+            false,
+            string.Empty,
+            null,
+            null,
+            false,
+            false,
+            0,
+            issue,
+            [issue]);
+    }
+
+    private static string? ReadOptionalString(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.String
+            ? element.GetString()
+            : null;
+
+    private static bool ReadBool(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.True;
+
+    private static IReadOnlyList<string> ReadStringArray(JsonElement root, string name) =>
+        root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Array
+            ? element.EnumerateArray()
+                .Where(item => item.ValueKind == JsonValueKind.String)
+                .Select(item => item.GetString()!)
+                .ToArray()
+            : [];
 
     public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default)
     {

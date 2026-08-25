@@ -14,9 +14,9 @@ const usage = `Usage:
   npm --prefix tools/rule-compiler run compile:snapshot -- [--subject-pack junior-physics-answer|senior-physics-answer|math-answer|physics-answer(alias)] [--profile classroom|compact] [--out <snapshot.json>]
 `;
 
-export function resolveDefaultOutputRelativePath(subjectPack = defaultSubjectPack) {
+export function resolveDefaultOutputRelativePath(subjectPack = defaultSubjectPack, repositoryRoot = repoRoot) {
   const canonicalSubjectPack = normalizeSubjectPackName(subjectPack, defaultSubjectPack);
-  const configPath = resolveRepoPath(`prompts/${canonicalSubjectPack}/config.json`);
+  const configPath = path.resolve(repositoryRoot, `prompts/${canonicalSubjectPack}/config.json`);
   if (!fs.existsSync(configPath)) {
     return defaultOutputRelativePath;
   }
@@ -28,7 +28,7 @@ export function resolveDefaultOutputRelativePath(subjectPack = defaultSubjectPac
   }
 
   const absoluteOutputPath = path.resolve(path.dirname(configPath), configuredPath);
-  return path.relative(repoRoot, absoluteOutputPath).replace(/\\/g, "/");
+  return path.relative(repositoryRoot, absoluteOutputPath).replace(/\\/g, "/");
 }
 
 export function parseArgs(argv) {
