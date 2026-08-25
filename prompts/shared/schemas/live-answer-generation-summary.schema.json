@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "classroom-toolkit://prompts/shared/schemas/live-answer-generation-summary.schema.json",
+  "title": "Live answer generation summary receipt",
+  "description": "Atomic JSON receipt written by tools/ai-gateway/answer-request.mjs for each AI generation stage. Validated at write time; every top-level field is always present (nullable when the stage does not use it).",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "provider",
+    "model",
+    "reasoningEffort",
+    "promptPath",
+    "promptSha256",
+    "mode",
+    "sourcePageCount",
+    "auditImageCount",
+    "referencePageCount",
+    "requestedVisualDetailMode",
+    "providerVisualDetailMode",
+    "routing",
+    "candidatePath",
+    "candidateSha256",
+    "semanticFindingsPath",
+    "semanticFindingsSha256",
+    "auditFindingsPath",
+    "auditFindingsSha256",
+    "sourceTextPath",
+    "sourceTextSha256",
+    "referenceTextPath",
+    "referenceTextSha256",
+    "pageCount",
+    "pageImages",
+    "outputPath",
+    "outputSha256",
+    "answerCharacters",
+    "referenceChoiceOverride",
+    "semanticChoiceOverride",
+    "attempts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "1.1" },
+    "kind": { "const": "live-answer-generation-summary" },
+    "generatedAt": { "type": "string" },
+    "provider": { "type": "string" },
+    "model": { "type": "string" },
+    "reasoningEffort": {
+      "anyOf": [ { "type": "string" }, { "type": "null" } ]
+    },
+    "promptPath": { "type": "string" },
+    "promptSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "mode": {
+      "enum": [
+        "blind_generation",
+        "semantic_review_findings",
+        "semantic_review_merge",
+        "visual_audit",
+        "visual_audit_findings",
+        "visual_audit_merge",
+        "reference_review"
+      ]
+    },
+    "sourcePageCount": { "type": "integer", "minimum": 0 },
+    "auditImageCount": { "type": "integer", "minimum": 0 },
+    "referencePageCount": { "type": "integer", "minimum": 0 },
+    "requestedVisualDetailMode": { "enum": [ "low", "high", "original" ] },
+    "providerVisualDetailMode": { "enum": [ "low", "high", "original" ] },
+    "routing": {
+      "type": "object",
+      "required": [
+        "mode",
+        "qualityProfile",
+        "qualityDegraded",
+        "selectedRole",
+        "orderedRoles",
+        "target",
+        "resolvedRole",
+        "attemptedRoles"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "blind_generation",
+            "semantic_review_findings",
+            "semantic_review_merge",
+            "visual_audit",
+            "visual_audit_findings",
+            "visual_audit_merge",
+            "reference_review"
+          ]
+        },
+        "qualityProfile": { "type": "string" },
+        "qualityDegraded": { "type": "boolean" },
+        "selectedRole": {
+          "anyOf": [ { "type": "string" }, { "type": "null" } ]
+        },
+        "orderedRoles": { "type": "array", "items": { "type": "string" } },
+        "target": { "type": "string" },
+        "resolvedRole": {
+          "anyOf": [ { "type": "string" }, { "type": "null" } ]
+        },
+        "attemptedRoles": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "candidatePath": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
+    "candidateSha256": {
+      "anyOf": [ { "type": "string", "pattern": "^[0-9a-f]{64}$" }, { "type": "null" } ]
+    },
+    "semanticFindingsPath": {
+      "anyOf": [ { "type": "string" }, { "type": "null" } ]
+    },
+    "semanticFindingsSha256": {
+      "anyOf": [ { "type": "string", "pattern": "^[0-9a-f]{64}$" }, { "type": "null" } ]
+    },
+    "auditFindingsPath": {
+      "anyOf": [ { "type": "string" }, { "type": "null" } ]
+    },
+    "auditFindingsSha256": {
+      "anyOf": [ { "type": "string", "pattern": "^[0-9a-f]{64}$" }, { "type": "null" } ]
+    },
+    "sourceTextPath": {
+      "anyOf": [ { "type": "string" }, { "type": "null" } ]
+    },
+    "sourceTextSha256": {
+      "anyOf": [ { "type": "string", "pattern": "^[0-9a-f]{64}$" }, { "type": "null" } ]
+    },
+    "referenceTextPath": {
+      "anyOf": [ { "type": "string" }, { "type": "null" } ]
+    },
+    "referenceTextSha256": {
+      "anyOf": [ { "type": "string", "pattern": "^[0-9a-f]{64}$" }, { "type": "null" } ]
+    },
+    "pageCount": { "type": "integer", "minimum": 0 },
+    "pageImages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [ "path", "sha256", "evidenceLabel" ],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "evidenceLabel": {
+            "anyOf": [ { "type": "string" }, { "type": "null" } ]
+          }
+        }
+      }
+    },
+    "outputPath": { "type": "string" },
+    "outputSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "answerCharacters": { "type": "integer", "minimum": 0 },
+    "referenceChoiceOverride": {
+      "type": "object",
+      "required": [ "applied" ],
+      "additionalProperties": false,
+      "properties": {
+        "applied": { "type": "boolean" },
+        "answers": { "type": "string" }
+      }
+    },
+    "semanticChoiceOverride": {
+      "type": "object",
+      "required": [ "applied", "questions" ],
+      "additionalProperties": false,
+      "properties": {
+        "applied": { "type": "boolean" },
+        "questions": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "provider",
+          "model",
+          "reasoningEffort",
+          "status",
+          "retryAfterMs",
+          "ok",
+          "retryable",
+          "attemptNumber",
+          "durationMs",
+          "requestBytes",
+          "transport",
+          "error"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "provider": { "type": "string" },
+          "model": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
+          "reasoningEffort": {
+            "anyOf": [ { "type": "string" }, { "type": "null" } ]
+          },
+          "status": { "anyOf": [ { "type": "integer" }, { "type": "null" } ] },
+          "retryAfterMs": {
+            "anyOf": [ { "type": "integer" }, { "type": "null" } ]
+          },
+          "ok": { "type": "boolean" },
+          "retryable": { "type": "boolean" },
+          "attemptNumber": { "type": "integer", "minimum": 1 },
+          "durationMs": {
+            "anyOf": [ { "type": "integer" }, { "type": "null" } ]
+          },
+          "requestBytes": {
+            "anyOf": [ { "type": "integer" }, { "type": "null" } ]
+          },
+          "transport": {
+            "anyOf": [ { "type": "object" }, { "type": "null" } ]
+          },
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}

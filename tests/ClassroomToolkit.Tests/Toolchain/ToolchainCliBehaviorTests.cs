@@ -292,6 +292,7 @@ public sealed class ToolchainCliBehaviorTests
                     [Console]::Error.WriteLine("provider diagnostics: status=503; attemptedRoles=primary,fallback_1")
                     exit 1
                 }
+                "validate-json.mjs" { exit 0 }
                 default { throw "Unexpected fake node tool: $tool" }
             }
             """);
@@ -388,6 +389,11 @@ public sealed class ToolchainCliBehaviorTests
                     Write-Text $pdf "%PDF-delivery"
                     Write-Text ($base + ".snapshot.json") '{"snapshotId":"test"}'
                     Write-Text ($base + ".delivery-manifest.json") '{"kind":"delivery-manifest"}'
+                }
+                "validate-json.mjs" {
+                    # Receipt schema fidelity is asserted by the rule-compiler
+                    # receipt fixture tests; the fake only proves the call path.
+                    exit 0
                 }
                 default { throw "Unexpected fake node tool: $tool" }
             }

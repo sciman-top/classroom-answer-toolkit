@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { sha256File } from "../shared.mjs";
+import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 
 import {
   applyReferenceChoiceAnswers,
@@ -25,6 +26,14 @@ import {
   selectAnswerRoute
 } from "./answer-transport.mjs";
 import { loadGatewayConfig, repoRoot, requireValue } from "./validate-config.mjs";
+
+const summarySchemaPath = path.join(
+  repoRoot,
+  "prompts",
+  "shared",
+  "schemas",
+  "live-answer-generation-summary.schema.json"
+);
 
 // Re-exported so the test suite and sibling tools keep importing the answer
 // pipeline from the historical entry module.
@@ -532,6 +541,12 @@ export async function main() {
     },
     attempts: result.attempts.map(redactAttempt)
   };
+  const summaryErrors = validateValueAgainstSchema(summary, summarySchemaPath);
+  if (summaryErrors.length > 0) {
+    throw new Error(
+      `Generation summary failed schema validation (${path.relative(repoRoot, summarySchemaPath)}):\n`
+      + summaryErrors.map((error) => `  ${error}`).join("\n"));
+  }
   const summaryJson = `${JSON.stringify(summary, null, 2)}\n`;
   if (options.summaryPath) {
     writeTextFileAtomic(options.summaryPath, summaryJson);

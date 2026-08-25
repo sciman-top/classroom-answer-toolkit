@@ -431,6 +431,13 @@ function Write-WorkflowReceipt {
     }
 
     Write-JsonFileAtomic -PathValue $workflowReceiptPath -Value $receipt
+
+    # The receipt is the run's audit anchor: reject a structurally invalid
+    # receipt instead of leaving an unvalidatable file behind.
+    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/rule-compiler/validate-json.mjs") -Arguments @(
+        "--schema", (Join-Path $repoRoot "prompts/shared/schemas/live-answer-workflow-run.schema.json"),
+        "--value", $workflowReceiptPath
+    )
 }
 
 if ($UseGatewayProxy) {

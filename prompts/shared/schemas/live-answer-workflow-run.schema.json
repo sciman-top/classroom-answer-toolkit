@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "classroom-toolkit://prompts/shared/schemas/live-answer-workflow-run.schema.json",
+  "title": "Live answer workflow run receipt",
+  "description": "Final receipt written by scripts/run-live-answer-workflow.ps1 for one whole run. Validated with tools/rule-compiler/validate-json.mjs immediately after the atomic write; failed-run receipts are equally valid instances.",
+  "type": "object",
+  "$defs": {
+    "fileReceipt": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [ "path", "bytes", "sha256" ],
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string" },
+            "bytes": { "type": "integer", "minimum": 0 },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "phase": {
+      "type": "object",
+      "required": [ "status", "summaryPath", "artifactPath", "summary", "artifact" ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [ "pending", "in_progress", "completed", "failed", "skipped" ]
+        },
+        "summaryPath": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
+        "artifactPath": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
+        "summary": { "$ref": "#/$defs/fileReceipt" },
+        "artifact": { "$ref": "#/$defs/fileReceipt" },
+        "error": { "type": "string" }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "runId",
+    "status",
+    "startedAt",
+    "finishedAt",
+    "inputs",
+    "options",
+    "phases",
+    "artifacts",
+    "diagnostics",
+    "error"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "live-answer-workflow-run" },
+    "runId": { "type": "string" },
+    "status": { "enum": [ "succeeded", "failed" ] },
+    "startedAt": { "type": "string" },
+    "finishedAt": { "type": "string" },
+    "inputs": {
+      "type": "object",
+      "required": [ "sourcePdf", "referencePdf", "prompt", "blindFocusRegions", "visualAuditFocusRegions" ],
+      "additionalProperties": false,
+      "properties": {
+        "sourcePdf": { "$ref": "#/$defs/fileReceipt" },
+        "referencePdf": { "$ref": "#/$defs/fileReceipt" },
+        "prompt": { "$ref": "#/$defs/fileReceipt" },
+        "blindFocusRegions": { "$ref": "#/$defs/fileReceipt" },
+        "visualAuditFocusRegions": { "$ref": "#/$defs/fileReceipt" }
+      }
+    },
+    "options": {
+      "type": "object",
+      "required": [
+        "provider",
+        "profile",
+        "visualDetail",
+        "maxOutputTokens",
+        "timeoutMs",
+        "reviewScale",
+        "visualAuditScale",
+        "blindFocusRegionsFile",
+        "visualAuditFocusRegionsFile",
+        "skipVisualAudit",
+        "keepReview",
+        "useGatewayProxy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "type": "string" },
+        "profile": { "type": "string" },
+        "visualDetail": { "type": "string" },
+        "maxOutputTokens": { "type": "integer", "minimum": 1000 },
+        "timeoutMs": { "type": "integer", "minimum": 1000 },
+        "reviewScale": { "type": "number", "minimum": 0 },
+        "visualAuditScale": { "type": "number", "minimum": 0 },
+        "blindFocusRegionsFile": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
+        "visualAuditFocusRegionsFile": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
+        "skipVisualAudit": { "type": "boolean" },
+        "keepReview": { "type": "boolean" },
+        "useGatewayProxy": { "type": "boolean" }
+      }
+    },
+    "phases": {
+      "type": "object",
+      "required": [
+        "blindGeneration",
+        "semanticFindings",
+        "semanticMerge",
+        "visualFindings",
+        "visualMerge",
+        "referenceReview",
+        "delivery"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "blindGeneration": { "$ref": "#/$defs/phase" },
+        "semanticFindings": { "$ref": "#/$defs/phase" },
+        "semanticMerge": { "$ref": "#/$defs/phase" },
+        "visualFindings": { "$ref": "#/$defs/phase" },
+        "visualMerge": { "$ref": "#/$defs/phase" },
+        "referenceReview": { "$ref": "#/$defs/phase" },
+        "delivery": { "$ref": "#/$defs/phase" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fileReceipt" }
+    },
+    "diagnostics": {
+      "type": "object",
+      "required": [ "retainedWorkRoot" ],
+      "additionalProperties": false,
+      "properties": {
+        "retainedWorkRoot": { "anyOf": [ { "type": "string" }, { "type": "null" } ] }
+      }
+    },
+    "error": { "anyOf": [ { "type": "string" }, { "type": "null" } ] }
+  }
+}

@@ -9,6 +9,8 @@
     "validate:spec-boundary": "node validate-spec-boundary.mjs",
     "test:spec-boundary": "node --test validate-spec-boundary.test.mjs",
     "validate:cross-subject": "node validate-cross-subject.mjs",
-    "resolve:profile": "node resolve-profile.mjs"
+    "resolve:profile": "node resolve-profile.mjs",
+    "validate:json": "node validate-json.mjs",
+    "test:validate-json": "node --test validate-json.test.mjs"
   }
 }
