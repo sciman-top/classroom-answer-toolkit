@@ -55,6 +55,7 @@ SourceExam
 - WPF 不复制 Node 业务逻辑，不因缺少历史 review/trust 对象而扩建领域模型。
 - WPF 的 deliver 成功必须核对 manifest 的 input/output、subject-pack、profile 和本次生成时间；不能接受另一份 Markdown 或旧回执留下的产物。
 - 发布 WPF 仍是 repository-coupled companion；隔离 smoke 只证明启动和缺仓 fail-closed。没有可写、版本化 runtime bundle 前不得生成或宣称自包含 MSIX。
+- 2026-08-25 裁决：WPF 定位为 developer/operator companion，runtime bundle 投资冻结；重立项条件见 PRD Decisions 2026-08-25，且以 M4 产品化决策门通过为前提。冻结期间 WPF 只接受安全、兼容、进程生命周期、诊断与合同修复。
 - 验证按变更面路由：C# 用 build+xUnit，gateway/renderer 用 focused Node 测试，subject spec/rules 用 Core；shared spec/schema、跨学科或 release 才用 Full。
 - Full 的通用 renderer/layout 合同由主产品包运行一次；其他 subject-pack 必须保留独立 snapshot 和学科特异 sentinel，不复制同一输入与视觉基准。
 
@@ -72,5 +73,5 @@ SourceExam
 2. `M1 dead-surface-removal`（verified）：退出主链的工具、专属 schema/eval、死 DTO、未使用 diagnostics 和空项目已删除。
 3. `M2 gate-tiering`（verified）：Focused/Core/Full 已分层、去重并解除 patch SDK 摩擦。
 4. `M3 real-paper-regression`（verified）：2024/2025 真实错题已绑定 authority、输入/产物 hash 和独立阶段结果。
-5. `M4 targeted-visual-grounding`：在真实标注和稳定 provider 前提下接入有限部件定位。
+5. `M4 targeted-visual-grounding`：在真实标注和稳定 provider 前提下接入有限部件定位；兼任 WPF 产品化决策门（runtime bundle 只在本门通过后立项）。
 6. `M5 historical-rollout`：按同一主链推进 2015-2023 真实回归。
