@@ -44,7 +44,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-live-answer-workflow.p
 
 工作流默认执行视觉审计。只有诊断旧链或明确控制 provider 成本时才使用 `-SkipVisualAudit`；这会恢复单次盲答路径，不能作为可信交付。
 
-每个 AI 阶段都会原子写入独立的 `*.summary.json`；工作流最终写入 `<原卷名>.workflow-run.json`，记录 run id、输入 SHA-256、阶段 `completed/skipped/failed`、当前阶段产物和最终交付哈希。失败回执会指向保留的临时诊断目录；这些回执证明本次执行和文件绑定，不证明答案语义正确。
+每个 AI 阶段都会原子写入独立的 `*.summary.json`；工作流最终写入 `<原卷名>.workflow-run.json`，记录 run id、输入 SHA-256、阶段 `completed/skipped/failed`、当前阶段产物和最终交付哈希。两类回执在写出时都经 `prompts/shared/schemas/` 的 schema 校验，结构漂移即失败。失败回执会指向保留的临时诊断目录；这些回执证明本次执行和文件绑定，不证明答案语义正确。
 
 只对已有答案 Markdown 做校验和 PDF 交付：
 
@@ -83,7 +83,7 @@ dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug 
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer
 ```
 
-AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试；workflow、publish、packaging 或 Node CLI 合同再运行 `Gate=ToolchainIntegration` 的 9 项 .NET 集成测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
+AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试；workflow、publish、packaging 或 Node CLI 合同再运行 `Gate=ToolchainIntegration` 的 12 项 .NET 集成测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
 
 Full 中共享 renderer/layout/delivery 回归只由 `junior-physics-answer` eval 承担一次；廉价 manifest 合同独立验证负向边界。Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
 
