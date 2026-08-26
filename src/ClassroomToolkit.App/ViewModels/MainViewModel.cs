@@ -18,6 +18,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly IPathOpener _pathOpener;
     private readonly StringBuilder _activityLog = new();
     private CancellationTokenSource? _operationCancellation;
+    private bool _suppressHealthRefresh;
+    private int _healthRefreshVersion;
 
     public MainViewModel(IToolchainOrchestrator toolchainOrchestrator, IPathOpener pathOpener)
     {
@@ -28,6 +30,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         // A locked or damaged prompts/ tree must degrade to the default pack view
         // instead of crashing application startup.
+        _suppressHealthRefresh = true;
         try
         {
             var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
@@ -42,8 +45,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
             AppendLog($"工作区扫描失败：{ex.Message}");
             SelectedSubjectPack = DefaultSubjectPackFallback();
         }
+        finally
+        {
+            _suppressHealthRefresh = false;
+        }
 
-        RefreshHealth();
+        // The health check drives a real node process (up to the 2-minute guard);
+        // it must never block UI construction, so it runs fire-and-forget and
+        // updates the cards when it completes.
+        _ = RefreshHealthAsync();
     }
 
     public ObservableCollection<string> AvailableSubjectPacks { get; }
@@ -85,7 +95,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnSelectedSubjectPackChanged(string value)
     {
-        RefreshHealth();
+        if (!_suppressHealthRefresh)
+        {
+            _ = RefreshHealthAsync();
+        }
     }
 
     [RelayCommand]
@@ -161,7 +174,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var result = await action(cancellationToken);
             ApplyExecution(result);
             StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
-            RefreshHealth();
+            await RefreshHealthAsync();
         });
     }
 
@@ -215,11 +228,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
         AppendLog(result.Output);
     }
 
-    private void RefreshHealth()
+    private async Task RefreshHealthAsync()
     {
+        // Concurrent refreshes (startup, pack switching, post-check) resolve by
+        // versioning: only the latest request may apply its results.
+        var version = ++_healthRefreshVersion;
         try
         {
-            var health = _toolchainOrchestrator.GetWorkspaceHealthReport(SelectedSubjectPack);
+            var health = await _toolchainOrchestrator.GetWorkspaceHealthReportAsync(SelectedSubjectPack);
+            if (version != _healthRefreshVersion)
+            {
+                return;
+            }
+
             StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
             StatusCards.Clear();
             StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现", health.SubjectPacks.Count > 0));
@@ -229,6 +250,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
+            if (version != _healthRefreshVersion)
+            {
+                return;
+            }
+
             // Keep the previous status cards visible and surface the failure as a diagnostic.
             StatusMessage = $"工作区健康检查失败：{ex.Message}";
         }

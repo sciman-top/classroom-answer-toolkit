@@ -6,7 +6,9 @@ public interface IToolchainOrchestrator
 {
     ToolchainWorkspaceInfo GetWorkspaceInfo();
 
-    WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null);
+    Task<WorkspaceHealthReport> GetWorkspaceHealthReportAsync(
+        string? subjectPack = null,
+        CancellationToken cancellationToken = default);
 
     Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default);
 

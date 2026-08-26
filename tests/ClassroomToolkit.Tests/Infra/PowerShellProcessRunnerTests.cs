@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading;
 using ClassroomToolkit.Infra.Process;
 using FluentAssertions;
 
@@ -65,5 +66,44 @@ public sealed class PowerShellProcessRunnerTests
             .Which.Message.Should().Contain("exceeded").And.Contain("pwsh").And.Contain("terminated");
         clock.Stop();
         clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(15));
+    }
+
+    [Fact]
+    public async Task RunAsync_Completes_WhenBlockedOnANonPumpingDispatcherThread()
+    {
+        // Regression for the WPF startup deadlock (2026-08-26 audit, P1): blocking a
+        // Dispatcher thread on RunAsync deadlocked whenever any continuation was
+        // posted back to the captured Dispatcher context, because that context was
+        // not pumping. The runner must not capture the caller's context. Before the
+        // fix this test times out instead of failing fast: the worker thread stays
+        // blocked on GetResult until the test process ends.
+        var runner = new PowerShellProcessRunner();
+        var completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                // Mirror the WPF UI thread: an STA thread with a Dispatcher
+                // synchronization context that never runs a message pump.
+                var dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+                SynchronizationContext.SetSynchronizationContext(
+                    new System.Windows.Threading.DispatcherSynchronizationContext(dispatcher));
+
+                var result = runner.RunAsync(
+                    "node",
+                    ["-e", "setTimeout(() => console.log('ok'), 300)"],
+                    Path.GetTempPath()).GetAwaiter().GetResult();
+                completion.TrySetResult(result.StandardOutput.Trim());
+            }
+            catch (Exception ex)
+            {
+                completion.TrySetException(ex);
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+
+        var output = await completion.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        output.Should().Be("ok");
     }
 }

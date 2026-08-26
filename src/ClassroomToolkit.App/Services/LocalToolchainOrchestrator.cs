@@ -44,7 +44,9 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             subjectPacks.Select(pack => pack.AssetId).ToArray());
     }
 
-    public WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null)
+    public async Task<WorkspaceHealthReport> GetWorkspaceHealthReportAsync(
+        string? subjectPack = null,
+        CancellationToken cancellationToken = default)
     {
         var workspace = GetWorkspaceInfo();
         var toolPath = Path.Combine(workspace.RepositoryRoot, "tools", "rule-compiler", "workspace-health.mjs");
@@ -57,11 +59,12 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 arguments.Add(subjectPack);
             }
 
-            var process = _processRunner.RunAsync(
+            var process = await _processRunner.RunAsync(
                 "node",
                 arguments,
                 workspace.RepositoryRoot,
-                timeout: HealthCheckTimeout).GetAwaiter().GetResult();
+                cancellationToken,
+                HealthCheckTimeout).ConfigureAwait(false);
             if (process.ExitCode != 0)
             {
                 return DegradedHealthReport(workspace, subjectPack,

@@ -76,7 +76,10 @@ public sealed class PowerShellProcessRunner : IProcessRunner
         var standardErrorTask = process.StandardError.ReadToEndAsync(cancellationToken);
         try
         {
-            await process.WaitForExitAsync(linkedCts.Token);
+            // ConfigureAwait(false) is load-bearing: callers such as the WPF health
+            // surface may block a Dispatcher thread on this task, and any continuation
+            // posted back to a non-pumping Dispatcher context deadlocks.
+            await process.WaitForExitAsync(linkedCts.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (IsTimeout())
         {
@@ -90,8 +93,8 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             throw TimeoutException();
         }
 
-        var standardOutput = await standardOutputTask;
-        var standardError = await standardErrorTask;
+        var standardOutput = await standardOutputTask.ConfigureAwait(false);
+        var standardError = await standardErrorTask.ConfigureAwait(false);
 
         return new ProcessRunResult(
             process.ExitCode,

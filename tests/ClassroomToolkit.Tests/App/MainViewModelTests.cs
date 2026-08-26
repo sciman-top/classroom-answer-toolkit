@@ -120,7 +120,9 @@ public sealed class MainViewModelTests
                 true, true, "junior-physics-answer", ["junior-physics-answer", "math-answer"]);
         }
 
-        public WorkspaceHealthReport GetWorkspaceHealthReport(string? subjectPack = null)
+        public Task<WorkspaceHealthReport> GetWorkspaceHealthReportAsync(
+            string? subjectPack = null,
+            CancellationToken cancellationToken = default)
         {
             if (_throwOnWorkspaceInfo)
             {
@@ -129,10 +131,10 @@ public sealed class MainViewModelTests
 
             LastHealthSubjectPack = subjectPack;
             var selected = subjectPack ?? "junior-physics-answer";
-            return new(
+            return Task.FromResult(new WorkspaceHealthReport(
                 selected, ["junior-physics-answer", "math-answer"], "v8.14", "v8.14",
                 true, @"D:\repo\.snapshot-cache\resolved-snapshot.json", "v8.14", "classroom",
-                true, true, 12, $"{selected} 主链就绪", []);
+                true, true, 12, $"{selected} 主链就绪", []));
         }
 
         public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default) =>

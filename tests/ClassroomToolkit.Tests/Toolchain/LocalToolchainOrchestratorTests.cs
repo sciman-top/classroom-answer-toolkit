@@ -10,7 +10,7 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class LocalToolchainOrchestratorTests
 {
     [Fact]
-    public void GetWorkspaceHealthReport_ParsesTheNodeRegistryReport()
+    public async Task GetWorkspaceHealthReportAsync_ParsesTheNodeRegistryReport()
     {
         using var workspace = new TemporaryWorkspace();
         var runner = new DeliveryRunner(workspace.Root, healthJson: """
@@ -32,7 +32,7 @@ public sealed class LocalToolchainOrchestratorTests
             """);
         var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
 
-        var health = orchestrator.GetWorkspaceHealthReport("junior-physics-answer");
+        var health = await orchestrator.GetWorkspaceHealthReportAsync("junior-physics-answer");
 
         health.IsHealthy.Should().BeTrue(health.Summary);
         health.PrimarySubjectPack.Should().Be("junior-physics-answer");
@@ -43,13 +43,13 @@ public sealed class LocalToolchainOrchestratorTests
     }
 
     [Fact]
-    public void GetWorkspaceHealthReport_DegradesToDiagnostics_WhenNodeToolFails()
+    public async Task GetWorkspaceHealthReportAsync_DegradesToDiagnostics_WhenNodeToolFails()
     {
         using var workspace = new TemporaryWorkspace();
         var runner = new DeliveryRunner(workspace.Root, healthExitCode: 1, healthError: "node unavailable");
         var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
 
-        var health = orchestrator.GetWorkspaceHealthReport();
+        var health = await orchestrator.GetWorkspaceHealthReportAsync();
 
         health.IsHealthy.Should().BeFalse();
         health.Issues.Should().ContainSingle(issue => issue.Contains("健康检查工具失败"));

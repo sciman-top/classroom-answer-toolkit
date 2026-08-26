@@ -72,7 +72,12 @@ public partial class App : System.Windows.Application
         }
 
         var workspace = _toolchainOrchestrator.GetWorkspaceInfo();
-        var health = _toolchainOrchestrator.GetWorkspaceHealthReport(workspace.PrimarySubjectPack);
+        // Blocking here is safe: the process runner never captures a synchronization
+        // context (ConfigureAwait(false) throughout), so no continuation needs this
+        // thread and the smoke has no pumped Dispatcher anyway.
+        var health = _toolchainOrchestrator
+            .GetWorkspaceHealthReportAsync(workspace.PrimarySubjectPack)
+            .GetAwaiter().GetResult();
         Console.WriteLine($"repositoryRoot={workspace.RepositoryRoot}");
         Console.WriteLine($"workspaceSummary={workspace.Summary}");
         Console.WriteLine($"workspaceHealthy={health.IsHealthy}");
