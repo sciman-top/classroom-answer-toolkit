@@ -494,13 +494,17 @@ export async function requestTextWithFailover(config, options) {
     }
 
     if (!attempt.retryable) {
-      return {
-        ok: false,
-        provider: provider.role,
-        output: "",
-        attempts,
-        error: attempt.error
-      };
+      // Provider-local rejections must not veto the remaining roles in the chain.
+      if (!PROVIDER_LOCAL_FAILURE_STATUSES.has(attempt.status) || provider === providers.at(-1)) {
+        return {
+          ok: false,
+          provider: provider.role,
+          output: "",
+          attempts,
+          error: attempt.error
+        };
+      }
+      continue;
     }
   }
 
@@ -597,6 +601,10 @@ export async function callTextProvider(provider, options) {
 export function isRetryableGatewayFailure(status) {
   return [408, 409, 425, 429, 500, 502, 503, 504].includes(status);
 }
+
+// Provider-local rejections: the endpoint itself refused (bad key/URL/payload
+// size), so another same-profile role with its own connection may still serve.
+export const PROVIDER_LOCAL_FAILURE_STATUSES = Object.freeze(new Set([401, 403, 404, 405, 413]));
 
 function joinUrl(baseUrl, endpointPath) {
   return `${baseUrl.replace(/\/+$/, "")}/${endpointPath}`;

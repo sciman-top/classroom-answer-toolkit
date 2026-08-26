@@ -25,7 +25,7 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
 
 `--timeout-ms` 是每次请求的应用层 AbortController 总上限，默认 600 秒。gateway 显式把 Undici `headersTimeout` 和 `bodyTimeout` 设为该值加 5 秒，使应用层计时器成为权威截止线，避免默认约 300 秒的响应头上限提前截断长推理。连接建立仍使用 Undici 的短超时。启用工作流 `-UseGatewayProxy` 时使用 `EnvHttpProxyAgent`，保持 `HTTP_PROXY`、`HTTPS_PROXY` 和 `NO_PROXY` 语义。
 
-`--provider primary|fallback|all` 只过滤同一质量 profile 内的尝试范围：`primary` 只请求主角色，`fallback` 只请求 fallback 角色，`all` 按 provider role 顺序使用该 profile 的所有角色。页数、题型和风险信号不再隐式改变模型。成功回执的 `routing` 记录 mode、quality profile、quality-degraded（当前严格策略恒为 false）、实际 `orderedRoles`、`selectedRole` 和 target，不记录密钥。
+`--provider primary|fallback|all` 只过滤同一质量 profile 内的尝试范围：`primary` 只请求主角色，`fallback` 只请求 fallback 角色，`all` 按 provider role 顺序使用该 profile 的所有角色。provider 本地拒绝（401/403/404/405/413，即该 endpoint 自身的 key/URL/payload 问题）不终止整条链，改为继续尝试同档下一角色；其余非 retryable 失败仍 fail closed。页数、题型和风险信号不再隐式改变模型。成功回执的 `routing` 记录 mode、quality profile、quality-degraded（当前严格策略恒为 false）、实际 `orderedRoles`、`selectedRole` 和 target，不记录密钥。
 
 `--summary-out` 与 Markdown 都使用同目录临时文件原子替换；summary 记录 prompt/input/output SHA-256、实际 provider/model/reasoning、routing 和脱敏 attempts。summary 路径不得覆盖 prompt、候选、输入图或 Markdown 输出。
 

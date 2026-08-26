@@ -20,6 +20,16 @@ export function resolveImageEvidenceLabels(imagePaths, role = "source") {
       ? "No-reference visual audit source"
       : "Source exam";
   const manifestMaps = new Map();
+  // Windows paths differ by case casing between runs and archives; entry paths in
+  // a manifest may be relative to the manifest itself. Canonicalize both sides per
+  // platform, then warn loudly on a miss: silently dropping measured geometry
+  // labels would strip deterministic evidence from the model prompt.
+  const canonicalEntryPath = (manifestDirectory, entryPath) => {
+    const resolved = path.isAbsolute(entryPath)
+      ? path.resolve(entryPath)
+      : path.resolve(manifestDirectory, entryPath);
+    return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+  };
   return imagePaths.map((imagePath) => {
     const directory = path.dirname(imagePath);
     if (!manifestMaps.has(directory)) {
@@ -36,11 +46,12 @@ export function resolveImageEvidenceLabels(imagePaths, role = "source") {
         const entries = Array.isArray(manifest.pages) ? manifest.pages : [];
         manifestMaps.set(directory, new Map(entries
           .filter((entry) => typeof entry?.imagePath === "string")
-          .map((entry) => [path.resolve(entry.imagePath), entry])));
+          .map((entry) => [canonicalEntryPath(directory, entry.imagePath), entry])));
       }
     }
-    const entry = manifestMaps.get(directory)?.get(path.resolve(imagePath));
+    const entry = manifestMaps.get(directory)?.get(canonicalEntryPath(directory, imagePath));
     if (!entry) {
+      console.warn(`[gateway] No image-evidence manifest entry for ${imagePath}; continuing without deterministic labels.`);
       return null;
     }
     if (entry.kind === "focus-region") {

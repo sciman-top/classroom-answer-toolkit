@@ -3,7 +3,7 @@ import path from "node:path";
 import { Agent, EnvHttpProxyAgent, setGlobalDispatcher } from "undici";
 
 import { normalizeAnswerMarkdown } from "./answer-tasks.mjs";
-import { assertLiveEgressAllowed, isRetryableGatewayFailure } from "./validate-config.mjs";
+import { assertLiveEgressAllowed, isRetryableGatewayFailure, PROVIDER_LOCAL_FAILURE_STATUSES } from "./validate-config.mjs";
 
 const TRANSPORT_TIMEOUT_GRACE_MS = 5000;
 let activeTransportKey = null;
@@ -437,14 +437,20 @@ export async function requestAnswerWithFailover(config, options) {
         };
       }
       if (!attempt.retryable) {
-        return {
-          ok: false,
-          provider: provider.role,
-          answerMarkdown: "",
-          attempts,
-          routing: routingReceipt(route),
-          error: attempt.error
-        };
+        // Provider-local rejections (bad key/URL on one endpoint) must not veto the
+        // remaining same-profile roles; generic non-retryable failures still do.
+        const providerLocal = PROVIDER_LOCAL_FAILURE_STATUSES.has(attempt.status);
+        if (!providerLocal || provider === providers.at(-1)) {
+          return {
+            ok: false,
+            provider: provider.role,
+            answerMarkdown: "",
+            attempts,
+            routing: routingReceipt(route),
+            error: attempt.error
+          };
+        }
+        break;
       }
       if (attemptNumber < RETRYABLE_ATTEMPTS_PER_PROVIDER) {
         const backoffMs = attempt.status === 429
@@ -462,6 +468,6 @@ export async function requestAnswerWithFailover(config, options) {
     answerMarkdown: "",
     attempts,
     routing: routingReceipt(route),
-    error: "All configured AI providers failed with retryable errors."
+    error: "All configured AI providers for this quality profile failed."
   };
 }
