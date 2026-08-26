@@ -211,11 +211,8 @@ function main() {
     ? collectReviewFilePaths(reviewDir).map(createFileIntegrity)
     : [];
 
-  // Portability contract (2026-08-27): package-internal paths are written
-  // relative to the manifest directory so an archived delivery validates after
-  // the archive moves or changes machine. Out-of-repo review artifacts stay
-  // absolute: they are not part of the delivery package yet (2026-09-30
-  // cleanup gate may revisit that layout).
+  // Package-internal paths are relative to the manifest directory so an
+  // archived delivery validates after the archive moves or changes machine.
   const manifestDirectory = path.dirname(manifestOutPath);
   const anchoredPath = (filePath) => {
     const relative = path.relative(manifestDirectory, filePath);
@@ -238,8 +235,8 @@ function main() {
     input: anchoredPath(inputPath),
     output: anchoredPath(outputPath),
     review: {
-      outputDir: reviewDir,
-      manifestPath: reviewManifestPath,
+      outputDir: anchoredPath(reviewDir),
+      manifestPath: anchoredPath(reviewManifestPath),
       scale: options.reviewScale
     },
     ocr,

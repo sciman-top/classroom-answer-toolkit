@@ -401,7 +401,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             snapshot.GetProperty("version").GetString(),
             root.GetProperty("profile").GetString()
                 ?? throw new InvalidOperationException("Manifest profile is empty."),
-            review.GetProperty("outputDir").GetString(),
+            ResolveManifestEntryPath(manifestDirectory, review.GetProperty("outputDir").GetString()
+                ?? throw new InvalidOperationException("Manifest review.outputDir is empty.")),
             status.GetProperty("deliveryComplete").GetBoolean());
     }
 

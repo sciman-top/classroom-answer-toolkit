@@ -104,6 +104,8 @@ test("package-relative manifest paths are accepted (2026-08-27 portability contr
     manifest.integrity.input.path = "answer.md";
     manifest.integrity.output.path = "answer.pdf";
     manifest.integrity.snapshot.path = "answer.snapshot.json";
+    manifest.review.outputDir = "answer.review";
+    manifest.review.manifestPath = "answer.review/manifest.json";
 
     assert.deepEqual(validateDeliveryManifest(manifest, manifestPath), []);
   });

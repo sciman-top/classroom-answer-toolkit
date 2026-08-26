@@ -422,6 +422,22 @@ async function main() {
               path.dirname(deliverPdfPath),
               `${path.basename(deliverPdfPath, path.extname(deliverPdfPath))}.snapshot.json`
             );
+            const expectedDeliveryReviewDir = path.resolve(
+              path.dirname(deliverPdfPath),
+              `${path.basename(deliverPdfPath, path.extname(deliverPdfPath))}.review`
+            );
+            const deliveryReviewDir = typeof deliveryManifest.review?.outputDir === "string"
+              ? path.resolve(path.dirname(deliveryManifestPath), deliveryManifest.review.outputDir)
+              : null;
+            const deliveryReviewManifestPath = typeof deliveryManifest.review?.manifestPath === "string"
+              ? path.resolve(path.dirname(deliveryManifestPath), deliveryManifest.review.manifestPath)
+              : null;
+            const reviewPackageMatch = deliveryReviewDir === expectedDeliveryReviewDir
+              && deliveryReviewManifestPath === path.join(expectedDeliveryReviewDir, "manifest.json")
+              && fs.existsSync(expectedDeliveryReviewDir)
+              && fs.existsSync(deliveryReviewManifestPath)
+              && Array.isArray(deliveryManifest.integrity?.reviewFiles)
+              && deliveryManifest.integrity.reviewFiles.length > 0;
             const deliverySnapshot = deliverySnapshotPath && fs.existsSync(deliverySnapshotPath)
               ? readJson(deliverySnapshotPath)
               : null;
@@ -439,7 +455,7 @@ async function main() {
             const expectedStatus = expectation.delivery.expectedStatus ?? {
               toolchainPassed: true,
               deliveryComplete: true,
-              reviewArtifactReady: Boolean(expectation.delivery.keepReview)
+              reviewArtifactReady: true
             };
             const actualStatus = deliveryManifest.status ?? {};
             const statusMatch =
@@ -451,7 +467,7 @@ async function main() {
             const ocrMatch = Object.entries(expectedOcr)
               .every(([key, value]) => actualOcr[key] === value);
 
-            deliveryOk = snapshotMatch && graphicsMatch && statusMatch && ocrMatch;
+            deliveryOk = snapshotMatch && reviewPackageMatch && graphicsMatch && statusMatch && ocrMatch;
             delivery = {
               manifestPath: path.relative(repoRoot, deliveryManifestPath),
               pdfPath: path.relative(repoRoot, deliverPdfPath),
@@ -459,6 +475,8 @@ async function main() {
               snapshotPath: deliveryManifest.snapshotPath,
               snapshotMatch,
               expectedSnapshotPath: path.relative(repoRoot, expectedDeliverySnapshotPath),
+              reviewPackageMatch,
+              expectedReviewDir: path.relative(repoRoot, expectedDeliveryReviewDir),
               expectedGraphics,
               actualGraphics,
               graphicsMatch,

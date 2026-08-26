@@ -61,8 +61,8 @@
         "scale"
       ],
       "properties": {
-        "outputDir": { "type": "string" },
-        "manifestPath": { "type": "string" },
+        "outputDir": { "type": "string", "description": "Review package directory, relative to the delivery manifest directory for new manifests. Legacy absolute paths remain valid." },
+        "manifestPath": { "type": "string", "description": "Review manifest path, relative to the delivery manifest directory for new manifests. Legacy absolute paths remain valid." },
         "scale": { "type": "string" }
       },
       "additionalProperties": true

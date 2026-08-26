@@ -25,7 +25,7 @@ SourceExam
 - 生成提示词：`prompts/specs/compiled/`，禁止手改；运行时经各 subject-pack manifest 的 `sourceOfTruth.humanSpec` 解析。
 - 规则真源：`prompts/platform-core/` 与 `prompts/<subject-pack>/rules|profiles/`。
 - 编译缓存快照：`.snapshot-cache/`；它可被后续编译替换，不能直接充当长期交付证据。
-- 真实交付：用户指定输出目录；每个 PDF 同目录保留交付专属 snapshot，manifest 1.1 绑定输入 Markdown、PDF、snapshot 和当前 review 文件集合的字节数与 SHA-256。
+- 真实交付：用户指定输出目录；每个 PDF 同目录保留交付专属 snapshot 和 `<PDF基名>.review/`，manifest 1.1 以自身目录为相对路径锚点，绑定输入 Markdown、PDF、snapshot 和包内 review 文件集合的字节数与 SHA-256；`.pdf-review/` 仅是可选调试缓存。
 - 工作流执行证据：各 AI 阶段独立 `*.summary.json`，最终 `<原卷名>.workflow-run.json` 记录输入 hash、阶段终态、当前产物及失败诊断目录。
 
 ## Retained modules

@@ -105,7 +105,7 @@ WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓�
 
 ## 可信边界
 
-`delivery-manifest.json` 1.1 会把输入 Markdown、最终 PDF、同目录交付 snapshot 和保留的 review 文件绑定到字节数与 SHA-256；validator 会拒绝缺失、篡改或 review 文件集合漂移。它证明的是指定文件之间的交付关系，不证明答案语义必然正确。答案可信需要满足以下至少一项：
+`delivery-manifest.json` 1.1 会把输入 Markdown、最终 PDF、同目录交付 snapshot 和 `<PDF基名>.review/` 包内 review 文件绑定到字节数与 SHA-256；validator 会拒绝缺失、篡改或 review 文件集合漂移。`.pdf-review/` 只保留可选调试副本，不是归档依赖。该 manifest 证明的是指定文件之间的交付关系，不证明答案语义必然正确。答案可信需要满足以下至少一项：
 
 - 与权威参考答案逐题比对并完成校正；
 - 由教师逐题复核；

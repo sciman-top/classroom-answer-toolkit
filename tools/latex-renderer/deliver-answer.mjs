@@ -24,8 +24,9 @@ Examples:
 Behavior:
   1. Render the answer Markdown to PDF.
   2. Render the answer PDF into review page images for visual QA.
-  3. If both steps succeed, automatically clean transient artifacts unless you keep them.
-  4. If any step fails, keep all temporary artifacts for debugging.
+  3. Copy the review set beside the PDF as <pdf-base>.review for archival.
+  4. If both steps succeed, automatically clean transient artifacts unless you keep them.
+  5. If any step fails, keep all temporary artifacts for debugging.
 `;
 
 function fail(message, code = 2) {
@@ -110,6 +111,13 @@ function makeDeliverySnapshotPath(pdfPath) {
   return path.resolve(
     path.dirname(pdfPath),
     `${path.basename(pdfPath, path.extname(pdfPath))}.snapshot.json`
+  );
+}
+
+function makeDeliveryReviewPath(pdfPath) {
+  return path.resolve(
+    path.dirname(pdfPath),
+    `${path.basename(pdfPath, path.extname(pdfPath))}.review`
   );
 }
 
@@ -217,6 +225,12 @@ function main() {
     options.reviewScale
   ]);
 
+  // The repository-local review directory is a transient debugging surface.
+  // Keep a delivery-owned copy beside the PDF so archives remain self-contained.
+  const deliveryReviewDir = makeDeliveryReviewPath(outputPath);
+  removePathRecursive(deliveryReviewDir);
+  fs.cpSync(reviewOutputDir, deliveryReviewDir, { recursive: true });
+
   const cleanupArgs = ["--keep-review"];
   if (!options.keepReview) {
     cleanupArgs.push(path.relative(repoRoot, reviewOutputDir));
@@ -235,7 +249,7 @@ function main() {
     console.log(`[${packageName}] cleanup skipped by runtime config`);
   }
 
-  const reviewManifestPath = path.join(reviewOutputDir, "manifest.json");
+  const reviewManifestPath = path.join(deliveryReviewDir, "manifest.json");
   console.log(`[${packageName}] write-delivery-manifest`);
   runNodeScript("write-delivery-manifest.mjs", [
     "--input",
@@ -245,7 +259,7 @@ function main() {
     "--snapshot-path",
     path.relative(repoRoot, deliverySnapshotPath),
     "--review-dir",
-    path.relative(repoRoot, reviewOutputDir),
+    path.relative(repoRoot, deliveryReviewDir),
     "--review-manifest",
     path.relative(repoRoot, reviewManifestPath),
     "--review-scale",

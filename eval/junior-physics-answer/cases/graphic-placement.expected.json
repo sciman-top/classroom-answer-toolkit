@@ -13,7 +13,7 @@
         "expectedStatus": {
           "toolchainPassed": true,
           "deliveryComplete": true,
-          "reviewArtifactReady": false
+          "reviewArtifactReady": true
         },
         "expectedOcr": {
           "status": "not-requested"

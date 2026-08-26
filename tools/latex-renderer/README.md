@@ -37,13 +37,15 @@ This one command will:
 1. render the answer Markdown to PDF;
 2. generate repository-local review page images for the answer PDF;
 3. keep temporary artifacts when render or review fails;
-4. automatically clean transient artifacts when both steps succeed.
-5. validate answer Markdown against baseline formatting rules before rendering.
-6. persist `<pdf-base>.snapshot.json` beside the PDF instead of pointing long-lived delivery evidence at the mutable `.snapshot-cache`.
-7. write and validate Delivery Manifest 1.1 integrity metadata for the input Markdown, PDF, delivery snapshot, and exact retained review-file set.
+4. copy the complete review set to `<pdf-base>.review/` beside the PDF;
+5. automatically clean transient artifacts when both steps succeed;
+6. validate answer Markdown against baseline formatting rules before rendering;
+7. persist `<pdf-base>.snapshot.json` beside the PDF instead of pointing long-lived delivery evidence at the mutable `.snapshot-cache`;
+8. write and validate Delivery Manifest 1.1 integrity metadata for the input Markdown, PDF, delivery snapshot, and exact packaged review-file set.
 
-Use `--keep-review` when you want to retain the answer review page images for
-manual re-checking after a successful run.
+The packaged `<pdf-base>.review/` directory is always retained. Use
+`--keep-review` only when you also want to retain the repository-local
+`.pdf-review/` debugging copy after a successful run.
 
 The validator still accepts legacy manifest `1.0` files. New deliveries always
 write `1.1`; changing any bound file after delivery causes validation to fail.
@@ -117,7 +119,8 @@ This removes known transient outputs such as:
 - explicitly targeted `*.render.html`
 
 It does **not** remove final deliverables such as the original PDF, answer
-Markdown, answer PDF, or runtime dependencies like `node_modules` and `.tessdata`.
+Markdown, answer PDF, packaged `<pdf-base>.review/`, or runtime dependencies
+like `node_modules` and `.tessdata`.
 
 Useful options:
 

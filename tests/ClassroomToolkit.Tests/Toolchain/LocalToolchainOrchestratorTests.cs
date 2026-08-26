@@ -68,7 +68,7 @@ public sealed class LocalToolchainOrchestratorTests
         execution.Succeeded.Should().BeTrue();
         delivery.Should().NotBeNull();
         delivery!.SnapshotId.Should().Be("snapshot-test");
-        delivery.ReviewDirectoryPath.Should().Be(Path.Combine(workspace.Root, ".pdf-review", "answer"));
+        delivery.ReviewDirectoryPath.Should().Be(Path.Combine(workspace.Root, "answer.review"));
         runner.FileName.Should().Be("node");
         runner.Arguments[0].Should().EndWith("deliver-answer.mjs");
         runner.Arguments.Should().Contain("--keep-review");
@@ -254,7 +254,7 @@ public sealed class LocalToolchainOrchestratorTests
                 profile = _manifestProfile,
                 review = new
                 {
-                    outputDir = Path.Combine(_root, ".pdf-review", "answer")
+                    outputDir = "answer.review"
                 },
                 status = new { deliveryComplete = true }
             }).Replace(Path.Combine(_root, "answer.md"), "answer.md")
