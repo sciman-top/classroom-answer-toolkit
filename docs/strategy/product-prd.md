@@ -49,7 +49,7 @@
 
 ## Current evidence boundary
 
-- 2025 广州中考：Blind Candidate 存在实质错误；Reference Review 后完成正确排版交付，教师验收仍未记录。
+- 2025 广州中考：Blind Candidate 存在实质错误；Reference Review 后完成正确排版交付；三档复跑交付已于 2026-08-26 完成首次教师验收（accepted，锚点见 docs/change-evidence/20260826-teacher-acceptance-2025-guangzhou.md）。
 - 2024 广州中考：题目级 4x 左右重叠视窗和 findings/merge 已接入；Q16-Q18 无参考答案回归仍失败；Reference Review 后交付正确。
 - 2015-2017 源卷已入库并有修复链，但尚未形成与 2024/2025 同级的 checked-in 回归基线（M5 进行中）。
 - 2026 两份冻结 PDF（源卷与解析版）处于"待授权输入"状态，不是 baseline。
