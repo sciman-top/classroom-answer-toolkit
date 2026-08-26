@@ -35,7 +35,7 @@
     "generatedAt": { "type": "string" },
     "subjectPack": { "type": "string" },
     "snapshotId": { "type": "string" },
-    "snapshotPath": { "type": "string" },
+    "snapshotPath": { "type": "string" ,"description": "Path (may be relative to the manifest directory; the manifest directory is the archive anchor). Absolute paths from legacy archives remain valid."},
     "snapshot": {
       "type": "object",
       "required": [
@@ -51,8 +51,8 @@
       "additionalProperties": true
     },
     "profile": { "type": "string" },
-    "input": { "type": "string" },
-    "output": { "type": "string" },
+    "input": { "type": "string" ,"description": "Path (may be relative to the manifest directory; the manifest directory is the archive anchor). Absolute paths from legacy archives remain valid."},
+    "output": { "type": "string" ,"description": "Path (may be relative to the manifest directory; the manifest directory is the archive anchor). Absolute paths from legacy archives remain valid."},
     "review": {
       "type": "object",
       "required": [

@@ -413,8 +413,10 @@ async function main() {
             }
 
             const deliveryManifest = readJson(deliveryManifestPath);
+            // Manifest paths may be relative to the manifest itself (2026-08-27
+            // portability contract); resolve against the manifest directory.
             const deliverySnapshotPath = typeof deliveryManifest.snapshotPath === "string"
-              ? path.resolve(deliveryManifest.snapshotPath)
+              ? path.resolve(path.dirname(deliveryManifestPath), deliveryManifest.snapshotPath)
               : null;
             const expectedDeliverySnapshotPath = path.resolve(
               path.dirname(deliverPdfPath),

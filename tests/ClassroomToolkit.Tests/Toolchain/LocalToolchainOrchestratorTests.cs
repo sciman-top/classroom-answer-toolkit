@@ -257,7 +257,8 @@ public sealed class LocalToolchainOrchestratorTests
                     outputDir = Path.Combine(_root, ".pdf-review", "answer")
                 },
                 status = new { deliveryComplete = true }
-            }));
+            }).Replace(Path.Combine(_root, "answer.md"), "answer.md")
+              .Replace(pdfPath, Path.GetFileName(pdfPath)));
             return Task.FromResult(new ProcessRunResult(0, "ok", ""));
         }
     }

@@ -95,6 +95,20 @@ test("valid delivery manifest 1.1 is accepted", () => {
   });
 });
 
+test("package-relative manifest paths are accepted (2026-08-27 portability contract)", () => {
+  withFixture(({ manifest, manifestPath }) => {
+    // New writer emits package-internal paths relative to the manifest directory.
+    manifest.input = "answer.md";
+    manifest.output = "answer.pdf";
+    manifest.snapshotPath = "answer.snapshot.json";
+    manifest.integrity.input.path = "answer.md";
+    manifest.integrity.output.path = "answer.pdf";
+    manifest.integrity.snapshot.path = "answer.snapshot.json";
+
+    assert.deepEqual(validateDeliveryManifest(manifest, manifestPath), []);
+  });
+});
+
 test("delivery manifest rejects output integrity drift", () => {
   withFixture(({ manifest, manifestPath, outputPath }) => {
     fs.appendFileSync(outputPath, "tampered", "utf8");

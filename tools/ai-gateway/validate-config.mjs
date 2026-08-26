@@ -198,9 +198,20 @@ function readAiProvider(env, role, canonicalPrefix, legacyPrefix, inherited = nu
 
   const source = hasCanonical ? "canonical" : "legacy";
   const prefix = hasCanonical ? canonicalPrefix : legacyPrefix;
-  const inheritPrimaryConnection = inherited !== null && boolValue(get(env, `${prefix}_INHERIT_PRIMARY`));
+  const inheritFlagRaw = get(env, `${prefix}_INHERIT_PRIMARY`);
+  const inheritPrimaryConnection = inherited !== null && boolValue(inheritFlagRaw);
   const model = hasCanonical ? get(env, `${prefix}_TEXT_MODEL`) : get(env, `${prefix}_MODEL`);
   const visionModel = hasCanonical ? get(env, `${prefix}_VISION_MODEL`) || model : model;
+
+  // Connection provenance probes for the fallback contract: cross-gateway key
+  // reuse and partial inheritance must be caught at validate time, not live.
+  const ownConnection = {
+    baseUrl: Boolean(get(env, `${prefix}_BASE_URL`)),
+    apiKey: Boolean(get(env, `${prefix}_API_KEY`)),
+    kind: Boolean(get(env, `${prefix}_KIND`)),
+    textSurface: Boolean(get(env, `${prefix}_TEXT_SURFACE`)),
+    visionSurface: Boolean(get(env, `${prefix}_VISION_SURFACE`))
+  };
 
   return {
     lane: "ai",
@@ -217,7 +228,10 @@ function readAiProvider(env, role, canonicalPrefix, legacyPrefix, inherited = nu
       : normalizeSurface(get(env, `${prefix}_TEXT_SURFACE`) || inherited?.textSurface || "responses"),
     visionSurface: inheritPrimaryConnection
       ? inherited.visionSurface
-      : normalizeSurface(get(env, `${prefix}_VISION_SURFACE`) || inherited?.visionSurface || "responses")
+      : normalizeSurface(get(env, `${prefix}_VISION_SURFACE`) || inherited?.visionSurface || "responses"),
+    _inheritPrimaryConnection: inheritPrimaryConnection,
+    _inheritFlagPresent: inherited !== null && inheritFlagRaw != null && inheritFlagRaw !== "",
+    _ownConnection: ownConnection
   };
 }
 
@@ -273,6 +287,7 @@ export function validateConfig(config, options, parseErrors) {
   for (const provider of config.providers) {
     validateProvider(provider, options, errors, warnings);
   }
+  validateFallbackConnectionProvenance(config.providers, errors, warnings);
 
   const primaryAi = config.providers.find((provider) => provider.lane === "ai" && provider.role === "primary");
   if (!primaryAi) {
@@ -280,6 +295,39 @@ export function validateConfig(config, options, parseErrors) {
   }
 
   return { errors, warnings };
+}
+
+function validateFallbackConnectionProvenance(providers, errors, warnings) {
+  const fallbacks = providers.filter((provider) => provider.lane === "ai" && provider.role.startsWith("fallback"));
+  for (const provider of fallbacks) {
+    const label = `${provider.lane}.${provider.role}`;
+    const own = provider._ownConnection;
+    const ownFields = Object.entries(own).filter(([, present]) => present).map(([field]) => field);
+
+    if (provider._inheritPrimaryConnection && ownFields.length > 0) {
+      errors.push(
+        `${label}: CLASSROOM_TOOLKIT_AI_*_${provider.role.toUpperCase()}_INHERIT_PRIMARY=true conflicts with locally set connection fields (${ownFields.join(", ")}); either inherit fully or configure the connection explicitly.`);
+      continue;
+    }
+
+    if (provider._inheritPrimaryConnection) {
+      continue;
+    }
+
+    // A distinct endpoint with no key of its own would silently reuse the
+    // primary's key against another gateway — fail closed at validate time.
+    if (own.baseUrl && !own.apiKey) {
+      errors.push(
+        `${label}: BASE_URL is set without an API key; it would reuse the primary key across gateways. Set ${provider.role.toUpperCase()}_API_KEY explicitly or set INHERIT_PRIMARY=true to inherit the primary connection entirely.`);
+      continue;
+    }
+
+    if (ownFields.length === 0) {
+      // Compat window: fully-omitted connection fields keep working, loudly.
+      warnings.push(
+        `${label}: no connection fields set; primary endpoint/key are inherited implicitly (connectionSource=primary). Set INHERIT_PRIMARY=true explicitly before the compatibility window closes.`);
+    }
+  }
 }
 
 function validateProvider(provider, options, errors, warnings) {

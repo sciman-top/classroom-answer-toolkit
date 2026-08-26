@@ -211,12 +211,23 @@ function main() {
     ? collectReviewFilePaths(reviewDir).map(createFileIntegrity)
     : [];
 
+  // Portability contract (2026-08-27): package-internal paths are written
+  // relative to the manifest directory so an archived delivery validates after
+  // the archive moves or changes machine. Out-of-repo review artifacts stay
+  // absolute: they are not part of the delivery package yet (2026-09-30
+  // cleanup gate may revisit that layout).
+  const manifestDirectory = path.dirname(manifestOutPath);
+  const anchoredPath = (filePath) => {
+    const relative = path.relative(manifestDirectory, filePath);
+    return relative.startsWith("..") ? filePath : relative.split(path.sep).join("/");
+  };
+
   const manifest = {
     schemaVersion: "1.1",
     kind: "delivery-manifest",
     generatedAt,
     snapshotId,
-    snapshotPath,
+    snapshotPath: anchoredPath(snapshotPath),
     snapshot: {
       id: snapshotId,
       version: snapshotVersion,
@@ -224,8 +235,8 @@ function main() {
     },
     subjectPack: snapshotSubjectPack,
     profile: snapshotProfile,
-    input: inputPath,
-    output: outputPath,
+    input: anchoredPath(inputPath),
+    output: anchoredPath(outputPath),
     review: {
       outputDir: reviewDir,
       manifestPath: reviewManifestPath,
@@ -237,9 +248,9 @@ function main() {
     },
     integrity: {
       algorithm: "sha256",
-      input: createFileIntegrity(inputPath),
-      output: createFileIntegrity(outputPath),
-      snapshot: createFileIntegrity(snapshotPath),
+      input: { ...createFileIntegrity(inputPath), path: anchoredPath(inputPath) },
+      output: { ...createFileIntegrity(outputPath), path: anchoredPath(outputPath) },
+      snapshot: { ...createFileIntegrity(snapshotPath), path: anchoredPath(snapshotPath) },
       reviewFiles
     },
     status: {

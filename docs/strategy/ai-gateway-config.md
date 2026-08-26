@@ -31,6 +31,8 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
 
 质量 profile 不是多数投票或独立正确性复核。固定高档或 HTTP 成功均不能证明答案正确；真实效果仍需同阶段可比样本或教师验收证明。
 
-fallback 档位可只覆盖 model/reasoning，并继承 primary 的 endpoint、key、kind 与 surface。既有本机配置若还保留旧连接字段，可设置对应的 `CLASSROOM_TOOLKIT_AI_FALLBACK_n_INHERIT_PRIMARY=true` 显式忽略这些字段。HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、reasoning effort、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。
+fallback 档位的连接继承合同：显式设置 `INHERIT_PRIMARY=true` 才完整继承 primary 的 endpoint、key、kind 与 surface；该标志与本地自定义连接字段（BASE_URL/API_KEY/KIND/surface）并存属配置错误。只配 `BASE_URL` 而无本档 `API_KEY` 会被直接拒绝（跨网关复用 primary key）；完全省略连接字段的旧配置暂可继续工作，但产生 `connectionSource=primary` 迁移告警，应迁移到显式标志。既有本机配置若曾依赖隐式继承，请在兼容窗口内迁移。HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、reasoning effort、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。
+
+`--config-env-file` 的相对路径解析基准因 CLI 而异：`validate:config` 与 `request:text` 按仓库根解析；`generate:answer` 的输入路径按 `INIT_CWD`/`process.cwd` 解析；`run-live-answer-workflow.ps1` 先按仓库根解析再以绝对路径传入。自动化示例应优先使用绝对路径。
 
 升级既有 `.env` 时只同步四组 `TEXT_MODEL`、`VISION_MODEL` 和 `REASONING_EFFORT` 到 `.env.example` 的 profile 顺序；不得复制、打印或提交 API key。旧的 `sol/high` fallback 不再匹配任一 quality profile，显式请求 `terra-xhigh` 前必须先确认本机 `.env` 已提供该精确 model/effort 组合。

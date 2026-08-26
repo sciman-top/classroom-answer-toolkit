@@ -228,6 +228,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         AppendLog(result.Output);
     }
 
+    // StatusMessage semantics (2026-08-27 product ruling): it always shows the
+    // LATEST workspace health; the most recent operation result lives in
+    // LastResultSummary and the activity log, so a successful health refresh
+    // overwriting a toolchain verdict is intentional.
     private async Task RefreshHealthAsync()
     {
         // Concurrent refreshes (startup, pack switching, post-check) resolve by

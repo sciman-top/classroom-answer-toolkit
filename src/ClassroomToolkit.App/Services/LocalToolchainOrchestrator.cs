@@ -383,22 +383,32 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         var snapshot = root.GetProperty("snapshot");
         var review = root.GetProperty("review");
         var status = root.GetProperty("status");
+        // Manifest paths may be relative to the manifest's own directory
+        // (2026-08-27 portability contract); the process CWD must not matter.
+        var manifestDirectory = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
         return new ManifestContext(
             root.GetProperty("generatedAt").GetDateTimeOffset(),
             root.GetProperty("subjectPack").GetString()
                 ?? throw new InvalidOperationException("Manifest subjectPack is empty."),
-            root.GetProperty("input").GetString()
-                ?? throw new InvalidOperationException("Manifest input is empty."),
-            root.GetProperty("output").GetString()
-                ?? throw new InvalidOperationException("Manifest output is empty."),
+            ResolveManifestEntryPath(manifestDirectory, root.GetProperty("input").GetString()
+                ?? throw new InvalidOperationException("Manifest input is empty.")),
+            ResolveManifestEntryPath(manifestDirectory, root.GetProperty("output").GetString()
+                ?? throw new InvalidOperationException("Manifest output is empty.")),
             root.GetProperty("snapshotId").GetString(),
-            root.GetProperty("snapshotPath").GetString(),
+            root.TryGetProperty("snapshotPath", out var snapshotPathElement)
+                ? ResolveManifestEntryPath(manifestDirectory, snapshotPathElement.GetString() ?? "")
+                : null,
             snapshot.GetProperty("version").GetString(),
             root.GetProperty("profile").GetString()
                 ?? throw new InvalidOperationException("Manifest profile is empty."),
             review.GetProperty("outputDir").GetString(),
             status.GetProperty("deliveryComplete").GetBoolean());
     }
+
+    private static string ResolveManifestEntryPath(string manifestDirectory, string value) =>
+        Path.IsPathFullyQualified(value)
+            ? Path.GetFullPath(value)
+            : Path.GetFullPath(Path.Combine(manifestDirectory, value));
 
     private static string BuildOutput(string standardOutput, string standardError)
     {
