@@ -11,8 +11,8 @@ const assembliesRoot = path.join(repoRoot, "prompts", "specs", "assemblies");
 function parseArgs(argv) {
   return parseArgvFlags(argv, {
     stringFlags: { assembly: true },
-    booleanFlags: { all: true, check: true },
-    defaults: { all: false, assembly: null, check: false }
+    booleanFlags: { check: true },
+    defaults: { assembly: null, check: false }
   });
 }
 

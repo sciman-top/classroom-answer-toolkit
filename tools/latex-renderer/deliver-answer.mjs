@@ -15,7 +15,7 @@ const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const packageName = packageJson.name ?? "junior-physics-answer-latex-renderer";
 
 const usage = `Usage:
-  npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--keep-ocr] [--review-scale 2] [--skip-validate]
+  npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--review-scale 2] [--skip-validate]
 
 Examples:
   npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md"
@@ -49,14 +49,12 @@ function parseArgs(argv) {
     },
     booleanFlags: {
       "keep-review": "keepReview",
-      "keep-ocr": "keepOcr",
       "skip-validate": "skipValidate"
     },
     defaults: {
       profile: null,
       snapshotPath: null,
       keepReview: false,
-      keepOcr: false,
       reviewScale: "2",
       skipValidate: false,
       subjectPack: getDefaultSubjectPack()
@@ -219,15 +217,10 @@ function main() {
     options.reviewScale
   ]);
 
-  const cleanupArgs = [];
-  if (options.keepOcr) {
-    cleanupArgs.push("--keep-ocr");
-  }
-  cleanupArgs.push("--keep-review");
+  const cleanupArgs = ["--keep-review"];
   if (!options.keepReview) {
     cleanupArgs.push(path.relative(repoRoot, reviewOutputDir));
   }
-  cleanupArgs.push(path.relative(repoRoot, makeRenderTempHtmlPath(outputPath)));
 
   console.log(`[${packageName}] cleanup`);
   if (snapshot.delivery?.rules?.cleanupAfterSuccessfulDeliver !== false) {
