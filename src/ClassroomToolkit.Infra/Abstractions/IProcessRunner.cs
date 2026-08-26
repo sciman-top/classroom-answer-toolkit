@@ -13,5 +13,4 @@ public interface IProcessRunner
 public sealed record ProcessRunResult(
     int ExitCode,
     string StandardOutput,
-    string StandardError,
-    TimeSpan Duration);
+    string StandardError);

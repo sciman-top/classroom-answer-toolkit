@@ -31,7 +31,14 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     {
         var repositoryRoot = _repositoryRootResolver.ResolveRepositoryRoot();
         var scriptsDirectory = Path.Combine(repositoryRoot, "scripts");
-        var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(repositoryRoot);
+        // Broken/locked pack manifests would otherwise vanish from the picker with
+        // no trace; surface the locator issues on stderr (visible in smoke/console).
+        var scanIssues = new List<string>();
+        var subjectPacks = WorkspaceSubjectPackLocator.FindSubjectPacks(repositoryRoot, scanIssues);
+        foreach (var issue in scanIssues)
+        {
+            Console.Error.WriteLine($"[toolchain] subject-pack scan issue: {issue}");
+        }
 
         return new ToolchainWorkspaceInfo(
             repositoryRoot,
@@ -98,9 +105,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             root.TryGetProperty("snapshotPath", out var snapshotPath) && snapshotPath.ValueKind == JsonValueKind.String
                 ? snapshotPath.GetString()!
                 : string.Empty,
-            ReadOptionalString(root, "snapshotVersion"),
-            ReadOptionalString(root, "snapshotProfile"),
-            ReadBool(root, "evalExists"),
             ReadBool(root, "evalOk"),
             root.TryGetProperty("evalCaseCount", out var caseCount) && caseCount.ValueKind == JsonValueKind.Number
                 ? caseCount.GetInt32()
@@ -123,9 +127,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             null,
             false,
             string.Empty,
-            null,
-            null,
-            false,
             false,
             0,
             issue,
@@ -327,15 +328,11 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
 
         return (execution, new AnswerDeliveryResult(
-            answerPath,
             outputPath,
             manifestPath,
             context.ReviewDirectoryPath ?? string.Empty,
             context.SnapshotId,
-            subjectPack,
-            context.Profile ?? request.Profile,
-            context.SnapshotPath ?? string.Empty,
-            context.SnapshotVersion));
+            subjectPack));
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(

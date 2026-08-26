@@ -5,8 +5,6 @@ namespace ClassroomToolkit.Infra.Workspace;
 public sealed record WorkspaceSubjectPackPaths(
     string AssetId,
     string Status,
-    string ManifestPath,
-    string ConfigPath,
     string EvalResultsPath);
 
 public static class WorkspaceSubjectPackLocator
@@ -85,14 +83,6 @@ public static class WorkspaceSubjectPackLocator
             ? statusElement.GetString() ?? string.Empty
             : string.Empty;
 
-        var configRelativePath = "./config.json";
-        if (root.TryGetProperty("sourceOfTruth", out var sourceOfTruthElement)
-            && sourceOfTruthElement.TryGetProperty("runtimeConfig", out var runtimeConfigElement)
-            && !string.IsNullOrWhiteSpace(runtimeConfigElement.GetString()))
-        {
-            configRelativePath = runtimeConfigElement.GetString()!;
-        }
-
         var evalResultsRelativePath = $"../../eval/{assetId}/results";
         if (root.TryGetProperty("evaluation", out var evaluationElement)
             && evaluationElement.TryGetProperty("resultsDir", out var resultsDirElement)
@@ -104,8 +94,6 @@ public static class WorkspaceSubjectPackLocator
         return new WorkspaceSubjectPackPaths(
             assetId,
             status,
-            manifestPath,
-            Path.GetFullPath(Path.Combine(packRoot, configRelativePath)),
             Path.GetFullPath(Path.Combine(packRoot, evalResultsRelativePath, "latest.json")));
     }
 }

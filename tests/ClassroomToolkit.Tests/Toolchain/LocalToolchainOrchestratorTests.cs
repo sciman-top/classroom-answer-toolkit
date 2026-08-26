@@ -36,7 +36,6 @@ public sealed class LocalToolchainOrchestratorTests
 
         health.IsHealthy.Should().BeTrue(health.Summary);
         health.PrimarySubjectPack.Should().Be("junior-physics-answer");
-        health.SnapshotVersion.Should().Be("v8.18");
         health.EvalCaseCount.Should().Be(15);
         runner.Arguments[0].Should().EndWith("workspace-health.mjs");
         runner.Arguments.Should().Contain("--subject-pack");
@@ -226,8 +225,7 @@ public sealed class LocalToolchainOrchestratorTests
                 return Task.FromResult(new ProcessRunResult(
                     _healthExitCode,
                     _healthJson ?? "{}",
-                    _healthError ?? "",
-                    TimeSpan.Zero));
+                    _healthError ?? ""));
             }
 
             var pdfPath = arguments[2];
@@ -235,13 +233,13 @@ public sealed class LocalToolchainOrchestratorTests
             var manifestPath = Path.Combine(Path.GetDirectoryName(pdfPath)!, $"{Path.GetFileNameWithoutExtension(pdfPath)}.delivery-manifest.json");
             if (!_writeManifest)
             {
-                return Task.FromResult(new ProcessRunResult(0, "ok", "", TimeSpan.Zero));
+                return Task.FromResult(new ProcessRunResult(0, "ok", ""));
             }
 
             if (_invalidManifest)
             {
                 File.WriteAllText(manifestPath, "{ invalid json");
-                return Task.FromResult(new ProcessRunResult(0, "ok", "", TimeSpan.Zero));
+                return Task.FromResult(new ProcessRunResult(0, "ok", ""));
             }
 
             File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
@@ -260,7 +258,7 @@ public sealed class LocalToolchainOrchestratorTests
                 },
                 status = new { deliveryComplete = true }
             }));
-            return Task.FromResult(new ProcessRunResult(0, "ok", "", TimeSpan.Zero));
+            return Task.FromResult(new ProcessRunResult(0, "ok", ""));
         }
     }
 

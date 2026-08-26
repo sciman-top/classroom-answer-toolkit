@@ -14,7 +14,6 @@ public sealed class PowerShellProcessRunner : IProcessRunner
         CancellationToken cancellationToken = default,
         TimeSpan? timeout = null)
     {
-        var start = DateTimeOffset.Now;
         var startInfo = new ProcessStartInfo
         {
             FileName = fileName,
@@ -112,8 +111,7 @@ public sealed class PowerShellProcessRunner : IProcessRunner
         return new ProcessRunResult(
             process.ExitCode,
             standardOutput,
-            standardError,
-            DateTimeOffset.Now - start);
+            standardError);
 
         bool IsTimeout() =>
             timeoutCts is not null

@@ -133,8 +133,8 @@ public sealed class MainViewModelTests
             var selected = subjectPack ?? "junior-physics-answer";
             return Task.FromResult(new WorkspaceHealthReport(
                 selected, ["junior-physics-answer", "math-answer"], "v8.14", "v8.14",
-                true, @"D:\repo\.snapshot-cache\resolved-snapshot.json", "v8.14", "classroom",
-                true, true, 12, $"{selected} 主链就绪", []));
+                true, @"D:\repo\.snapshot-cache\resolved-snapshot.json",
+                true, 12, $"{selected} 主链就绪", []));
         }
 
         public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default) =>
@@ -164,9 +164,8 @@ public sealed class MainViewModelTests
         {
             LastDeliveryRequest = request;
             var delivery = new AnswerDeliveryResult(
-                request.AnswerMarkdownPath, @"D:\out\answer.pdf", @"D:\out\answer.delivery-manifest.json",
-                @"D:\repo\.pdf-review\answer", "snapshot-test", "junior-physics-answer", "classroom",
-                @"D:\repo\.snapshot-cache\resolved-snapshot.json", "v8.14");
+                @"D:\out\answer.pdf", @"D:\out\answer.delivery-manifest.json",
+                @"D:\repo\.pdf-review\answer", "snapshot-test", "junior-physics-answer");
             return Task.FromResult<(ToolchainExecutionResult, AnswerDeliveryResult?)>((Success(ToolchainScriptKind.Deliver), delivery));
         }
 

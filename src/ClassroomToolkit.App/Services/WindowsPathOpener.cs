@@ -22,7 +22,9 @@ public sealed class WindowsPathOpener : IPathOpener
                 return false;
             }
 
-            Process.Start(new ProcessStartInfo
+            // The returned Process holds OS handles; dispose immediately since we
+            // only launch and never wait on it.
+            using var _ = Process.Start(new ProcessStartInfo
             {
                 FileName = fullPath,
                 UseShellExecute = true
