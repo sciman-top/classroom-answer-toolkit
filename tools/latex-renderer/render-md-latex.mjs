@@ -397,24 +397,33 @@ try {
   await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: "load" });
   // page.pdf has no built-in deadline; a pathological layout could hang forever
   // on direct `npm run render` (deliver's outer limit never applies there).
-  await Promise.race([
-    page.pdf({
-      // Chromium on Windows can native-crash when its PDF path has a non-ASCII file name.
-      path: browserPdfOutputPath,
-      format: renderProfile.page.size,
-      printBackground: true,
-      margin: {
-        top: `${renderProfile.page.margin.topMm}mm`,
-        right: `${renderProfile.page.margin.rightMm}mm`,
-        bottom: `${renderProfile.page.margin.bottomMm}mm`,
-        left: `${renderProfile.page.margin.leftMm}mm`
-      }
-    }),
-    new Promise((_resolve, reject) => setTimeout(
-      () => reject(new Error(`page.pdf exceeded ${RENDER_PDF_TIMEOUT_MS / 1000}s; aborting render.`)),
-      RENDER_PDF_TIMEOUT_MS
-    ))
-  ]);
+  // The loser timer must be cleared: a left-behind 120s timeout would keep the
+  // node process alive long after every successful render.
+  let pdfTimeoutGuard = null;
+  try {
+    await Promise.race([
+      page.pdf({
+        // Chromium on Windows can native-crash when its PDF path has a non-ASCII file name.
+        path: browserPdfOutputPath,
+        format: renderProfile.page.size,
+        printBackground: true,
+        margin: {
+          top: `${renderProfile.page.margin.topMm}mm`,
+          right: `${renderProfile.page.margin.rightMm}mm`,
+          bottom: `${renderProfile.page.margin.bottomMm}mm`,
+          left: `${renderProfile.page.margin.leftMm}mm`
+        }
+      }),
+      new Promise((_resolve, reject) => {
+        pdfTimeoutGuard = setTimeout(
+          () => reject(new Error(`page.pdf exceeded ${RENDER_PDF_TIMEOUT_MS / 1000}s; aborting render.`)),
+          RENDER_PDF_TIMEOUT_MS
+        );
+      })
+    ]);
+  } finally {
+    clearTimeout(pdfTimeoutGuard);
+  }
   commitBrowserPdfOutput(browserPdfOutputPath, outputPath);
 } finally {
   if (browser) {
