@@ -36,7 +36,7 @@ public sealed class ArchiveDeliveryRunScriptTests
             var archiveRoot = Path.Combine(sandbox, "archive-drift");
             var first = await RunScriptAsync(scriptPath, sandbox, archiveRoot, runDirectory);
             first.ExitCode.Should().Be(0);
-            File.ReadAllLines(Path.Combine(archiveRoot, "ARCHIVE-MANIFEST.txt")).Should().HaveCount(3);
+            File.ReadAllLines(Path.Combine(archiveRoot, "ARCHIVE-MANIFEST.txt")).Should().HaveCount(4);
 
             DeleteDirectory(Path.Combine(archiveRoot, "正式交付", "run-a"));
             File.WriteAllText(Path.Combine(runDirectory, "file-1.md"), "drifted content");
@@ -75,13 +75,61 @@ public sealed class ArchiveDeliveryRunScriptTests
 
             var retried = await RunScriptAsync(scriptPath, sandbox, archiveRoot, runDirectory);
             retried.ExitCode.Should().Be(0);
-            File.ReadAllLines(Path.Combine(archiveRoot, "ARCHIVE-MANIFEST.txt")).Should().HaveCount(3);
+            File.ReadAllLines(Path.Combine(archiveRoot, "ARCHIVE-MANIFEST.txt")).Should().HaveCount(4);
         }
         finally
         {
             lockStream?.Dispose();
             DeleteDirectory(sandbox);
         }
+    }
+
+    [Fact]
+    public async Task PreservesRelativeNamesWhenRunDirectoryHasTrailingSeparator()
+    {
+        var (sandbox, runDirectory, scriptPath) = CreateSandbox();
+        try
+        {
+            var archiveRoot = Path.Combine(sandbox, "archive-trailing");
+            var result = await RunScriptAsync(scriptPath, sandbox, archiveRoot, runDirectory + Path.DirectorySeparatorChar);
+
+            result.ExitCode.Should().Be(0);
+            File.Exists(Path.Combine(archiveRoot, "正式交付", "run-a", "file-1.md")).Should().BeTrue();
+            File.Exists(Path.Combine(archiveRoot, "正式交付", "run-a", "sub", "page.pdf")).Should().BeTrue();
+            File.ReadAllLines(Path.Combine(archiveRoot, "ARCHIVE-MANIFEST.txt"))
+                .Should().Contain(line => line.Contains("正式交付/run-a/file-1.md"));
+        }
+        finally
+        {
+            DeleteDirectory(sandbox);
+        }
+    }
+
+    [Fact]
+    public async Task RejectsArchivingAFailedWorkflowRun()
+    {
+        var (sandbox, runDirectory, scriptPath) = CreateSandbox();
+        try
+        {
+            WriteWorkflowReceipt(Path.Combine(runDirectory, "run-a.workflow-run.json"), "failed");
+            var archiveRoot = Path.Combine(sandbox, "archive-failed");
+
+            var result = await RunScriptAsync(scriptPath, sandbox, archiveRoot, runDirectory);
+
+            result.ExitCode.Should().NotBe(0);
+            result.Output.Should().Contain("workflow-run status is 'failed'");
+            Directory.Exists(Path.Combine(archiveRoot, "正式交付", "run-a")).Should().BeFalse();
+        }
+        finally
+        {
+            DeleteDirectory(sandbox);
+        }
+    }
+
+    private static void WriteWorkflowReceipt(string receiptPath, string status)
+    {
+        File.WriteAllText(receiptPath,
+            $"{{\"kind\":\"live-answer-workflow-run\",\"status\":\"{status}\"}}");
     }
 
     private static (string Sandbox, string RunDirectory, string ScriptPath) CreateSandbox()
@@ -93,6 +141,7 @@ public sealed class ArchiveDeliveryRunScriptTests
         File.WriteAllText(Path.Combine(runDirectory, "file-1.md"), "answer markdown");
         File.WriteAllText(Path.Combine(runDirectory, "file-2.json"), "{\"ok\":true}");
         File.WriteAllText(Path.Combine(runDirectory, "sub", "page.pdf"), "%PDF-page");
+        WriteWorkflowReceipt(Path.Combine(runDirectory, "run-a.workflow-run.json"), "succeeded");
         var sibling = Path.Combine(sandbox, "正式交付-fake", "run-b");
         Directory.CreateDirectory(sibling);
         File.WriteAllText(Path.Combine(sibling, "x.md"), "sibling");

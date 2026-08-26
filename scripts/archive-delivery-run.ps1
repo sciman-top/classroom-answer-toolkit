@@ -25,6 +25,9 @@ $resolvedRunDirectory = if ([IO.Path]::IsPathFullyQualified($RunDirectory)) {
 else {
     [IO.Path]::GetFullPath((Join-Path $deliveriesRoot $RunDirectory))
 }
+# A trailing separator survives GetFullPath but shifts every Substring($length + 1)
+# by one character below, silently corrupting archived names and manifest entries.
+$resolvedRunDirectory = $resolvedRunDirectory.TrimEnd('\', '/')
 
 $runParent = [IO.Path]::GetFullPath((Split-Path -Parent $resolvedRunDirectory))
 if (-not [string]::Equals($runParent, $deliveriesRoot, [StringComparison]::OrdinalIgnoreCase)) {
@@ -35,6 +38,20 @@ if (-not (Test-Path -LiteralPath $resolvedRunDirectory -PathType Container)) {
 }
 
 $runName = Split-Path -Leaf $resolvedRunDirectory
+
+# Only completed deliveries belong in the read-only archive: archiving a failed or
+# partial run freezes broken artifacts (and their hashes) into the manifest.
+$receiptFiles = @(Get-ChildItem -LiteralPath $resolvedRunDirectory -File -Filter "*.workflow-run.json")
+if ($receiptFiles.Count -eq 0) {
+    throw "No workflow-run receipt (*.workflow-run.json) found in the run directory; refusing to archive an unverified delivery."
+}
+if ($receiptFiles.Count -gt 1) {
+    throw "Ambiguous workflow-run receipts in the run directory: $($receiptFiles.Count)"
+}
+$workflowReceipt = Get-Content -LiteralPath $receiptFiles[0].FullName -Raw | ConvertFrom-Json
+if ($workflowReceipt.status -ne "succeeded") {
+    throw ("Refusing to archive a delivery whose workflow-run status is '{0}': {1}" -f $workflowReceipt.status, $receiptFiles[0].FullName)
+}
 $destinationDirectory = Join-Path (Join-Path $ArchiveRoot "正式交付") $runName
 if (Test-Path -LiteralPath $destinationDirectory) {
     throw "Archive destination already exists (remove it first to re-archive): $destinationDirectory"
