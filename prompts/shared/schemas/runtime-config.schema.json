@@ -39,7 +39,6 @@
       ],
       "properties": {
         "humanSpec": { "type": "string" },
-        "mirroredSpec": { "type": "string" },
         "runtimeConfig": { "type": "string" },
         "acceptanceChecklist": { "type": "string" }
       },
