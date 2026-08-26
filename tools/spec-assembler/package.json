@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "assemble": "node assemble-human-spec.mjs",
-    "assemble:all": "node assemble-human-spec.mjs --all"
+    "assemble:all": "node assemble-human-spec.mjs --all",
+    "test:assemble": "node --test assemble-human-spec.test.mjs"
   }
 }
