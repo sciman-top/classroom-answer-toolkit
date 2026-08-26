@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import katex from "katex";
+import { createInlineMathScanner } from "./inline-math.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -13,6 +14,7 @@ Checks:
   - orphan question-number first lines
   - backtick-wrapped math or units
   - unbalanced LaTeX dollar signs
+  - dollar signs the renderer would leave as literal text (e.g. '$a$$b$')
   - LaTeX math that fails the renderer's strict KaTeX contract
   - executable raw HTML
   - overly long plain-text lines (warning)
@@ -159,6 +161,45 @@ function validateUnbalancedDollarSigns(source, rule, errors, warnings) {
   }
 }
 
+// Contract check against the renderer: a `$` the renderer's scanner does not
+// consume reaches the PDF as literal text (e.g. `$a$$b$`, `costs $5 and $10`).
+// One scan pass mirrors render-md-latex exactly: whatever that single pass does
+// not replace prints verbatim, so a later rescannable pair is still a leak.
+export function findLeakingDollarLines(source) {
+  const displayFree = source
+    .replace(/\$\$([\s\S]+?)\$\$/g, () => "@@CLASSROOM_DISPLAY_MATH@@")
+    .replace(/\\\[([\s\S]+?)\\\]/g, () => "@@CLASSROOM_DISPLAY_MATH@@");
+
+  const consumedRanges = [];
+  const scanner = createInlineMathScanner(displayFree);
+  let match;
+  while ((match = scanner.next()) !== null) {
+    consumedRanges.push([
+      match.index + match[1].length,
+      match.index + match[0].length
+    ]);
+  }
+
+  const leakingOffsets = [];
+  for (let index = 0; index < displayFree.length; index += 1) {
+    if (displayFree[index] !== "$" || displayFree[index - 1] === "\\") {
+      continue;
+    }
+    if (consumedRanges.some(([start, end]) => index >= start && index < end)) {
+      continue;
+    }
+    leakingOffsets.push(index);
+  }
+
+  return [...new Set(leakingOffsets.map((offset) => lineNumberAt(source, offset)))];
+}
+
+function validateLeakingDollarLines(source, rule, errors, warnings) {
+  for (const lineNumber of [...new Set(findLeakingDollarLines(source))]) {
+    addRuleFinding(rule, `Line ${lineNumber}: dollar sign would be rendered as literal text by the renderer; escape it with \\$ or balance it.`, errors, warnings);
+  }
+}
+
 function lineNumberAt(source, offset) {
   return source.slice(0, offset).split("\n").length;
 }
@@ -261,6 +302,7 @@ function main() {
 
   if (rules.trueLatex) {
     validateUnbalancedDollarSigns(source, rules.trueLatex, errors, warnings);
+    validateLeakingDollarLines(source, rules.trueLatex, errors, warnings);
     validateStrictKatex(source, rules.trueLatex, errors, warnings);
   }
 

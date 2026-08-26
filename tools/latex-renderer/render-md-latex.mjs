@@ -12,6 +12,7 @@ import {
   makeRenderTempHtmlPath
 } from "./pdf-output-path.mjs";
 import { loadRenderProfile } from "./render-profiles.mjs";
+import { mapInlineMath } from "./inline-math.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 import { getDefaultSubjectPack, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -124,10 +125,9 @@ function replaceMath(markdown) {
   text = text.replace(/\\\[([\s\S]+?)\\\]/g, (_match, tex) =>
     stashMath(tex, true)
   );
-  text = text.replace(/(^|[^\\])\$([\s\S]+?)\$/g, (_match, prefix, tex) =>
-    `${prefix}${stashMath(tex, false)}`
-  );
-  return text;
+  // The validator consumes the same scanner via inline-math.mjs; keep both sides
+  // on one implementation so validated documents cannot render differently.
+  return mapInlineMath(text, (tex) => stashMath(tex, false));
 }
 
 function injectMath(html) {
@@ -235,18 +235,42 @@ function resolveLocalImageRefs(markdown, sourcePath) {
   });
 }
 
+// Reference-style definitions (`![alt][ref]` + `[ref]: path`) bypass the inline
+// precheck above; resolve their targets with the same fail-closed rule so the
+// renderer cannot silently emit PDFs with missing images.
+function resolveLocalImageDefinitions(markdown, sourcePath) {
+  return markdown.replace(/^([ \t]{0,3}\[[^\]]+\]:[ \t]*)([^)\s]+)(.*)$/gm, (match, lead, url, tail) => {
+    if (/^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|\/\/|#)/.test(url)) {
+      return match;
+    }
+    const sourceDir = path.dirname(sourcePath);
+    const imagePath = path.resolve(sourceDir, decodeURIComponent(url));
+    if (!fs.existsSync(imagePath)) {
+      throw new Error(`Image reference not found relative to ${sourceDir}: ${url}`);
+    }
+    return `${lead}${pathToFileURL(imagePath).href}${tail}`;
+  });
+}
+
 const source = fs.readFileSync(inputPath, "utf8");
 const normalizedSource = normalizeQuestionLeadLines(source);
 const expanded = expandAnswerGraphicMarkers(normalizedSource, inputPath);
-const withResolvedImages = resolveLocalImageRefs(expanded.expandedMarkdown, inputPath);
+const withResolvedImages = resolveLocalImageDefinitions(
+  resolveLocalImageRefs(expanded.expandedMarkdown, inputPath),
+  inputPath
+);
 const renderedMarkdown = md.render(replaceMath(withResolvedImages));
 const body = injectAnswerGraphics(injectMath(renderedMarkdown), expanded.graphics);
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const katexCss = fs.readFileSync(
-  path.join(toolDir, "node_modules", "katex", "dist", "katex.min.css"),
-  "utf8"
-);
+const katexDistDir = path.join(toolDir, "node_modules", "katex", "dist");
+// KaTeX ships its @font-face sources as URLs relative to the CSS file. Inlined
+// into a temp HTML inside the output directory they would all 404 and formulas
+// silently fall back to serif fonts, so rewrite them to absolute file URLs.
+const katexCss = fs.readFileSync(path.join(katexDistDir, "katex.min.css"), "utf8")
+  .replace(/url\((['"]?)(fonts\/[^)'"]+)\1\)/g, (_match, quote, relativeUrl) =>
+    `url(${quote}${pathToFileURL(path.join(katexDistDir, relativeUrl)).href}${quote})`
+  );
 
 const html = `<!doctype html>
 <html lang="zh-CN">

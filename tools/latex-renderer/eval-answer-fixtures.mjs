@@ -266,7 +266,25 @@ async function main() {
           snapshotRelativePath,
           options.subjectPack
         );
+        // Only exit 1 with the validator's "Errors (n):" report counts as a content
+        // rejection; usage errors (exit 2), crashes, or killed processes are
+        // infrastructure failures that must not masquerade as expected rejections.
+        const rejectedWithFindings = run.status === 1 && /Errors \(\d+\):/.test(run.stderr);
+        if (!expectation.shouldPass && !rejectedWithFindings) {
+          throw new Error(
+            `Validator did not reject case ${caseEntry.id}/${profile} for document reasons `
+            + `(status ${run.status}); treat this as an infrastructure failure.\n`
+            + `stderr: ${run.stderr}\nstdout: ${run.stdout}`
+          );
+        }
         const passed = run.status === 0;
+        if (!passed && !rejectedWithFindings) {
+          throw new Error(
+            `Validator exited with status ${run.status} for passing case ${caseEntry.id}/${profile}; `
+            + "treat this as an infrastructure failure.\n"
+            + `stderr: ${run.stderr}\nstdout: ${run.stdout}`
+          );
+        }
         const warningMatches = [...(run.stderr + run.stdout).matchAll(/Warnings \((\d+)\):/g)];
         const warningCount = warningMatches.length > 0 ? Number(warningMatches.at(-1)[1]) : 0;
         let visual = null;
