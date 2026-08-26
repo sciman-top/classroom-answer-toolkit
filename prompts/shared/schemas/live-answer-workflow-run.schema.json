@@ -74,7 +74,12 @@
       "type": "object",
       "required": [
         "provider",
+        "subjectPack",
         "profile",
+        "blindQualityProfile",
+        "semanticQualityProfile",
+        "visualQualityProfile",
+        "referenceQualityProfile",
         "visualDetail",
         "maxOutputTokens",
         "timeoutMs",
@@ -84,12 +89,18 @@
         "visualAuditFocusRegionsFile",
         "skipVisualAudit",
         "keepReview",
-        "useGatewayProxy"
+        "useGatewayProxy",
+        "configEnvFile"
       ],
       "additionalProperties": false,
       "properties": {
         "provider": { "type": "string" },
+        "subjectPack": { "type": "string" },
         "profile": { "type": "string" },
+        "blindQualityProfile": { "type": "string" },
+        "semanticQualityProfile": { "type": "string" },
+        "visualQualityProfile": { "type": "string" },
+        "referenceQualityProfile": { "type": "string" },
         "visualDetail": { "type": "string" },
         "maxOutputTokens": { "type": "integer", "minimum": 1000 },
         "timeoutMs": { "type": "integer", "minimum": 1000 },
@@ -99,7 +110,8 @@
         "visualAuditFocusRegionsFile": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
         "skipVisualAudit": { "type": "boolean" },
         "keepReview": { "type": "boolean" },
-        "useGatewayProxy": { "type": "boolean" }
+        "useGatewayProxy": { "type": "boolean" },
+        "configEnvFile": { "type": "string" }
       }
     },
     "phases": {

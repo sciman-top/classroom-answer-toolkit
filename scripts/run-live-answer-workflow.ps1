@@ -410,7 +410,12 @@ function Write-WorkflowReceipt {
         }
         options = [ordered]@{
             provider = $Provider
+            subjectPack = $SubjectPack
             profile = $Profile
+            blindQualityProfile = $BlindQualityProfile
+            semanticQualityProfile = $SemanticQualityProfile
+            visualQualityProfile = $VisualQualityProfile
+            referenceQualityProfile = $ReferenceQualityProfile
             visualDetail = $VisualDetail
             maxOutputTokens = $MaxOutputTokens
             timeoutMs = $TimeoutMs
@@ -421,6 +426,7 @@ function Write-WorkflowReceipt {
             skipVisualAudit = [bool]$SkipVisualAudit
             keepReview = [bool]$KeepReview
             useGatewayProxy = [bool]$UseGatewayProxy
+            configEnvFile = $envFilePath
         }
         phases = $phaseReceipts
         artifacts = $artifacts
