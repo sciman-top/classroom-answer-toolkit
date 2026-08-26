@@ -1,3 +1,4 @@
+#requires -Version 7
 param(
     [string]$PublishDir = "artifacts\publish\ClassroomToolkit.App",
     [string]$StageDir = "artifacts\msix\stage",

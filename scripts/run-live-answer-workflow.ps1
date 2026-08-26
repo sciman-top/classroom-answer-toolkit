@@ -1,3 +1,4 @@
+#requires -Version 7
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
@@ -561,6 +562,11 @@ function New-AnswerRequestArguments {
     }
     if ($IncludeSourceText -and (Test-Path -LiteralPath $sourceTextPath -PathType Leaf)) {
         $arguments += @("--source-text-file", $sourceTextPath)
+    }
+    elseif ($IncludeSourceText) {
+        # A missing text layer silently degrades scanned-PDF runs to pure image
+        # input; the operator must see the downgrade instead of inferring it later.
+        Write-Host "[run-live] Source text layer not found; continuing without --source-text-file: $sourceTextPath"
     }
     if ($ReferenceTextFile -and (Test-Path -LiteralPath $ReferenceTextFile -PathType Leaf)) {
         $arguments += @("--reference-text-file", $ReferenceTextFile)

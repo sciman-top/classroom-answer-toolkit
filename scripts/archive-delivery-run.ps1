@@ -1,3 +1,4 @@
+#requires -Version 7
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
@@ -68,9 +69,15 @@ if (Test-Path -LiteralPath $manifestPath) {
     }
 }
 
-$files = @(Get-ChildItem -LiteralPath $resolvedRunDirectory -File -Recurse | Sort-Object FullName)
+$files = @(Get-ChildItem -LiteralPath $resolvedRunDirectory -File -Recurse -Force | Sort-Object FullName)
 if ($files.Count -eq 0) {
     throw "Run directory contains no files: $resolvedRunDirectory"
+}
+# Reparse points (symlinks/junctions) must not sneak foreign content into the
+# read-only archive or leave dangling links behind after the source moves.
+$linkFiles = @($files | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint })
+if ($linkFiles.Count -gt 0) {
+    throw ("Run directory contains reparse-point files; remove them before archiving: {0}" -f (($linkFiles | Select-Object -First 3 -ExpandProperty FullName) -join ", "))
 }
 
 $totalBytes = 0

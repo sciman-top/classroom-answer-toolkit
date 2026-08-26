@@ -42,6 +42,15 @@ if ($subjectPacks.Count -eq 0) {
     throw "No subject pack manifests were found under prompts/."
 }
 
+# Validate an explicitly requested pack regardless of mode: in Full the
+# selection is ignored on purpose, but a typo must fail loudly, not run all.
+if (-not [string]::IsNullOrWhiteSpace($SubjectPack)) {
+    $known = @($subjectPacks | Where-Object { $_.AssetId -eq $SubjectPack })
+    if ($known.Count -eq 0) {
+        throw ("Unknown subject pack: {0}" -f $SubjectPack)
+    }
+}
+
 $selectedSubjectPacks = if ($Mode -eq "Full") {
     $subjectPacks
 } else {

@@ -488,6 +488,13 @@ export async function main() {
         options.candidateFile ? fs.readFileSync(options.candidateFile, "utf8") : result.answerMarkdown
       )
     : { markdown: result.answerMarkdown, applied: false, questions: [] };
+  if (options.semanticFindingsFile && !semanticChoiceOverride.applied) {
+    // Confirmed corrections that match no choice line must be visible; silently
+    // dropping them is indistinguishable from "the report had no corrections".
+    console.error(
+      "[gateway] Semantic findings file was supplied but no confirmed correction "
+      + `matched a choice line (${options.semanticFindingsFile}); overrides skipped.`);
+  }
   // Reference Review is authoritative when a reference text is present; otherwise
   // only explicitly confirmed semantic choice corrections may be applied.
   const referenceChoiceOverride = options.referenceTextFile
