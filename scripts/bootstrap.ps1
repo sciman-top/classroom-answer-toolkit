@@ -47,12 +47,30 @@ function Test-DotNetSdkCompatible {
     ).Count -gt 0
 }
 
+function Get-LatestDotNetSdkVersionInBand {
+    param(
+        [string]$MajorMinor,
+        [string]$BandPrefix
+    )
+
+    $releases = Invoke-RestMethod -Uri "https://builds.dotnet.microsoft.com/dotnet/release-metadata/$MajorMinor/releases.json"
+    return @($releases.releases | ForEach-Object { $_.sdks } | ForEach-Object { $_.version } |
+        Where-Object { $_ -like "$BandPrefix.*" })[0]
+}
+
 function Assert-DotNetSdk {
     if (-not (Test-DotNetSdkCompatible -MinimumVersion "10.0.300")) {
         Write-Host "Installing a compatible .NET 10.0.3xx SDK..."
-        & winget install --id Microsoft.DotNet.SDK.10 --exact --accept-source-agreements --accept-package-agreements --disable-interactivity
+        # Unpinned winget may deliver a newer feature band while global.json only
+        # rolls forward within 10.0.3xx; resolve and pin the in-band patch instead.
+        $targetSdkVersion = Get-LatestDotNetSdkVersionInBand -MajorMinor "10.0" -BandPrefix "10.0.3"
+        if ([string]::IsNullOrWhiteSpace($targetSdkVersion)) {
+            throw "Unable to resolve the latest .NET 10.0.3xx SDK version from the official release feed."
+        }
+
+        & winget install --id Microsoft.DotNet.SDK.10 --exact --version $targetSdkVersion --accept-source-agreements --accept-package-agreements --disable-interactivity
         if ($LASTEXITCODE -ne 0) {
-            throw "Failed to install Microsoft.DotNet.SDK.10."
+            throw ("Failed to install Microsoft.DotNet.SDK.10 {0}; install a 10.0.3xx SDK manually and rerun." -f $targetSdkVersion)
         }
     }
 
@@ -94,10 +112,12 @@ function Assert-Browser {
 }
 
 function Install-NodeDependencies {
-    Write-Host "Installing Node dependencies for tools/latex-renderer..."
-    & npm ci --no-fund --no-audit --prefix tools/latex-renderer
-    if ($LASTEXITCODE -ne 0) {
-        throw "npm ci failed for tools/latex-renderer."
+    foreach ($toolDirectory in @("tools/latex-renderer", "tools/ai-gateway")) {
+        Write-Host "Installing Node dependencies for $toolDirectory..."
+        & npm ci --no-fund --no-audit --prefix $toolDirectory
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm ci failed for $toolDirectory."
+        }
     }
 }
 
