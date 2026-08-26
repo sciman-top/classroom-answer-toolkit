@@ -6,7 +6,6 @@ physics answer workflow.
 ## Current baseline
 
 - Human-readable production spec: `../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md`
-- Mirrored in-repo prompt spec: `spec.md`
 - Structured runtime config consumed by tools: `config.json`
 - Asset manifest and ownership map: `manifest.json`
 - Acceptance gates distilled from the full spec: `checklists/acceptance.md`
@@ -14,7 +13,6 @@ physics answer workflow.
 
 ## Directory contract
 
-- `spec.md`: synced mirror of the current full production prompt spec
 - `config.json`: tool-facing structured rules and profile defaults
 - `manifest.json`: asset metadata, authoritative paths, and eval/tool bindings
 - `checklists/acceptance.md`: distilled hard gates and review reminders
@@ -22,7 +20,7 @@ physics answer workflow.
 ## Change policy
 
 1. Update the source layers under `prompts/specs/platform|commons|subjects/` first when wording or policy changes.
-2. Rebuild the compiled spec and `spec.md` mirror through the assembler before editing tool-facing assets.
+2. Rebuild the compiled spec through the assembler before editing tool-facing assets.
 3. Add or update a fixed case under `eval/junior-physics-answer/` whenever the change
    affects validation, rendering, or delivery behavior.
 
