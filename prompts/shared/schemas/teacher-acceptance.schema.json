@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "classroom-toolkit://prompts/shared/schemas/teacher-acceptance.schema.json",
+  "title": "Teacher acceptance record",
+  "description": "Binds one real teacher's verdict to an exact delivery (manifest/Markdown/PDF/snapshot/workflow receipt SHA-256). Only a record with status accepted or accepted-with-comments establishes Teacher Accepted; nothing else may.",
+  "type": "object",
+  "$defs": {
+    "fileReceipt": {
+      "type": "object",
+      "required": [ "path", "bytes", "sha256" ],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "status",
+    "preparedAt",
+    "preparedBy",
+    "delivery",
+    "verdict"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "teacher-acceptance-record" },
+    "status": {
+      "enum": [ "待验收", "accepted", "accepted-with-comments", "rejected" ]
+    },
+    "preparedAt": { "type": "string" },
+    "preparedBy": { "type": "string" },
+    "delivery": {
+      "type": "object",
+      "required": [
+        "deliveryName",
+        "subjectPack",
+        "profile",
+        "snapshotId",
+        "manifestGeneratedAt",
+        "deliveryManifest",
+        "answerMarkdown",
+        "answerPdf",
+        "snapshot",
+        "workflowReceipt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "deliveryName": { "type": "string" },
+        "subjectPack": { "type": "string" },
+        "profile": { "type": "string" },
+        "snapshotId": { "type": "string" },
+        "manifestGeneratedAt": { "type": "string" },
+        "deliveryManifest": { "$ref": "#/$defs/fileReceipt" },
+        "answerMarkdown": { "$ref": "#/$defs/fileReceipt" },
+        "answerPdf": { "$ref": "#/$defs/fileReceipt" },
+        "snapshot": { "$ref": "#/$defs/fileReceipt" },
+        "workflowReceipt": { "$ref": "#/$defs/fileReceipt" }
+      }
+    },
+    "verdict": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": [ "decision", "decidedAt" ],
+          "additionalProperties": false,
+          "properties": {
+            "decision": {
+              "enum": [ "accepted", "accepted-with-comments", "rejected" ]
+            },
+            "decidedAt": { "type": "string" },
+            "teacherName": { "type": "string" },
+            "teacherRole": { "type": "string" },
+            "overallComment": { "type": "string" },
+            "perQuestion": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [ "question", "result" ],
+                "additionalProperties": false,
+                "properties": {
+                  "question": { "type": "string" },
+                  "result": { "enum": [ "correct", "incorrect", "unclear" ] },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
