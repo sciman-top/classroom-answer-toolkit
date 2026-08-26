@@ -9,6 +9,9 @@ import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
+// Generous per-tool ceiling: visual pipelines run a full browser render, but a
+// wedged tool must not stall the eval suite indefinitely.
+const TOOL_TIMEOUT_MS = 5 * 60_000;
 let sharedBrowserWsEndpoint = null;
 
 function fail(message, code = 2) {
@@ -56,14 +59,25 @@ function runNodeTool(scriptFileName, args, options = {}) {
     let stdout = "";
     let stderr = "";
 
+    // A hung render/review must not stall the whole eval suite forever.
+    const timer = setTimeout(() => {
+      child.removeAllListeners("close");
+      child.kill();
+      reject(new Error(`Tool ${scriptFileName} exceeded the ${TOOL_TIMEOUT_MS / 1000}s eval timeout and was killed.`));
+    }, options.timeoutMs ?? TOOL_TIMEOUT_MS);
+
     child.stdout.on("data", (chunk) => {
       stdout += chunk.toString();
     });
     child.stderr.on("data", (chunk) => {
       stderr += chunk.toString();
     });
-    child.once("error", reject);
+    child.once("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
     child.once("close", (status) => {
+      clearTimeout(timer);
       resolve({
         status: status ?? 2,
         stdout,

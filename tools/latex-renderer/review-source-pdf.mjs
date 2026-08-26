@@ -416,14 +416,19 @@ async function main() {
       }
     }
   } finally {
+    // Close the browser first: Chromium pages hold idle keep-alive sockets, so
+    // closing the HTTP server first would stall its callback until the browser's
+    // own idle timeout elapses.
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
     try {
+      rendererServer?.closeIdleConnections?.();
       if (rendererServer) {
         await rendererServer.close();
       }
-    } finally {
-      if (browser) {
-        await browser.close();
-      }
+    } catch {
+      // Teardown is best effort; a failed close must not mask the run result.
     }
   }
 

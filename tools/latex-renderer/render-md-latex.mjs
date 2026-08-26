@@ -380,6 +380,7 @@ ${body}
 const tempHtmlPath = makeRenderTempHtmlPath(outputPath);
 fs.writeFileSync(tempHtmlPath, html, "utf8");
 
+const RENDER_PDF_TIMEOUT_MS = 120_000;
 const browserPdfOutputPath = makeBrowserPdfOutputPath(outputPath);
 let browser = null;
 try {
@@ -394,18 +395,26 @@ try {
       });
   const page = await browser.newPage({ viewport: { width: 1280, height: 1600 } });
   await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: "load" });
-  await page.pdf({
-    // Chromium on Windows can native-crash when its PDF path has a non-ASCII file name.
-    path: browserPdfOutputPath,
-    format: renderProfile.page.size,
-    printBackground: true,
-    margin: {
-      top: `${renderProfile.page.margin.topMm}mm`,
-      right: `${renderProfile.page.margin.rightMm}mm`,
-      bottom: `${renderProfile.page.margin.bottomMm}mm`,
-      left: `${renderProfile.page.margin.leftMm}mm`
-    }
-  });
+  // page.pdf has no built-in deadline; a pathological layout could hang forever
+  // on direct `npm run render` (deliver's outer limit never applies there).
+  await Promise.race([
+    page.pdf({
+      // Chromium on Windows can native-crash when its PDF path has a non-ASCII file name.
+      path: browserPdfOutputPath,
+      format: renderProfile.page.size,
+      printBackground: true,
+      margin: {
+        top: `${renderProfile.page.margin.topMm}mm`,
+        right: `${renderProfile.page.margin.rightMm}mm`,
+        bottom: `${renderProfile.page.margin.bottomMm}mm`,
+        left: `${renderProfile.page.margin.leftMm}mm`
+      }
+    }),
+    new Promise((_resolve, reject) => setTimeout(
+      () => reject(new Error(`page.pdf exceeded ${RENDER_PDF_TIMEOUT_MS / 1000}s; aborting render.`)),
+      RENDER_PDF_TIMEOUT_MS
+    ))
+  ]);
   commitBrowserPdfOutput(browserPdfOutputPath, outputPath);
 } finally {
   if (browser) {

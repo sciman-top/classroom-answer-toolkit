@@ -99,7 +99,12 @@ try {
     [IO.Directory]::CreateDirectory($isolatedPublishDir) | Out-Null
     Copy-Item -Path (Join-Path $publishDir "*") -Destination $isolatedPublishDir -Recurse -Force
 
-    $process = Start-Process -FilePath $isolatedExePath -ArgumentList @("--smoke") -WorkingDirectory $isolatedPublishDir -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    # -Wait has no deadline; a hung app would stall smoke (and publish-app) forever.
+    $process = Start-Process -FilePath $isolatedExePath -ArgumentList @("--smoke") -WorkingDirectory $isolatedPublishDir -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    if (-not $process.WaitForExit(120000)) {
+        $process.Kill($true)
+        throw "Published app smoke timed out after 120 seconds."
+    }
     if ($process.ExitCode -ne 0) {
         throw "Published app smoke failed with exit code $($process.ExitCode)."
     }

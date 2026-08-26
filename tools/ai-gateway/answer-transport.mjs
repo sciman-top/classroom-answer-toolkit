@@ -188,9 +188,18 @@ function detectTruncation(parsed, provider, maxOutputTokens) {
     const finishReason = Array.isArray(parsed.choices)
       ? parsed.choices[0]?.finish_reason
       : parsed.finish_reason;
-    return finishReason === "length"
-      ? `chat_completions finish_reason=length: answer truncated at max_tokens=${maxOutputTokens}.`
-      : null;
+    if (finishReason === "length") {
+      return `chat_completions finish_reason=length: answer truncated at max_tokens=${maxOutputTokens}.`;
+    }
+    // Mid-stream policy cut is also a non-terminal output; fail closed on it.
+    if (finishReason === "content_filter") {
+      return "chat_completions finish_reason=content_filter: answer was not fully produced.";
+    }
+    return null;
+  }
+  if (parsed.status === "failed") {
+    const reason = typeof parsed.error?.message === "string" ? parsed.error.message : "unknown";
+    return `responses status=failed (${reason}): answer was not produced.`;
   }
   if (parsed.status === "incomplete") {
     const reason = typeof parsed.incomplete_details?.reason === "string"
@@ -303,7 +312,15 @@ async function callProvider(provider, options) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
   const startedAt = Date.now();
-  const requestBody = JSON.stringify(buildAnswerRequestBody(provider, options));
+  let requestBody;
+  try {
+    // Build inside a guard: throwing here used to leak the abort timer and keep
+    // the process alive for the full request timeout.
+    requestBody = JSON.stringify(buildAnswerRequestBody(provider, options));
+  } catch (error) {
+    clearTimeout(timeout);
+    throw error;
+  }
   try {
     const response = await fetch(endpoint, {
       method: "POST",
@@ -453,9 +470,12 @@ export async function requestAnswerWithFailover(config, options) {
         break;
       }
       if (attemptNumber < RETRYABLE_ATTEMPTS_PER_PROVIDER) {
-        const backoffMs = attempt.status === 429
-          ? (attempt.retryAfterMs > 0 ? attempt.retryAfterMs : defaultRateLimitBackoffMs)
-          : 0;
+        // Honor Retry-After from any retryable failure that carries it, not just 429.
+        const backoffMs = attempt.retryAfterMs > 0
+          ? attempt.retryAfterMs
+          : attempt.status === 429
+            ? defaultRateLimitBackoffMs
+            : 0;
         if (backoffMs > 0) {
           await new Promise((resolve) => setTimeout(resolve, backoffMs));
         }
