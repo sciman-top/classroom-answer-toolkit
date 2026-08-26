@@ -108,8 +108,10 @@ function resolveProfileInheritance(profileKey, profileGraph, seen = new Set()) {
   for (const inheritRef of inheritRefs) {
     const inheritedKey = normalizeInheritedProfileKey(inheritRef, resolvedKey);
     const inheritedResolvedKey = profileGraph.aliases.get(inheritedKey) ?? inheritedKey;
+    // A dangling inherits target would silently drop an entire base layer
+    // (layout, metrics, …) while snapshots still compile — fail closed instead.
     if (!inheritedKey || !profileGraph.profilesByPath.has(inheritedResolvedKey)) {
-      continue;
+      throw new Error(`Unknown inherits target "${inheritRef}" referenced by profile "${resolvedKey}".`);
     }
     mergedBase = deepMerge(mergedBase, resolveProfileInheritance(inheritedResolvedKey, profileGraph, nextSeen));
   }

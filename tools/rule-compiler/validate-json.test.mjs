@@ -51,7 +51,12 @@ function buildWorkflowRunReceipt({ status = "succeeded" } = {}) {
     },
     options: {
       provider: "all",
+      subjectPack: "junior-physics-answer",
       profile: "classroom",
+      blindQualityProfile: "sol-xhigh",
+      semanticQualityProfile: "sol-xhigh",
+      visualQualityProfile: "sol-xhigh",
+      referenceQualityProfile: "sol-xhigh",
       visualDetail: "original",
       maxOutputTokens: 24000,
       timeoutMs: 600000,
@@ -61,7 +66,8 @@ function buildWorkflowRunReceipt({ status = "succeeded" } = {}) {
       visualAuditFocusRegionsFile: null,
       skipVisualAudit: true,
       keepReview: false,
-      useGatewayProxy: false
+      useGatewayProxy: false,
+      configEnvFile: "D:\\repo\\.env"
     },
     phases: {
       blindGeneration: phase(status === "succeeded" ? "completed" : "failed",

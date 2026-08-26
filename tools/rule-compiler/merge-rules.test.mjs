@@ -112,3 +112,16 @@ test("buildMergedAssets rejects circular profile inheritance", () => {
 
   assert.throws(() => buildFixtureAssets(), /Circular profile inheritance detected/);
 });
+
+test("buildMergedAssets fails closed on a dangling inherits target", () => {
+  // A dangling target used to be skipped silently, dropping the whole base layer
+  // while snapshots still compiled.
+  writeMinimalWorkspace();
+  writeFixture("subject/profiles/classroom.json", {
+    name: "classroom",
+    inherits: ["no-such-base"],
+    layout: { marginMm: 20 }
+  });
+
+  assert.throws(() => buildFixtureAssets(), /Unknown inherits target "no-such-base"/);
+});

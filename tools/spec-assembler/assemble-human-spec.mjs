@@ -221,6 +221,11 @@ export function assembleAll(options = {}) {
 
 function main(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
+  // An unknown --assembly reference must fail loudly; silently falling back to
+  // "all assemblies" turns a typo into a false-green targeted check.
+  if (options.assembly && !resolveAssemblyFile(options.assembly)) {
+    throw new Error(`Unknown assembly: ${options.assembly}`);
+  }
   const assemblyFilePath = options.assembly ? resolveAssemblyFile(options.assembly) : null;
   const written = assembleAll({
     assemblyFilePath,

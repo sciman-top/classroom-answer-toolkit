@@ -19,6 +19,7 @@ function main() {
   const options = parseArgvFlags(process.argv.slice(2), {
     stringFlags: { schema: true, value: true },
     defaults: { schema: null, value: null },
+    help: true,
     unknownFlag: "error"
   });
 
@@ -31,6 +32,10 @@ function main() {
   const valuePath = path.resolve(repoRoot, options.value);
   if (!fs.existsSync(schemaPath)) {
     console.error(`Schema not found: ${schemaPath}`);
+    process.exit(2);
+  }
+  if (!fs.existsSync(valuePath)) {
+    console.error(`Value file not found: ${valuePath}`);
     process.exit(2);
   }
 
