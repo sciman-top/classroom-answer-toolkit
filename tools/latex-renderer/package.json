@@ -8,7 +8,7 @@
     "deliver": "node deliver-answer.mjs",
     "eval:answer": "node eval-answer-fixtures.mjs",
     "eval:math": "node eval-answer-fixtures.mjs --subject-pack math-answer",
-    "test:delivery-contract": "node --test validate-delivery-manifest.test.mjs",
+    "test:delivery-contract": "node --test validate-delivery-manifest.test.mjs delivery-portability.test.mjs",
     "test:eval-runtime": "node --test eval-answer-fixtures.test.mjs",
     "render": "node render-md-latex.mjs",
     "test:output-path": "node --test ../shared.test.mjs pdf-output-path.test.mjs focus-region-spec.test.mjs analog-meter-reading.test.mjs linear-scale-reading.test.mjs optical-ray-geometry.test.mjs review-page-selection.test.mjs review-html.test.mjs",
