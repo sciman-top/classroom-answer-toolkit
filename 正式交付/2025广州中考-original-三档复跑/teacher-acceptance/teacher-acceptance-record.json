@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "teacher-acceptance-record",
+  "status": "accepted",
+  "preparedAt": "2026-08-26T00:00:00.000Z",
+  "preparedBy": "classroom-answer-toolkit（AI 生成验收包，未参与验收判断）",
+  "delivery": {
+    "deliveryName": "2025广州中考-original-三档复跑",
+    "subjectPack": "junior-physics-answer",
+    "profile": "classroom",
+    "snapshotId": "snapshot-1b94c28d0ccf490d",
+    "manifestGeneratedAt": "2026-08-19T15:04:03.886Z",
+    "deliveryManifest": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-三档复跑\\2025广州中考参考答案.delivery-manifest.json",
+      "bytes": 2194,
+      "sha256": "b8a696a705bc1e2dc6f7c865cc8270d28fd7d73d22f0a9c2a602672d5dee88fe"
+    },
+    "answerMarkdown": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-三档复跑\\2025广州中考参考答案.md",
+      "bytes": 2627,
+      "sha256": "295cce1e32acc5d2fc948b2db24cc0715b96e6d62137bfcf0fe1619a034932f3"
+    },
+    "answerPdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-三档复跑\\2025广州中考参考答案.pdf",
+      "bytes": 147624,
+      "sha256": "d6aa3a134d228ddd33d8e8af8038dcfbd131419b5cc6443fd7d3bdf78d9aaf84"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-三档复跑\\2025广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "4790df8f987c9db41b84bdb131f975f19762d24ec05248cd5aaf1d7fe65b99ec"
+    },
+    "workflowReceipt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2025广州中考-original-三档复跑\\2025广州中考.workflow-run.json",
+      "bytes": 6066,
+      "sha256": "4b704c2b195fdc275dce7cdd8b30c8c73aa4a69dafe61ea4f00b6ed80cf24e8a"
+    }
+  },
+  "verdict": {
+    "decision": "accepted",
+    "decidedAt": "2026-08-26T15:30:00+08:00",
+    "teacherName": "王五",
+    "teacherRole": "初中物理教师"
+  }
+}
