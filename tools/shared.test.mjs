@@ -76,11 +76,33 @@ test("parseArgvFlags unknown flag policies", () => {
 });
 
 test("parseArgvFlags help flag and trailing missing value", () => {
-  const options = parseArgvFlags(["-h", "--profile"], {
+  const options = parseArgvFlags(["-h"], {
     stringFlags: { profile: true },
     help: true,
     defaults: { profile: "default" }
   });
   assert.equal(options.help, true);
-  assert.equal(options.profile, undefined);
+  assert.equal(options.profile, "default");
+
+  // A trailing string flag without a value must fail loudly instead of being
+  // swallowed and shifting later arguments.
+  assert.throws(
+    () => parseArgvFlags(["--profile"], { stringFlags: { profile: true } }),
+    /Missing value for flag: --profile/);
+});
+
+test("parseArgvFlags rejects a flag-like token as a value", () => {
+  assert.throws(
+    () => parseArgvFlags(["--subject-pack", "--profile", "classroom"], {
+      stringFlags: { "subject-pack": true, profile: true },
+      unknownFlag: "error"
+    }),
+    /Missing value for flag: --subject-pack/);
+});
+
+test("deepMerge skips prototype-dangerous keys", () => {
+  const merged = deepMerge({ a: 1 }, JSON.parse('{"__proto__":{"polluted":1},"b":2}'));
+  assert.equal(merged.b, 2);
+  assert.equal(merged.polluted, undefined);
+  assert.equal(Object.prototype.polluted, undefined);
 });

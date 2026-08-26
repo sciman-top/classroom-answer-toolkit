@@ -22,9 +22,13 @@ export function parsePageSelection(selection, pageCount) {
 
   for (const token of tokens) {
     if (token.includes("-")) {
-      const [startToken, endToken] = token.split("-", 2);
-      const start = normalizePageToken(startToken, pageCount);
-      const end = normalizePageToken(endToken, pageCount);
+      const rangeParts = token.split("-");
+      // "2-4-6" used to lose "-6" silently via split(...,2); require exactly two.
+      if (rangeParts.length !== 2 || !rangeParts[0] || !rangeParts[1]) {
+        throw new Error(`Invalid page range: ${token}`);
+      }
+      const start = normalizePageToken(rangeParts[0], pageCount);
+      const end = normalizePageToken(rangeParts[1], pageCount);
       if (start > end) {
         throw new Error(`Invalid page range: ${token}`);
       }

@@ -6,8 +6,22 @@ export function sha256Hex(value) {
 }
 
 export function sha256File(filePath) {
-  return sha256Hex(fs.readFileSync(filePath));
+  // Chunked reading keeps large PDFs/page images out of a single big buffer.
+  const handle = fs.openSync(filePath, "r");
+  try {
+    const hash = crypto.createHash("sha256");
+    const buffer = Buffer.alloc(1024 * 1024);
+    let read = 0;
+    while ((read = fs.readSync(handle, buffer)) > 0) {
+      hash.update(read === buffer.length ? buffer : buffer.subarray(0, read));
+    }
+    return hash.digest("hex");
+  } finally {
+    fs.closeSync(handle);
+  }
 }
+
+const UNSAFE_MERGE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
 export function deepMerge(base, override) {
   if (!override || typeof override !== "object" || Array.isArray(override)) {
@@ -16,6 +30,9 @@ export function deepMerge(base, override) {
 
   const merged = { ...base };
   for (const [key, value] of Object.entries(override)) {
+    if (UNSAFE_MERGE_KEYS.has(key)) {
+      continue;
+    }
     if (
       value &&
       typeof value === "object" &&
@@ -78,7 +95,14 @@ export function parseArgvFlags(argv, {
       if (stringFlags[flagName] !== undefined) {
         const target = stringFlags[flagName];
         const key = target === true ? kebabToCamel(flagName) : target;
-        options[key] = hasInlineValue ? arg.slice(equalsIndex + 1) : argv[++index];
+        const rawValue = hasInlineValue ? arg.slice(equalsIndex + 1) : argv[index + 1];
+        // A missing or flag-like value used to be swallowed silently, shifting
+        // every later argument one slot over.
+        if (!hasInlineValue && (rawValue === undefined || rawValue.startsWith("--"))) {
+          throw new Error(`Missing value for flag: --${flagName}`);
+        }
+        options[key] = rawValue;
+        index += hasInlineValue ? 0 : 1;
         continue;
       }
 

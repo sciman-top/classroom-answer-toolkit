@@ -17,7 +17,9 @@ function parseArgs(argv) {
 }
 
 function normalizeNewlines(text) {
-  return String(text).replace(/\r\n/g, "\n");
+  // Strip a UTF-8 BOM too: it would otherwise glue onto the first heading and
+  // fail the title match with a misleading error.
+  return String(text).replace(/^\uFEFF/, "").replace(/\r\n/g, "\n");
 }
 
 function readJson(filePath) {
@@ -33,7 +35,7 @@ function listAssemblyFiles() {
     .readdirSync(assembliesRoot, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
     .map((entry) => path.join(assembliesRoot, entry.name))
-    .sort((left, right) => left.localeCompare(right));
+    .sort((left, right) => left.localeCompare(right, "en"));
 }
 
 function resolveAssemblyFile(assemblyRef) {
