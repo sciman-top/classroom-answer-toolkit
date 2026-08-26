@@ -106,6 +106,19 @@ test("package-relative manifest paths are accepted (2026-08-27 portability contr
     manifest.integrity.snapshot.path = "answer.snapshot.json";
     manifest.review.outputDir = "answer.review";
     manifest.review.manifestPath = "answer.review/manifest.json";
+    manifest.status.reviewArtifactReady = true;
+    // reviewFiles anchor moved with the delivery-owned review package
+    // (2026-08-27 closeout regression: absolute entries broke relocated archives).
+    const reviewFixtureRoot = path.join(path.dirname(manifestPath), "answer.review");
+    fs.mkdirSync(reviewFixtureRoot, { recursive: true });
+    const reviewFileNames = ["manifest.json", "page-001.png"];
+    for (const name of reviewFileNames) {
+      fs.writeFileSync(path.join(reviewFixtureRoot, name), "review fixture", "utf8");
+    }
+    manifest.integrity.reviewFiles = reviewFileNames.map((name) => {
+      const filePath = path.join(reviewFixtureRoot, name);
+      return { ...fileIntegrity(filePath), path: `answer.review/${name}` };
+    });
 
     assert.deepEqual(validateDeliveryManifest(manifest, manifestPath), []);
   });

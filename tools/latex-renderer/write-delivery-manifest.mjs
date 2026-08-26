@@ -207,17 +207,23 @@ function main() {
   const answerGraphics = collectAnswerGraphicReferences(inputPath);
   const ocr = collectOcrMetadata(reviewManifestPath);
   const generatedAt = new Date().toISOString();
-  const reviewFiles = reviewArtifactReady
-    ? collectReviewFilePaths(reviewDir).map(createFileIntegrity)
-    : [];
 
   // Package-internal paths are relative to the manifest directory so an
   // archived delivery validates after the archive moves or changes machine.
+  // The review set is delivery-owned (<pdf-base>.review beside the PDF), so its
+  // integrity entries follow the same anchor — leaving them absolute broke
+  // validation for any relocated archive (2026-08-27 closeout regression).
   const manifestDirectory = path.dirname(manifestOutPath);
   const anchoredPath = (filePath) => {
     const relative = path.relative(manifestDirectory, filePath);
     return relative.startsWith("..") ? filePath : relative.split(path.sep).join("/");
   };
+  const reviewFiles = reviewArtifactReady
+    ? collectReviewFilePaths(reviewDir).map((filePath) => ({
+      ...createFileIntegrity(filePath),
+      path: anchoredPath(filePath)
+    }))
+    : [];
 
   const manifest = {
     schemaVersion: "1.1",
