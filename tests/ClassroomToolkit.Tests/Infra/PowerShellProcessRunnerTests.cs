@@ -106,4 +106,34 @@ public sealed class PowerShellProcessRunnerTests
         var output = await completion.Task.WaitAsync(TimeSpan.FromSeconds(30));
         output.Should().Be("ok");
     }
+
+    [Fact]
+    public async Task RunAsync_TimesOut_WhenAnOrphanGrandchildHoldsTheOutputPipe()
+    {
+        // Regression for 2026-08-26 audit P2: a detached grandchild inheriting our
+        // redirected stdout keeps ReadToEnd alive forever after the parent exited;
+        // the deadline must still terminate the wait instead of hanging.
+        var runner = new PowerShellProcessRunner();
+        var clock = Stopwatch.StartNew();
+        var orphanScript = Path.Combine(Path.GetTempPath(), $"orphan-{Guid.NewGuid():N}.js");
+        await File.WriteAllTextAsync(orphanScript,
+            "require('child_process').spawn(process.execPath,['-e','setTimeout(()=>{},60000)'],{detached:true,stdio:['ignore','inherit','inherit']}).unref();");
+        try
+        {
+            var action = () => runner.RunAsync(
+                "node",
+                ["-e", $"require('{orphanScript.Replace("\\", "\\\\")}');setTimeout(()=>{{}},120000)"],
+                Path.GetTempPath(),
+                timeout: TimeSpan.FromSeconds(3));
+
+            (await action.Should().ThrowAsync<TimeoutException>())
+                .Which.Message.Should().Contain("exceeded").And.Contain("terminated");
+            clock.Stop();
+            clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(15));
+        }
+        finally
+        {
+            File.Delete(orphanScript);
+        }
+    }
 }

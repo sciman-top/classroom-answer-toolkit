@@ -72,8 +72,8 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             }
         });
 
-        var standardOutputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var standardErrorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        var standardOutputTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
+        var standardErrorTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
         try
         {
             // ConfigureAwait(false) is load-bearing: callers such as the WPF health
@@ -93,8 +93,21 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             throw TimeoutException();
         }
 
-        var standardOutput = await standardOutputTask.ConfigureAwait(false);
-        var standardError = await standardErrorTask.ConfigureAwait(false);
+        string standardOutput;
+        string standardError;
+        try
+        {
+            // An orphaned grandchild holding the pipe can keep ReadToEnd alive after
+            // the parent exited; the deadline (or caller cancellation) must still win.
+            standardOutput = await standardOutputTask.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+            standardError = await standardErrorTask.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (IsTimeout())
+        {
+            // The parent is gone but a grandchild may still own the pipe.
+            TryKillEntireTree(process);
+            throw TimeoutException();
+        }
 
         return new ProcessRunResult(
             process.ExitCode,
@@ -106,6 +119,21 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             timeoutCts is not null
             && timeoutCts.IsCancellationRequested
             && !cancellationToken.IsCancellationRequested;
+
+        static void TryKillEntireTree(System.Diagnostics.Process target)
+        {
+            try
+            {
+                if (!target.HasExited)
+                {
+                    target.Kill(entireProcessTree: true);
+                }
+            }
+            catch
+            {
+                // Best effort cleanup only.
+            }
+        }
 
         TimeoutException TimeoutException() => new(
             $"Process exceeded the {timeout!.Value.TotalMinutes:0.#} minute limit and was terminated: {fileName}");
