@@ -252,7 +252,7 @@ function Stop-LocalServer {
         $Process.Refresh()
         if (-not $Process.HasExited) {
             Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
-            $Process.WaitForExit(5000)
+            $Process.WaitForExit(5000) | Out-Null
         }
     }
     finally {
