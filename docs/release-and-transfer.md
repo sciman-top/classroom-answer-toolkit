@@ -6,13 +6,15 @@ This repository distributes three intentionally separate artifacts:
 
 | Artifact | Audience | Includes | Must not include |
 | --- | --- | --- | --- |
-| `ClassroomToolkit-<version>-win-x64.zip` | ordinary Windows users | published WPF application | real `.env`, private papers, delivery outputs, `.git` |
+| Standard online installation | ordinary Windows users | independently verified published WPF application and matching public workspace | real `.env`, private papers, delivery outputs, `.git` |
 | `ClassroomToolkit-<version>-source.zip` | public developers | source, tests, scripts, prompt assets, lock files, `.env.example` | real `.env`, `node_modules`, local cache and delivery data |
 | PrivateDev transfer ZIP | the private maintainer only | current working-tree snapshot and, only when explicitly requested, `.env` / `.git` / app | GitHub Release publication or any shared distribution channel |
 
-The ordinary app remains a repository-coupled companion. Its initial install
-therefore fetches the matching source workspace and initializes the supported
-toolchain. It is not a claim of an offline, self-contained MSIX product.
+The standard online installation remains a repository-coupled companion. Its
+initial installer fetches the matching public source workspace as a separate,
+verified Release asset and initializes the supported toolchain. This does not
+embed source inside the app ZIP, and it is not a claim of an offline,
+self-contained MSIX product.
 
 ## Public Release
 
@@ -21,12 +23,20 @@ The GitHub Actions workflow performs the local setup gate, creates the app and
 source ZIPs, writes `update-manifest.json`, and publishes those assets plus
 `scripts/install-release.ps1` to the GitHub Release.
 
-The manifest binds each asset to a URL, byte count and SHA-256. The WPF app
-only accepts a newer semantic version and an app asset hosted on GitHub HTTPS.
+The manifest binds each asset to a URL, byte count and SHA-256, plus a
+`workspaceContract`. The WPF app only accepts a newer semantic version, a
+matching installed workspace contract, and an app asset hosted on GitHub HTTPS.
 The updater verifies the downloaded ZIP before it extracts it, waits for the
 main process to exit, moves the old app directory to a timestamped backup,
 starts the replacement, and restores the backup if replacement fails before
-restart.
+restart. When a release raises `workspaceContract`, it must be installed with
+the standard installer into a new empty destination; the updater will not
+silently replace a workspace, `.env`, or user files.
+
+An offline full edition is intentionally not published. It remains blocked
+until a versioned offline runtime bundle includes the required Node/runtime
+dependencies and assets, has a signed installation/update/rollback contract,
+and passes representative non-developer installation and acceptance checks.
 
 No code-signing certificate is configured by this repository. SHA-256 is an
 integrity check for the published Release asset; it is not a substitute for a

@@ -69,6 +69,19 @@ function Download-VerifiedAsset {
     return $targetPath
 }
 
+function Get-WorkspaceContract {
+    param([Parameter(Mandatory = $true)]$Manifest)
+
+    $workspaceContract = [string]$Manifest.workspaceContract
+    if ([string]::IsNullOrWhiteSpace($workspaceContract)) {
+        return "1"
+    }
+    if ($workspaceContract -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$') {
+        throw "Workspace contract is invalid: $workspaceContract"
+    }
+    return $workspaceContract
+}
+
 $manifestUri = [uri]$ManifestUrl
 Assert-ApprovedGitHubUri -UriValue $manifestUri
 $targetRoot = if ([string]::IsNullOrWhiteSpace($Destination)) {
@@ -95,6 +108,7 @@ try {
     if ([string]$manifest.schemaVersion -ne "1.0" -or [string]$manifest.kind -ne "classroom-toolkit-update-manifest") {
         throw "Unsupported update manifest."
     }
+    $workspaceContract = Get-WorkspaceContract -Manifest $manifest
 
     $appAsset = @($manifest.assets | Where-Object { $_.kind -eq "app" }) | Select-Object -First 1
     $sourceAsset = @($manifest.assets | Where-Object { $_.kind -eq "source" }) | Select-Object -First 1
@@ -129,6 +143,7 @@ try {
         installedAt = [DateTimeOffset]::UtcNow.ToString("O")
         version = [string]$manifest.version
         sourceCommit = [string]$manifest.sourceCommit
+        workspaceContract = $workspaceContract
         manifestUrl = $manifestUri.AbsoluteUri
         setupRequested = $RunSetup.IsPresent
     }

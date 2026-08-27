@@ -1,6 +1,7 @@
 #requires -Version 7
 param(
     [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')][string]$WorkspaceContract = "1",
     [string]$OutputDirectory = "artifacts\release",
     [switch]$SkipPublish
 )
@@ -55,6 +56,7 @@ try {
         releaseUrl = "https://github.com/sciman-top/classroom-answer-toolkit/releases/tag/v$Version"
         releaseNotes = "Classroom Answer Toolkit $Version"
         sourceCommit = ((& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim())
+        workspaceContract = $WorkspaceContract
         generatedAt = [DateTimeOffset]::UtcNow.ToString("O")
         assets = @(
             [ordered]@{

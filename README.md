@@ -109,7 +109,7 @@ WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓�
 
 | 方式 | 面向对象 | 内容 | 更新边界 |
 | --- | --- | --- | --- |
-| 普通用户安装版 | 只运行工具的用户 | Release 中的 `app` 包和匹配工作区 | 应用检查 GitHub Release，校验 SHA-256 后只替换 `app`，保留 `.env`、源码和用户文件 |
+| 标准联网安装版 | 只运行工具的用户 | Release 中独立校验的 `app` 包和匹配公开工作区 | 初始安装下载两个公开资产；仅在 `workspaceContract` 一致时自动替换 `app`，保留 `.env`、源码和用户文件 |
 | 公开源码开发包 | 开发者与开源协作者 | `source` 包、测试、脚本、prompt、锁文件和 `.env.example` | 使用 Git 或下载新的 source 包；自动初始化不覆盖已有 `.env` |
 | 私用开发迁移包 | 同一维护者换电脑 | 当前源码快照，可显式包含 `.env`、`.git` 和已发布应用 | 导入时先校验 manifest，已有目标会备份；不静默覆盖开发修改 |
 
@@ -119,7 +119,9 @@ WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓�
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\install-release.ps1 -RunSetup -Launch
 ```
 
-该脚本只接受 GitHub HTTPS 清单和资产，校验 app/source 两个资产的 SHA-256 与字节数，拒绝越界 ZIP 条目。首次安装会从 `.env.example` 创建本机 `.env`，但云出网仍为关闭状态；必须由使用者自行填写 provider 配置后才能请求 live AI。
+该脚本只接受 GitHub HTTPS 清单和资产，校验 app/source 两个资产的 SHA-256 与字节数，拒绝越界 ZIP 条目。标准版会将匹配的公开源码工作区安装在本机，但源码仍是独立 Release 资产，不嵌入 app ZIP。首次安装会从 `.env.example` 创建本机 `.env`，但云出网仍为关闭状态；必须由使用者自行填写 provider 配置后才能请求 live AI。
+
+每个 Release 都声明 `workspaceContract`。合同相同的版本可自动更新应用；合同提升时客户端会拒绝只替换 app，避免应用、脚本和 prompt 静默错配。此时应保留现有工作区与 `.env`，再使用新 Release 的标准安装器部署到新的空目录。完整离线版仍未提供：它需要将 Node、依赖、运行时资源、离线安装/升级和回滚合同一起交付，并完成代表性非开发者实机验收后才可立项。
 
 公开源码包或 Git clone 在新机器执行：
 

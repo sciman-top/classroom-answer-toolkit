@@ -18,6 +18,7 @@ public interface IUpdateService
 
 public sealed record UpdateInfo(
     string Version,
+    string WorkspaceContract,
     string ReleaseUrl,
     string PackageUrl,
     string PackageSha256,
@@ -47,6 +48,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         "https://github.com/sciman-top/classroom-answer-toolkit/releases/latest/download/update-manifest.json";
 
     private static readonly Version DevelopmentVersion = new(0, 0, 0);
+    private const string LegacyWorkspaceContract = "1";
     private readonly HttpClient _httpClient;
     private readonly string _repositoryRoot;
     private readonly string _manifestUrl;
@@ -106,6 +108,19 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 return UpdateCheckResult.NoUpdate($"当前已是最新版本 {FormatVersion(currentVersion)}");
             }
 
+            var targetWorkspaceContract = ParseWorkspaceContract(manifest.WorkspaceContract);
+            if (targetWorkspaceContract is null)
+            {
+                return UpdateCheckResult.Unavailable("更新清单的工作区合同无效");
+            }
+
+            var installedWorkspaceContract = GetInstalledWorkspaceContract();
+            if (!string.Equals(targetWorkspaceContract, installedWorkspaceContract, StringComparison.Ordinal))
+            {
+                return UpdateCheckResult.NoUpdate(
+                    $"新版本需要工作区合同 {targetWorkspaceContract}，当前安装为 {installedWorkspaceContract}；请使用标准安装器重新部署匹配工作区");
+            }
+
             var asset = manifest.Assets?.FirstOrDefault(item => string.Equals(item.Kind, "app", StringComparison.OrdinalIgnoreCase));
             if (asset is null || string.IsNullOrWhiteSpace(asset.Url) || string.IsNullOrWhiteSpace(asset.Sha256))
             {
@@ -121,6 +136,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
             return UpdateCheckResult.Available(new UpdateInfo(
                 manifest.Version!,
+                targetWorkspaceContract,
                 manifest.ReleaseUrl ?? string.Empty,
                 asset.Url!,
                 asset.Sha256.ToLowerInvariant(),
@@ -223,6 +239,40 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
     private static string FormatVersion(Version version) => $"{version.Major}.{version.Minor}.{version.Build}";
 
+    private string GetInstalledWorkspaceContract()
+    {
+        var installRoot = Directory.GetParent(_repositoryRoot)?.FullName;
+        if (string.IsNullOrWhiteSpace(installRoot))
+        {
+            return LegacyWorkspaceContract;
+        }
+
+        var receiptPath = Path.Combine(installRoot, "install-receipt.json");
+        if (!File.Exists(receiptPath))
+        {
+            return LegacyWorkspaceContract;
+        }
+
+        try
+        {
+            using var receiptStream = File.OpenRead(receiptPath);
+            var receipt = JsonSerializer.Deserialize<InstallReceipt>(receiptStream,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return ParseWorkspaceContract(receipt?.WorkspaceContract) ?? LegacyWorkspaceContract;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return LegacyWorkspaceContract;
+        }
+    }
+
+    private static string? ParseWorkspaceContract(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? LegacyWorkspaceContract
+            : System.Text.RegularExpressions.Regex.IsMatch(value, "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+                ? value
+                : null;
+
     private static bool IsAllowedDownloadHost(string host) =>
         host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
         || host.Equals("objects.githubusercontent.com", StringComparison.OrdinalIgnoreCase)
@@ -241,6 +291,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
     private sealed class ReleaseUpdateManifest
     {
         public string? Version { get; set; }
+        public string? WorkspaceContract { get; set; }
         public string? ReleaseUrl { get; set; }
         public string? ReleaseNotes { get; set; }
         public List<ReleaseAsset>? Assets { get; set; }
@@ -252,5 +303,10 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         public string? Url { get; set; }
         public string? Sha256 { get; set; }
         public long Bytes { get; set; }
+    }
+
+    private sealed class InstallReceipt
+    {
+        public string? WorkspaceContract { get; set; }
     }
 }

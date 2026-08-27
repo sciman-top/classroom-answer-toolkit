@@ -41,7 +41,74 @@ public sealed class ReleaseUpdateServiceTests
         result.UpdateAvailable.Should().BeTrue();
         result.Update.Should().NotBeNull();
         result.Update!.Version.Should().Be("1.0.1");
+        result.Update.WorkspaceContract.Should().Be("1");
         result.Update.PackageBytes.Should().Be(123);
+    }
+
+    [Fact]
+    public async Task CheckAsync_RefusesAppOnlyUpdateWhenWorkspaceContractChanges()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        fixture.WriteInstallReceipt("1");
+        using var client = new HttpClient(new StaticResponseHandler("""
+            {
+              "version":"1.0.1",
+              "workspaceContract":"2",
+              "assets":[
+                {
+                  "kind":"app",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+                  "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "bytes":123
+                }
+              ]
+            }
+            """));
+        using var service = new ReleaseUpdateService(
+            fixture.RepositoryRoot,
+            fixture.AppDirectory,
+            "https://github.com/sciman-top/classroom-answer-toolkit/releases/latest/download/update-manifest.json",
+            client,
+            new Version(1, 0, 0));
+
+        var result = await service.CheckAsync();
+
+        result.Succeeded.Should().BeTrue();
+        result.UpdateAvailable.Should().BeFalse();
+        result.Update.Should().BeNull();
+        result.Message.Should().Contain("重新部署匹配工作区");
+    }
+
+    [Fact]
+    public async Task CheckAsync_RejectsInvalidWorkspaceContract()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StaticResponseHandler("""
+            {
+              "version":"1.0.1",
+              "workspaceContract":"contract with spaces",
+              "assets":[
+                {
+                  "kind":"app",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+                  "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "bytes":123
+                }
+              ]
+            }
+            """));
+        using var service = new ReleaseUpdateService(
+            fixture.RepositoryRoot,
+            fixture.AppDirectory,
+            "https://github.com/sciman-top/classroom-answer-toolkit/releases/latest/download/update-manifest.json",
+            client,
+            new Version(1, 0, 0));
+
+        var result = await service.CheckAsync();
+
+        result.Succeeded.Should().BeFalse();
+        result.UpdateAvailable.Should().BeFalse();
+        result.Message.Should().Contain("工作区合同无效");
     }
 
     [Fact]
@@ -113,6 +180,13 @@ public sealed class ReleaseUpdateServiceTests
         public string Root { get; }
         public string RepositoryRoot { get; }
         public string AppDirectory { get; }
+
+        public void WriteInstallReceipt(string workspaceContract)
+        {
+            File.WriteAllText(
+                Path.Combine(Root, "install-receipt.json"),
+                $$"""{"workspaceContract":"{{workspaceContract}}"}""");
+        }
 
         public void Dispose()
         {

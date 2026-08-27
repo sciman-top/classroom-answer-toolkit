@@ -36,7 +36,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           $version = $env:RELEASE_TAG -replace '^v', ''
-          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package-release.ps1 -Version $version
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package-release.ps1 -Version $version -WorkspaceContract "1"
 
       - name: Publish GitHub Release
         shell: pwsh
