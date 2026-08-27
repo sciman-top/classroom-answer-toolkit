@@ -31,6 +31,9 @@ _tmp_*
 .*.render.html
 artifacts/*
 !artifacts/README.md
+artifacts/deliveries/**
+artifacts/history/**
+artifacts/work/**
 !artifacts/deliveries/
 !artifacts/deliveries/README.md
 !artifacts/history/
