@@ -44,4 +44,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create $env:RELEASE_TAG artifacts/release/* scripts/install-release.ps1 --generate-notes --verify-tag
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          gh release create $env:RELEASE_TAG `
+            "artifacts/release/ClassroomToolkit-$version-win-x64.zip" `
+            "artifacts/release/ClassroomToolkit-$version-source.zip" `
+            "artifacts/release/update-manifest.json" `
+            "scripts/install-release.ps1" `
+            --generate-notes `
+            --verify-tag
