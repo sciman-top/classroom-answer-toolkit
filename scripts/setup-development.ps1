@@ -9,6 +9,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+$requiredNodeMajor = 24
 
 $scriptRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $repoRoot = if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
@@ -76,6 +77,10 @@ function Assert-OrInstallCommand {
 
 Assert-OrInstallCommand -CommandName "node" -PackageId "OpenJS.NodeJS.LTS" -DisplayName "Node.js LTS"
 Assert-OrInstallCommand -CommandName "npm" -PackageId "OpenJS.NodeJS.LTS" -DisplayName "npm"
+$nodeVersion = (& node --version 2>$null | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch "^v$requiredNodeMajor\.") {
+    throw "Node.js $requiredNodeMajor.x is required; found $nodeVersion. Install the supported LTS major and rerun."
+}
 
 if (-not (Test-CommandAvailable "dotnet") -and $NoInstall) {
     throw ".NET SDK is missing: dotnet"
@@ -122,6 +127,12 @@ if (-not $SkipCore) {
     & (Join-Path $repoRoot "scripts/check-toolchain.ps1") -Mode Core -SubjectPack junior-physics-answer
     if ($LASTEXITCODE -ne 0) {
         throw "Core toolchain gate failed."
+    }
+
+    Write-Host "Running the primary subject-pack health evaluation..."
+    & node (Join-Path $repoRoot "tools/latex-renderer/eval-answer-fixtures.mjs") --subject-pack junior-physics-answer
+    if ($LASTEXITCODE -ne 0) {
+        throw "Primary subject-pack health evaluation failed."
     }
 }
 

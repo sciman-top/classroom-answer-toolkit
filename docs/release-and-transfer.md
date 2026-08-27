@@ -6,11 +6,11 @@ This repository distributes three intentionally separate artifacts:
 
 | Artifact | Audience | Includes | Must not include |
 | --- | --- | --- | --- |
-| Standard online installation | ordinary Windows users | independently verified published WPF application and matching public workspace | real `.env`, private papers, delivery outputs, `.git` |
+| Developer/operator online preview | repository maintainers familiar with the local toolchain | independently verified published WPF application and matching public workspace | real `.env`, private papers, delivery outputs, `.git` |
 | `ClassroomToolkit-<version>-source.zip` | public developers | source, tests, scripts, prompt assets, lock files, `.env.example` | real `.env`, `node_modules`, local cache and delivery data |
 | PrivateDev transfer ZIP | the private maintainer only | current working-tree snapshot and, only when explicitly requested, `.env` / `.git` / app | GitHub Release publication or any shared distribution channel |
 
-The standard online installation remains a repository-coupled companion. Its
+The online preview remains a repository-coupled companion. Its
 initial installer fetches the matching public source workspace as a separate,
 verified Release asset and initializes the supported toolchain. This does not
 embed source inside the app ZIP, and it is not a claim of an offline,
@@ -19,8 +19,9 @@ self-contained MSIX product.
 ## Public Release
 
 Create an annotated tag named `v<major>.<minor>.<patch>` and push that tag.
-The GitHub Actions workflow performs the local setup gate, creates the app and
-source ZIPs, writes `update-manifest.json`, and publishes those assets plus
+The GitHub Actions workflow performs the local setup and integration gates,
+creates the app and source ZIPs, writes `update-manifest.json`, generates an
+SPDX SBOM and provenance attestations, and publishes those assets plus
 `scripts/install-release.ps1` to the GitHub Release.
 
 The manifest binds each asset to a URL, byte count and SHA-256, plus a
@@ -28,21 +29,25 @@ The manifest binds each asset to a URL, byte count and SHA-256, plus a
 matching installed workspace contract, and an app asset hosted on GitHub HTTPS.
 The updater verifies the downloaded ZIP before it extracts it, waits for the
 main process to exit, moves the old app directory to a timestamped backup,
-starts the replacement, and restores the backup if replacement fails before
-restart. When a release raises `workspaceContract`, it must be installed with
-the standard installer into a new empty destination; the updater will not
+requires a successful replacement smoke before normal restart, and restores
+the backup if replacement or smoke fails. When a release raises
+`workspaceContract`, it must be installed with
+the preview installer into a new empty destination; the updater will not
 silently replace a workspace, `.env`, or user files.
 
-An offline full edition is intentionally not published. It remains blocked
-until a versioned offline runtime bundle includes the required Node/runtime
-dependencies and assets, has a signed installation/update/rollback contract,
-and passes representative non-developer installation and acceptance checks.
+An ordinary-user standard edition and an offline full edition are intentionally
+not published. `package-release.ps1 -Audience ordinary-users` fails closed
+unless the application has a valid Authenticode signature. Productization
+remains blocked until a versioned runtime bundle includes the required
+Node/runtime dependencies and assets, has a signed
+installation/update/rollback contract, and passes representative non-developer
+installation and acceptance checks.
 
 No code-signing certificate is configured by this repository. SHA-256 is an
 integrity check for the published Release asset; it is not a substitute for a
 publisher identity signature. Before distributing to non-developer users,
-configure Authenticode signing in a protected CI secret and extend the release
-gate to verify the signature.
+configure Authenticode signing in a protected CI secret; the existing
+ordinary-user packaging gate will then verify the signature before packaging.
 
 ## Source Development
 
@@ -74,9 +79,10 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
 
 Every transfer ZIP carries `transfer-manifest.json`, which records file paths,
 byte counts and SHA-256 hashes without recording secret values. The importer
-rejects archive traversal and integrity drift. It moves an existing target to
-a timestamped backup before placing the new package; if import fails before
-completion it restores that backup.
+rejects archive traversal, undeclared files and integrity drift. It moves an
+existing target to a timestamped backup before placing the new package; if
+import or setup fails, it preserves the failed candidate alongside the
+destination and restores that backup.
 
 Private packages can contain plain-text API keys. Store and transfer them only
 through an encrypted, maintainer-controlled channel. Rotate any provider key

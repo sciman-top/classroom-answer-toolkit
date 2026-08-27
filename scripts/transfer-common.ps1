@@ -79,6 +79,33 @@ function Get-RelativeFileManifest {
     )
 }
 
+function Get-DirectoryTreeReceipt {
+    param([Parameter(Mandatory = $true)][string]$DirectoryPath)
+
+    $root = [IO.Path]::GetFullPath($DirectoryPath)
+    $entries = @(Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
+        [ordered]@{
+            relativePath = [IO.Path]::GetRelativePath($root, $_.FullName).Replace("\", "/")
+            bytes = $_.Length
+            sha256 = Get-FileSha256 -PathValue $_.FullName
+            lastWriteAt = $_.LastWriteTimeUtc.ToString("O")
+        }
+    } | Sort-Object { $_["relativePath"] })
+    $canonical = ($entries | ForEach-Object { "{0}|{1}|{2}" -f $_["relativePath"], $_["bytes"], $_["sha256"] }) -join "`n"
+    $treeHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($canonical))).ToLowerInvariant()
+    $totalBytes = ($entries | ForEach-Object { [long]$_["bytes"] } | Measure-Object -Sum).Sum
+    if ($null -eq $totalBytes) {
+        $totalBytes = 0
+    }
+
+    return [ordered]@{
+        algorithm = "sha256"
+        sha256 = $treeHash
+        fileCount = $entries.Count
+        bytes = [long]$totalBytes
+    }
+}
+
 function Write-JsonFileAtomic {
     param(
         [Parameter(Mandatory = $true)][string]$PathValue,

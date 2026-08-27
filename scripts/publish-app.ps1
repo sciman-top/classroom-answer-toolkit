@@ -31,7 +31,8 @@ $publishArguments = @(
     "publish", "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj",
     "-c", "Release", "-r", $RuntimeIdentifier,
     "--self-contained", $SelfContained.IsPresent.ToString().ToLowerInvariant(),
-    "-p:PublishSingleFile=true", "-p:PublishTrimmed=false", "-o", $publishDir
+    "-p:PublishSingleFile=true", "-p:PublishTrimmed=false",
+    "-p:DebugType=None", "-p:DebugSymbols=false", "-o", $publishDir
 )
 if (-not [string]::IsNullOrWhiteSpace($Version)) {
     $publishArguments += "-p:Version=$Version"

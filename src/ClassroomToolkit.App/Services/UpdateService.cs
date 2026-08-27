@@ -118,7 +118,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             if (!string.Equals(targetWorkspaceContract, installedWorkspaceContract, StringComparison.Ordinal))
             {
                 return UpdateCheckResult.NoUpdate(
-                    $"新版本需要工作区合同 {targetWorkspaceContract}，当前安装为 {installedWorkspaceContract}；请使用标准安装器重新部署匹配工作区");
+                    $"新版本需要工作区合同 {targetWorkspaceContract}，当前安装为 {installedWorkspaceContract}；请使用预览安装器重新部署匹配工作区");
             }
 
             var asset = manifest.Assets?.FirstOrDefault(item => string.Equals(item.Kind, "app", StringComparison.OrdinalIgnoreCase));

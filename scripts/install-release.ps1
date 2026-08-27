@@ -3,7 +3,8 @@ param(
     [string]$ManifestUrl = "https://github.com/sciman-top/classroom-answer-toolkit/releases/latest/download/update-manifest.json",
     [string]$Destination = "",
     [switch]$RunSetup,
-    [switch]$Launch
+    [switch]$Launch,
+    [switch]$ValidateDestinationOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,8 +92,12 @@ else {
     [IO.Path]::GetFullPath($Destination)
 }
 
-if (Test-Path -LiteralPath $targetRoot -PathType Container -and @(Get-ChildItem -LiteralPath $targetRoot -Force).Count -gt 0) {
+if ((Test-Path -LiteralPath $targetRoot -PathType Container) -and @(Get-ChildItem -LiteralPath $targetRoot -Force).Count -gt 0) {
     throw "Destination is not empty. Preserve it and use Git/source updates or choose a new destination: $targetRoot"
+}
+if ($ValidateDestinationOnly) {
+    Write-Host "Install destination is available: $targetRoot"
+    return
 }
 
 $workRoot = Join-Path ([IO.Path]::GetTempPath()) ("ClassroomToolkit-install-{0}" -f [Guid]::NewGuid().ToString("N"))

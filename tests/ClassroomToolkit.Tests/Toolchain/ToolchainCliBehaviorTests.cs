@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 
@@ -114,6 +116,206 @@ public sealed class ToolchainCliBehaviorTests
 
             result.ExitCode.Should().NotBe(0);
             result.Output.Should().Contain("executable SHA-256");
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InstallReleaseValidatesMissingEmptyAndNonEmptyDestinations()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-InstallDestination", Guid.NewGuid().ToString("N"));
+        var destination = Path.Combine(testRoot, "install");
+
+        try
+        {
+            var missingResult = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
+                "-Destination", destination,
+                "-ValidateDestinationOnly");
+            missingResult.ExitCode.Should().Be(0, missingResult.Output);
+
+            Directory.CreateDirectory(destination);
+            var emptyResult = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
+                "-Destination", destination,
+                "-ValidateDestinationOnly");
+            emptyResult.ExitCode.Should().Be(0, emptyResult.Output);
+
+            File.WriteAllText(Path.Combine(destination, "occupied.txt"), "occupied");
+            var occupiedResult = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
+                "-Destination", destination,
+                "-ValidateDestinationOnly");
+            occupiedResult.ExitCode.Should().NotBe(0);
+            occupiedResult.Output.Should().Contain("Destination is not empty");
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task PackageReleaseRejectsVersionThatDoesNotMatchSourceProject()
+    {
+        var result = await RunAsync(
+            "pwsh",
+            FindRepoRoot(),
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
+            "-Version", "9.9.9",
+            "-SkipPublish");
+
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("does not match the source project version");
+    }
+
+    [Fact]
+    public async Task UpdateReleaseRejectsRestartExecutableOutsideTargetApp()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-UpdateContainment", Guid.NewGuid().ToString("N"));
+        var targetApp = Path.Combine(testRoot, "app");
+        Directory.CreateDirectory(targetApp);
+
+        try
+        {
+            var result = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/update-release.ps1",
+                "-PackageUrl", "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v0.0.0/missing.zip",
+                "-ExpectedSha256", new string('a', 64),
+                "-ExpectedBytes", "1",
+                "-TargetAppDirectory", targetApp,
+                "-RepositoryRoot", testRoot,
+                "-ProcessId", "999999",
+                "-RestartExecutable", Path.Combine(testRoot, "outside.exe"));
+
+            result.ExitCode.Should().NotBe(0);
+            result.Output.Should().Contain("Path escapes root");
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ImportTransferPreservesExistingEnvWhenPackageDoesNotContainOne()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-PreserveEnv", Guid.NewGuid().ToString("N"));
+        var packagePath = Path.Combine(testRoot, "transfer.zip");
+        var destination = Path.Combine(testRoot, "destination");
+
+        try
+        {
+            CreateTransferPackage(
+                packagePath,
+                new Dictionary<string, string> { ["workspace/readme.txt"] = "incoming" },
+                "workspace/readme.txt");
+            Directory.CreateDirectory(Path.Combine(destination, "workspace"));
+            File.WriteAllText(Path.Combine(destination, "workspace", ".env"), "AUDIT_KEY=preserve-me");
+
+            var result = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/import-transfer.ps1",
+                "-Package", packagePath,
+                "-Destination", destination,
+                "-AllowExistingDestination",
+                "-PreserveExistingEnv");
+
+            result.ExitCode.Should().Be(0, result.Output);
+            File.ReadAllText(Path.Combine(destination, "workspace", ".env")).Should().Be("AUDIT_KEY=preserve-me");
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ImportTransferRestoresExistingDestinationWhenSetupFails()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-Rollback", Guid.NewGuid().ToString("N"));
+        var packagePath = Path.Combine(testRoot, "transfer.zip");
+        var destination = Path.Combine(testRoot, "destination");
+
+        try
+        {
+            CreateTransferPackage(
+                packagePath,
+                new Dictionary<string, string>
+                {
+                    ["workspace/scripts/setup-development.ps1"] = "exit 23",
+                    ["workspace/new-marker.txt"] = "new"
+                },
+                "workspace/scripts/setup-development.ps1",
+                "workspace/new-marker.txt");
+            Directory.CreateDirectory(Path.Combine(destination, "workspace"));
+            File.WriteAllText(Path.Combine(destination, "workspace", "old-marker.txt"), "old");
+
+            var result = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/import-transfer.ps1",
+                "-Package", packagePath,
+                "-Destination", destination,
+                "-AllowExistingDestination",
+                "-RunSetup");
+
+            result.ExitCode.Should().NotBe(0);
+            File.Exists(Path.Combine(destination, "workspace", "old-marker.txt")).Should().BeTrue();
+            File.Exists(Path.Combine(destination, "workspace", "new-marker.txt")).Should().BeFalse();
+            Directory.GetDirectories(testRoot, "destination.failed.*").Should().ContainSingle();
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ImportTransferRejectsFilesNotDeclaredByManifest()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-ExtraFile", Guid.NewGuid().ToString("N"));
+        var packagePath = Path.Combine(testRoot, "transfer.zip");
+        var destination = Path.Combine(testRoot, "destination");
+
+        try
+        {
+            CreateTransferPackage(
+                packagePath,
+                new Dictionary<string, string>
+                {
+                    ["workspace/readme.txt"] = "declared",
+                    ["workspace/Directory.Build.targets"] = "unlisted"
+                },
+                "workspace/readme.txt");
+
+            var result = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/import-transfer.ps1",
+                "-Package", packagePath,
+                "-Destination", destination);
+
+            result.ExitCode.Should().NotBe(0);
+            result.Output.Should().Contain("manifest file set mismatch");
+            Directory.Exists(destination).Should().BeFalse();
         }
         finally
         {
@@ -470,6 +672,49 @@ public sealed class ToolchainCliBehaviorTests
     private static async Task<ProcessResult> RunAsync(string fileName, string workingDirectory, params string[] arguments)
     {
         return await RunAsyncWithEnvironment(fileName, workingDirectory, environment: null, arguments);
+    }
+
+    private static void CreateTransferPackage(
+        string packagePath,
+        IReadOnlyDictionary<string, string> files,
+        params string[] manifestPaths)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(packagePath)!);
+        using var archive = ZipFile.Open(packagePath, ZipArchiveMode.Create);
+        foreach (var (relativePath, content) in files)
+        {
+            WriteZipEntry(archive, relativePath, Encoding.UTF8.GetBytes(content));
+        }
+
+        var manifestFiles = manifestPaths.Select(relativePath =>
+        {
+            var bytes = Encoding.UTF8.GetBytes(files[relativePath]);
+            return new
+            {
+                path = relativePath,
+                bytes = bytes.LongLength,
+                sha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()
+            };
+        }).ToArray();
+        var manifest = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            schemaVersion = "1.0",
+            kind = "classroom-toolkit-transfer",
+            mode = "PrivateDev",
+            sourceCommit = new string('a', 40),
+            envIncluded = false,
+            gitIncluded = false,
+            publishedAppIncluded = false,
+            files = manifestFiles
+        });
+        WriteZipEntry(archive, "transfer-manifest.json", manifest);
+    }
+
+    private static void WriteZipEntry(ZipArchive archive, string relativePath, byte[] content)
+    {
+        var entry = archive.CreateEntry(relativePath, CompressionLevel.Fastest);
+        using var stream = entry.Open();
+        stream.Write(content);
     }
 
     private static async Task<ProcessResult> RunAsyncWithEnvironment(

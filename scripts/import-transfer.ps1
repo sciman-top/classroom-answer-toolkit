@@ -40,8 +40,12 @@ try {
         throw "Unsupported transfer manifest."
     }
 
+    $manifestPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($file in @($manifest.files)) {
-        $relativePath = [string]$file.path
+        $relativePath = ([string]$file.path).Replace("\", "/")
+        if ([string]::IsNullOrWhiteSpace($relativePath) -or -not $manifestPaths.Add($relativePath)) {
+            throw "Transfer manifest contains an empty or duplicate file path: $relativePath"
+        }
         $candidate = Assert-ContainedPath -PathValue (Join-Path $extractRoot $relativePath) -RootPath $extractRoot -Description "manifest file"
         if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
             throw "Manifest file is missing: $relativePath"
@@ -53,9 +57,21 @@ try {
         }
     }
 
+    $actualFiles = @(Get-RelativeFileManifest -RootPath $extractRoot -ExcludeRelativePaths @("transfer-manifest.json"))
+    $actualPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($file in $actualFiles) {
+        [void]$actualPaths.Add([string]$file.path)
+    }
+    $missingPaths = @($manifestPaths | Where-Object { -not $actualPaths.Contains($_) })
+    $unexpectedPaths = @($actualPaths | Where-Object { -not $manifestPaths.Contains($_) })
+    if ($missingPaths.Count -gt 0 -or $unexpectedPaths.Count -gt 0) {
+        throw "Transfer manifest file set mismatch. missing=$($missingPaths -join ',') unexpected=$($unexpectedPaths -join ',')"
+    }
+
     $incomingEnv = Join-Path $extractRoot "workspace/.env"
     $existingEnv = Join-Path $destinationPath "workspace/.env"
-    if ($PreserveExistingEnv -and (Test-Path -LiteralPath $existingEnv -PathType Leaf) -and (Test-Path -LiteralPath $incomingEnv -PathType Leaf)) {
+    if ($PreserveExistingEnv -and (Test-Path -LiteralPath $existingEnv -PathType Leaf)) {
+        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($incomingEnv)) | Out-Null
         Copy-Item -LiteralPath $existingEnv -Destination $incomingEnv -Force
     }
 
@@ -89,7 +105,7 @@ try {
         }
         & pwsh -NoProfile -ExecutionPolicy Bypass -File $setupPath -RepositoryRoot (Join-Path $destinationPath "workspace")
         if ($LASTEXITCODE -ne 0) {
-            throw "Imported workspace setup failed. The backup remains at $backupPath"
+            throw "Imported workspace setup failed."
         }
     }
 
@@ -99,7 +115,11 @@ try {
     }
 }
 catch {
-    if ($backupPath -and -not (Test-Path -LiteralPath $destinationPath) -and (Test-Path -LiteralPath $backupPath)) {
+    if ($backupPath -and (Test-Path -LiteralPath $backupPath)) {
+        if (Test-Path -LiteralPath $destinationPath) {
+            $failedPath = "$destinationPath.failed.$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')).$([Guid]::NewGuid().ToString('N').Substring(0, 8))"
+            Move-Item -LiteralPath $destinationPath -Destination $failedPath
+        }
         Move-Item -LiteralPath $backupPath -Destination $destinationPath
     }
     throw

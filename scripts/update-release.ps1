@@ -73,7 +73,7 @@ if ($ExpectedBytes -le 0) {
 Assert-ApprovedGitHubUri -UriValue $PackageUrl
 
 $targetApp = Resolve-AbsolutePath $TargetAppDirectory
-$restartPath = Resolve-AbsolutePath $RestartExecutable
+$restartPath = Assert-ContainedPath -PathValue $RestartExecutable -RootPath $targetApp
 $repoRoot = Resolve-AbsolutePath $RepositoryRoot
 $targetParent = [IO.Path]::GetDirectoryName($targetApp)
 [IO.Directory]::CreateDirectory($targetParent) | Out-Null
@@ -118,6 +118,31 @@ try {
         Move-Item -LiteralPath $targetApp -Destination $backupPath
     }
     Move-Item -LiteralPath $stagedApp -Destination $targetApp
+
+    $smokeStdout = Join-Path $workRoot "replacement-smoke.stdout.log"
+    $smokeStderr = Join-Path $workRoot "replacement-smoke.stderr.log"
+    $smokeProcess = Start-Process `
+        -FilePath $restartPath `
+        -ArgumentList @("--smoke", "--repository-root", $repoRoot) `
+        -WorkingDirectory $targetApp `
+        -WindowStyle Hidden `
+        -PassThru `
+        -RedirectStandardOutput $smokeStdout `
+        -RedirectStandardError $smokeStderr
+    try {
+        if (-not $smokeProcess.WaitForExit(120000)) {
+            $smokeProcess.Kill($true)
+            throw "Replacement application smoke timed out after 120 seconds."
+        }
+        if ($smokeProcess.ExitCode -ne 0) {
+            $smokeError = if (Test-Path -LiteralPath $smokeStderr) { (Get-Content -LiteralPath $smokeStderr -Raw -Encoding utf8).Trim() } else { "" }
+            throw "Replacement application smoke failed with exit code $($smokeProcess.ExitCode): $smokeError"
+        }
+    }
+    finally {
+        $smokeProcess.Dispose()
+    }
+
     Start-Process -FilePath $restartPath -WorkingDirectory $targetApp -WindowStyle Hidden
     Write-Host "Update installed; previous app backup: $backupPath"
 }

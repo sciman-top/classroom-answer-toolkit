@@ -2,12 +2,15 @@
 
 Classroom Answer Toolkit source code is distributed under the MIT License in
 [`LICENSE`](./LICENSE). Third-party packages retain their own licenses. This
-notice records the direct runtime packages observed from the locked local
-install; complete transitive notices remain in the package metadata and the
-installed `node_modules` trees.
+notice records the direct application and toolchain runtime packages observed
+from the locked local install. Release application archives also include the
+license and notice files supplied by the exact restored .NET runtime packs and
+CommunityToolkit.Mvvm package.
 
 | Package | Locked local version | License |
 | --- | ---: | --- |
+| Microsoft .NET Runtime / Windows Desktop Runtime | 10.0.x | MIT and bundled third-party notices |
+| `CommunityToolkit.Mvvm` | 8.4.0 | MIT |
 | `undici` | 8.10.0 | MIT |
 | `katex` | 0.16.47 | MIT |
 | `markdown-it` | 14.3.0 | MIT |
