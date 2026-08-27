@@ -103,6 +103,48 @@ WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓�
 
 `scripts/pack-msix.ps1` 会校验回执是否属于当前 commit 和当前 publish tree，但在可写、版本化 runtime bundle 及安装/升级合同落地前始终阻断 MSIX 创建。不得把当前 publish/smoke 结果描述为自包含安装包验收。
 
+## 获取与迁移
+
+项目提供三种互不覆盖的分发方式。它们都不把真实 API key 放入 GitHub Release 或公开源码包。
+
+| 方式 | 面向对象 | 内容 | 更新边界 |
+| --- | --- | --- | --- |
+| 普通用户安装版 | 只运行工具的用户 | Release 中的 `app` 包和匹配工作区 | 应用检查 GitHub Release，校验 SHA-256 后只替换 `app`，保留 `.env`、源码和用户文件 |
+| 公开源码开发包 | 开发者与开源协作者 | `source` 包、测试、脚本、prompt、锁文件和 `.env.example` | 使用 Git 或下载新的 source 包；自动初始化不覆盖已有 `.env` |
+| 私用开发迁移包 | 同一维护者换电脑 | 当前源码快照，可显式包含 `.env`、`.git` 和已发布应用 | 导入时先校验 manifest，已有目标会备份；不静默覆盖开发修改 |
+
+从 GitHub Release 下载 `install-release.ps1` 后，普通安装版可执行：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\install-release.ps1 -RunSetup -Launch
+```
+
+该脚本只接受 GitHub HTTPS 清单和资产，校验 app/source 两个资产的 SHA-256 与字节数，拒绝越界 ZIP 条目。首次安装会从 `.env.example` 创建本机 `.env`，但云出网仍为关闭状态；必须由使用者自行填写 provider 配置后才能请求 live AI。
+
+公开源码包或 Git clone 在新机器执行：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1
+```
+
+它会检查/安装必要工具、恢复锁定依赖、编译 snapshot，并运行 build、普通测试和 Core gate。私用迁移包由维护者在旧机器生成：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
+  -Mode PrivateDev -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
+```
+
+在新机器导入时：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
+  -Package "D:\Transfer\ClassroomToolkit-private.zip" `
+  -Destination "D:\CODE\classroom-answer-toolkit" `
+  -RunSetup
+```
+
+默认公开包禁止 `.env` 与 `.git`；私用包只有显式 `-IncludeEnv` 才携带密钥。不要上传私用包，也不要把它作为 GitHub Release 资产。更完整的操作、回滚和发布流程见 [release-and-transfer.md](docs/release-and-transfer.md)。
+
 ## 可信边界
 
 `delivery-manifest.json` 1.1 会把输入 Markdown、最终 PDF、同目录交付 snapshot 和 `<PDF基名>.review/` 包内 review 文件绑定到字节数与 SHA-256；validator 会拒绝缺失、篡改或 review 文件集合漂移。`.pdf-review/` 只保留可选调试副本，不是归档依赖。该 manifest 证明的是指定文件之间的交付关系，不证明答案语义必然正确。答案可信需要满足以下至少一项：

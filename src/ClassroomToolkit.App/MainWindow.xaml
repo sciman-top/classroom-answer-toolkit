@@ -76,6 +76,12 @@
                 <TextBlock Text="主链状态" FontSize="22" FontWeight="SemiBold" />
                 <TextBlock Margin="0,6,0,0" Text="{Binding StatusMessage}" Foreground="#34495E" TextWrapping="Wrap" />
                 <TextBlock Margin="0,4,0,0" Text="{Binding LastResultSummary}" Foreground="#6C7A89" />
+                <WrapPanel Margin="0,12,0,0">
+                    <TextBlock Text="更新：" Foreground="#5D6D7E" />
+                    <TextBlock Text="{Binding UpdateStatus}" Foreground="#5D6D7E" TextWrapping="Wrap" />
+                    <Button Margin="10,0,0,0" Content="检查更新" Command="{Binding CheckForUpdatesCommand}" />
+                    <Button Content="安装更新" Command="{Binding InstallUpdateCommand}" />
+                </WrapPanel>
             </StackPanel>
 
             <ItemsControl Grid.Row="1" Margin="0,18,0,18" ItemsSource="{Binding StatusCards}">

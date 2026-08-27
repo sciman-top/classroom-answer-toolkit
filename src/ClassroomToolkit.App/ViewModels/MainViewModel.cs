@@ -16,15 +16,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private const string FallbackSubjectPack = "junior-physics-answer";
     private readonly IToolchainOrchestrator _toolchainOrchestrator;
     private readonly IPathOpener _pathOpener;
+    private readonly IUpdateService? _updateService;
     private readonly StringBuilder _activityLog = new();
     private CancellationTokenSource? _operationCancellation;
     private bool _suppressHealthRefresh;
     private int _healthRefreshVersion;
 
-    public MainViewModel(IToolchainOrchestrator toolchainOrchestrator, IPathOpener pathOpener)
+    public MainViewModel(
+        IToolchainOrchestrator toolchainOrchestrator,
+        IPathOpener pathOpener,
+        IUpdateService? updateService = null)
     {
         _toolchainOrchestrator = toolchainOrchestrator;
         _pathOpener = pathOpener;
+        _updateService = updateService;
         AvailableSubjectPacks = new ObservableCollection<string>();
         StatusCards = new ObservableCollection<StatusCardViewModel>();
 
@@ -54,6 +59,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // it must never block UI construction, so it runs fire-and-forget and
         // updates the cards when it completes.
         _ = RefreshHealthAsync();
+        _ = CheckForUpdatesAsync();
     }
 
     public ObservableCollection<string> AvailableSubjectPacks { get; }
@@ -79,6 +85,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string lastDeliveryManifestPath = string.Empty;
     [ObservableProperty] private string lastReviewDirectoryPath = string.Empty;
     [ObservableProperty] private string lastSnapshotId = string.Empty;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
+    private bool updateAvailable;
+    [ObservableProperty] private string updateStatus = "未检查更新";
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
+    private bool isUpdateBusy;
+    private UpdateInfo? _availableUpdate;
 
     private string DefaultSubjectPackFallback()
     {
@@ -165,6 +179,62 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand] private void OpenLastDeliveryManifest() => OpenPath(LastDeliveryManifestPath);
     [RelayCommand] private void OpenLastReviewDirectory() => OpenPath(LastReviewDirectoryPath);
 
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (_updateService is null)
+        {
+            UpdateStatus = "开发模式：未启用安装版更新检查";
+            return;
+        }
+
+        try
+        {
+            UpdateStatus = "正在检查更新...";
+            var result = await _updateService.CheckAsync();
+            _availableUpdate = result.Update;
+            UpdateAvailable = result.UpdateAvailable;
+            UpdateStatus = result.Message;
+        }
+        catch (Exception ex)
+        {
+            UpdateAvailable = false;
+            _availableUpdate = null;
+            UpdateStatus = $"更新检查失败：{ex.Message}";
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanInstallUpdate))]
+    private async Task InstallUpdateAsync()
+    {
+        if (_updateService is null || _availableUpdate is null)
+        {
+            return;
+        }
+
+        IsUpdateBusy = true;
+        try
+        {
+            var result = await _updateService.InstallAsync(_availableUpdate);
+            UpdateStatus = result.Message;
+            AppendLog(result.Message);
+            if (result.Started)
+            {
+                System.Windows.Application.Current?.Shutdown(0);
+            }
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus = $"启动更新失败：{ex.Message}";
+        }
+        finally
+        {
+            IsUpdateBusy = false;
+        }
+    }
+
+    private bool CanInstallUpdate() => UpdateAvailable && !IsUpdateBusy && !IsBusy;
+
     private async Task RunToolchainAsync(
         string message,
         Func<CancellationToken, Task<ToolchainExecutionResult>> action)
@@ -219,6 +289,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             IsBusy = false;
             CancelCommand.NotifyCanExecuteChanged();
+            InstallUpdateCommand.NotifyCanExecuteChanged();
         }
     }
 

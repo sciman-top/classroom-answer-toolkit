@@ -1,22 +1,43 @@
+param(
+    [string]$RuntimeIdentifier = "win-x64",
+    [string]$PublishDir = "artifacts\publish\ClassroomToolkit.App",
+    [string]$Version = "",
+    [switch]$SelfContained
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot
 
-$runtimeIdentifier = "win-x64"
-$publishDir = Join-Path $repoRoot "artifacts\publish\ClassroomToolkit.App"
+$publishDir = if ([IO.Path]::IsPathFullyQualified($PublishDir)) {
+    [IO.Path]::GetFullPath($PublishDir)
+}
+else {
+    [IO.Path]::GetFullPath((Join-Path $repoRoot $PublishDir))
+}
 $smokeReportPath = Join-Path $repoRoot "artifacts\publish\verification\ClassroomToolkit.App.smoke-report.json"
 
 Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $smokeReportPath -Force -ErrorAction SilentlyContinue
 
-dotnet restore src/ClassroomToolkit.App/ClassroomToolkit.App.csproj -r $runtimeIdentifier
+dotnet restore src/ClassroomToolkit.App/ClassroomToolkit.App.csproj -r $RuntimeIdentifier
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet restore failed for publish runtime."
 }
 
-dotnet publish src/ClassroomToolkit.App/ClassroomToolkit.App.csproj -c Release -r $runtimeIdentifier --self-contained false -p:PublishSingleFile=true -p:PublishTrimmed=false -o $publishDir
+$publishArguments = @(
+    "publish", "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj",
+    "-c", "Release", "-r", $RuntimeIdentifier,
+    "--self-contained", $SelfContained.IsPresent.ToString().ToLowerInvariant(),
+    "-p:PublishSingleFile=true", "-p:PublishTrimmed=false", "-o", $publishDir
+)
+if (-not [string]::IsNullOrWhiteSpace($Version)) {
+    $publishArguments += "-p:Version=$Version"
+}
+
+& dotnet @publishArguments
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed."
 }

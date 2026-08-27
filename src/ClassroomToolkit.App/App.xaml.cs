@@ -14,6 +14,7 @@ public partial class App : System.Windows.Application
 {
     private IToolchainOrchestrator? _toolchainOrchestrator;
     private MainViewModel? _viewModel;
+    private IDisposable? _updateService;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -26,7 +27,13 @@ public partial class App : System.Windows.Application
             var repositoryRootResolver = new RepositoryRootResolver(AppContext.BaseDirectory, repositoryRootOverride);
             IProcessRunner processRunner = new PowerShellProcessRunner();
             _toolchainOrchestrator = new LocalToolchainOrchestrator(repositoryRootResolver, processRunner);
-            _viewModel = new MainViewModel(_toolchainOrchestrator, new WindowsPathOpener());
+            var repositoryRoot = repositoryRootResolver.ResolveRepositoryRoot();
+            var updateService = new ReleaseUpdateService(repositoryRoot);
+            _updateService = updateService;
+            _viewModel = new MainViewModel(
+                _toolchainOrchestrator,
+                new WindowsPathOpener(),
+                updateService);
 
             if (isSmoke)
             {
@@ -60,6 +67,7 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         _viewModel?.Dispose();
+        _updateService?.Dispose();
         base.OnExit(e);
     }
 
