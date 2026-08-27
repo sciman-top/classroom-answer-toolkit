@@ -61,7 +61,7 @@ try {
             }
         }
 
-        $publishRoot = Join-Path $repoRoot "artifacts/publish/ClassroomToolkit.App"
+        $publishRoot = Join-Path $repoRoot "artifacts/work/publish/ClassroomToolkit.App"
         if (-not (Test-Path -LiteralPath $publishRoot -PathType Container)) {
             throw "Published application was requested but not found: $publishRoot"
         }

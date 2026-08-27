@@ -1,6 +1,6 @@
 #requires -Version 7
 param(
-    [string]$PublishDir = "artifacts\publish\ClassroomToolkit.App",
+    [string]$PublishDir = "artifacts\work\publish\ClassroomToolkit.App",
     [string]$ReportPath = ""
 )
 

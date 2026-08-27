@@ -7,14 +7,19 @@
 ```text
 artifacts/
   README.md
-  release/
-    ClassroomToolkit-<version>-win-x64.zip
-    ClassroomToolkit-<version>-source.zip
-    update-manifest.json
-    _manifest/spdx_2.2/manifest.spdx.json
+  deliveries/
+    <version>/
+      ClassroomToolkit-<version>-win-x64.zip
+      ClassroomToolkit-<version>-source.zip
+      update-manifest.json
+      _manifest/spdx_2.2/manifest.spdx.json
+  history/
+    <kind>/<date-or-id>/
+  work/
+    <kind>/
 ```
 
-其中 `release/` 的文件是当前待发布或已验证的 release 候选；它们不会提交到 Git，正式公开下载以 GitHub Release 资产为准。`publish/`、`diagnostics/`、`review-queue-observation/` 和 `tools/` 都是临时构建、审计或工具缓存，不应长期留在本目录。
+`deliveries/<version>/` 只放一个版本的待发布或已验证 release 候选；`history/` 只放明确保留的历史证据或归档；`work/` 放可随时删除的构建、审计和工具中间物。三者禁止在同一层混放。除本说明外，这些内容都不会提交到 Git；正式公开下载以 GitHub Release 资产为准。
 
 使用以下命令按版本清理旧产物：
 
@@ -24,4 +29,4 @@ pwsh -NoProfile -ExecutionPolicy Bypass `
   -KeepVersion 1.0.1
 ```
 
-该命令只删除可重建的目录和不匹配指定版本的 release 压缩包；未知文件会保留并报告，不会被静默删除。
+该命令删除 `work/` 下可重建目录和 `deliveries/` 下不匹配指定版本的目录；未知顶层目录会保留并报告，不会被静默删除。

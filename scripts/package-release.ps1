@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')][string]$WorkspaceContract = "1",
     [ValidateSet("developer-operator-preview", "ordinary-users")][string]$Audience = "developer-operator-preview",
-    [string]$OutputDirectory = "artifacts\release",
+    [string]$OutputDirectory = "artifacts\deliveries",
     [switch]$SkipPublish
 )
 
@@ -13,11 +13,12 @@ Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
-$outputRoot = Resolve-TransferPath -PathValue $OutputDirectory -BasePath $repoRoot
+$outputParent = Resolve-TransferPath -PathValue $OutputDirectory -BasePath $repoRoot
+$outputRoot = Join-Path $outputParent $Version
 $stageParent = Join-Path ([IO.Path]::GetTempPath()) ("ClassroomToolkit-release-{0}" -f [Guid]::NewGuid().ToString("N"))
 $appStageRoot = Join-Path $stageParent "app"
-$publishRoot = Join-Path $repoRoot "artifacts/publish/ClassroomToolkit.App"
-$smokeReportPath = Join-Path $repoRoot "artifacts/publish/verification/ClassroomToolkit.App.smoke-report.json"
+$publishRoot = Join-Path $repoRoot "artifacts/work/publish/ClassroomToolkit.App"
+$smokeReportPath = Join-Path $repoRoot "artifacts/work/publish/verification/ClassroomToolkit.App.smoke-report.json"
 $appZipName = "ClassroomToolkit-$Version-win-x64.zip"
 $sourceZipName = "ClassroomToolkit-$Version-source.zip"
 $currentCommit = ((& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim())

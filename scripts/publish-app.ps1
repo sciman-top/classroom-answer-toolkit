@@ -1,6 +1,6 @@
 param(
     [string]$RuntimeIdentifier = "win-x64",
-    [string]$PublishDir = "artifacts\publish\ClassroomToolkit.App",
+    [string]$PublishDir = "artifacts\work\publish\ClassroomToolkit.App",
     [string]$Version = "",
     [switch]$SelfContained
 )
@@ -17,7 +17,7 @@ $publishDir = if ([IO.Path]::IsPathFullyQualified($PublishDir)) {
 else {
     [IO.Path]::GetFullPath((Join-Path $repoRoot $PublishDir))
 }
-$smokeReportPath = Join-Path $repoRoot "artifacts\publish\verification\ClassroomToolkit.App.smoke-report.json"
+$smokeReportPath = Join-Path $repoRoot "artifacts\work\publish\verification\ClassroomToolkit.App.smoke-report.json"
 
 Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $smokeReportPath -Force -ErrorAction SilentlyContinue

@@ -1,8 +1,8 @@
 #requires -Version 7
 param(
-    [string]$PublishDir = "artifacts\publish\ClassroomToolkit.App",
-    [string]$StageDir = "artifacts\msix\stage",
-    [string]$PackageDir = "artifacts\msix\packages",
+    [string]$PublishDir = "artifacts\work\publish\ClassroomToolkit.App",
+    [string]$StageDir = "artifacts\work\msix\stage",
+    [string]$PackageDir = "artifacts\work\msix\packages",
     [string]$SmokeReportPath = "",
     [string]$Version = "1.0.0.0",
     [string]$Publisher = "CN=ClassroomToolkit.Dev"

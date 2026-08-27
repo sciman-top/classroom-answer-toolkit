@@ -149,11 +149,11 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
 
 ## 交付物目录
 
-本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。当前只保留 `artifacts/release/` 中与当前版本匹配的 app/source 压缩包、`update-manifest.json` 和 SPDX SBOM；`publish/`、diagnostics、review queue 与工具缓存不会作为交付物长期保存。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
+本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。交付物放在 `artifacts/deliveries/<version>/`，历史证据放在 `artifacts/history/<kind>/<date-or-id>/`，构建/审计中间物放在 `artifacts/work/<kind>/`，三者不在同一层混放。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
 
 当前仓库提交的发布说明会明确标出 `developer/operator preview`、公开源码包和 PrivateDev 迁移包的边界；ordinary-user 标准版在没有有效 Authenticode 签名和代表性非开发者验收前不会发布。
 
-当前发布状态：GitHub 上的 `v1.0.1` 是已存在的 tag/release 资产；后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布。不要把本机 `artifacts/release/` 候选包当作线上下载地址；发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
+当前发布状态：GitHub 上的 `v1.0.1` 是已存在的 tag/release 资产；后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布。不要把本机 `artifacts/deliveries/<version>/` 候选包当作线上下载地址；发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
 
 ## 可信边界
 

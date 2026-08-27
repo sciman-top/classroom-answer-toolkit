@@ -21,7 +21,7 @@ if (-not (Test-Path -LiteralPath $root -PathType Container)) {
 }
 
 $removed = [Collections.Generic.List[string]]::new()
-foreach ($name in @("diagnostics", "publish", "review-queue-observation", "tools")) {
+foreach ($name in @("work", "diagnostics", "publish", "review-queue-observation", "tools")) {
     $candidate = Join-Path $root $name
     if (Test-Path -LiteralPath $candidate) {
         [IO.Directory]::Delete($candidate, $true)
@@ -29,37 +29,47 @@ foreach ($name in @("diagnostics", "publish", "review-queue-observation", "tools
     }
 }
 
-$releaseRoot = Join-Path $root "release"
-if (Test-Path -LiteralPath $releaseRoot -PathType Container) {
-    $sbomPath = Join-Path $releaseRoot "_manifest/spdx_2.2/manifest.spdx.json"
-    if (Test-Path -LiteralPath $sbomPath -PathType Leaf) {
-        try {
-            $sbom = Get-Content -LiteralPath $sbomPath -Raw -Encoding utf8 | ConvertFrom-Json
-            if ([string]$sbom.name -ne "ClassroomToolkit $KeepVersion") {
-                [IO.Directory]::Delete((Join-Path $releaseRoot "_manifest"), $true)
-                $removed.Add((Join-Path $releaseRoot "_manifest"))
-            }
-        }
-        catch {
-            Write-Warning "Unable to validate the release SBOM; preserving it: $sbomPath"
+$deliveriesRoot = Join-Path $root "deliveries"
+if (Test-Path -LiteralPath $deliveriesRoot -PathType Container) {
+    foreach ($deliveryDirectory in @(Get-ChildItem -LiteralPath $deliveriesRoot -Directory -Force)) {
+        if ($deliveryDirectory.Name -ne $KeepVersion) {
+            [IO.Directory]::Delete($deliveryDirectory.FullName, $true)
+            $removed.Add($deliveryDirectory.FullName)
         }
     }
 
-    foreach ($item in @(Get-ChildItem -LiteralPath $releaseRoot -Force)) {
-        $keep = $item.Name -in @(
-            "update-manifest.json",
-            "_manifest",
-            "ClassroomToolkit-$KeepVersion-win-x64.zip",
-            "ClassroomToolkit-$KeepVersion-source.zip"
-        )
-        if (-not $keep -and $item.Name -match '^ClassroomToolkit-\d+\.\d+\.\d+-(win-x64|source)\.zip$') {
-            if ($item.PSIsContainer) {
-                [IO.Directory]::Delete($item.FullName, $true)
+    $releaseRoot = Join-Path $deliveriesRoot $KeepVersion
+    if (Test-Path -LiteralPath $releaseRoot -PathType Container) {
+        $sbomPath = Join-Path $releaseRoot "_manifest/spdx_2.2/manifest.spdx.json"
+        if (Test-Path -LiteralPath $sbomPath -PathType Leaf) {
+            try {
+                $sbom = Get-Content -LiteralPath $sbomPath -Raw -Encoding utf8 | ConvertFrom-Json
+                if ([string]$sbom.name -ne "ClassroomToolkit $KeepVersion") {
+                    [IO.Directory]::Delete((Join-Path $releaseRoot "_manifest"), $true)
+                    $removed.Add((Join-Path $releaseRoot "_manifest"))
+                }
             }
-            else {
-                [IO.File]::Delete($item.FullName)
+            catch {
+                Write-Warning "Unable to validate the release SBOM; preserving it: $sbomPath"
             }
-            $removed.Add($item.FullName)
+        }
+
+        foreach ($item in @(Get-ChildItem -LiteralPath $releaseRoot -Force)) {
+            $keep = $item.Name -in @(
+                "update-manifest.json",
+                "_manifest",
+                "ClassroomToolkit-$KeepVersion-win-x64.zip",
+                "ClassroomToolkit-$KeepVersion-source.zip"
+            )
+            if (-not $keep -and $item.Name -match '^ClassroomToolkit-\d+\.\d+\.\d+-(win-x64|source)\.zip$') {
+                if ($item.PSIsContainer) {
+                    [IO.Directory]::Delete($item.FullName, $true)
+                }
+                else {
+                    [IO.File]::Delete($item.FullName)
+                }
+                $removed.Add($item.FullName)
+            }
         }
     }
 }
@@ -73,7 +83,7 @@ else {
     $removed | ForEach-Object { Write-Host "- $_" }
 }
 
-$unknown = @(Get-ChildItem -LiteralPath $root -Force | Where-Object { $_.Name -notin @("README.md", "release") })
+$unknown = @(Get-ChildItem -LiteralPath $root -Force | Where-Object { $_.Name -notin @("README.md", "deliveries", "history", "work") })
 if ($unknown.Count -gt 0) {
     Write-Warning "Unknown artifacts entries were preserved: $($unknown.Name -join ', ')"
 }
