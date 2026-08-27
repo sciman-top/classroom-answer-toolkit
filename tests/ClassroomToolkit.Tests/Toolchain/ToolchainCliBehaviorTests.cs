@@ -180,6 +180,47 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
+    public async Task ArtifactCleanupKeepsCurrentDeliveryAndHistoryButRemovesWorkAndOldVersions()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-ArtifactLayout", Guid.NewGuid().ToString("N"));
+        var artifactsRoot = Path.Combine(testRoot, "artifacts");
+        var currentDelivery = Path.Combine(artifactsRoot, "deliveries", "1.0.1");
+        var oldDelivery = Path.Combine(artifactsRoot, "deliveries", "1.0.0");
+        var history = Path.Combine(artifactsRoot, "history", "diagnostics", "20260827");
+        var work = Path.Combine(artifactsRoot, "work", "publish");
+
+        try
+        {
+            Directory.CreateDirectory(currentDelivery);
+            Directory.CreateDirectory(oldDelivery);
+            Directory.CreateDirectory(history);
+            Directory.CreateDirectory(work);
+            File.WriteAllText(Path.Combine(currentDelivery, "ClassroomToolkit-1.0.1-source.zip"), "current");
+            File.WriteAllText(Path.Combine(oldDelivery, "ClassroomToolkit-1.0.0-source.zip"), "old");
+            File.WriteAllText(Path.Combine(history, "receipt.json"), "history");
+            File.WriteAllText(Path.Combine(work, "marker.txt"), "work");
+
+            var result = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/clean-artifacts.ps1",
+                "-ArtifactsRoot", artifactsRoot,
+                "-KeepVersion", "1.0.1");
+
+            result.ExitCode.Should().Be(0, result.Output);
+            Directory.Exists(currentDelivery).Should().BeTrue();
+            Directory.Exists(oldDelivery).Should().BeFalse();
+            Directory.Exists(work).Should().BeFalse();
+            File.Exists(Path.Combine(history, "receipt.json")).Should().BeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task UpdateReleaseRejectsRestartExecutableOutsideTargetApp()
     {
         var root = FindRepoRoot();
