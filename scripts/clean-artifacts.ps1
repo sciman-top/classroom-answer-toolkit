@@ -24,8 +24,21 @@ $removed = [Collections.Generic.List[string]]::new()
 foreach ($name in @("work", "diagnostics", "publish", "review-queue-observation", "tools")) {
     $candidate = Join-Path $root $name
     if (Test-Path -LiteralPath $candidate) {
-        [IO.Directory]::Delete($candidate, $true)
-        $removed.Add($candidate)
+        if ($name -eq "work" -and (Test-Path -LiteralPath (Join-Path $candidate "README.md") -PathType Leaf)) {
+            foreach ($child in @(Get-ChildItem -LiteralPath $candidate -Force | Where-Object { $_.Name -ne "README.md" })) {
+                if ($child.PSIsContainer) {
+                    [IO.Directory]::Delete($child.FullName, $true)
+                }
+                else {
+                    [IO.File]::Delete($child.FullName)
+                }
+                $removed.Add($child.FullName)
+            }
+        }
+        else {
+            [IO.Directory]::Delete($candidate, $true)
+            $removed.Add($candidate)
+        }
     }
 }
 
