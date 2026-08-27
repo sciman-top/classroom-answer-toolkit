@@ -147,6 +147,14 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
 
 默认公开包禁止 `.env` 与 `.git`；私用包只有显式 `-IncludeEnv` 才携带密钥。不要上传私用包，也不要把它作为 GitHub Release 资产。更完整的操作、回滚和发布流程见 [release-and-transfer.md](docs/release-and-transfer.md)。
 
+可由 AI 或自动化操作员执行不产生外部发布副作用的发布模拟验收：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.1
+```
+
+该回放使用临时 loopback 源驱动真实安装、更新、故障回滚和 PrivateDev 迁移脚本，结果是 `simulated-acceptance`，不能替代代码签名、GitHub 发布、普通用户实机、真实 provider 或教师/课堂验收。
+
 ## 交付物目录
 
 本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。交付物放在 `artifacts/deliveries/<version>/`，历史证据放在 `artifacts/history/<kind>/<date-or-id>/`，构建/审计中间物放在 `artifacts/work/<kind>/`，三者不在同一层混放。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。

@@ -7,7 +7,9 @@ param(
     [Parameter(Mandatory = $true)][string]$RepositoryRoot,
     [Parameter(Mandatory = $true)][int]$ProcessId,
     [Parameter(Mandatory = $true)][string]$RestartExecutable,
-    [int]$WaitSeconds = 120
+    [int]$WaitSeconds = 120,
+    [switch]$AllowLocalSimulation,
+    [switch]$Simulation
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,8 +58,14 @@ function Assert-ZipSafe {
 }
 
 function Assert-ApprovedGitHubUri {
-    param([Parameter(Mandatory = $true)][uri]$UriValue)
+    param(
+        [Parameter(Mandatory = $true)][uri]$UriValue,
+        [switch]$AllowLocalSimulation
+    )
 
+    if ($AllowLocalSimulation -and $UriValue.IsLoopback -and @("http", "https") -contains $UriValue.Scheme.ToLowerInvariant()) {
+        return
+    }
     $allowedHosts = @("github.com", "objects.githubusercontent.com")
     if ($UriValue.Scheme -ne "https" -or (-not ($allowedHosts -contains $UriValue.Host.ToLowerInvariant()) -and -not $UriValue.Host.EndsWith(".githubusercontent.com", [StringComparison]::OrdinalIgnoreCase))) {
         throw "Update URL must use an approved GitHub HTTPS host: $UriValue"
@@ -70,7 +78,10 @@ if ($ExpectedSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
 if ($ExpectedBytes -le 0) {
     throw "ExpectedBytes must be positive."
 }
-Assert-ApprovedGitHubUri -UriValue $PackageUrl
+if ($Simulation -and -not $AllowLocalSimulation) {
+    throw "-Simulation requires -AllowLocalSimulation."
+}
+Assert-ApprovedGitHubUri -UriValue $PackageUrl -AllowLocalSimulation:$AllowLocalSimulation
 
 $targetApp = Resolve-AbsolutePath $TargetAppDirectory
 $restartPath = Assert-ContainedPath -PathValue $RestartExecutable -RootPath $targetApp
@@ -143,7 +154,29 @@ try {
         $smokeProcess.Dispose()
     }
 
-    Start-Process -FilePath $restartPath -WorkingDirectory $targetApp -WindowStyle Hidden
+    if ($Simulation) {
+        $restartProcess = Start-Process `
+            -FilePath $restartPath `
+            -ArgumentList @("--smoke", "--repository-root", $repoRoot) `
+            -WorkingDirectory $targetApp `
+            -WindowStyle Hidden `
+            -PassThru
+        try {
+            if (-not $restartProcess.WaitForExit(120000)) {
+                $restartProcess.Kill($true)
+                throw "Simulated replacement restart timed out after 120 seconds."
+            }
+            if ($restartProcess.ExitCode -ne 0) {
+                throw "Simulated replacement restart failed with exit code $($restartProcess.ExitCode)."
+            }
+        }
+        finally {
+            $restartProcess.Dispose()
+        }
+    }
+    else {
+        Start-Process -FilePath $restartPath -WorkingDirectory $targetApp -WindowStyle Hidden | Out-Null
+    }
     Write-Host "Update installed; previous app backup: $backupPath"
 }
 catch {

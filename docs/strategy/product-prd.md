@@ -45,6 +45,7 @@
 - 新生成的 Delivery Manifest 必须把实际输入 Markdown、最终 PDF、交付 snapshot 和同目录 `<PDF基名>.review/` 包内文件集合绑定到 SHA-256；任一文件缺失或篡改必须 fail closed，`.pdf-review/` 调试缓存不得成为归档依赖。
 - workflow receipt 必须绑定 Source Exam、可选 Reference PDF、prompt、各阶段 summary/产物和阶段终态；参考差异必须以实际送入 Reference Review 的候选为基线。
 - WPF publish smoke 必须在开发仓之外运行并绑定 commit、EXE 与 publish tree；当前 repository-coupled 形态不得产出或宣称自包含 MSIX。
+- 可重复的安装、更新、回滚、迁移和发布包完整性可由 loopback 隔离回放形成 `simulated-acceptance`；该状态只证明工程操作合同，不得推导 publisher identity、普通用户体验、真实 provider 质量或 Teacher Accepted。
 - Teacher Accepted 只能来自教师对指定交付物的实际验收，不由 repo gate 或 manifest 自动推导。
 
 ## Current evidence boundary

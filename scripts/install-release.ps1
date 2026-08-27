@@ -4,15 +4,22 @@ param(
     [string]$Destination = "",
     [switch]$RunSetup,
     [switch]$Launch,
-    [switch]$ValidateDestinationOnly
+    [switch]$ValidateDestinationOnly,
+    [switch]$AllowLocalSimulation
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 function Assert-ApprovedGitHubUri {
-    param([Parameter(Mandatory = $true)][uri]$UriValue)
+    param(
+        [Parameter(Mandatory = $true)][uri]$UriValue,
+        [switch]$AllowLocalSimulation
+    )
 
+    if ($AllowLocalSimulation -and $UriValue.IsLoopback -and @("http", "https") -contains $UriValue.Scheme.ToLowerInvariant()) {
+        return
+    }
     $allowedHosts = @("github.com", "objects.githubusercontent.com")
     if ($UriValue.Scheme -ne "https" -or (-not ($allowedHosts -contains $UriValue.Host.ToLowerInvariant()) -and -not $UriValue.Host.EndsWith(".githubusercontent.com", [StringComparison]::OrdinalIgnoreCase))) {
         throw "URL must use an approved GitHub HTTPS host: $UriValue"
@@ -47,11 +54,12 @@ function Assert-ZipEntriesContained {
 function Download-VerifiedAsset {
     param(
         [Parameter(Mandatory = $true)]$Asset,
-        [Parameter(Mandatory = $true)][string]$DownloadDirectory
+        [Parameter(Mandatory = $true)][string]$DownloadDirectory,
+        [switch]$AllowLocalSimulation
     )
 
     $uri = [uri][string]$Asset.url
-    Assert-ApprovedGitHubUri -UriValue $uri
+    Assert-ApprovedGitHubUri -UriValue $uri -AllowLocalSimulation:$AllowLocalSimulation
     $expectedHash = [string]$Asset.sha256
     if ($expectedHash -notmatch '^[A-Fa-f0-9]{64}$') {
         throw "Asset SHA-256 is invalid: $($Asset.name)"
@@ -84,7 +92,7 @@ function Get-WorkspaceContract {
 }
 
 $manifestUri = [uri]$ManifestUrl
-Assert-ApprovedGitHubUri -UriValue $manifestUri
+Assert-ApprovedGitHubUri -UriValue $manifestUri -AllowLocalSimulation:$AllowLocalSimulation
 $targetRoot = if ([string]::IsNullOrWhiteSpace($Destination)) {
     Join-Path $env:LOCALAPPDATA "ClassroomToolkit"
 }
@@ -121,8 +129,8 @@ try {
         throw "Update manifest must provide both app and source assets."
     }
 
-    $appZip = Download-VerifiedAsset -Asset $appAsset -DownloadDirectory $downloadRoot
-    $sourceZip = Download-VerifiedAsset -Asset $sourceAsset -DownloadDirectory $downloadRoot
+    $appZip = Download-VerifiedAsset -Asset $appAsset -DownloadDirectory $downloadRoot -AllowLocalSimulation:$AllowLocalSimulation
+    $sourceZip = Download-VerifiedAsset -Asset $sourceAsset -DownloadDirectory $downloadRoot -AllowLocalSimulation:$AllowLocalSimulation
     $workspaceStage = Join-Path $stageRoot "workspace"
     [IO.Directory]::CreateDirectory($workspaceStage) | Out-Null
     Assert-ZipEntriesContained -ZipPath $sourceZip -DestinationRoot $workspaceStage

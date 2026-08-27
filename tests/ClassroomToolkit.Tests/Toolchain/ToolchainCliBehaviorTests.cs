@@ -166,6 +166,43 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
+    public async Task InstallReleaseAllowsLoopbackOnlyWithExplicitSimulationSwitch()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-LoopbackInstall", Guid.NewGuid().ToString("N"));
+        var destination = Path.Combine(testRoot, "install");
+        var manifestUrl = "http://127.0.0.1:43210/update-manifest.json";
+
+        try
+        {
+            var rejected = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
+                "-ManifestUrl", manifestUrl,
+                "-Destination", destination,
+                "-ValidateDestinationOnly");
+            rejected.ExitCode.Should().NotBe(0);
+            rejected.Output.Should().Contain("approved GitHub HTTPS host");
+
+            var allowed = await RunAsync(
+                "pwsh",
+                root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
+                "-ManifestUrl", manifestUrl,
+                "-Destination", destination,
+                "-ValidateDestinationOnly",
+                "-AllowLocalSimulation");
+            allowed.ExitCode.Should().Be(0, allowed.Output);
+            allowed.Output.Should().Contain("Install destination is available");
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task PackageReleaseRejectsVersionThatDoesNotMatchSourceProject()
     {
         var result = await RunAsync(

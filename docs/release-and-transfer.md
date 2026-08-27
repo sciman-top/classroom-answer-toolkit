@@ -43,6 +43,31 @@ the backup if replacement or smoke fails. When a release raises
 the preview installer into a new empty destination; the updater will not
 silently replace a workspace, `.env`, or user files.
 
+## Automated Simulation Acceptance
+
+Repeatable operator work can be exercised without a second machine or a
+GitHub write by running:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.1
+```
+
+The simulation serves the already verified candidate assets from a temporary
+loopback HTTP server and drives the real installer, updater and transfer
+scripts. It covers empty and occupied destinations, a successful update and
+smoke restart, replacement failure with rollback, and PrivateDev import with
+existing `.env` preservation. The receipt is written under
+`artifacts/work/verification/release-simulation/` and is intentionally
+cleaned with the other generated work artifacts.
+
+`-AllowLocalSimulation` and `-Simulation` are explicit test-only seams. The
+normal installer and updater continue to accept only approved GitHub HTTPS
+hosts; loopback is never an implicit production fallback. A passed receipt is
+`simulated-acceptance` evidence for deterministic operational contracts. It
+does not establish publisher identity, GitHub publication, UAC/antivirus or
+ordinary-user experience, live provider quality, or teacher/classroom
+acceptance.
+
 An ordinary-user standard edition and an offline full edition are intentionally
 not published. `package-release.ps1 -Audience ordinary-users` fails closed
 unless the application has a valid Authenticode signature. Productization
