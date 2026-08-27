@@ -29,7 +29,8 @@ tmp/
 _tmp_*
 *.render.html
 .*.render.html
-artifacts/
+artifacts/*
+!artifacts/README.md
 
 # Eval outputs
 eval/**/results/*

@@ -83,7 +83,7 @@ dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug 
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer
 ```
 
-AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试；workflow、publish、packaging 或 Node CLI 合同再运行 `Gate=ToolchainIntegration` 的 12 项 .NET 集成测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
+AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试；workflow、publish、packaging 或 Node CLI 合同再运行 `Gate=ToolchainIntegration` 的 20 项 .NET 集成测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
 
 Full 中共享 renderer/layout/delivery 回归只由 `junior-physics-answer` eval 承担一次；廉价 manifest 合同独立验证负向边界。Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
 
@@ -146,6 +146,14 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
 ```
 
 默认公开包禁止 `.env` 与 `.git`；私用包只有显式 `-IncludeEnv` 才携带密钥。不要上传私用包，也不要把它作为 GitHub Release 资产。更完整的操作、回滚和发布流程见 [release-and-transfer.md](docs/release-and-transfer.md)。
+
+## 交付物目录
+
+本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。当前只保留 `artifacts/release/` 中与当前版本匹配的 app/source 压缩包、`update-manifest.json` 和 SPDX SBOM；`publish/`、diagnostics、review queue 与工具缓存不会作为交付物长期保存。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
+
+当前仓库提交的发布说明会明确标出 `developer/operator preview`、公开源码包和 PrivateDev 迁移包的边界；ordinary-user 标准版在没有有效 Authenticode 签名和代表性非开发者验收前不会发布。
+
+当前发布状态：GitHub 上的 `v1.0.1` 是已存在的 tag/release 资产；后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布。不要把本机 `artifacts/release/` 候选包当作线上下载地址；发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
 
 ## 可信边界
 

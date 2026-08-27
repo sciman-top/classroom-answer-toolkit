@@ -18,11 +18,19 @@ self-contained MSIX product.
 
 ## Public Release
 
+本机生成的候选文件统一放在 Git 忽略的 `artifacts/release/`。目录只保留当前版本的 app/source ZIP、`update-manifest.json` 和 SPDX SBOM；清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
+
 Create an annotated tag named `v<major>.<minor>.<patch>` and push that tag.
 The GitHub Actions workflow performs the local setup and integration gates,
 creates the app and source ZIPs, writes `update-manifest.json`, generates an
 SPDX SBOM and provenance attestations, and publishes those assets plus
 `scripts/install-release.ps1` to the GitHub Release.
+
+The existing `v1.0.1` Release is a previously published tag snapshot. The
+post-release hardening currently on `main` is not represented by that Release
+until a new versioned tag runs this workflow. Do not replace an existing
+Release asset manually with a locally generated ZIP; the manifest, SBOM and
+attestation must be produced by the same clean tagged source.
 
 The manifest binds each asset to a URL, byte count and SHA-256, plus a
 `workspaceContract`. The WPF app only accepts a newer semantic version, a
