@@ -6,7 +6,7 @@ AI gateway 只承担原卷答案生成和参考答案复核。默认禁止 live 
 - `CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true`；
 - `.env` 中存在可用 provider 配置。
 
-配置模板为 `.env.example`，真实密钥只保存在本机 `.env`。
+配置模板为 `.env.example`；当前本机 `.env` 和 `.env.cockpit` 使用 `http://localhost:45335/v1` 的 Cockpit API Service，真实 bearer token 只保存在本机配置，不提交到 Git。AI gateway 始终配置 5 个执行槽位；执行槽位不是 5 个 endpoint，也不是 5 个模型。单个 Node 进程内使用 FIFO 队列，多个 CLI 进程通过 runtime directory 中的原子 lease 共用同一组五槽位；跨进程调度以保持槽位可用为目标，不承诺全局 FIFO。
 
 主入口：
 
@@ -16,16 +16,30 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
   --output <answer.md> `
   --summary-out <stage.summary.json> `
   --provider all `
-  --quality-profile sol-xhigh
+  --quality-profile auto
 ```
 
-质量 profile 是网关唯一的模型选择接口，固定为四档：`sol-xhigh`（`gpt-5.6-sol / xhigh`）、`sol-medium`（`gpt-5.6-sol / medium`）、`terra-xhigh`（`gpt-5.6-terra / xhigh`）、`terra-high`（`gpt-5.6-terra / high`）。默认 `auto` 为 `sol-xhigh`，所以 blind、无参考语义、视觉审计合并和参考复核不会因传输失败自动降低质量。工作流以 `-BlindQualityProfile`、`-SemanticQualityProfile`、`-VisualQualityProfile` 和 `-ReferenceQualityProfile` 分别传入阶段选择；改变 profile 必须是显式操作。
+质量 profile 是网关唯一的模型选择接口，固定为三套、每套三档：Sol 为 `sol-xhigh`（`gpt-5.6-sol / xhigh`）、`sol-medium`（`gpt-5.6-sol / medium`）、`sol-low`（`gpt-5.6-sol / low`）；Terra 为 `terra-xhigh`、`terra-high`、`terra-medium`；Luna 为 `luna-xhigh`、`luna-high`、`luna-medium`。默认 `auto` 解析为 `sol-xhigh`。`reasoning.effort` 只调节同一模型的思考预算，不替代模型选择；具体组合仍由 profile 固定。
 
-每个匹配 profile 的 provider 最多请求两次；仅同一精确 profile 的重复 provider 才可继续尝试。超时、502、429、空输出或截断均不能触发跨 profile 降级，全部同档尝试失败则 fail closed。`sol-medium` 仅适合显式草稿或成本受控试验；`terra-xhigh` 与 `terra-high` 在通过固定真实试题的阶段对比前，只能作为显式选择的独立/试验档，HTTP 成功不能证明质量等价。每次 attempt 必须记录实际 model、reasoning effort、attempt number、耗时和请求字节数。
+每套 preset 都有自己的 5 槽绑定表。选择 `Sol-only` 后，5 个槽位只可绑定 `sol-xhigh`、`sol-medium`、`sol-low`，并可重复；Terra-only 和 Luna-only 遵循同一不变量。这样槽位只表达当前 preset 内的并发队列，绝不把不同模型族混为同一预设。修改映射只需修改对应的 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<1..5>`，不需要复制 Cockpit endpoint 或 API key。
 
-`--timeout-ms` 是每次请求的应用层 AbortController 总上限，默认 600 秒。gateway 显式把 Undici `headersTimeout` 和 `bodyTimeout` 设为该值加 5 秒，使应用层计时器成为权威截止线，避免默认约 300 秒的响应头上限提前截断长推理。连接建立仍使用 Undici 的短超时。启用工作流 `-UseGatewayProxy` 时使用 `EnvHttpProxyAgent`，保持 `HTTP_PROXY`、`HTTPS_PROXY` 和 `NO_PROXY` 语义。
+| 执行槽位 | 对应 profile | 作用 |
+| --- | --- | --- |
+| `1` | 当前 preset 的最高档（`*-xhigh`） | 高推理队列 A |
+| `2` | 当前 preset 的最高档（`*-xhigh`） | 高推理队列 B |
+| `3` | 当前 preset 的中档（Sol=`medium`；Terra/Luna=`high`） | 常规队列 A |
+| `4` | 当前 preset 的中档（Sol=`medium`；Terra/Luna=`high`） | 常规队列 B |
+| `5` | 当前 preset 的最低档（Sol=`low`；Terra/Luna=`medium`） | 低档队列 |
 
-`--provider primary|fallback|all` 只过滤同一质量 profile 内的尝试范围：`primary` 只请求主角色，`fallback` 只请求 fallback 角色，`all` 按 provider role 顺序使用该 profile 的所有角色。provider 本地拒绝（401/403/404/405/413，即该 endpoint 自身的 key/URL/payload 问题）不终止整条链，改为继续尝试同档下一角色；其余非 retryable 失败仍 fail closed。页数、题型和风险信号不再隐式改变模型。成功回执的 `routing` 记录 mode、quality profile、quality-degraded（当前严格策略恒为 false）、实际 `orderedRoles`、`selectedRole` 和 target，不记录密钥。
+槽位映射是调度策略，不是质量排序。质量排序始终由 `Sol → Terra → Luna` 决定；路由在同一 profile 的候选 provider 失败后才进入下一个模型族，不能因为槽位空闲而跳过首选模型族。
+
+默认连通性路由按 preset 优先级 `Sol-only → Terra-only → Luna-only`。每次请求及每个 attempt 都只会激活一套 preset：先只在当前 preset 内使用一个固定 profile 和其匹配的槽位；Sol 故障后，才在 preset seam 处探测并切换到完整 Terra-only preset，Terra 不可用才切 Luna-only。跨 preset 时按相对档位而不是 effort 字面值映射：最高=`xhigh → xhigh → xhigh`，中档=`Sol/medium → Terra/high → Luna/high`，最低=`Sol/low → Terra/medium → Luna/medium`。运行时在 `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY`（未设置时为 OS 临时目录）保存活跃 preset 和冷却状态；当 Sol 冷却、Terra 健康时后续请求优先 Terra，Terra 后续故障时仍先重新探测 Sol、再探测 Luna。`CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS` 默认 120000 毫秒，范围为 1000–3600000。每个候选连接最多请求两次；超时、502、429、空输出或截断才进入下一 preset。每次 attempt 必须记录实际 preset、profile、model、reasoning effort、attempt number、耗时和请求字节数。高风险审批只是工作流的额外 policy/gate，既不增加第四档，也不改变单 preset、单模型族约束。
+
+`probe:text --provider all` 在显式 preset-slot 配置下会通过每个去重后的连接依次验证全部 9 个 profile 的 model/effort 投影，并返回各 preset 中首个匹配槽位；它是能力探测，不是答案正确性验收。`/v1/models` 只证明模型标识可见，不能替代 effort 组合的请求探测。
+
+`--timeout-ms` 是每次 attempt 从进入槽位队列开始计算的应用层 AbortController 总上限，默认 600 秒。槽位等待耗尽时会生成带 `EXECUTION_SLOT_TIMEOUT` 语义的 retryable attempt，并继续按既定模型族链路处理，不会无限排队。gateway 显式把 Undici `headersTimeout` 和 `bodyTimeout` 设为该值加 5 秒，使应用层计时器成为权威截止线，避免默认约 300 秒的响应头上限提前截断长推理。连接建立仍使用 Undici 的短超时。启用工作流 `-UseGatewayProxy` 时使用 `EnvHttpProxyAgent`，保持 `HTTP_PROXY`、`HTTPS_PROXY` 和 `NO_PROXY` 语义。
+
+`--provider primary|fallback|all` 过滤 preset 内的连接角色：`primary` 只请求主角色，`fallback` 只请求 fallback 角色，`all` 按 preset 优先级和角色顺序使用候选。provider 本地拒绝（401/403/404/405/413，即该 endpoint 自身的 key/URL/payload 问题）不终止整条链，改为继续尝试下一连接或下一 preset；其余非 retryable 失败仍 fail closed。页数、题型和风险信号不改变默认 preset 优先级。成功回执的 `routing` 明确记录 `requestedPreset`、`resolvedPreset`、实际唯一的 `activePreset`、请求与实际 quality profile、实际 `orderedPresets`、`orderedRoles`、`orderedExecutionSlots`、`selectedRole`、实际 `executionSlot` 和 target，不记录密钥；实际切到另一 preset 或不同推理档时 `qualityDegraded=true`。每个 attempt 同时记录实际 preset、profile、slot、model 和 reasoning effort。
 
 `--summary-out` 与 Markdown 都使用同目录临时文件原子替换；summary 记录 prompt/input/output SHA-256、实际 provider/model/reasoning、routing 和脱敏 attempts。summary 路径不得覆盖 prompt、候选、输入图或 Markdown 输出。
 
@@ -35,4 +49,10 @@ fallback 档位的连接继承合同：显式设置 `INHERIT_PRIMARY=true` 才�
 
 `--config-env-file` 的相对路径解析基准因 CLI 而异：`validate:config` 与 `request:text` 按仓库根解析；`generate:answer` 的输入路径按 `INIT_CWD`/`process.cwd` 解析；`run-live-answer-workflow.ps1` 先按仓库根解析再以绝对路径传入。自动化示例应优先使用绝对路径。
 
-升级既有 `.env` 时只同步四组 `TEXT_MODEL`、`VISION_MODEL` 和 `REASONING_EFFORT` 到 `.env.example` 的 profile 顺序；不得复制、打印或提交 API key。旧的 `sol/high` fallback 不再匹配任一 quality profile，显式请求 `terra-xhigh` 前必须先确认本机 `.env` 已提供该精确 model/effort 组合。
+升级既有 `.env` 时保留一个可复用的 `PRIMARY` 连接，并把 15 个 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<N>` 映射同步到 `.env.example`；不得为同一个 Cockpit endpoint 复制 8 份 API key。显式选择某个 profile 时，先使用所属 preset；只有该 preset 的连接不可用才切换完整备用 preset。旧的 `FALLBACK_1..8` 模型 role 配置仍可读取，作为旧式多连接兼容路径；槽位不再由旧的 `CLASSROOM_TOOLKIT_AI_PROFILE_*_SLOT` 表达。旧配置省略 `EXECUTION_SLOT` 时按 role 稳定推导，建议迁移为显式 5 槽 preset 映射。
+
+该分层与官方 reasoning 参数语义、以及成熟网关将 retry/cooldown、部署组和跨模型 fallback 分开管理的做法一致：
+
+- OpenAI reasoning guide: https://developers.openai.com/api/docs/guides/reasoning
+- LiteLLM fallback/reliability: https://docs.litellm.ai/docs/proxy/reliability
+- Portkey fallback patterns: https://portkey.ai/docs/product/ai-gateway/fallbacks

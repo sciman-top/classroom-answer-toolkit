@@ -81,6 +81,8 @@ const FAILover_OPTIONS = {
 };
 
 test("requestAnswerWithFailover continues to fallback after a provider-local 401", async () => {
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-e2e-"));
+  try {
   await withServer((request, response) => {
     if (request.headers.authorization === "Bearer primary-key") {
       response.writeHead(401, { "Content-Type": "application/json" });
@@ -92,6 +94,7 @@ test("requestAnswerWithFailover continues to fallback after a provider-local 401
   }, async (baseUrl) => {
     const config = normalizeConfig({
       ...EGRESS_ENV,
+      CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY: workDir,
       ...providerEnv(baseUrl, "PRIMARY", "primary-key"),
       ...providerEnv(baseUrl, "FALLBACK_1", "fallback-key")
     });
@@ -103,10 +106,15 @@ test("requestAnswerWithFailover continues to fallback after a provider-local 401
     assert.ok(result.attempts.some((attempt) => attempt.status === 401));
     assert.equal(result.answerMarkdown.trim(), ANSWER_MARKDOWN.trim());
   });
+  } finally {
+    fs.rmSync(workDir, { recursive: true, force: true });
+  }
 });
 
 test("requestAnswerWithFailover still fails closed on a generic non-retryable status", async () => {
   let requests = 0;
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-e2e-"));
+  try {
   await withServer((_request, response) => {
     requests += 1;
     response.writeHead(400, { "Content-Type": "application/json" });
@@ -114,6 +122,7 @@ test("requestAnswerWithFailover still fails closed on a generic non-retryable st
   }, async (baseUrl) => {
     const config = normalizeConfig({
       ...EGRESS_ENV,
+      CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY: workDir,
       ...providerEnv(baseUrl, "PRIMARY", "primary-key"),
       ...providerEnv(baseUrl, "FALLBACK_1", "fallback-key")
     });
@@ -124,6 +133,9 @@ test("requestAnswerWithFailover still fails closed on a generic non-retryable st
     assert.equal(requests, 1);
     assert.equal(result.attempts.length, 1);
   });
+  } finally {
+    fs.rmSync(workDir, { recursive: true, force: true });
+  }
 });
 
 test("main() success path writes answer and schema-valid summary through a fake gateway", async () => {
@@ -135,6 +147,7 @@ test("main() success path writes answer and schema-valid summary through a fake 
     }, async (baseUrl) => {
       const envLines = [
         "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true",
+        `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY=${workDir}`,
         ...Object.entries(providerEnv(baseUrl, "PRIMARY", "primary-key"))
           .map(([key, value]) => `${key}=${value}`)
       ];

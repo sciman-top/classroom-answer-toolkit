@@ -1,6 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  DEFAULT_PRESET_SLOT_BINDINGS,
+  EXECUTION_SLOT_COUNT,
+  PRESET_NAMES,
+  PRESET_PROFILES,
+  QUALITY_PROFILES,
+  QUALITY_PROFILE_ORDER,
+  presetForProfile,
+  slotsForPresetProfile,
+  TEXT_FAILOVER_PROFILES
+} from "./profile-matrix.mjs";
+import { acquireSharedExecutionSlot } from "./gateway-runtime.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(toolDir, "..", "..");
@@ -13,7 +25,14 @@ const KNOWN_PREFIXES = [
 const ALLOWED_AI_KINDS = new Set(["openai_compatible"]);
 const ALLOWED_TEXT_SURFACES = new Set(["responses", "chat_completions"]);
 const ALLOWED_REASONING_EFFORTS = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
-
+export const DEFAULT_EXECUTION_SLOT_COUNT = EXECUTION_SLOT_COUNT;
+const DEFAULT_EXECUTION_SLOT_BY_ROLE = Object.freeze({
+  primary: 1,
+  fallback_1: 2,
+  fallback_2: 3,
+  fallback_3: 4,
+  fallback_4: 5
+});
 function usage() {
   return [
     "Usage:",
@@ -202,6 +221,10 @@ function readAiProvider(env, role, canonicalPrefix, legacyPrefix, inherited = nu
   const inheritPrimaryConnection = inherited !== null && boolValue(inheritFlagRaw);
   const model = hasCanonical ? get(env, `${prefix}_TEXT_MODEL`) : get(env, `${prefix}_MODEL`);
   const visionModel = hasCanonical ? get(env, `${prefix}_VISION_MODEL`) || model : model;
+  const executionSlotRaw = get(env, `${prefix}_EXECUTION_SLOT`);
+  const executionSlot = executionSlotRaw.length > 0
+    ? Number(executionSlotRaw)
+    : defaultExecutionSlotForRole(role);
 
   // Connection provenance probes for the fallback contract: cross-gateway key
   // reuse and partial inheritance must be caught at validate time, not live.
@@ -229,10 +252,19 @@ function readAiProvider(env, role, canonicalPrefix, legacyPrefix, inherited = nu
     visionSurface: inheritPrimaryConnection
       ? inherited.visionSurface
       : normalizeSurface(get(env, `${prefix}_VISION_SURFACE`) || inherited?.visionSurface || "responses"),
+    executionSlot,
     _inheritPrimaryConnection: inheritPrimaryConnection,
     _inheritFlagPresent: inherited !== null && inheritFlagRaw != null && inheritFlagRaw !== "",
     _ownConnection: ownConnection
   };
+}
+
+function defaultExecutionSlotForRole(role) {
+  if (Object.hasOwn(DEFAULT_EXECUTION_SLOT_BY_ROLE, role)) {
+    return DEFAULT_EXECUTION_SLOT_BY_ROLE[role];
+  }
+  const match = role.match(/^fallback_(\d+)$/);
+  return match ? ((Number(match[1]) - 1) % DEFAULT_EXECUTION_SLOT_COUNT) + 1 : 1;
 }
 
 function discoverAiFallbackIndices(env) {
@@ -252,6 +284,32 @@ function normalizeSurface(value) {
   return value.trim().toLowerCase().replace(/-/g, "_");
 }
 
+function presetSlotEnvKey(preset, slot) {
+  return `CLASSROOM_TOOLKIT_AI_PRESET_${preset.toUpperCase()}_SLOT_${slot}`;
+}
+
+function readPresetSlotBindings(env) {
+  const bindings = {};
+  let explicit = false;
+  const errors = [];
+  for (const preset of PRESET_NAMES) {
+    const configured = [];
+    const values = DEFAULT_PRESET_SLOT_BINDINGS[preset].map((defaultProfile, index) => {
+      const raw = get(env, presetSlotEnvKey(preset, index + 1));
+      configured.push(raw.length > 0);
+      return raw.length > 0 ? raw.toLowerCase() : defaultProfile;
+    });
+    if (configured.some(Boolean)) {
+      explicit = true;
+      if (!configured.every(Boolean)) {
+        errors.push(`${preset}: all five ${presetSlotEnvKey(preset, "<N>")} bindings are required when overriding a preset.`);
+      }
+    }
+    bindings[preset] = Object.freeze(values);
+  }
+  return { bindings: Object.freeze(bindings), explicit, errors };
+}
+
 export function normalizeConfig(env) {
   const primaryAi = readAiProvider(env, "primary", "CLASSROOM_TOOLKIT_AI_PRIMARY", "TEXT_PROVIDER");
   const aiFallbacks = discoverAiFallbackIndices(env).map((index) => readAiProvider(
@@ -265,19 +323,57 @@ export function normalizeConfig(env) {
     primaryAi,
     ...aiFallbacks
   ].filter(Boolean);
+  const presetSlotConfig = readPresetSlotBindings(env);
 
   return {
     cloudEgressEnabled: boolValue(get(env, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED")),
+    executionSlotCount: Number(get(env, "CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT") || DEFAULT_EXECUTION_SLOT_COUNT),
+    runtimeDirectory: get(env, "CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY"),
+    presetCooldownMs: Number(get(env, "CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS") || 120000),
+    presetSlotBindings: presetSlotConfig.bindings,
+    presetSlotsExplicit: presetSlotConfig.explicit,
+    presetSlotErrors: presetSlotConfig.errors,
     providers
   };
 }
 
 export function validateConfig(config, options, parseErrors) {
-  const errors = [...parseErrors];
+  const errors = [...parseErrors, ...(config.presetSlotErrors ?? [])];
   const warnings = [];
 
   if (config.providers.length === 0) {
     errors.push("No AI gateway providers are configured.");
+  }
+
+  if (!Number.isInteger(config.executionSlotCount)
+      || config.executionSlotCount < 1
+      || config.executionSlotCount > DEFAULT_EXECUTION_SLOT_COUNT) {
+    errors.push(`AI execution slot count must be an integer between 1 and ${DEFAULT_EXECUTION_SLOT_COUNT}.`);
+  }
+  if (!Number.isInteger(config.presetCooldownMs)
+      || config.presetCooldownMs < 1000
+      || config.presetCooldownMs > 3_600_000) {
+    errors.push("AI preset cooldown must be an integer between 1000 and 3600000 milliseconds.");
+  }
+  if (config.presetSlotsExplicit === true && config.executionSlotCount !== DEFAULT_EXECUTION_SLOT_COUNT) {
+    errors.push(`AI execution slot count must be ${DEFAULT_EXECUTION_SLOT_COUNT} when preset slot bindings are configured.`);
+  }
+  for (const preset of PRESET_NAMES) {
+    const bindings = config.presetSlotBindings?.[preset] ?? [];
+    if (bindings.length !== DEFAULT_EXECUTION_SLOT_COUNT) {
+      errors.push(`${preset}: exactly ${DEFAULT_EXECUTION_SLOT_COUNT} preset slot bindings are required.`);
+      continue;
+    }
+    for (const [index, profile] of bindings.entries()) {
+      if (!PRESET_PROFILES[preset].includes(profile)) {
+        errors.push(`${preset} slot ${index + 1}: profile '${profile}' must remain ${preset}-only.`);
+      }
+    }
+    for (const profile of PRESET_PROFILES[preset]) {
+      if (!bindings.includes(profile)) {
+        errors.push(`${preset}: preset slots must include ${profile} at least once.`);
+      }
+    }
   }
 
   if (!config.cloudEgressEnabled) {
@@ -285,7 +381,7 @@ export function validateConfig(config, options, parseErrors) {
   }
 
   for (const provider of config.providers) {
-    validateProvider(provider, options, errors, warnings);
+    validateProvider(provider, config.executionSlotCount, options, errors, warnings);
   }
   validateFallbackConnectionProvenance(config.providers, errors, warnings);
 
@@ -330,7 +426,7 @@ function validateFallbackConnectionProvenance(providers, errors, warnings) {
   }
 }
 
-function validateProvider(provider, options, errors, warnings) {
+function validateProvider(provider, executionSlotCount, options, errors, warnings) {
   const label = `${provider.lane}.${provider.role}`;
 
   if (!ALLOWED_AI_KINDS.has(provider.kind)) {
@@ -343,6 +439,11 @@ function validateProvider(provider, options, errors, warnings) {
   validateRequired(provider.visionModel, `${label}: vision model`, errors);
   validateSurface(provider.textSurface, ALLOWED_TEXT_SURFACES, `${label}: text surface`, errors);
   validateSurface(provider.visionSurface, ALLOWED_TEXT_SURFACES, `${label}: vision surface`, errors);
+  if (!Number.isInteger(provider.executionSlot)
+      || provider.executionSlot < 1
+      || provider.executionSlot > executionSlotCount) {
+    errors.push(`${label}: execution slot must be an integer between 1 and ${executionSlotCount}.`);
+  }
   if (provider.reasoningEffort.length > 0 && !ALLOWED_REASONING_EFFORTS.has(provider.reasoningEffort)) {
     errors.push(`${label}: reasoning effort must be one of ${[...ALLOWED_REASONING_EFFORTS].join(", ")}.`);
   }
@@ -412,6 +513,7 @@ export function summarizeProvider(provider) {
     textModel: provider.textModel,
     visionModel: provider.visionModel,
     reasoningEffort: provider.reasoningEffort || null,
+    executionSlot: provider.executionSlot,
     textSurface: provider.textSurface,
     visionSurface: provider.visionSurface
   };
@@ -421,16 +523,23 @@ function printHumanSummary(options, config, validation, liveResults = []) {
   console.log("AI gateway config summary");
   console.log(`- env file: ${path.relative(repoRoot, options.envFile) || "."}`);
   console.log(`- cloud egress: ${config.cloudEgressEnabled ? "enabled" : "disabled"}`);
+  console.log(`- execution slots: ${config.executionSlotCount}`);
+  console.log(`- preset cooldown: ${config.presetCooldownMs}ms`);
+  console.log(`- preset slot bindings: ${JSON.stringify(config.presetSlotBindings)}`);
   for (const provider of config.providers) {
     const summary = summarizeProvider(provider);
-    console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, ${summary.baseUrl}, text=${summary.textModel}, vision=${summary.visionModel}, reasoning=${summary.reasoningEffort ?? "default"}, key=${summary.apiKey}`);
+    console.log(`- ${summary.lane}.${summary.role}: ${summary.source}, slot=${summary.executionSlot}, ${summary.baseUrl}, text=${summary.textModel}, vision=${summary.visionModel}, reasoning=${summary.reasoningEffort ?? "default"}, key=${summary.apiKey}`);
   }
 
   for (const warning of validation.warnings) {
     console.warn(`warning: ${warning}`);
   }
   for (const result of liveResults) {
-    console.log(`- live ${result.provider}: ${result.ok ? "ok" : "failed"}${result.status ? ` status=${result.status}` : ""}${result.output ? ` output=${result.output}` : ""}${result.error ? ` error=${result.error}` : ""}`);
+    const profile = result.qualityProfile ? ` profile=${result.qualityProfile}` : "";
+    const model = result.model ? ` model=${result.model}` : "";
+    const effort = result.reasoningEffort ? ` reasoning=${result.reasoningEffort}` : "";
+    const slot = result.executionSlot ? ` slot=${result.executionSlot}` : "";
+    console.log(`- live ${result.provider}:${profile}${model}${effort}${slot} ${result.ok ? "ok" : "failed"}${result.status ? ` status=${result.status}` : ""}${result.output ? ` output=${result.output}` : ""}${result.error ? ` error=${result.error}` : ""}`);
   }
 
   if (validation.errors.length > 0) {
@@ -461,6 +570,79 @@ export function assertLiveEgressAllowed(config, allowCloudEgress) {
   }
 }
 
+const executionSlotTails = new Map();
+
+// A slot is a shared in-process queue. Profile selection remains independent,
+// while requests mapped to the same slot cannot overload one local gateway lane.
+export class ExecutionSlotTimeoutError extends Error {
+  constructor(slot, timeoutMs) {
+    super(`Execution slot ${slot} wait exceeded the ${timeoutMs}ms attempt timeout.`);
+    this.name = "ExecutionSlotTimeoutError";
+    this.code = "EXECUTION_SLOT_TIMEOUT";
+    this.slot = slot;
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+export async function runInExecutionSlot(slot, operation, options = {}) {
+  const normalizedSlot = Number.isInteger(slot) && slot > 0 ? slot : 1;
+  const previous = executionSlotTails.get(normalizedSlot) ?? Promise.resolve();
+  let release;
+  const current = new Promise((resolve) => {
+    release = resolve;
+  });
+  executionSlotTails.set(normalizedSlot, current);
+  const timeoutMs = Number.isInteger(options.timeoutMs) && options.timeoutMs > 0
+    ? options.timeoutMs
+    : null;
+  const startedAt = Date.now();
+  let waitTimer;
+  let timedOutBeforeAcquire = false;
+  const finalize = () => {
+    release();
+    if (executionSlotTails.get(normalizedSlot) === current) {
+      executionSlotTails.delete(normalizedSlot);
+    }
+  };
+  try {
+    if (timeoutMs === null) {
+      await previous;
+    } else {
+      try {
+        await Promise.race([
+          previous,
+          new Promise((_, reject) => {
+            waitTimer = setTimeout(
+              () => reject(new ExecutionSlotTimeoutError(normalizedSlot, timeoutMs)),
+              timeoutMs);
+          })
+        ]);
+      } catch (error) {
+        if (error instanceof ExecutionSlotTimeoutError) {
+          // Keep this node in the chain until the prior operation completes;
+          // otherwise a later caller could bypass an active slot occupant.
+          timedOutBeforeAcquire = true;
+          previous.then(finalize, finalize);
+        }
+        throw error;
+      }
+      const remainingTimeoutMs = timeoutMs - (Date.now() - startedAt);
+      if (remainingTimeoutMs <= 0) {
+        throw new ExecutionSlotTimeoutError(normalizedSlot, timeoutMs);
+      }
+      return await operation(remainingTimeoutMs);
+    }
+    return await operation(null);
+  } finally {
+    if (waitTimer) {
+      clearTimeout(waitTimer);
+    }
+    if (!timedOutBeforeAcquire) {
+      finalize();
+    }
+  }
+}
+
 export async function runLiveTextProbes(config, options) {
   if (!options.live) {
     return [];
@@ -472,16 +654,7 @@ export async function runLiveTextProbes(config, options) {
     throw new Error("This Node.js runtime does not provide fetch; use a newer Node.js runtime for live probes.");
   }
 
-  const candidates = config.providers.filter((provider) => provider.lane === "ai");
-  const selected = candidates.filter((provider) => {
-    if (options.provider === "all") {
-      return true;
-    }
-    if (options.provider === "primary") {
-      return provider.role === "primary";
-    }
-    return provider.role.startsWith("fallback");
-  });
+  const selected = orderedTextProbeProviders(config, options.provider);
 
   if (selected.length === 0) {
     throw new Error(`No ${options.provider} AI provider is configured for live text probe.`);
@@ -489,18 +662,58 @@ export async function runLiveTextProbes(config, options) {
 
   const results = [];
   for (const provider of selected) {
-    results.push(await probeTextProvider(provider, options.timeoutMs));
+    results.push(await probeTextProvider(config, provider, options.timeoutMs));
   }
   return results;
 }
 
-export async function probeTextProvider(provider, timeoutMs) {
-  const result = await callTextProvider(provider, {
-    prompt: "Return exactly OK.",
-    timeoutMs
-  });
+async function callTextProviderInSharedSlot(config, provider, options) {
+  const startedAt = Date.now();
+  const lease = await acquireSharedExecutionSlot(config, [provider.executionSlot], options.timeoutMs);
+  if (!lease) {
+    throw new ExecutionSlotTimeoutError(provider.executionSlot, options.timeoutMs);
+  }
+  provider.executionSlot = lease.slot;
+  try {
+    const remainingTimeoutMs = options.timeoutMs - (Date.now() - startedAt);
+    if (remainingTimeoutMs <= 0) {
+      throw new ExecutionSlotTimeoutError(lease.slot, options.timeoutMs);
+    }
+    return await runInExecutionSlot(lease.slot, (slotRemainingTimeoutMs) => callTextProvider(provider, {
+      ...options,
+      timeoutMs: slotRemainingTimeoutMs ?? remainingTimeoutMs
+    }), { timeoutMs: remainingTimeoutMs });
+  } finally {
+    lease.release();
+  }
+}
+
+export async function probeTextProvider(config, provider, timeoutMs) {
+  let result;
+  try {
+    result = await callTextProviderInSharedSlot(config, provider, {
+      prompt: "Return exactly OK.",
+      timeoutMs,
+      maxOutputTokens: 8
+    });
+  } catch (error) {
+    if (!(error instanceof ExecutionSlotTimeoutError)) {
+      throw error;
+    }
+    result = {
+      provider: provider.role,
+      ok: false,
+      status: null,
+      output: "",
+      error: error.message
+    };
+  }
   return {
     provider: provider.role,
+    qualityProfile: provider.qualityProfile ?? null,
+    model: provider.textModel,
+    reasoningEffort: provider.reasoningEffort || null,
+    executionSlot: provider.executionSlot ?? null,
     ok: result.ok && result.output.toUpperCase().includes("OK"),
     status: result.status,
     output: result.output.slice(0, 80),
@@ -522,14 +735,38 @@ export async function requestTextWithFailover(config, options) {
 
   const attempts = [];
   for (const provider of providers) {
-    const forcedFailure = options.forcePrimaryFailure === true && provider.role === "primary";
-    const attempt = forcedFailure
-      ? forcedRetryableFailure(provider)
-      : await callTextProvider(provider, {
-        prompt: options.prompt,
-        timeoutMs: options.timeoutMs,
-        maxOutputTokens: options.maxOutputTokens
-      });
+    const forcedFailure = options.forcePrimaryFailure === true && provider === providers[0];
+    const attemptStartedAt = Date.now();
+    let attempt;
+    if (forcedFailure) {
+      attempt = forcedRetryableFailure(provider);
+    } else {
+      try {
+        attempt = await callTextProviderInSharedSlot(config, provider, {
+          prompt: options.prompt,
+          timeoutMs: options.timeoutMs,
+          maxOutputTokens: options.maxOutputTokens
+        });
+      } catch (error) {
+        if (!(error instanceof ExecutionSlotTimeoutError)) {
+          throw error;
+        }
+        attempt = {
+          provider: provider.role,
+          ok: false,
+          retryable: true,
+          status: null,
+          output: "",
+          error: error.message,
+          durationMs: Date.now() - attemptStartedAt
+        };
+      }
+    }
+
+    attempt.model ??= provider.textModel;
+    attempt.reasoningEffort ??= provider.reasoningEffort || null;
+    attempt.qualityProfile ??= provider.qualityProfile ?? null;
+    attempt.executionSlot ??= provider.executionSlot;
 
     attempts.push(attempt);
     if (attempt.ok) {
@@ -565,10 +802,82 @@ export async function requestTextWithFailover(config, options) {
   };
 }
 
+function executionSlotForProfile(config, profile, provider) {
+  const preset = presetForProfile(profile);
+  return slotsForPresetProfile(config.presetSlotBindings, preset, profile)[0]
+    ?? provider.executionSlot
+    ?? 1;
+}
+
 function orderedAiProviders(config) {
-  return config.providers
+  if (config.presetSlotsExplicit === true) {
+    const candidates = config.providers
+      .filter((provider) => provider.lane === "ai")
+      .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
+    const connections = uniqueConnections(candidates);
+    return TEXT_FAILOVER_PROFILES.flatMap((profile) => connections.map((provider) => ({
+      ...provider,
+      textModel: profile.model,
+      visionModel: profile.model,
+      reasoningEffort: profile.reasoningEffort,
+      qualityProfile: profile.profile,
+      executionSlot: executionSlotForProfile(config, profile.profile, provider)
+    })));
+  }
+  return TEXT_FAILOVER_PROFILES.flatMap((profile) => config.providers
     .filter((provider) => provider.lane === "ai")
+    .filter((provider) => provider.textModel === profile.model
+      && provider.reasoningEffort === profile.reasoningEffort)
+    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role)));
+}
+
+function orderedTextProbeProviders(config, target) {
+  const matchesTarget = (provider) => target === "all"
+    || (target === "primary" && provider.role === "primary")
+    || (target === "fallback" && provider.role.startsWith("fallback"));
+  const candidates = config.providers
+    .filter((provider) => provider.lane === "ai")
+    .filter(matchesTarget)
     .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
+
+  if (config.presetSlotsExplicit !== true) {
+    return candidates;
+  }
+
+  const connections = uniqueConnections(candidates);
+  return QUALITY_PROFILE_ORDER.flatMap((profileName) => {
+    const profile = QUALITY_PROFILES[profileName];
+    return connections.map((provider) => ({
+      ...provider,
+      textModel: profile.model,
+      visionModel: profile.model,
+      reasoningEffort: profile.reasoningEffort,
+      qualityProfile: profileName,
+      executionSlot: executionSlotForProfile(config, profileName, provider)
+    }));
+  });
+}
+
+function connectionFingerprint(provider) {
+  return [
+    provider.kind,
+    provider.baseUrl,
+    provider.apiKey,
+    provider.textSurface,
+    provider.visionSurface
+  ].join("\u0000");
+}
+
+function uniqueConnections(providers) {
+  const seen = new Set();
+  return providers.filter((provider) => {
+    const fingerprint = connectionFingerprint(provider);
+    if (seen.has(fingerprint)) {
+      return false;
+    }
+    seen.add(fingerprint);
+    return true;
+  });
 }
 
 function providerOrder(role) {
@@ -583,6 +892,9 @@ function providerOrder(role) {
 function forcedRetryableFailure(provider) {
   return {
     provider: provider.role,
+    model: provider.textModel,
+    reasoningEffort: provider.reasoningEffort || null,
+    executionSlot: provider.executionSlot,
     ok: false,
     retryable: true,
     status: null,
@@ -663,6 +975,7 @@ function buildTextRequestBody(provider, prompt, requestedMaxOutputTokens) {
   if (provider.textSurface === "chat_completions") {
     return {
       model: provider.textModel,
+      ...(provider.reasoningEffort ? { reasoning_effort: provider.reasoningEffort } : {}),
       messages: [
         { role: "user", content: prompt }
       ],
@@ -672,6 +985,7 @@ function buildTextRequestBody(provider, prompt, requestedMaxOutputTokens) {
 
   return {
     model: provider.textModel,
+    ...(provider.reasoningEffort ? { reasoning: { effort: provider.reasoningEffort } } : {}),
     input: prompt,
     max_output_tokens: maxOutputTokens
   };
@@ -740,6 +1054,11 @@ export async function main() {
     console.log(JSON.stringify({
       envFile: path.relative(repoRoot, options.envFile) || ".",
       cloudEgressEnabled: config.cloudEgressEnabled,
+      executionSlotCount: config.executionSlotCount,
+      runtimeDirectory: config.runtimeDirectory || null,
+      presetCooldownMs: config.presetCooldownMs,
+      presetSlotBindings: config.presetSlotBindings,
+      presetSlotsExplicit: config.presetSlotsExplicit,
       providers: config.providers.map(summarizeProvider),
       warnings: validation.warnings,
       errors: validation.errors,

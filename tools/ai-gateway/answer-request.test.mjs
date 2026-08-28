@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -23,7 +23,13 @@ import {
   selectAnswerRoute,
   requestAnswerWithFailover
 } from "./answer-request.mjs";
-import { normalizeConfig } from "./validate-config.mjs";
+import {
+  normalizeConfig,
+  runInExecutionSlot,
+  runLiveTextProbes,
+  validateConfig
+} from "./validate-config.mjs";
+import { presetOrderForRequest } from "./gateway-runtime.mjs";
 
 test("answer transport keeps the application timeout authoritative", () => {
   assert.deepEqual(resolveAnswerTransportPolicy(600000, ""), {
@@ -66,7 +72,7 @@ test("application timeout aborts before the longer transport timeout", async () 
   };
 
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers: [provider] }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers: [provider], runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "primary",
       mode: "blind_generation",
@@ -155,15 +161,34 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
     CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_EXECUTION_SLOT: "1",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_TEXT_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "medium",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_EXECUTION_SLOT: "2",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_INHERIT_PRIMARY: "true",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_BASE_URL: "https://stale.example.com/v1",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_API_KEY: "stale-key",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-5.6-terra",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "low",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_EXECUTION_SLOT: "3",
     CLASSROOM_TOOLKIT_AI_FALLBACK_3_TEXT_MODEL: "gpt-5.6-terra",
-    CLASSROOM_TOOLKIT_AI_FALLBACK_3_REASONING_EFFORT: "high"
+    CLASSROOM_TOOLKIT_AI_FALLBACK_3_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_3_EXECUTION_SLOT: "1",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_4_TEXT_MODEL: "gpt-5.6-terra",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_4_REASONING_EFFORT: "high",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_4_EXECUTION_SLOT: "4",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_5_TEXT_MODEL: "gpt-5.6-terra",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_5_REASONING_EFFORT: "medium",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_5_EXECUTION_SLOT: "5",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_6_TEXT_MODEL: "gpt-5.6-luna",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_6_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_6_EXECUTION_SLOT: "1",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_7_TEXT_MODEL: "gpt-5.6-luna",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_7_REASONING_EFFORT: "high",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_7_EXECUTION_SLOT: "4",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_8_TEXT_MODEL: "gpt-5.6-luna",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_8_REASONING_EFFORT: "medium",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_8_EXECUTION_SLOT: "5"
   });
 
   const aiProviders = config.providers.filter((provider) => provider.lane === "ai");
@@ -172,13 +197,20 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
     [
       { role: "primary", textModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
       { role: "fallback_1", textModel: "gpt-5.6-sol", reasoningEffort: "medium" },
-      { role: "fallback_2", textModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
-      { role: "fallback_3", textModel: "gpt-5.6-terra", reasoningEffort: "high" }
+      { role: "fallback_2", textModel: "gpt-5.6-sol", reasoningEffort: "low" },
+      { role: "fallback_3", textModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+      { role: "fallback_4", textModel: "gpt-5.6-terra", reasoningEffort: "high" },
+      { role: "fallback_5", textModel: "gpt-5.6-terra", reasoningEffort: "medium" },
+      { role: "fallback_6", textModel: "gpt-5.6-luna", reasoningEffort: "xhigh" },
+      { role: "fallback_7", textModel: "gpt-5.6-luna", reasoningEffort: "high" },
+      { role: "fallback_8", textModel: "gpt-5.6-luna", reasoningEffort: "medium" }
     ]
   );
   assert.ok(aiProviders.slice(1).every((provider) => provider.baseUrl === aiProviders[0].baseUrl));
   assert.ok(aiProviders.slice(1).every((provider) => provider.apiKey === aiProviders[0].apiKey));
   assert.ok(aiProviders.every((provider) => provider.visionModel === provider.textModel));
+  assert.equal(config.executionSlotCount, 5);
+  assert.deepEqual(aiProviders.map(({ executionSlot }) => executionSlot), [1, 2, 3, 1, 4, 5, 1, 4, 5]);
 });
 
 test("visual audit prompt treats audit images as source evidence rather than reference answers", () => {
@@ -252,19 +284,496 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
   }
 });
 
-test("quality profiles select only their exact configured model and effort", () => {
+test("preset routes stay model-family closed and order preset failover", () => {
   const providers = [
-    { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
+    { lane: "ai", role: "fallback_8", visionModel: "gpt-5.6-luna", reasoningEffort: "medium" },
+    { lane: "ai", role: "fallback_7", visionModel: "gpt-5.6-luna", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_6", visionModel: "gpt-5.6-luna", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_5", visionModel: "gpt-5.6-terra", reasoningEffort: "medium" },
+    { lane: "ai", role: "fallback_4", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "low" },
+    { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
     { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" }
   ];
-  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "all").orderedRoles, ["primary"]);
-  assert.equal(selectAnswerRoute({ providers }, "blind_generation", "all").qualityProfile, "sol-xhigh");
-  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "all", "sol-medium").orderedRoles, ["fallback_2"]);
-  assert.deepEqual(selectAnswerRoute({ providers }, "visual_audit_findings", "all", "terra-xhigh").orderedRoles, ["fallback_1"]);
-  assert.deepEqual(selectAnswerRoute({ providers }, "reference_review", "all", "terra-high").orderedRoles, ["fallback_3"]);
-  assert.deepEqual(selectAnswerRoute({ providers }, "blind_generation", "fallback", "sol-xhigh").orderedRoles, []);
+  const solRoute = selectAnswerRoute({ providers }, "blind_generation", "all");
+  assert.equal(solRoute.qualityProfile, "sol-xhigh");
+  assert.equal(solRoute.requestedPreset, "sol");
+  assert.equal(solRoute.activePreset, "sol");
+  assert.deepEqual(solRoute.orderedPresets, ["sol", "terra", "luna"]);
+  assert.deepEqual(solRoute.providers.map(({ role, visionModel }) => ({ role, visionModel })), [
+    { role: "primary", visionModel: "gpt-5.6-sol" }
+  ]);
+  assert.deepEqual(solRoute.presetRoutes.map(({ preset, qualityProfile, orderedRoles }) => ({ preset, qualityProfile, orderedRoles })), [
+    { preset: "sol", qualityProfile: "sol-xhigh", orderedRoles: ["primary"] },
+    { preset: "terra", qualityProfile: "terra-xhigh", orderedRoles: ["fallback_3"] },
+    { preset: "luna", qualityProfile: "luna-xhigh", orderedRoles: ["fallback_6"] }
+  ]);
+
+  const terraRoute = selectAnswerRoute({ providers }, "visual_audit_findings", "all", "terra-xhigh");
+  assert.deepEqual(terraRoute.orderedPresets, ["terra", "sol", "luna"]);
+  assert.deepEqual(terraRoute.providers.map(({ role, visionModel }) => ({ role, visionModel })), [
+    { role: "fallback_3", visionModel: "gpt-5.6-terra" }
+  ]);
+  assert.deepEqual(terraRoute.presetRoutes.map(({ preset, qualityProfile }) => ({ preset, qualityProfile })), [
+    { preset: "terra", qualityProfile: "terra-xhigh" },
+    { preset: "sol", qualityProfile: "sol-xhigh" },
+    { preset: "luna", qualityProfile: "luna-xhigh" }
+  ]);
+
+  const expectedTierRoutes = [
+    ["sol-medium", ["sol-medium", "terra-high", "luna-high"]],
+    ["terra-high", ["terra-high", "sol-medium", "luna-high"]],
+    ["luna-high", ["luna-high", "sol-medium", "terra-high"]]
+  ];
+  for (const [profile, expectedProfiles] of expectedTierRoutes) {
+    const route = selectAnswerRoute({ providers }, "reference_review", "all", profile);
+    assert.deepEqual(route.orderedQualityProfiles, expectedProfiles, `${profile} must preserve its relative tier across presets`);
+  }
+});
+
+test("each preset binds all five slots to only its own three profiles", () => {
+  const config = normalizeConfig({
+    CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
+    CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT: "5",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-low",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-high"
+  });
+
+  const route = selectAnswerRoute(config, "blind_generation", "all", "sol-medium");
+  assert.equal(config.providers.length, 1);
+  assert.equal(config.presetSlotsExplicit, true);
+  assert.deepEqual(config.presetSlotBindings.sol, ["sol-xhigh", "sol-xhigh", "sol-medium", "sol-low", "sol-medium"]);
+  assert.deepEqual(config.presetSlotBindings.terra, ["terra-xhigh", "terra-xhigh", "terra-high", "terra-medium", "terra-high"]);
+  assert.deepEqual(config.presetSlotBindings.luna, ["luna-xhigh", "luna-xhigh", "luna-high", "luna-medium", "luna-high"]);
+  assert.deepEqual(route.orderedQualityProfiles, ["sol-medium", "terra-high", "luna-high"]);
+  assert.deepEqual(route.orderedExecutionSlots, [3, 5]);
+  assert.deepEqual(route.providers.map(({ role, visionModel, reasoningEffort, executionSlot }) => ({
+    role, visionModel, reasoningEffort, executionSlot
+  })), [
+    { role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "medium", executionSlot: 3 }
+  ]);
+  assert.ok(route.presetRoutes.every((presetRoute) => presetRoute.providers.every((provider) => provider.preset === presetRoute.preset)));
+
+  const invalidConfig = {
+    ...config,
+    presetSlotBindings: {
+      ...config.presetSlotBindings,
+      sol: ["sol-xhigh", "terra-xhigh", "sol-medium", "sol-low", "sol-medium"]
+    }
+  };
+  const validation = validateConfig(invalidConfig, { allowMissingSecrets: false }, []);
+  assert.ok(validation.errors.some((error) => error.includes("sol slot 2") && error.includes("sol-only")));
+});
+
+test("execution slots serialize shared lanes and allow independent lanes to overlap", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  let active = 0;
+  let maxActive = 0;
+  globalThis.fetch = async () => {
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    active -= 1;
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+
+  const config = {
+    cloudEgressEnabled: true,
+    runtimeDirectory: path.join(directory, ".gateway-runtime"),
+    executionSlotCount: 5,
+    providers: [
+      {
+        lane: "ai",
+        role: "primary",
+        baseUrl: "https://primary.example.com/v1",
+        apiKey: "key",
+        visionSurface: "responses",
+        visionModel: "gpt-5.6-sol",
+        reasoningEffort: "xhigh",
+        executionSlot: 1
+      },
+      {
+        lane: "ai",
+        role: "fallback_1",
+        baseUrl: "https://primary.example.com/v1",
+        apiKey: "key",
+        visionSurface: "responses",
+        visionModel: "gpt-5.6-sol",
+        reasoningEffort: "medium",
+        executionSlot: 2
+      }
+    ]
+  };
+  const requestOptions = {
+    allowCloudEgress: true,
+    provider: "all",
+    mode: "blind_generation",
+    prompt: "slot scheduling",
+    imagePaths,
+    visualDetailMode: "high",
+    maxOutputTokens: 1000,
+    timeoutMs: 1000
+  };
+
+  try {
+    maxActive = 0;
+    const sameSlot = await Promise.all([
+      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-xhigh" }),
+      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-xhigh" })
+    ]);
+    assert.ok(sameSlot.every((result) => result.ok));
+    assert.equal(maxActive, 1);
+    assert.ok(sameSlot.every((result) => result.routing.executionSlot === 1));
+
+    maxActive = 0;
+    const differentSlots = await Promise.all([
+      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-xhigh" }),
+      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-medium" })
+    ]);
+    assert.ok(differentSlots.every((result) => result.ok));
+    assert.equal(maxActive, 2);
+    assert.deepEqual(differentSlots.map((result) => result.routing.executionSlot).sort(), [1, 2]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("repeated preset bindings let one quality tier occupy its two assigned slots", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const originalFetch = globalThis.fetch;
+  let active = 0;
+  let maxActive = 0;
+  globalThis.fetch = async () => {
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    active -= 1;
+    return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
+  };
+
+  const config = normalizeConfig({
+    CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "key",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-medium"
+  });
+  config.runtimeDirectory = path.join(directory, ".gateway-runtime");
+  const requestOptions = {
+    allowCloudEgress: true,
+    provider: "all",
+    mode: "blind_generation",
+    qualityProfile: "sol-xhigh",
+    prompt: "repeated slot scheduling",
+    imagePaths,
+    visualDetailMode: "high",
+    maxOutputTokens: 1000,
+    timeoutMs: 1000
+  };
+
+  try {
+    const results = await Promise.all([
+      requestAnswerWithFailover(config, requestOptions),
+      requestAnswerWithFailover(config, requestOptions)
+    ]);
+    assert.ok(results.every((result) => result.ok));
+    assert.equal(maxActive, 2);
+    assert.deepEqual(results.map((result) => result.routing.executionSlot).sort(), [1, 2]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+function spawnLeaseChild(runtimeDirectory, slots, holdMs, eventsPath) {
+  const runtimeModuleUrl = new URL("./gateway-runtime.mjs", import.meta.url).href;
+  const source = [
+    'import { appendFileSync } from "node:fs";',
+    `import { acquireSharedExecutionSlot } from ${JSON.stringify(runtimeModuleUrl)};`,
+    'const [runtimeDirectory, slotsText, holdMsText, eventsPath] = process.argv.slice(1);',
+    'const lease = await acquireSharedExecutionSlot({ runtimeDirectory }, slotsText.split(",").map(Number), 5000);',
+    'if (!lease) { process.exitCode = 2; } else {',
+    '  appendFileSync(eventsPath, JSON.stringify({ event: "acquire", slot: lease.slot }) + "\\n");',
+    '  await new Promise((resolve) => setTimeout(resolve, Number(holdMsText)));',
+    '  appendFileSync(eventsPath, JSON.stringify({ event: "release", slot: lease.slot }) + "\\n");',
+    '  lease.release();',
+    '}'
+  ].join("\n");
+  const child = spawn(process.execPath, ["--input-type=module", "--eval", source, runtimeDirectory, slots.join(","), String(holdMs), eventsPath], {
+    stdio: "ignore"
+  });
+  return once(child, "exit").then(([code]) => {
+    assert.equal(code, 0);
+  });
+}
+
+function maxConcurrentLeaseEvents(eventsPath) {
+  const events = readFileSync(eventsPath, "utf8")
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+  let active = 0;
+  let maximum = 0;
+  for (const event of events) {
+    active += event.event === "acquire" ? 1 : -1;
+    maximum = Math.max(maximum, active);
+  }
+  assert.equal(active, 0);
+  return maximum;
+}
+
+test("execution leases cap concurrent independent CLI processes at the configured slots", async () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-shared-slot-"));
+  const runtimeDirectory = path.join(directory, "runtime");
+  const eventsPath = path.join(directory, "lease-events.jsonl");
+  try {
+    writeFileSync(eventsPath, "", "utf8");
+    await Promise.all([
+      spawnLeaseChild(runtimeDirectory, [1], 80, eventsPath),
+      spawnLeaseChild(runtimeDirectory, [1], 80, eventsPath)
+    ]);
+    assert.equal(maxConcurrentLeaseEvents(eventsPath), 1);
+
+    writeFileSync(eventsPath, "", "utf8");
+    await Promise.all([
+      spawnLeaseChild(runtimeDirectory, [1, 2], 80, eventsPath),
+      spawnLeaseChild(runtimeDirectory, [1, 2], 80, eventsPath),
+      spawnLeaseChild(runtimeDirectory, [1, 2], 80, eventsPath)
+    ]);
+    assert.equal(maxConcurrentLeaseEvents(eventsPath), 2);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("live probes project one shared connection across all nine quality profiles", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  let runtimeDirectory = null;
+  globalThis.fetch = async (_url, request) => {
+    calls.push(JSON.parse(request.body));
+    return new Response(JSON.stringify({ output_text: "OK" }), { status: 200 });
+  };
+
+  try {
+    const config = normalizeConfig({
+      CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
+      CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT: "5",
+      CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
+      CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
+      CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
+      CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
+      CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
+      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
+      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-high",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-high",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-medium",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-high",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-high",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-medium"
+    });
+    runtimeDirectory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-probe-runtime-"));
+    config.runtimeDirectory = runtimeDirectory;
+    const results = await runLiveTextProbes(config, {
+      live: "text",
+      allowCloudEgress: true,
+      provider: "all",
+      timeoutMs: 1000
+    });
+
+    assert.equal(results.length, 9);
+    assert.ok(results.every((result) => result.ok));
+    assert.deepEqual(results.map(({ qualityProfile, model, reasoningEffort, executionSlot }) => ({
+      qualityProfile,
+      model,
+      reasoningEffort,
+      executionSlot
+    })), [
+      { qualityProfile: "sol-xhigh", model: "gpt-5.6-sol", reasoningEffort: "xhigh", executionSlot: 1 },
+      { qualityProfile: "sol-medium", model: "gpt-5.6-sol", reasoningEffort: "medium", executionSlot: 3 },
+      { qualityProfile: "sol-low", model: "gpt-5.6-sol", reasoningEffort: "low", executionSlot: 5 },
+      { qualityProfile: "terra-xhigh", model: "gpt-5.6-terra", reasoningEffort: "xhigh", executionSlot: 1 },
+      { qualityProfile: "terra-high", model: "gpt-5.6-terra", reasoningEffort: "high", executionSlot: 3 },
+      { qualityProfile: "terra-medium", model: "gpt-5.6-terra", reasoningEffort: "medium", executionSlot: 5 },
+      { qualityProfile: "luna-xhigh", model: "gpt-5.6-luna", reasoningEffort: "xhigh", executionSlot: 1 },
+      { qualityProfile: "luna-high", model: "gpt-5.6-luna", reasoningEffort: "high", executionSlot: 3 },
+      { qualityProfile: "luna-medium", model: "gpt-5.6-luna", reasoningEffort: "medium", executionSlot: 5 }
+    ]);
+    assert.deepEqual(calls.map(({ model, reasoning }) => ({ model, effort: reasoning.effort })), [
+      { model: "gpt-5.6-sol", effort: "xhigh" },
+      { model: "gpt-5.6-sol", effort: "medium" },
+      { model: "gpt-5.6-sol", effort: "low" },
+      { model: "gpt-5.6-terra", effort: "xhigh" },
+      { model: "gpt-5.6-terra", effort: "high" },
+      { model: "gpt-5.6-terra", effort: "medium" },
+      { model: "gpt-5.6-luna", effort: "xhigh" },
+      { model: "gpt-5.6-luna", effort: "high" },
+      { model: "gpt-5.6-luna", effort: "medium" }
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (typeof runtimeDirectory === "string") {
+      rmSync(runtimeDirectory, { recursive: true, force: true });
+    }
+  }
+});
+
+test("execution slot FIFO wait is bounded by the attempt timeout", async () => {
+  let signalStarted;
+  const started = new Promise((resolve) => {
+    signalStarted = resolve;
+  });
+  let unblock;
+  const blocked = new Promise((resolve) => {
+    unblock = resolve;
+  });
+  let laterStarted = false;
+  const first = runInExecutionSlot(5, async () => {
+    signalStarted();
+    await blocked;
+  });
+
+  await started;
+  const waiting = runInExecutionSlot(5, () => "unexpected", { timeoutMs: 20 });
+  await assert.rejects(waiting, (error) => (
+    error.code === "EXECUTION_SLOT_TIMEOUT"
+      && error.slot === 5
+      && error.timeoutMs === 20
+  ));
+
+  const later = runInExecutionSlot(5, () => {
+    laterStarted = true;
+    return "later";
+  }, { timeoutMs: 1000 });
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  assert.equal(laterStarted, false);
+
+  unblock();
+  await first;
+  assert.equal(await later, "later");
+});
+
+test("auto failover probes Terra after Sol and probes Luna after a later Terra failure", async () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const runtimeDirectory = path.join(directory, ".gateway-runtime");
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  let requestRound = 0;
+  const providers = [
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_3", baseUrl: "https://terra.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_6", baseUrl: "https://luna.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-luna", reasoningEffort: "xhigh" }
+  ];
+  globalThis.fetch = async (_url, request) => {
+    const body = JSON.parse(request.body);
+    calls.push({ round: requestRound, model: body.model, effort: body.reasoning.effort });
+    const isSuccess = requestRound === 0
+      ? body.model === "gpt-5.6-terra"
+      : body.model === "gpt-5.6-luna";
+    return isSuccess
+      ? new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 })
+      : new Response(JSON.stringify({ error: "temporary" }), { status: 503 });
+  };
+
+  const requestOptions = {
+    allowCloudEgress: true,
+    provider: "all",
+    mode: "blind_generation",
+    prompt: "model family failover",
+    imagePaths,
+    visualDetailMode: "high",
+    maxOutputTokens: 1000,
+    timeoutMs: 1000
+  };
+
+  try {
+    const first = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory }, requestOptions);
+    assert.equal(first.ok, true);
+    assert.equal(first.provider, "fallback_3");
+    assert.equal(first.routing.qualityDegraded, true);
+    assert.equal(first.routing.requestedPreset, "sol");
+    assert.equal(first.routing.resolvedPreset, "terra");
+    assert.equal(first.routing.activePreset, "terra");
+    assert.deepEqual(first.attempts.map((attempt) => attempt.preset), ["sol", "sol", "terra"]);
+    assert.deepEqual(calls.map(({ model }) => model), [
+      "gpt-5.6-sol", "gpt-5.6-sol", "gpt-5.6-terra"
+    ]);
+
+    requestRound = 1;
+    const second = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory }, requestOptions);
+    assert.equal(second.ok, true);
+    assert.equal(second.provider, "fallback_6");
+    assert.equal(second.routing.qualityDegraded, true);
+    assert.equal(second.routing.requestedPreset, "sol");
+    assert.equal(second.routing.resolvedPreset, "luna");
+    assert.equal(second.routing.activePreset, "luna");
+    assert.deepEqual(second.attempts.map((attempt) => attempt.preset), ["terra", "terra", "sol", "sol", "luna"]);
+    assert.deepEqual(calls.slice(3).map(({ model }) => model), [
+      "gpt-5.6-terra", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-5.6-sol", "gpt-5.6-luna"
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("cooldown keeps a healthy active preset first but restores Sol-first after expiry", () => {
+  const health = {
+    activePreset: "terra",
+    presets: {
+      sol: { cooldownUntil: 200 },
+      terra: { cooldownUntil: 0 },
+      luna: { cooldownUntil: 0 }
+    }
+  };
+  assert.deepEqual(presetOrderForRequest("sol", health, 100), ["terra", "sol", "luna"]);
+  assert.deepEqual(presetOrderForRequest("sol", health, 201), ["sol", "terra", "luna"]);
 });
 
 test("semantic findings and merge prompts create an observable no-reference review gate", () => {
@@ -375,9 +884,10 @@ test("blind generation prompt binds extracted source text as auxiliary evidence"
   }
 });
 
-function createConfig(surface = "responses") {
+function createConfig(surface = "responses", runtimeDirectory = "") {
   return {
     cloudEgressEnabled: true,
+    runtimeDirectory: runtimeDirectory || path.join(os.tmpdir(), "classroom-answer-test-runtime", String(process.pid)),
     providers: [
       {
         lane: "ai",
@@ -492,7 +1002,7 @@ test("reference review retries the same quality profile before using its matchin
   };
 
   try {
-    const result = await requestAnswerWithFailover(createConfig(), {
+    const result = await requestAnswerWithFailover(createConfig("responses", path.join(directory, ".gateway-runtime")), {
       allowCloudEgress: true,
       provider: "all",
       mode: "reference_review",
@@ -544,7 +1054,7 @@ test("reference review uses an explicitly selected Terra profile without crossin
   }));
 
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       qualityProfile: "terra-xhigh",
@@ -700,7 +1210,7 @@ test("blind solving retries sol/xhigh twice and fails closed without a quality d
     { lane: "ai", role: "fallback_2", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "blind_generation",
@@ -743,7 +1253,7 @@ test("blind solving retries sol/xhigh after one headers timeout", async () => {
     { lane: "ai", role: "fallback_2", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "blind_generation",
@@ -788,7 +1298,7 @@ test("blind solving does not reach sol-medium after sol-xhigh retryable failures
     reasoningEffort
   }));
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "blind_generation",
@@ -832,7 +1342,7 @@ test("blind solving rejects a truncated payload and retries the same profile", a
     reasoningEffort
   }));
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "blind_generation",
@@ -874,7 +1384,7 @@ test("chat completions finish_reason=length is rejected instead of delivered", a
     reasoningEffort: "xhigh"
   }];
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "blind_generation",
@@ -912,7 +1422,7 @@ test("a 200 non-JSON body is retryable and the same profile retries", async () =
     { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
   ];
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "reference_review",
@@ -949,7 +1459,7 @@ test("an empty 200 output is retryable and the same profile retries", async () =
     { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
   ];
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "reference_review",
@@ -989,7 +1499,7 @@ test("a 429 with Retry-After stays retryable and the same profile retries", asyn
     { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
   ];
   try {
-    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers }, {
+    const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
       allowCloudEgress: true,
       provider: "all",
       mode: "reference_review",
@@ -1189,6 +1699,15 @@ test("Markdown normalization keeps Chinese punctuation out of math mode", () => 
   assert.equal(
     normalizeAnswerMarkdown("# 参考答案\n\n23. 电表接入 $a、b$，短路 $c、d$。"),
     "# 参考答案\n\n23. 电表接入 $a\\text{、}b$，短路 $c\\text{、}d$。"
+  );
+});
+
+test("Markdown normalization closes real multiline math fences before rendering", () => {
+  assert.equal(
+    normalizeAnswerMarkdown(
+      "# 参考答案\n\n21．（2）\n\n$m=\\rho V=1.0\\times10^3\\,\\mathrm{kg/m^3}\n\\times1.0\\times10^{-3}\\,\\mathrm{m^3}=1\\,\\mathrm{kg}$。\n\n$Q_{\\text{吸}}=cm\\Delta t\n=4.2\\times10^3\\,\\mathrm{J/(kg\\cdot{}^\\circ C)}\n\\times1\\,\\mathrm{kg}\\times(80-30)\\,^\\circ\\mathrm{C}\n=2.1\\times10^5\\,\\mathrm{J}$。"
+    ),
+    "# 参考答案\n\n21．（2）\n\n$m=\\rho V=1.0\\times10^3\\,\\mathrm{kg/m^3}$  \n$\\times1.0\\times10^{-3}\\,\\mathrm{m^3}=1\\,\\mathrm{kg}$。\n\n$Q_{\\text{吸}}=cm\\Delta t$  \n$=4.2\\times10^3\\,\\mathrm{J/(kg\\cdot{}^\\circ C)}$  \n$\\times1\\,\\mathrm{kg}\\times(80-30)\\,^\\circ\\mathrm{C}$  \n$=2.1\\times10^5\\,\\mathrm{J}$。"
   );
 });
 

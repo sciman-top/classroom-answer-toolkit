@@ -8,8 +8,8 @@ const defaultRepoRoot = path.resolve(moduleDirectory, "..", "..");
 const baselineDirectory = path.join(moduleDirectory, "baselines");
 const allowedStageStatuses = new Set(["evaluated", "not_run"]);
 const allowedCaseResults = new Set(["pass", "fail", "not_evaluated"]);
-const allowedModels = new Set(["gpt-5.6-sol", "gpt-5.6-terra"]);
-const allowedReasoningEfforts = new Set(["medium", "high", "xhigh"]);
+const allowedModels = new Set(["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]);
+const allowedReasoningEfforts = new Set(["low", "medium", "high", "xhigh"]);
 
 function fail(message) {
   throw new Error(message);

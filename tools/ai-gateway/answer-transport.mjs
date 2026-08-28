@@ -3,7 +3,31 @@ import path from "node:path";
 import { Agent, EnvHttpProxyAgent, setGlobalDispatcher } from "undici";
 
 import { normalizeAnswerMarkdown } from "./answer-tasks.mjs";
-import { assertLiveEgressAllowed, isRetryableGatewayFailure, PROVIDER_LOCAL_FAILURE_STATUSES } from "./validate-config.mjs";
+import {
+  assertLiveEgressAllowed,
+  ExecutionSlotTimeoutError,
+  isRetryableGatewayFailure,
+  PROVIDER_LOCAL_FAILURE_STATUSES,
+  runInExecutionSlot,
+  DEFAULT_EXECUTION_SLOT_COUNT
+} from "./validate-config.mjs";
+import {
+  QUALITY_PROFILES,
+  QUALITY_PROFILE_NAMES,
+  presetForProfile,
+  profileForPresetTier,
+  tierForProfile,
+  slotsForPresetProfile
+} from "./profile-matrix.mjs";
+import {
+  acquireSharedExecutionSlot,
+  presetOrderForRequest,
+  readPresetHealth,
+  recordPresetFailure,
+  recordPresetSuccess
+} from "./gateway-runtime.mjs";
+
+export { QUALITY_PROFILES, QUALITY_PROFILE_NAMES };
 
 const TRANSPORT_TIMEOUT_GRACE_MS = 5000;
 let activeTransportKey = null;
@@ -45,17 +69,11 @@ export const TASK_MODES = new Set([
   "reference_review"
 ]);
 
-export const QUALITY_PROFILES = Object.freeze({
-  "sol-xhigh": Object.freeze({ model: "gpt-5.6-sol", reasoningEffort: "xhigh" }),
-  "sol-medium": Object.freeze({ model: "gpt-5.6-sol", reasoningEffort: "medium" }),
-  "terra-xhigh": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "xhigh" }),
-  "terra-high": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "high" })
-});
-export const QUALITY_PROFILE_NAMES = new Set(["auto", ...Object.keys(QUALITY_PROFILES)]);
 const DEFAULT_QUALITY_PROFILE_BY_MODE = Object.freeze(Object.fromEntries(
   [...TASK_MODES].map((mode) => [mode, "sol-xhigh"])
 ));
 const RETRYABLE_ATTEMPTS_PER_PROVIDER = 2;
+const nextSlotIndexByPresetProfile = new Map();
 
 export function normalizeQualityProfile(value = "auto") {
   return String(value).trim().toLowerCase();
@@ -64,9 +82,89 @@ export function normalizeQualityProfile(value = "auto") {
 function resolveQualityProfile(mode, requestedQualityProfile = "auto") {
   const normalized = normalizeQualityProfile(requestedQualityProfile);
   if (!QUALITY_PROFILE_NAMES.has(normalized)) {
-    throw new Error("qualityProfile must be auto, sol-xhigh, sol-medium, terra-xhigh, or terra-high.");
+    throw new Error(`qualityProfile must be auto or one of ${Object.keys(QUALITY_PROFILES).join(", ")}.`);
   }
   return normalized === "auto" ? DEFAULT_QUALITY_PROFILE_BY_MODE[mode] : normalized;
+}
+
+function resolveExecutionSlots(provider, preset, profile, config = {}) {
+  const slots = slotsForPresetProfile(config.presetSlotBindings, preset, profile);
+  if (slots.length > 0) {
+    const key = `${preset}:${profile}`;
+    const index = nextSlotIndexByPresetProfile.get(key) ?? 0;
+    nextSlotIndexByPresetProfile.set(key, index + 1);
+    const rotatedIndex = index % slots.length;
+    return [...slots.slice(rotatedIndex), ...slots.slice(0, rotatedIndex)];
+  }
+  return [Number.isInteger(provider.executionSlot) && provider.executionSlot > 0
+    ? provider.executionSlot
+    : 1];
+}
+
+function connectionFingerprint(provider) {
+  return [
+    provider.kind,
+    provider.baseUrl,
+    provider.apiKey,
+    provider.textSurface,
+    provider.visionSurface
+  ].join("\u0000");
+}
+
+function routeConnections(config, target) {
+  const candidates = config.providers
+    .filter((provider) => provider.lane === "ai")
+    .filter((provider) => target === "all"
+      || (target === "primary" && provider.role === "primary")
+      || (target === "fallback" && provider.role.startsWith("fallback")))
+    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
+  const seen = new Set();
+  return candidates.filter((provider) => {
+    const fingerprint = connectionFingerprint(provider);
+    if (seen.has(fingerprint)) {
+      return false;
+    }
+    seen.add(fingerprint);
+    return true;
+  });
+}
+
+function providersForPresetProfile(config, preset, profile, target) {
+  const requiredProfile = QUALITY_PROFILES[profile];
+  if (config.presetSlotsExplicit !== true) {
+    return config.providers
+      .filter((provider) => provider.lane === "ai")
+      .filter((provider) => provider.visionModel === requiredProfile.model
+        && provider.reasoningEffort === requiredProfile.reasoningEffort)
+      .filter((provider) => target === "all"
+        || (target === "primary" && provider.role === "primary")
+        || (target === "fallback" && provider.role.startsWith("fallback")))
+      .sort((left, right) => providerOrder(left.role) - providerOrder(right.role))
+      .map((provider) => {
+        const executionSlots = resolveExecutionSlots(provider, preset, profile, config);
+        return {
+          ...provider,
+          qualityProfile: profile,
+          preset,
+          executionSlots,
+          executionSlot: executionSlots[0]
+        };
+      });
+  }
+
+  return routeConnections(config, target).map((provider) => {
+    const executionSlots = resolveExecutionSlots(provider, preset, profile, config);
+    return {
+      ...provider,
+      textModel: requiredProfile.model,
+      visionModel: requiredProfile.model,
+      reasoningEffort: requiredProfile.reasoningEffort,
+      qualityProfile: profile,
+      preset,
+      executionSlots,
+      executionSlot: executionSlots[0]
+    };
+  });
 }
 
 export function inferAnswerMode(options = {}) {
@@ -94,38 +192,104 @@ export function inferAnswerMode(options = {}) {
   return "blind_generation";
 }
 
-export function selectAnswerRoute(config, modeOrOptions = {}, target = "all", requestedQualityProfile = "auto") {
+export function selectAnswerRoute(config, modeOrOptions = {}, target = "all", requestedQualityProfile = "auto", presetHealth = null) {
   const mode = typeof modeOrOptions === "string" ? modeOrOptions : inferAnswerMode(modeOrOptions);
   const qualityProfile = resolveQualityProfile(mode, requestedQualityProfile);
-  const requiredProfile = QUALITY_PROFILES[qualityProfile];
-  const providers = config.providers
-    .filter((provider) => provider.lane === "ai")
-    .filter((provider) => provider.visionModel === requiredProfile.model
-      && provider.reasoningEffort === requiredProfile.reasoningEffort)
-    .filter((provider) => target === "all"
-      || (target === "primary" && provider.role === "primary")
-      || (target === "fallback" && provider.role.startsWith("fallback")))
-    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
+  const requestedPreset = presetForProfile(qualityProfile);
+  const requestedTier = tierForProfile(qualityProfile);
+  const presetRoutes = presetOrderForRequest(requestedPreset, presetHealth ?? undefined).map((preset) => {
+    const resolvedQualityProfile = profileForPresetTier(preset, requestedTier);
+    const providers = resolvedQualityProfile
+      ? providersForPresetProfile(config, preset, resolvedQualityProfile, target)
+      : [];
+    return {
+      preset,
+      qualityProfile: resolvedQualityProfile,
+      selectedRole: providers[0]?.role ?? null,
+      orderedRoles: providers.map((provider) => provider.role),
+      orderedExecutionSlots: providers.flatMap((provider) => provider.executionSlots),
+      providers
+    };
+  });
+  const initialRoute = presetRoutes[0];
   return {
     mode,
     target,
     qualityProfile,
+    requestedPreset,
+    activePreset: requestedPreset,
     qualityDegraded: false,
-    selectedRole: providers[0]?.role ?? null,
-    orderedRoles: providers.map((provider) => provider.role),
-    providers
+    selectedRole: initialRoute.selectedRole,
+    orderedPresets: presetRoutes.map((presetRoute) => presetRoute.preset),
+    orderedRoles: initialRoute.orderedRoles,
+    orderedQualityProfiles: presetRoutes.map((presetRoute) => presetRoute.qualityProfile),
+    orderedExecutionSlots: initialRoute.orderedExecutionSlots,
+    executionSlotCount: Number.isInteger(config.executionSlotCount)
+      ? config.executionSlotCount
+      : DEFAULT_EXECUTION_SLOT_COUNT,
+    presetRoutes,
+    providers: initialRoute.providers
   };
 }
 
-function routingReceipt(route) {
+function routingReceipt(route, resolvedProvider = null, resolvedPreset = null) {
+  const actualPreset = resolvedPreset ?? resolvedProvider?.preset ?? null;
+  const actualProfile = resolvedProvider?.qualityProfile ?? null;
+  const qualityDegraded = resolvedProvider !== null
+    && (actualPreset !== route.requestedPreset || actualProfile !== route.qualityProfile);
   return {
     mode: route.mode,
     qualityProfile: route.qualityProfile,
-    qualityDegraded: route.qualityDegraded,
+    requestedQualityProfile: route.qualityProfile,
+    resolvedQualityProfile: actualProfile,
+    requestedPreset: route.requestedPreset,
+    resolvedPreset: actualPreset,
+    activePreset: actualPreset,
+    qualityDegraded,
     selectedRole: route.selectedRole,
+    orderedPresets: route.orderedPresets,
     orderedRoles: route.orderedRoles,
+    orderedQualityProfiles: route.orderedQualityProfiles,
+    orderedExecutionSlots: route.orderedExecutionSlots,
+    executionSlot: resolvedProvider?.executionSlot ?? null,
+    executionSlotCount: route.executionSlotCount,
     target: route.target
   };
+}
+
+function persistPresetHealth(action) {
+  try {
+    action();
+  } catch {
+    // Runtime health state is an optimization. A local temp-directory failure
+    // must not turn an otherwise valid answer into a failed delivery.
+  }
+}
+
+async function callProviderInSharedSlot(config, provider, requestOptions, attemptNumber) {
+  const startedAt = Date.now();
+  const lease = await acquireSharedExecutionSlot(
+    config,
+    provider.executionSlots ?? [provider.executionSlot],
+    requestOptions.timeoutMs
+  );
+  if (!lease) {
+    throw new ExecutionSlotTimeoutError(provider.executionSlot, requestOptions.timeoutMs);
+  }
+  provider.executionSlot = lease.slot;
+  try {
+    const remainingTimeoutMs = requestOptions.timeoutMs - (Date.now() - startedAt);
+    if (remainingTimeoutMs <= 0) {
+      throw new ExecutionSlotTimeoutError(lease.slot, requestOptions.timeoutMs);
+    }
+    return await runInExecutionSlot(lease.slot, (slotRemainingTimeoutMs) => callProvider(provider, {
+      ...requestOptions,
+      timeoutMs: slotRemainingTimeoutMs ?? remainingTimeoutMs,
+      attemptNumber
+    }), { timeoutMs: remainingTimeoutMs });
+  } finally {
+    lease.release();
+  }
 }
 
 function providerOrder(role) {
@@ -426,9 +590,9 @@ export async function requestAnswerWithFailover(config, options) {
   }
   const transportPolicy = configureAnswerTransport(options.timeoutMs);
   const mode = inferAnswerMode(options);
-  const route = selectAnswerRoute(config, mode, options.provider, options.qualityProfile);
-  const providers = route.providers;
-  if (providers.length === 0) {
+  const presetHealth = readPresetHealth(config);
+  const route = selectAnswerRoute(config, mode, options.provider, options.qualityProfile, presetHealth);
+  if (route.presetRoutes.every((presetRoute) => presetRoute.providers.length === 0)) {
     throw new Error(`No ${options.provider ?? "all"} AI provider is configured for quality profile ${route.qualityProfile}.`);
   }
 
@@ -438,48 +602,81 @@ export async function requestAnswerWithFailover(config, options) {
     transportPolicy,
     imageDataUrls: resolveImageDataUrls(options)
   };
-  for (const provider of providers) {
-    for (let attemptNumber = 1; attemptNumber <= RETRYABLE_ATTEMPTS_PER_PROVIDER; attemptNumber += 1) {
-      const attempt = await callProvider(provider, { ...requestOptions, attemptNumber });
-      attempts.push(attempt);
-      if (attempt.ok) {
-        return {
-          ok: true,
+  let lastProvider = null;
+  let lastPreset = null;
+  for (const presetRoute of route.presetRoutes) {
+    for (const provider of presetRoute.providers) {
+      lastProvider = provider;
+      lastPreset = presetRoute.preset;
+      for (let attemptNumber = 1; attemptNumber <= RETRYABLE_ATTEMPTS_PER_PROVIDER; attemptNumber += 1) {
+      const attemptStartedAt = Date.now();
+      let attempt;
+      try {
+        attempt = await callProviderInSharedSlot(config, provider, requestOptions, attemptNumber);
+      } catch (error) {
+        if (!(error instanceof ExecutionSlotTimeoutError)) {
+          throw error;
+        }
+        attempt = {
           provider: provider.role,
-          model: attempt.model,
-          reasoningEffort: attempt.reasoningEffort,
-          answerMarkdown: attempt.answerMarkdown,
-          attempts,
-          routing: routingReceipt(route)
+          model: provider.visionModel,
+          reasoningEffort: provider.reasoningEffort || null,
+          attemptNumber,
+          durationMs: Date.now() - attemptStartedAt,
+          requestBytes: 0,
+          transport: requestOptions.transportPolicy,
+          ok: false,
+          retryable: true,
+          status: null,
+          error: error.message
         };
       }
-      if (!attempt.retryable) {
-        // Provider-local rejections (bad key/URL on one endpoint) must not veto the
-        // remaining same-profile roles; generic non-retryable failures still do.
-        const providerLocal = PROVIDER_LOCAL_FAILURE_STATUSES.has(attempt.status);
-        if (!providerLocal || provider === providers.at(-1)) {
+        attempt.executionSlot = provider.executionSlot;
+        attempt.qualityProfile = provider.qualityProfile;
+        attempt.preset = presetRoute.preset;
+        attempts.push(attempt);
+        if (attempt.ok) {
+          persistPresetHealth(() => recordPresetSuccess(config, presetRoute.preset));
           return {
-            ok: false,
+            ok: true,
             provider: provider.role,
-            answerMarkdown: "",
+            model: attempt.model,
+            reasoningEffort: attempt.reasoningEffort,
+            answerMarkdown: attempt.answerMarkdown,
             attempts,
-            routing: routingReceipt(route),
-            error: attempt.error
+            routing: routingReceipt(route, provider, presetRoute.preset)
           };
         }
-        break;
-      }
-      if (attemptNumber < RETRYABLE_ATTEMPTS_PER_PROVIDER) {
-        // Honor Retry-After from any retryable failure that carries it, not just 429.
-        const backoffMs = attempt.retryAfterMs > 0
-          ? attempt.retryAfterMs
-          : attempt.status === 429
-            ? defaultRateLimitBackoffMs
-            : 0;
-        if (backoffMs > 0) {
-          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        if (!attempt.retryable) {
+          // Provider-local rejections are a connection-level failure. Continue with
+          // another connection in this preset, then transition at the preset seam.
+          if (!PROVIDER_LOCAL_FAILURE_STATUSES.has(attempt.status)) {
+            return {
+              ok: false,
+              provider: provider.role,
+              answerMarkdown: "",
+              attempts,
+              routing: routingReceipt(route, provider, presetRoute.preset),
+              error: attempt.error
+            };
+          }
+          break;
+        }
+        if (attemptNumber < RETRYABLE_ATTEMPTS_PER_PROVIDER) {
+          // Honor Retry-After from any retryable failure that carries it, not just 429.
+          const backoffMs = attempt.retryAfterMs > 0
+            ? attempt.retryAfterMs
+            : attempt.status === 429
+              ? defaultRateLimitBackoffMs
+              : 0;
+          if (backoffMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, backoffMs));
+          }
         }
       }
+    }
+    if (presetRoute.providers.length > 0) {
+      persistPresetHealth(() => recordPresetFailure(config, presetRoute.preset));
     }
   }
   return {
@@ -487,7 +684,7 @@ export async function requestAnswerWithFailover(config, options) {
     provider: attempts.at(-1)?.provider ?? null,
     answerMarkdown: "",
     attempts,
-    routing: routingReceipt(route),
-    error: "All configured AI providers for this quality profile failed."
+    routing: routingReceipt(route, lastProvider, lastPreset),
+    error: "All configured AI presets failed."
   };
 }

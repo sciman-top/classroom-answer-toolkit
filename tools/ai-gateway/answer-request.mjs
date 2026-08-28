@@ -72,7 +72,7 @@ Options:
   --output <path>           Markdown output path
   --summary-out <path>      Optional atomic JSON receipt for this generation stage
   --provider <target>       primary, fallback, or all; default all
-  --quality-profile <name>  auto, sol-xhigh, sol-medium, terra-xhigh, or terra-high; default auto
+  --quality-profile <name>  auto, sol-xhigh, sol-medium, sol-low, terra-xhigh, terra-high, terra-medium, luna-xhigh, luna-high, or luna-medium; default auto
   --visual-detail <mode>    low, high, or original; default original
   --max-output-tokens <n>   Maximum answer tokens; default 24000
   --timeout-ms <ms>         Per-provider timeout; default 600000
@@ -315,7 +315,7 @@ function validateOptions(options) {
     throw new Error("--provider must be primary, fallback, or all.");
   }
   if (!QUALITY_PROFILE_NAMES.has(normalizeQualityProfile(options.qualityProfile))) {
-    throw new Error("--quality-profile must be auto, sol-xhigh, sol-medium, terra-xhigh, or terra-high.");
+    throw new Error(`--quality-profile must be auto or one of ${[...QUALITY_PROFILE_NAMES].filter((name) => name !== "auto").join(", ")}.`);
   }
   if (!["low", "high", "original"].includes(options.visualDetailMode)) {
     throw new Error("--visual-detail must be low, high, or original.");
@@ -425,6 +425,9 @@ function redactAttempt(attempt) {
     provider: attempt.provider,
     model: attempt.model ?? null,
     reasoningEffort: attempt.reasoningEffort ?? null,
+    preset: attempt.preset ?? null,
+    qualityProfile: attempt.qualityProfile ?? null,
+    executionSlot: attempt.executionSlot ?? null,
     status: attempt.status,
     retryAfterMs: attempt.retryAfterMs ?? null,
     ok: attempt.ok,
@@ -505,7 +508,7 @@ export async function main() {
     : semanticChoiceOverride.markdown;
   writeTextFileAtomic(options.outputPath, `${answerMarkdown}\n`);
   const summary = {
-    schemaVersion: "1.1",
+    schemaVersion: "1.2",
     kind: "live-answer-generation-summary",
     generatedAt: new Date().toISOString(),
     provider: result.provider,
