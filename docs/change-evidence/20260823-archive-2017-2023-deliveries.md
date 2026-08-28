@@ -6,7 +6,7 @@
 
 `正式交付/` 下 2017-2023 年份的 25 个运行目录（320 个文件：163 json / 132 md / 25 pdf，共 5,861,636 字节）已迁移至仓外归档。防改保护为 **soft guard only**：全部 payload 文件设 Windows 只读属性，且 SHA-256 manifest 可发现任意漂移；这不是 ACL 或不可变存储，不能阻止有意的属性清除与改写。
 
-- 归档根：`D:\CODE\classroom-answer-toolkit-archive\正式交付-2017-2023\`
+- 归档根：`D:\Archive\classroom-answer-toolkit-archive\正式交付-2017-2023\`
 - 逐文件清单：归档根 `ARCHIVE-MANIFEST.txt`（每行 `sha256  相对路径`，与文件内容一并校验）
 - 目录摘要：归档根 `ARCHIVE-INDEX.json`（每目录的 workflow 状态、文件数、字节数、目录级 SHA-256 摘要）
 - 迁移时逐文件"复制后回读哈希比对"全部通过；另以独立工具（GNU sha256sum）抽样 md/json/pdf 各 1 件，manifest、仓内副本、归档副本三方哈希一致。

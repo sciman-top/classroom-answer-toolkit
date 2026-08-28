@@ -6,7 +6,7 @@ param(
 
     [string]$RepositoryRoot = "",
 
-    [string]$ArchiveRoot = "D:\CODE\classroom-answer-toolkit-archive\正式交付-2017-2023"
+    [string]$ArchiveRoot = "D:\Archive\classroom-answer-toolkit-archive\正式交付-2017-2023"
 )
 
 $ErrorActionPreference = "Stop"

@@ -317,6 +317,27 @@ p {
   margin: 0 0 ${renderProfile.typography.paragraphMarginBottomPt}pt;
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0 0 ${renderProfile.typography.paragraphMarginBottomPt}pt;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+th,
+td {
+  border: 0.5pt solid #333;
+  padding: 0.25em 0.4em;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+th {
+  font-weight: 700;
+}
+
 strong {
   font-weight: 700;
 }

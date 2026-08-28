@@ -8,6 +8,15 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class ArchiveDeliveryRunScriptTests
 {
     [Fact]
+    public void UsesTheCurrentExternalArchiveAsItsDefault()
+    {
+        var root = FindRepoRoot();
+        var script = File.ReadAllText(Path.Combine(root, "scripts", "archive-delivery-run.ps1"));
+
+        script.Should().Contain("D:\\Archive\\classroom-answer-toolkit-archive\\正式交付-2017-2023");
+    }
+
+    [Fact]
     public async Task RejectsRunDirectoriesOutsideTheDeliveriesRoot()
     {
         var (sandbox, _, scriptPath) = CreateSandbox();

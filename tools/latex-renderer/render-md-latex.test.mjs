@@ -9,6 +9,13 @@ import { fileURLToPath } from "node:url";
 const toolDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDirectory, "..", "..");
 
+test("renderer keeps Markdown tables as bordered, non-splitting layout blocks", () => {
+  const rendererSource = fs.readFileSync(path.join(toolDirectory, "render-md-latex.mjs"), "utf8");
+
+  assert.match(rendererSource, /table\s*\{[\s\S]*?border-collapse:\s*collapse;[\s\S]*?break-inside:\s*avoid;/u);
+  assert.match(rendererSource, /th,\s*td\s*\{[\s\S]*?border:\s*0\.5pt solid #333;/u);
+});
+
 test("renderer converts a multiline inline math fence without leaking LaTeX source", () => {
   const workDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-answer-render-"));
   const markdownPath = path.join(workDirectory, "multiline-math.md");
