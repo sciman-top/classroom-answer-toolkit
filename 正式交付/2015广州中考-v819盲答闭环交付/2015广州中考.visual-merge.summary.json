@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-29T12:03:01.508Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "2bf32565b9c2bddaf9237ca449703060fc89eb847ef761e63ddc4c1bdf66fede",
+  "mode": "visual_audit_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_merge",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "sol",
+      "luna"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "sol-xhigh",
+      "luna-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2015-terra-xhigh-v819-regression10\\2015广州中考语义复核候选.md",
+  "candidateSha256": "f026bc7b9ea8cb82f6c5c514ddf9007de158ded350cacec75abf79e6d5877a5a",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2015-terra-xhigh-v819-regression10\\2015广州中考视觉审计发现.md",
+  "auditFindingsSha256": "e078ada2da61a2e1963df715b6fab0f13dd2dce9f267d6ec536913b296148dfd",
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2015-terra-xhigh-v819-regression10\\2015广州中考视觉审计候选.md",
+  "outputSha256": "9561448b0dcaa721a6125bb8086fd223c3992f08719c3c88cc592ad23c4cd0e2",
+  "answerCharacters": 2052,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 34811,
+      "requestBytes": 126134,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -193,8 +194,9 @@ export function checkAssemblyOutputs(assemblyFilePath) {
 export function writeAssemblyOutputs(assemblyFilePath) {
   const generated = generateAssemblyOutputs(assemblyFilePath);
   for (const output of generated.outputs) {
-    fs.mkdirSync(path.dirname(output.path), { recursive: true });
-    fs.writeFileSync(output.path, output.content, "utf8");
+    // Atomic replace: this file is the manifest's human-spec source of truth;
+    // a crash mid-write must not leave a half-written spec behind.
+    writeTextFileAtomic(output.path, output.content);
   }
 
   return generated.outputs.map((output) => path.relative(repoRoot, output.path).replace(/\\/g, "/"));

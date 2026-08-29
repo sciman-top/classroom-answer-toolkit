@@ -5,8 +5,8 @@ This folder contains the lightweight local toolchain used by the answer workflow
 ## Render final answer PDF
 
 ```powershell
-npm --prefix tools/latex-renderer run render -- "样例交付/能量-效率参考答案.md"
-npm --prefix tools/latex-renderer run render -- "样例交付/能量-效率参考答案.md" --profile classroom
+npm --prefix tools/latex-renderer run render -- "<答案.md>"
+npm --prefix tools/latex-renderer run render -- "<答案.md>" --profile classroom
 ```
 
 The renderer keeps LaTeX as real math by using Markdown-It, KaTeX, and a local
@@ -28,8 +28,8 @@ For the repository-standard delivery flow after the answer Markdown is ready,
 use:
 
 ```powershell
-npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md"
-npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md" --profile compact
+npm --prefix tools/latex-renderer run deliver -- "<答案.md>"
+npm --prefix tools/latex-renderer run deliver -- "<答案.md>" --profile compact
 ```
 
 This one command will:
@@ -53,7 +53,7 @@ write `1.1`; changing any bound file after delivery causes validation to fail.
 ## Review source PDF pages
 
 ```powershell
-npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf"
+npm --prefix tools/latex-renderer run review-source-pdf -- "<试卷.pdf>"
 ```
 
 The source-review command renders the original PDF pages into PNG files with
@@ -64,9 +64,9 @@ page images.
 Useful options:
 
 ```powershell
-npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --pages 1,last
-npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --out ".pdf-review/能量-效率"
-npm --prefix tools/latex-renderer run review-source-pdf -- "样例交付/能量-效率.pdf" --pages 1 --ocr chi_sim
+npm --prefix tools/latex-renderer run review-source-pdf -- "<试卷.pdf>" --pages 1,last
+npm --prefix tools/latex-renderer run review-source-pdf -- "<试卷.pdf>" --out ".pdf-review/<试卷>"
+npm --prefix tools/latex-renderer run review-source-pdf -- "<试卷.pdf>" --pages 1 --ocr chi_sim
 ```
 
 For a measured real-paper failure, `--focus-regions-file <regions.json>` appends
@@ -127,7 +127,7 @@ Useful options:
 ```powershell
 npm --prefix tools/latex-renderer run cleanup -- --dry-run
 npm --prefix tools/latex-renderer run cleanup -- --keep-review
-npm --prefix tools/latex-renderer run cleanup -- .pdf-review/能量-效率
+npm --prefix tools/latex-renderer run cleanup -- .pdf-review/<试卷>
 ```
 
 Recommended workflow:
@@ -142,7 +142,7 @@ Recommended workflow:
 Before rendering, you can run the baseline answer-format gate directly:
 
 ```powershell
-npm --prefix tools/latex-renderer run validate:answer -- "样例交付/能量-效率参考答案.md" --profile classroom
+npm --prefix tools/latex-renderer run validate:answer -- "<答案.md>" --profile classroom
 ```
 
 Current checks focus on the most common hard failures:
@@ -151,6 +151,10 @@ Current checks focus on the most common hard failures:
 - orphan question-number first lines
 - backtick-wrapped math or units
 - unbalanced LaTeX dollar signs
+- unbalanced `\(...\)` / `\[...\]` LaTeX delimiters (`\(...\)` is normalized to `$...$` first; math inside code fences or inline code is exempt)
+- dollar signs the renderer would leave as literal text (e.g. `$a$$b$`)
+- LaTeX math failing the renderer's strict KaTeX contract
+- executable raw HTML
 - overly long plain-text lines as warnings
 
 These automated checks are derived from the current v8.18 production spec and

@@ -22,6 +22,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private CancellationTokenSource? _healthRefreshCancellation;
     private bool _suppressHealthRefresh;
     private int _healthRefreshVersion;
+    private int _updateCheckInFlight;
 
     public MainViewModel(
         IToolchainOrchestrator toolchainOrchestrator,
@@ -104,7 +105,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         return AvailableSubjectPacks[0];
     }
 
-    private bool CanDeliver() => !IsBusy && File.Exists(SelectedAnswerMarkdownPath);
+    // File.Exists is deliberately absent here: with UpdateSourceTrigger=
+    // PropertyChanged it would hit the disk (possibly a disconnected drive,
+    // blocking for seconds) on every keystroke. Existence is validated once
+    // when the command actually runs.
+    private bool CanDeliver() => !IsBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
     private bool CanRunToolchain() => !IsBusy;
     private bool CanCancel() => IsBusy && _operationCancellation is { IsCancellationRequested: false };
 
@@ -137,6 +142,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanDeliver))]
     private async Task DeliverAsync()
     {
+        if (!File.Exists(SelectedAnswerMarkdownPath))
+        {
+            StatusMessage = "答案 Markdown 文件不存在，请重新选择";
+            return;
+        }
+
         await RunAsync("正在生成排版答案 PDF...", async cancellationToken =>
         {
             var (execution, delivery) = await _toolchainOrchestrator.RunDeliverAsync(
@@ -189,6 +200,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
+        // Startup fires one check and the button can fire more; without this
+        // guard concurrent checks race and the last writer wins the status.
+        if (Interlocked.Exchange(ref _updateCheckInFlight, 1) == 1)
+        {
+            return;
+        }
+
         try
         {
             UpdateStatus = "正在检查更新...";
@@ -202,6 +220,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             UpdateAvailable = false;
             _availableUpdate = null;
             UpdateStatus = $"更新检查失败：{ex.Message}";
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _updateCheckInFlight, 0);
         }
     }
 
@@ -309,7 +331,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // A health probe starts a real Node process.  Versioning protects the UI
         // from stale results, but cancelling the superseded probe protects the
         // machine from doing up to two minutes of unnecessary work per switch.
-        var refreshCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var refreshCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var previousRefresh = Interlocked.Exchange(ref _healthRefreshCancellation, refreshCancellation);
         previousRefresh?.Cancel();
         var version = Interlocked.Increment(ref _healthRefreshVersion);

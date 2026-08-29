@@ -27,8 +27,13 @@ function runNodeScript(scriptFileName, scriptArgs) {
     throw result.error;
   }
 
-  if (typeof result.status === "number" && result.status !== 0) {
-    process.exit(result.status);
+  if (result.status !== 0) {
+    // A signal-killed child reports status null; exiting with its falsy status
+    // would mask the failure as success.
+    if (result.signal) {
+      console.error(`${scriptFileName} terminated by signal ${result.signal}.`);
+    }
+    process.exit(typeof result.status === "number" ? result.status : 2);
   }
 }
 

@@ -214,7 +214,7 @@ function Start-LocalServer {
     }
     [IO.File]::WriteAllText(
         (Join-Path $serverRoot "update-manifest.json"),
-        (($LocalManifest | ConvertTo-Json -Depth 12) + [Environment]::NewLine),
+        (($LocalManifest | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
         [Text.UTF8Encoding]::new($false))
     [IO.File]::WriteAllText($serverScriptPath, $serverScript, [Text.UTF8Encoding]::new($false))
 

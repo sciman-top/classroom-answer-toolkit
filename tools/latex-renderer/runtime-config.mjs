@@ -47,7 +47,7 @@ export function resolveSnapshotPath(snapshotPath, options = {}) {
   return getDefaultSnapshotPath(subjectPack);
 }
 
-export function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath(), options = {}) {
+function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath(), options = {}) {
   if (!fs.existsSync(snapshotPath)) {
     if (options.required) {
       throw new Error(`Resolved snapshot not found: ${snapshotPath}`);
@@ -88,8 +88,4 @@ export function getSnapshotActiveProfile(snapshot, requestedProfile = null) {
   }
 
   return activeProfile;
-}
-
-export function listSnapshotProfileNames(snapshot) {
-  return Object.keys(snapshot?.profiles ?? {}).sort();
 }

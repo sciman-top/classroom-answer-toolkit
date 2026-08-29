@@ -3,6 +3,16 @@
   "sourcePdfSha256": "ab627c5c8ad8ca3b3c808a84fb568d265f80a7a50e952a03b06adc6447a27aa7",
   "regions": [
     {
+      "id": "q9-figure-flashlight-lens-options",
+      "label": "Question 9 flashlight lens ray diagrams: compare each option's incident and outgoing ray angles against the principal axis before judging divergence change",
+      "page": 3,
+      "questionNumber": 9,
+      "x": 0.06,
+      "y": 0.28,
+      "width": 0.88,
+      "height": 0.40
+    },
+    {
       "id": "q13-figures-a-b-bottles-and-optical-path",
       "label": "Question 13 Figures a and b: inspect the thick/thin tube bottle thermometers and the laser-two-mirror optical path with screen point P",
       "page": 5,

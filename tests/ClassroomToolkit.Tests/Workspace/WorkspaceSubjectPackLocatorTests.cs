@@ -18,7 +18,6 @@ public sealed class WorkspaceSubjectPackLocatorTests
 
         packs.Select(pack => pack.AssetId).Should().Equal(
             "junior-physics-answer", "senior-physics-answer", "math-answer");
-        packs[0].EvalResultsPath.Should().EndWith(Path.Combine("eval", "junior-physics-answer", "results", "latest.json"));
     }
 
     [Fact]

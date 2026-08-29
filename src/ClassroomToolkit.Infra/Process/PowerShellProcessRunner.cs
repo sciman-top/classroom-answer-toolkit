@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using System.Threading.Tasks;
 using ClassroomToolkit.Infra.Abstractions;
 
 namespace ClassroomToolkit.Infra.Process;
@@ -58,17 +59,24 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             timeoutCts?.Token ?? CancellationToken.None);
         using var registration = linkedCts.Token.Register(() =>
         {
-            if (!process.HasExited)
+            // Cancel() runs this callback inline on the caller's thread — the UI
+            // thread when the Cancel button fires it. Kill(entireProcessTree)
+            // enumerates a node→headless-browser tree and can block for hundreds
+            // of milliseconds, so the kill is handed to the thread pool.
+            _ = Task.Run(() =>
             {
-                try
+                if (!process.HasExited)
                 {
-                    process.Kill(entireProcessTree: true);
+                    try
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                    catch
+                    {
+                        // Best effort cancellation only.
+                    }
                 }
-                catch
-                {
-                    // Best effort cancellation only.
-                }
-            }
+            });
         });
 
         var standardOutputTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
@@ -82,7 +90,18 @@ public sealed class PowerShellProcessRunner : IProcessRunner
         }
         catch (OperationCanceledException) when (IsTimeout())
         {
+            // Cancellation callbacks are scheduled asynchronously.  Do not let
+            // disposal of the registration race ahead of the callback and leave
+            // the timed-out child alive (which also keeps its output pipe open).
+            TryKillEntireTree(process);
             throw TimeoutException();
+        }
+        catch (OperationCanceledException)
+        {
+            // Caller cancellation has the same process-lifecycle requirement as
+            // the timeout path: returning control must not leave a tool running.
+            TryKillEntireTree(process);
+            throw;
         }
 
         if (IsTimeout())

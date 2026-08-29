@@ -2,7 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import katex from "katex";
-import { createInlineMathScanner } from "./inline-math.mjs";
+import {
+  createInlineMathScanner,
+  findUnbalancedLatexDelimiterPositions,
+  maskLatexCodeSegments,
+  normalizeLatexParenDelimiters,
+  repairSplitMathSpans
+} from "./inline-math.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -14,8 +20,10 @@ Checks:
   - orphan question-number first lines
   - backtick-wrapped math or units
   - unbalanced LaTeX dollar signs
+  - unbalanced \\(...\\) / \\[...\\] LaTeX delimiters
   - dollar signs the renderer would leave as literal text (e.g. '$a$$b$')
-  - LaTeX math that fails the renderer's strict KaTeX contract
+  - LaTeX math that fails the renderer's strict KaTeX contract (\\(...\\) is
+    normalized to $...$ first; math inside code fences or inline code is exempt)
   - executable raw HTML
   - overly long plain-text lines (warning)
 `;
@@ -165,10 +173,11 @@ function validateUnbalancedDollarSigns(source, rule, errors, warnings) {
 // consume reaches the PDF as literal text (e.g. `$a$$b$`, `costs $5 and $10`).
 // One scan pass mirrors render-md-latex exactly: whatever that single pass does
 // not replace prints verbatim, so a later rescannable pair is still a leak.
+// Display tokens keep the matched newlines so reported lines stay accurate.
 export function findLeakingDollarLines(source) {
-  const displayFree = source
-    .replace(/\$\$([\s\S]+?)\$\$/g, () => "@@CLASSROOM_DISPLAY_MATH@@")
-    .replace(/\\\[([\s\S]+?)\\\]/g, () => "@@CLASSROOM_DISPLAY_MATH@@");
+  const displayFree = normalizeLatexParenDelimiters(repairSplitMathSpans(maskLatexCodeSegments(source).text))
+    .replace(/\$\$([\s\S]+?)\$\$/g, (match) => displayMathToken(match))
+    .replace(/\\\[([\s\S]+?)\\\]/g, (match) => displayMathToken(match));
 
   const consumedRanges = [];
   const scanner = createInlineMathScanner(displayFree);
@@ -191,12 +200,35 @@ export function findLeakingDollarLines(source) {
     leakingOffsets.push(index);
   }
 
-  return [...new Set(leakingOffsets.map((offset) => lineNumberAt(source, offset)))];
+  return [...new Set(leakingOffsets.map((offset) => lineNumberAt(displayFree, offset)))];
+}
+
+function displayMathToken(matchedText) {
+  const newlineCount = (matchedText.match(/\n/g) || []).length;
+  return "@@CLASSROOM_DISPLAY_MATH@@" + "\n".repeat(newlineCount);
 }
 
 function validateLeakingDollarLines(source, rule, errors, warnings) {
-  for (const lineNumber of [...new Set(findLeakingDollarLines(source))]) {
+  for (const lineNumber of findLeakingDollarLines(source)) {
     addRuleFinding(rule, `Line ${lineNumber}: dollar sign would be rendered as literal text by the renderer; escape it with \\$ or balance it.`, errors, warnings);
+  }
+}
+
+export function findUnbalancedLatexDelimiterLines(source) {
+  return [...new Set(
+    findUnbalancedLatexDelimiterPositions(source)
+      .map((offset) => lineNumberAt(source, offset))
+  )];
+}
+
+function validateUnbalancedLatexDelimiters(source, rule, errors, warnings) {
+  for (const lineNumber of findUnbalancedLatexDelimiterLines(source)) {
+    addRuleFinding(
+      rule,
+      `Line ${lineNumber}: \\(...\\) and \\[...\\] LaTeX delimiters must be balanced; otherwise literal source would reach the PDF.`,
+      errors,
+      warnings
+    );
   }
 }
 
@@ -206,13 +238,14 @@ function lineNumberAt(source, offset) {
 
 export function findStrictKatexErrors(source) {
   const findings = [];
+  const normalizedSource = normalizeLatexParenDelimiters(repairSplitMathSpans(maskLatexCodeSegments(source).text));
   const patterns = [
     { regex: /\$\$([\s\S]+?)\$\$/g, displayMode: true },
     { regex: /\\\[([\s\S]+?)\\\]/g, displayMode: true },
     { regex: /(?<![\\$])\$((?:\\.|[^$])*?)(?<!\\)\$(?!\$)/g, displayMode: false }
   ];
   for (const { regex, displayMode } of patterns) {
-    for (const match of source.matchAll(regex)) {
+    for (const match of normalizedSource.matchAll(regex)) {
       if (match.index === undefined) {
         continue;
       }
@@ -227,7 +260,7 @@ export function findStrictKatexErrors(source) {
         });
       } catch (error) {
         findings.push({
-          lineNumber: lineNumberAt(source, match.index),
+          lineNumber: lineNumberAt(normalizedSource, match.index),
           message: error instanceof Error ? error.message : String(error)
         });
       }
@@ -302,6 +335,7 @@ function main() {
 
   if (rules.trueLatex) {
     validateUnbalancedDollarSigns(source, rules.trueLatex, errors, warnings);
+    validateUnbalancedLatexDelimiters(source, rules.trueLatex, errors, warnings);
     validateLeakingDollarLines(source, rules.trueLatex, errors, warnings);
     validateStrictKatex(source, rules.trueLatex, errors, warnings);
   }

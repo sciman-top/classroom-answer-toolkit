@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
+import { resolveProfileSnapshotRelativePath } from "../rule-compiler/subject-pack-registry.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 

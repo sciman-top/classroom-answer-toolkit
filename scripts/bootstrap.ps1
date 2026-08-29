@@ -1,3 +1,10 @@
+param(
+    # Callers that run check-toolchain Core/Full right after bootstrap must pass
+    # this: the gate already runs validate:assets and snapshot compilation, and
+    # AGENTS.md forbids repeating validate:assets before it.
+    [switch]$SkipSnapshots
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -140,7 +147,9 @@ function Compile-RuleSnapshots {
             $relativeOutputPath = Get-RelativePath -BasePath $repoRoot -TargetPath $outputPath
 
             Write-Host ("- {0}/{1} -> {2}" -f $subjectPack.AssetId, $profile, $relativeOutputPath)
-            & npm --prefix tools/rule-compiler run compile:snapshot -- --subject-pack $subjectPack.AssetId --profile $profile --out $relativeOutputPath
+            # Direct node call: the snapshot writer resolves --out against the
+            # repo root, so the per-invocation npm layer buys nothing.
+            & node (Join-Path $repoRoot "tools/rule-compiler/compile-snapshot.mjs") --subject-pack $subjectPack.AssetId --profile $profile --out $relativeOutputPath
             if ($LASTEXITCODE -ne 0) {
                 throw ("Failed to compile snapshot for {0}/{1}." -f $subjectPack.AssetId, $profile)
             }
@@ -151,6 +160,8 @@ function Compile-RuleSnapshots {
 Assert-DotNetSdk
 Assert-Browser
 Install-NodeDependencies
-Compile-RuleSnapshots
+if (-not $SkipSnapshots) {
+    Compile-RuleSnapshots
+}
 
 Write-Host "Bootstrap complete."

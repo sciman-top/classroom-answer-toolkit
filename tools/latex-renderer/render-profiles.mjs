@@ -1,5 +1,5 @@
 import { deepMerge } from "../shared.mjs";
-import { getSnapshotActiveProfile, listSnapshotProfileNames } from "./runtime-config.mjs";
+import { getSnapshotActiveProfile } from "./runtime-config.mjs";
 
 const fallbackRenderProfile = {
   name: "classroom",
@@ -46,8 +46,4 @@ export function loadRenderProfile(profileNameOrPath, snapshot = null) {
   merged.profilePath = snapshot.snapshotId;
   merged.answerRules = deepMerge(fallbackRenderProfile.answerRules, activeProfile.answerRules ?? {});
   return merged;
-}
-
-export function listBuiltInProfiles(_subjectPack = null, snapshot = null) {
-  return snapshot ? listSnapshotProfileNames(snapshot) : [];
 }

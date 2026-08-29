@@ -162,7 +162,7 @@ try {
     }
     [IO.File]::WriteAllText(
         (Join-Path $targetRoot "install-receipt.json"),
-        (($receipt | ConvertTo-Json -Depth 8) + [Environment]::NewLine),
+        (($receipt | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
         [Text.UTF8Encoding]::new($false))
 
     $workspaceRoot = Join-Path $targetRoot "workspace"

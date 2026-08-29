@@ -101,7 +101,9 @@ if (-not (Test-Path -LiteralPath $envPath -PathType Leaf) -and (Test-Path -Liter
 }
 
 Write-Host "Restoring the repository toolchain..."
-& (Join-Path $repoRoot "scripts/bootstrap.ps1")
+# -SkipSnapshots: the Core gate below runs validate:assets + snapshot
+# compilation exactly once; doing it in bootstrap too would duplicate the gate.
+& (Join-Path $repoRoot "scripts/bootstrap.ps1") -SkipSnapshots
 if ($LASTEXITCODE -ne 0) {
     throw "Bootstrap failed."
 }

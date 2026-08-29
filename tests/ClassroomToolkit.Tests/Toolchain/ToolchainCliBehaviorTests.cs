@@ -545,9 +545,15 @@ public sealed class ToolchainCliBehaviorTests
         var receiptPath = Path.Combine(outputDirectory, "exam.workflow-run.json");
         string? retainedWorkRoot = null;
         Directory.CreateDirectory(fakeNodeDirectory);
+        Directory.CreateDirectory(Path.Combine(outputDirectory, "exam参考答案.review"));
         File.WriteAllText(sourcePath, "%PDF-source");
         File.WriteAllText(promptPath, "# prompt");
         File.WriteAllText(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false");
+        File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.md"), "# stale answer");
+        File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.pdf"), "%PDF-stale");
+        File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.delivery-manifest.json"), "{\"kind\":\"delivery-manifest\"}");
+        File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.snapshot.json"), "{\"snapshotId\":\"stale\"}");
+        File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.review", "page-001.png"), "stale review");
         File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
             "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
         File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"),
@@ -601,6 +607,13 @@ public sealed class ToolchainCliBehaviorTests
             receipt.GetProperty("phases").GetProperty("blindGeneration").GetProperty("error").GetString()
                 .Should().Contain("status=503");
             receipt.GetProperty("error").GetString().Should().Contain("attemptedRoles=primary,fallback_1");
+            var staleRunDirectory = Directory.GetDirectories(Path.Combine(outputDirectory, ".stale-runs")).Should().ContainSingle().Which;
+            File.Exists(Path.Combine(staleRunDirectory, "exam参考答案.md")).Should().BeTrue();
+            File.Exists(Path.Combine(staleRunDirectory, "exam参考答案.pdf")).Should().BeTrue();
+            File.Exists(Path.Combine(staleRunDirectory, "exam参考答案.delivery-manifest.json")).Should().BeTrue();
+            File.Exists(Path.Combine(staleRunDirectory, "exam参考答案.snapshot.json")).Should().BeTrue();
+            File.Exists(Path.Combine(staleRunDirectory, "exam参考答案.review", "page-001.png")).Should().BeTrue();
+            Directory.Exists(Path.Combine(outputDirectory, "exam参考答案.review")).Should().BeFalse();
             retainedWorkRoot = receipt.GetProperty("diagnostics").GetProperty("retainedWorkRoot").GetString();
         }
         finally

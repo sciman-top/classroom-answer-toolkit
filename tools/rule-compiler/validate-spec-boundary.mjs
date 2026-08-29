@@ -103,7 +103,10 @@ export function assertSpecBoundary() {
   if (errors.length > 0) {
     throw new Error(`Spec boundary validation failed:\n${errors.join("\n")}`);
   }
-  return { assemblyCount: 3, forbiddenTermCount: forbiddenSpecTerms.length };
+  const assemblyCount = fs
+    .readdirSync(resolveRepoPath("prompts/specs/assemblies"))
+    .filter((name) => name.endsWith(".json")).length;
+  return { assemblyCount, forbiddenTermCount: forbiddenSpecTerms.length };
 }
 
 function main() {

@@ -31,6 +31,7 @@ export { QUALITY_PROFILES, QUALITY_PROFILE_NAMES };
 
 const TRANSPORT_TIMEOUT_GRACE_MS = 5000;
 let activeTransportKey = null;
+let activeDispatcher = null;
 
 export function resolveAnswerTransportPolicy(timeoutMs, nodeOptions = process.env.NODE_OPTIONS ?? "") {
   const environmentProxyEnabled = /(?:^|\s)--use-env-proxy(?:\s|$)/.test(nodeOptions);
@@ -53,8 +54,12 @@ function configureAnswerTransport(timeoutMs) {
     const dispatcher = policy.environmentProxyEnabled
       ? new EnvHttpProxyAgent(dispatcherOptions)
       : new Agent(dispatcherOptions);
+    const previousDispatcher = activeDispatcher;
     setGlobalDispatcher(dispatcher);
+    activeDispatcher = dispatcher;
     activeTransportKey = transportKey;
+    // Sockets pooled by the replaced agent would otherwise linger until GC.
+    previousDispatcher?.close()?.catch(() => {});
   }
   return policy;
 }

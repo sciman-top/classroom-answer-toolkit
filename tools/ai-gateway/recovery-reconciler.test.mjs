@@ -107,7 +107,10 @@ test("the reconciler probes Sol outside business slots and promotes only recover
     assert.equal(first.activePreset, "terra");
     assert.equal(first.recoveryReady, false);
     assert.equal(calls[0].model, "gpt-5.6-sol");
-    assert.equal(calls[0].reasoning.effort, "xhigh");
+    // Health probes must not pair a heavy reasoning effort with a tiny token
+    // cap: reasoning tokens count against it, so the probe could never say OK.
+    assert.equal(calls[0].reasoning.effort, "low");
+    assert.equal(calls[0].max_output_tokens, 512);
     assert.equal(existsSync(path.join(runtimeDirectory, "execution-slots")), false);
 
     const second = await runSolRecoveryProbeOnce(config, { allowCloudEgress: true, now: 200 });

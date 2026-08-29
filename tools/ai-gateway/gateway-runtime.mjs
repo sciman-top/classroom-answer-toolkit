@@ -3,19 +3,24 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { EXECUTION_SLOT_COUNT, MODEL_FAMILY_PREFERENCE } from "./profile-matrix.mjs";
 
 const HEALTH_FILE_NAME = "preset-health.json";
 const HEALTH_LOCK_FILE_NAME = "preset-health.lock.json";
 const SLOT_DIRECTORY_NAME = "execution-slots";
 const LEASE_GRACE_MS = 10_000;
-const SLOT_WAIT_INTERVAL_MS = 25;
+// Waiting callers poll the lease directory; the exponential cap keeps the
+// worst-case slot pickup latency bounded without 40 metadata operations per
+// second per waiter over a default 600s timeout.
+const SLOT_WAIT_MIN_INTERVAL_MS = 25;
+const SLOT_WAIT_MAX_INTERVAL_MS = 250;
 const HEALTH_LOCK_TIMEOUT_MS = 2_000;
 const HEALTH_LOCK_LEASE_MS = 10_000;
 const HEALTH_LOCK_WAIT_INTERVAL_MS = 10;
 const HEALTH_LOCK_WAIT_SIGNAL = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
 
-export const DEFAULT_PRESET_COOLDOWN_MS = 120_000;
+const DEFAULT_PRESET_COOLDOWN_MS = 120_000;
 export const DEFAULT_RECOVERY_PROBE_INTERVAL_MS = 300_000;
 export const DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS = 900_000;
 export const DEFAULT_RECOVERY_PROBE_SUCCESS_THRESHOLD = 2;
@@ -52,10 +57,9 @@ function defaultRuntimeDirectory() {
   return path.join(os.tmpdir(), "classroom-answer-toolkit-ai-gateway");
 }
 
-export function resolveGatewayRuntimeDirectory(config = {}) {
+function resolveGatewayRuntimeDirectory(config = {}) {
   return path.resolve(config.runtimeDirectory || defaultRuntimeDirectory());
 }
-
 function ensureRuntimeDirectory(directory) {
   fs.mkdirSync(directory, { recursive: true });
   return directory;
@@ -134,10 +138,9 @@ export function readPresetHealth(config = {}) {
 }
 
 function writePresetHealth(config, value) {
-  const target = healthPath(config);
-  const temporary = `${target}.${process.pid}.${crypto.randomUUID()}.tmp`;
-  fs.writeFileSync(temporary, `${JSON.stringify(value)}\n`, "utf8");
-  fs.renameSync(temporary, target);
+  // Reconciler and answer processes share this file; the atomic writer's EPERM
+  // retry keeps one AV/reader lock from dropping a whole probe round.
+  writeTextFileAtomic(healthPath(config), `${JSON.stringify(value)}\n`);
 }
 
 function tryAcquirePresetHealthLock(config) {
@@ -354,8 +357,28 @@ function readLease(filePath) {
 
 function removeExpiredLease(filePath, now) {
   const lease = readLease(filePath);
-  if (lease && Number.isFinite(lease.expiresAt) && lease.expiresAt > now) {
-    return false;
+  if (lease && Number.isFinite(lease.expiresAt)) {
+    if (lease.expiresAt > now) {
+      return false;
+    }
+    // Re-read immediately before unlinking: a concurrent waiter may have
+    // already replaced the stale lease with its own fresh one, and deleting
+    // that would silently break the slot's concurrency limit.
+    const recheck = readLease(filePath);
+    if (recheck && !(recheck.token === lease.token && recheck.expiresAt === lease.expiresAt)) {
+      return false;
+    }
+  } else {
+    // Malformed or unreadable (e.g. a crash left a partial file): reclaim only
+    // after a full grace period so an in-flight renewal is never unlinked.
+    try {
+      const stats = fs.statSync(filePath);
+      if (Date.now() - stats.mtimeMs < LEASE_GRACE_MS) {
+        return false;
+      }
+    } catch {
+      return false;
+    }
   }
   try {
     fs.unlinkSync(filePath);
@@ -417,6 +440,7 @@ export async function acquireSharedExecutionSlot(config, slots, timeoutMs) {
     throw new Error("At least one valid execution slot is required.");
   }
   const startedAt = Date.now();
+  let waitIntervalMs = SLOT_WAIT_MIN_INTERVAL_MS;
   while (Date.now() - startedAt < timeoutMs) {
     for (const slot of uniqueSlots) {
       const lease = tryAcquireLease(config, slot, timeoutMs);
@@ -424,7 +448,8 @@ export async function acquireSharedExecutionSlot(config, slots, timeoutMs) {
         return lease;
       }
     }
-    await sleep(Math.min(SLOT_WAIT_INTERVAL_MS, Math.max(1, timeoutMs - (Date.now() - startedAt))));
+    await sleep(Math.min(waitIntervalMs, Math.max(1, timeoutMs - (Date.now() - startedAt))));
+    waitIntervalMs = Math.min(SLOT_WAIT_MAX_INTERVAL_MS, waitIntervalMs * 2);
   }
   return null;
 }

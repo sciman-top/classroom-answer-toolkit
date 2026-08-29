@@ -13,10 +13,14 @@ import {
   recoveryProbeEligibility
 } from "./gateway-runtime.mjs";
 
+// The probe verifies Sol connectivity, not business-answer quality. Reasoning
+// effort stays low and the token budget must leave room for it: reasoning
+// tokens count against max_output_tokens, so the earlier xhigh+8 pairing could
+// never complete and Sol could never auto-recover (2026-08-29 audit).
 const SOL_RECOVERY_PROFILE = Object.freeze({
-  qualityProfile: "sol-xhigh",
+  qualityProfile: "sol-recovery-probe",
   model: "gpt-5.6-sol",
-  reasoningEffort: "xhigh"
+  reasoningEffort: "low"
 });
 
 function usage() {
@@ -158,7 +162,7 @@ export async function runSolRecoveryProbeOnce(config, options = {}) {
       result = await callTextProvider(provider, {
         prompt: "Return exactly OK.",
         timeoutMs,
-        maxOutputTokens: 8
+        maxOutputTokens: 512
       });
     } catch (error) {
       result = {

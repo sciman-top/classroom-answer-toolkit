@@ -30,17 +30,22 @@ public partial class App : System.Windows.Application
             var repositoryRoot = repositoryRootResolver.ResolveRepositoryRoot();
             var updateService = new ReleaseUpdateService(repositoryRoot);
             _updateService = updateService;
-            _viewModel = new MainViewModel(
-                _toolchainOrchestrator,
-                new WindowsPathOpener(),
-                updateService);
 
+            // The smoke branch must come before the view-model exists: its
+            // constructor starts a health probe and an update check, and the
+            // smoke path would duplicate both (a second node process and a
+            // real GitHub request) for results it discards.
             if (isSmoke)
             {
                 RunHeadlessSmoke();
                 Shutdown(0);
                 return;
             }
+
+            _viewModel = new MainViewModel(
+                _toolchainOrchestrator,
+                new WindowsPathOpener(),
+                updateService);
 
             var window = new MainWindow
             {

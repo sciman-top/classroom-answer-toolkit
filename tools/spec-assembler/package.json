@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "assemble": "node assemble-human-spec.mjs",
     "assemble:all": "node assemble-human-spec.mjs",
     "test:assemble": "node --test assemble-human-spec.test.mjs"
   }

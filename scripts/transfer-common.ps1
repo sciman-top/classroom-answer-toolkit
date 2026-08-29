@@ -130,9 +130,19 @@ function Write-JsonFileAtomic {
 function Get-WorkingTreeFiles {
     param([Parameter(Mandatory = $true)][string]$RepositoryRoot)
 
-    $output = & git -C $RepositoryRoot ls-files --cached --others --exclude-standard -z
-    if ($LASTEXITCODE -ne 0) {
-        throw "Unable to enumerate the working tree with git."
+    # git -z emits raw UTF-8 bytes; PowerShell decodes native output through
+    # [Console]::OutputEncoding, which defaults to the GBK OEM page on Chinese
+    # Windows and mojibakes every non-ASCII tracked path (e.g. 广州物理中考试卷).
+    $previousEncoding = [Console]::OutputEncoding
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+    try {
+        $output = & git -C $RepositoryRoot ls-files --cached --others --exclude-standard -z
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to enumerate the working tree with git."
+        }
+    }
+    finally {
+        [Console]::OutputEncoding = $previousEncoding
     }
 
     return @($output -join "" -split "`0" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -148,7 +158,9 @@ function Copy-RelativeFiles {
     foreach ($relativePath in $RelativePaths) {
         $sourcePath = Assert-ContainedPath -PathValue (Join-Path $SourceRoot $relativePath) -RootPath $SourceRoot -Description "source file"
         if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
-            continue
+            # Fail loudly: a tracked-but-deleted (or mis-decoded) path would
+            # otherwise silently ship an incomplete transfer that imports green.
+            throw "Working-tree file listed by git is missing on disk: $sourcePath"
         }
 
         $destinationPath = Assert-ContainedPath -PathValue (Join-Path $DestinationRoot $relativePath) -RootPath $DestinationRoot -Description "destination file"

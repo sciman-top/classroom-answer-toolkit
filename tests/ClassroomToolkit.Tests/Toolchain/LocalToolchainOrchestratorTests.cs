@@ -257,12 +257,16 @@ public sealed class LocalToolchainOrchestratorTests
                 return Task.FromResult(new ProcessRunResult(0, "ok", ""));
             }
 
+            // input/output are written as literal manifest-relative paths: the
+            // portability contract (2026-08-27) requires the orchestrator to
+            // resolve them against the manifest directory. (A post-serialize
+            // .Replace could never match — JsonSerializer escapes the backslashes.)
             File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
             {
                 generatedAt = _generatedAt ?? DateTimeOffset.UtcNow,
                 subjectPack = _manifestSubjectPack,
-                input = _manifestInputPath ?? arguments[1],
-                output = pdfPath,
+                input = _manifestInputPath ?? "answer.md",
+                output = Path.GetFileName(pdfPath),
                 snapshotId = "snapshot-test",
                 snapshotPath = ".snapshot-cache/resolved-snapshot.json",
                 snapshot = new { version = "v8.14" },
@@ -272,8 +276,7 @@ public sealed class LocalToolchainOrchestratorTests
                     outputDir = "answer.review"
                 },
                 status = new { deliveryComplete = true }
-            }).Replace(Path.Combine(_root, "answer.md"), "answer.md")
-              .Replace(pdfPath, Path.GetFileName(pdfPath)));
+            }));
             return Task.FromResult(new ProcessRunResult(0, "ok", ""));
         }
     }
