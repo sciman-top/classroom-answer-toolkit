@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   findStrictKatexErrors,
   findLeakingDollarLines,
-  findUnbalancedLatexParenDelimiterLines
+  findUnbalancedLatexDelimiterLines
 } from "./validate-answer-markdown.mjs";
 import { repairSplitMathSpans } from "./inline-math.mjs";
 
@@ -44,6 +44,18 @@ test("leak check reports the document line of a stray dollar", () => {
     "第一行没有美元。",
     "第二行价格 $9 到期。"
   ].join("\n")), [2]);
+});
+
+test("leak check keeps line numbers accurate after multi-line display math", () => {
+  // The display block spans lines 1-3; a token without the matched newlines
+  // would report the stray dollar on line 3 instead of line 5.
+  assert.deepEqual(findLeakingDollarLines([
+    "$$",
+    "E = mc^2",
+    "$$",
+    "",
+    "第五行价格 $9 到期。"
+  ].join("\n")), [5]);
 });
 
 test("paren-delimited inline math is normalized before strict KaTeX and leak checks", () => {
@@ -97,5 +109,30 @@ $E_{甲}$`;
 
   const unbalanced = String.raw`第一行 \) 没有起始
 第二行 \(v=2`;
-  assert.deepEqual(findUnbalancedLatexParenDelimiterLines(unbalanced), [1, 2]);
+  assert.deepEqual(findUnbalancedLatexDelimiterLines(unbalanced), [1, 2]);
+});
+
+test("unclosed display delimiters are rejected like unclosed paren delimiters", () => {
+  // Same defect class as 2015 regression10: an unclosed `\[` degrades to a
+  // literal `[` in the rendered PDF.
+  assert.deepEqual(findUnbalancedLatexDelimiterLines(String.raw`第一行 \[ F=ma`), [1]);
+  assert.deepEqual(findUnbalancedLatexDelimiterLines(String.raw`第一行 F=ma \] 没有起始`), [1]);
+  assert.deepEqual(findUnbalancedLatexDelimiterLines(String.raw`\[ F=ma \]`), []);
+  assert.deepEqual(findUnbalancedLatexDelimiterLines(String.raw`平衡的 \(v=2\) 与 \[E=3\,\mathrm{J}\]`), []);
+});
+
+test("math inside code fences and same-line inline code is opaque to math checks", () => {
+  const fenced = [
+    "```text",
+    "$\\frac{1}{$",
+    "```",
+    "",
+    "$E_{甲}$"
+  ].join("\n");
+  // Only the real math on the last line is reported; the fence content is exempt.
+  assert.deepEqual(findStrictKatexErrors(fenced).map((finding) => finding.lineNumber), [5]);
+  assert.deepEqual(findLeakingDollarLines("```text\n$a$$b$\n```\n正文 $v=2$。"), []);
+
+  const inlineCode = "记作 `$a$$b$` 但正文 $v=2$。";
+  assert.deepEqual(findLeakingDollarLines(inlineCode), []);
 });
