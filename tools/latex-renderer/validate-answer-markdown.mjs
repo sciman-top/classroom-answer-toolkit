@@ -157,9 +157,12 @@ function validateBacktickWrappedMath(line, lineNumber, rule, errors, warnings) {
 }
 
 function validateUnbalancedDollarSigns(source, rule, errors, warnings) {
+  // Count on the code-masked text: a `$` inside a fence or code span prints
+  // literally and must not flip the document's parity.
+  const masked = maskLatexCodeSegments(source).text;
   let count = 0;
-  for (let index = 0; index < source.length; index += 1) {
-    if (source[index] === "$" && source[index - 1] !== "\\") {
+  for (let index = 0; index < masked.length; index += 1) {
+    if (masked[index] === "$" && masked[index - 1] !== "\\") {
       count += 1;
     }
   }
@@ -215,9 +218,13 @@ function validateLeakingDollarLines(source, rule, errors, warnings) {
 }
 
 export function findUnbalancedLatexDelimiterLines(source) {
+  // Delimiter balance runs on the code-masked text: a `\(` or `\[` inside a
+  // fence or code span is literal content, not an open math region. The mask
+  // preserves line counts, so the reported lines are the document's real ones.
+  const masked = maskLatexCodeSegments(source).text;
   return [...new Set(
-    findUnbalancedLatexDelimiterPositions(source)
-      .map((offset) => lineNumberAt(source, offset))
+    findUnbalancedLatexDelimiterPositions(masked)
+      .map((offset) => lineNumberAt(masked, offset))
   )];
 }
 
@@ -326,6 +333,10 @@ function main() {
   const profile = getSnapshotActiveProfile(snapshot, options.profile);
   const source = fs.readFileSync(inputPath, "utf8");
   const lines = source.replace(/\r\n/g, "\n").split("\n");
+  // Code-masked text has the same line count; a line whose masked version is
+  // blank while the raw line is not sits inside a fenced code block and is a
+  // literal code sample, so the per-line content rules must skip it.
+  const maskedLines = maskLatexCodeSegments(source.replace(/\r\n/g, "\n")).text.split("\n");
 
   const errors = [];
   const warnings = [];
@@ -342,6 +353,9 @@ function main() {
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
+    if (maskedLines[index] === "" && line.trim() !== "") {
+      continue;
+    }
     const lineNumber = index + 1;
 
     if (rules.choiceAnswer) {

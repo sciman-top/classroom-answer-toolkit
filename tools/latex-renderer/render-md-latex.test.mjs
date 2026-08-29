@@ -51,6 +51,54 @@ test("renderer converts a multiline inline math fence without leaking LaTeX sour
   }
 });
 
+test("renderer keeps fenced and crossed-line code literal even with math-looking content", () => {
+  // 2026-08-29 review regression: a fence holding `$\frac{1}{$` or an unclosed
+  // `\[` used to crash the render or leak stashed KaTeX into <pre><code>, and
+  // math inside a cross-line code span was stashed even though markdown-it
+  // renders it as literal code.
+  const workDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-answer-code-literal-"));
+  const markdownPath = path.join(workDirectory, "code-literal.md");
+  const pdfPath = path.join(workDirectory, "code-literal.pdf");
+  const reviewDirectory = path.join(workDirectory, "review");
+  fs.writeFileSync(markdownPath, [
+    "# 物理试卷参考答案",
+    "",
+    "```text",
+    "$\\frac{1}{$",
+    "未闭合 \\[ 也只是示例",
+    "```",
+    "",
+    "记作 `跨行",
+    "$E_{甲}$` 但正文 $v=2\\,\\mathrm{m/s}$。",
+    ""
+  ].join("\n"), "utf8");
+
+  try {
+    execFileSync(process.execPath, [
+      "render-md-latex.mjs",
+      markdownPath,
+      pdfPath,
+      "--subject-pack", "junior-physics-answer"
+    ], { cwd: toolDirectory, stdio: "pipe" });
+    execFileSync(process.execPath, [
+      "review-source-pdf.mjs",
+      pdfPath,
+      "--out", reviewDirectory,
+      "--pages", "all"
+    ], { cwd: toolDirectory, stdio: "pipe" });
+
+    const extractedText = fs.readFileSync(path.join(reviewDirectory, "code-literal.page-001.text-layer.txt"), "utf8");
+    // The fence content prints literally; no stashed math token may leak.
+    assert.match(extractedText, /\\frac\{1\}\{/u);
+    assert.doesNotMatch(extractedText, /LATEX_MATH/u);
+    // The real inline math after the span is rendered by KaTeX (the text
+    // layer inserts spaces between glyph runs, so allow flexible spacing).
+    assert.match(extractedText, /v\s*=\s*2/u);
+  } finally {
+    fs.rmSync(workDirectory, { recursive: true, force: true });
+  }
+});
+
 test("renderer keeps a question's trailing formula block together near a page boundary", () => {
   const workDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-answer-pagination-"));
   const markdownPath = path.join(workDirectory, "question-pagination.md");

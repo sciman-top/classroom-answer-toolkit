@@ -10,7 +10,7 @@
     "request:text": "node text-request.mjs",
     "reconcile:recovery": "node recovery-reconciler.mjs --once",
     "watch:recovery": "node recovery-reconciler.mjs --watch",
-    "test:answer": "node --test answer-request.test.mjs answer-request.e2e.test.mjs recovery-reconciler.test.mjs validate-config.inherit.test.mjs answer-diff-report.test.mjs"
+    "test:answer": "node --test answer-request.test.mjs answer-request.e2e.test.mjs gateway-runtime.test.mjs recovery-reconciler.test.mjs validate-config.inherit.test.mjs answer-diff-report.test.mjs"
   },
   "dependencies": {
     "undici": "8.10.0"

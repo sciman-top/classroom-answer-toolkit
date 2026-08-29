@@ -136,3 +136,41 @@ test("math inside code fences and same-line inline code is opaque to math checks
   const inlineCode = "记作 `$a$$b$` 但正文 $v=2$。";
   assert.deepEqual(findLeakingDollarLines(inlineCode), []);
 });
+
+test("fenced code is opaque to delimiter and dollar-parity checks with accurate line numbers", () => {
+  // Reviewer repro: an unclosed `\[` inside a fence is literal content and must
+  // not be reported; one after the fence must still be reported on its real line.
+  const fenced = [
+    "```text",
+    "$\\frac{1}{$ 与未闭合 \\[",
+    "```",
+    "",
+    "第五行 \\[ 未闭合"
+  ].join("\n");
+  assert.deepEqual(findUnbalancedLatexDelimiterLines(fenced), [5]);
+  // A lone `$` inside a fence must not flip the document's dollar parity.
+  assert.deepEqual(findLeakingDollarLines("```text\n单个 $\n```\n正文 $v=2$。"), []);
+});
+
+test("cross-line inline code spans are masked like single-line spans", () => {
+  const span = [
+    "记作 `值",
+    "$E_{甲}$` 但正文 $v=2$。"
+  ].join("\n");
+  assert.deepEqual(findStrictKatexErrors(span), []);
+  assert.deepEqual(findLeakingDollarLines(span), []);
+
+  // markdown-it renders math inside an unclosed backtick run, so it must stay checked.
+  const unclosed = [
+    "前缀 `未闭合",
+    "$E_{甲}$ 之后"
+  ].join("\n");
+  assert.equal(findStrictKatexErrors(unclosed).length, 1);
+});
+
+test("variable-length backtick runs only close on equal-length runs", () => {
+  // The two-backtick span hides `a$b`; the real math after it is still reported.
+  const text = "前 ``a$b`` 中 $E_{甲}$ 后";
+  assert.deepEqual(findStrictKatexErrors(text).map((finding) => finding.lineNumber), [1]);
+  assert.deepEqual(findLeakingDollarLines("记 ``a$$b`` 作 与 $v$。"), []);
+});

@@ -52,6 +52,72 @@ public sealed class PowerShellProcessRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_CancelAfterStart_KillsChildWithoutUnobservedExceptions()
+    {
+        // Regression for the 2026-08-29 review: the cancel callback hands the
+        // process-tree kill to a thread-pool task, and RunAsync can return and
+        // dispose the Process before that task runs. The kill body must keep
+        // its own exception handling so the deferred task never faults
+        // unobserved, and immediate cancellation must still terminate the tree.
+        var unobservedExceptions = new List<Exception>();
+        void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs eventArgs)
+        {
+            lock (unobservedExceptions)
+            {
+                unobservedExceptions.Add(eventArgs.Exception);
+            }
+        }
+
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        try
+        {
+            for (var iteration = 0; iteration < 5; iteration += 1)
+            {
+                var runner = new PowerShellProcessRunner();
+                var processIdPath = Path.Combine(Path.GetTempPath(), $"runner-cancel-{Guid.NewGuid():N}.pid");
+                using var cancellation = new CancellationTokenSource();
+                try
+                {
+                    var runTask = runner.RunAsync(
+                        "node",
+                        [
+                            "-e",
+                            $"require('fs').writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {{}}, 30000)",
+                            processIdPath
+                        ],
+                        Path.GetTempPath(),
+                        cancellation.Token);
+
+                    var processId = await WaitForPidFileAsync(processIdPath, TimeSpan.FromSeconds(5));
+                    cancellation.Cancel();
+                    await FluentActions.Awaiting(() => runTask)
+                        .Should().ThrowAsync<OperationCanceledException>();
+                    (await WaitForProcessExitAsync(processId, TimeSpan.FromSeconds(5)))
+                        .Should().BeTrue("an immediate cancel must still terminate the started child");
+                }
+                finally
+                {
+                    File.Delete(processIdPath);
+                }
+            }
+
+            // Give finalizers a chance to surface any unobserved task fault.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            lock (unobservedExceptions)
+            {
+                unobservedExceptions.Should().BeEmpty();
+            }
+        }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
+        }
+    }
+
+    [Fact]
     public async Task RunAsync_TerminatesHungProcessAfterTimeout()
     {
         var runner = new PowerShellProcessRunner();

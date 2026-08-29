@@ -62,19 +62,25 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             // Cancel() runs this callback inline on the caller's thread — the UI
             // thread when the Cancel button fires it. Kill(entireProcessTree)
             // enumerates a node→headless-browser tree and can block for hundreds
-            // of milliseconds, so the kill is handed to the thread pool.
+            // of milliseconds, so the kill itself runs on the thread pool. The
+            // whole body stays inside the try: RunAsync may have already
+            // returned and disposed the Process by the time the pool thread
+            // runs, and the catch keeps that deferred task's exception observed.
             _ = Task.Run(() =>
             {
-                if (!process.HasExited)
+                try
                 {
-                    try
+                    if (!process.HasExited)
                     {
                         process.Kill(entireProcessTree: true);
                     }
-                    catch
-                    {
-                        // Best effort cancellation only.
-                    }
+                }
+                catch (Exception ex) when (ex is ObjectDisposedException
+                    or InvalidOperationException
+                    or System.ComponentModel.Win32Exception)
+                {
+                    // The process exited (and was disposed) before the pool
+                    // thread got here; there is nothing left to kill.
                 }
             });
         });

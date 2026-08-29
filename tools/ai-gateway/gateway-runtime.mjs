@@ -339,6 +339,82 @@ function slotDirectory(config) {
   ));
 }
 
+// Cross-process mutex for lease reclamation, built on atomic directory
+// creation: for a given slot, exactly one waiter at a time may run
+// check-expiry → unlink → re-create. A claimant that dies leaves the directory
+// behind; later waiters reap it once it is older than SLOT_CLAIM_STALE_MS
+// (a live claimant holds it for milliseconds).
+const SLOT_CLAIM_DIRECTORY_SUFFIX = ".claim";
+const SLOT_CLAIM_STALE_MS = 5_000;
+
+function slotClaimDirectoryPath(config, slot) {
+  return path.join(slotDirectory(config), `slot-${slot}${SLOT_CLAIM_DIRECTORY_SUFFIX}`);
+}
+
+function tryEnterSlotReclaimSection(config, slot, now) {
+  const claimDirectory = slotClaimDirectoryPath(config, slot);
+  try {
+    fs.mkdirSync(claimDirectory);
+    return true;
+  } catch (error) {
+    if (!error || typeof error !== "object" || error.code !== "EEXIST") {
+      throw error;
+    }
+  }
+  try {
+    const stats = fs.statSync(claimDirectory);
+    if (now - stats.mtimeMs < SLOT_CLAIM_STALE_MS) {
+      return false;
+    }
+    fs.rmSync(claimDirectory, { recursive: true, force: true });
+  } catch {
+    // Vanished or reaped concurrently; the caller's loop retries.
+  }
+  return false;
+}
+
+function exitSlotReclaimSection(config, slot) {
+  try {
+    fs.rmdirSync(slotClaimDirectoryPath(config, slot));
+  } catch (error) {
+    if (!error || typeof error !== "object" || error.code !== "ENOENT") {
+      throw error;
+    }
+  }
+}
+
+// Caller must hold the slot's reclaim section, which makes the
+// read-expiry → unlink pair atomic with respect to every other reclaimer: a
+// fresh lease is never unlinked (its holder is alive), and two waiters can
+// never both dispose of the same stale lease and each create their own — the
+// pre-fix race that silently broke the slot's concurrency limit.
+function reclaimExpiredLeaseInSection(filePath, now) {
+  const lease = readLease(filePath);
+  if (lease === null) {
+    return;
+  }
+  if (Number.isFinite(lease.expiresAt)) {
+    if (lease.expiresAt > now) {
+      return;
+    }
+  } else {
+    try {
+      // A crash between create and write leaves an empty/malformed file; a
+      // live creator may still be filling it, so honor the grace window.
+      if (now - fs.statSync(filePath).mtimeMs < LEASE_GRACE_MS) {
+        return;
+      }
+    } catch {
+      return;
+    }
+  }
+  try {
+    fs.unlinkSync(filePath);
+  } catch {
+    // Gone already; the create attempt below decides ownership.
+  }
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -390,29 +466,21 @@ function removeExpiredLease(filePath, now) {
   return true;
 }
 
-function tryAcquireLease(config, slot, timeoutMs) {
-  const filePath = leasePath(config, slot);
-  const token = crypto.randomUUID();
-  const now = Date.now();
+function writeLeaseFile(filePath, token, slot, timeoutMs) {
+  const descriptor = fs.openSync(filePath, "wx");
   try {
-    const descriptor = fs.openSync(filePath, "wx");
-    try {
-      fs.writeFileSync(descriptor, JSON.stringify({
-        token,
-        pid: process.pid,
-        slot,
-        expiresAt: now + timeoutMs + LEASE_GRACE_MS
-      }), "utf8");
-    } finally {
-      fs.closeSync(descriptor);
-    }
-  } catch (error) {
-    if (!error || typeof error !== "object" || error.code !== "EEXIST") {
-      throw error;
-    }
-    removeExpiredLease(filePath, now);
-    return null;
+    fs.writeFileSync(descriptor, JSON.stringify({
+      token,
+      pid: process.pid,
+      slot,
+      expiresAt: Date.now() + timeoutMs + LEASE_GRACE_MS
+    }), "utf8");
+  } finally {
+    fs.closeSync(descriptor);
   }
+}
+
+function leaseHandle(filePath, token, slot) {
   return {
     slot,
     release() {
@@ -428,6 +496,37 @@ function tryAcquireLease(config, slot, timeoutMs) {
       }
     }
   };
+}
+
+function tryAcquireLease(config, slot, timeoutMs) {
+  const filePath = leasePath(config, slot);
+  const token = crypto.randomUUID();
+  try {
+    writeLeaseFile(filePath, token, slot, timeoutMs);
+  } catch (error) {
+    if (!error || typeof error !== "object" || error.code !== "EEXIST") {
+      throw error;
+    }
+    if (!tryEnterSlotReclaimSection(config, slot, Date.now())) {
+      return null;
+    }
+    try {
+      reclaimExpiredLeaseInSection(filePath, Date.now());
+      try {
+        writeLeaseFile(filePath, token, slot, timeoutMs);
+      } catch (createError) {
+        if (!createError || typeof createError !== "object" || createError.code !== "EEXIST") {
+          throw createError;
+        }
+        // A fast-path acquirer created its lease after our unlink; keep waiting.
+        return null;
+      }
+      return leaseHandle(filePath, token, slot);
+    } finally {
+      exitSlotReclaimSection(config, slot);
+    }
+  }
+  return leaseHandle(filePath, token, slot);
 }
 
 // Limits every local CLI process that shares the runtime directory.  Slots are

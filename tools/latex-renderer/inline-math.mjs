@@ -216,23 +216,28 @@ export function repairSplitMathSpans(text) {
 // into <pre><code> corrupts code output, and invalid KaTeX there crashed the
 // whole render). Renderer and validator share this one implementation; the
 // renderer restores the segments after math replacement, before Markdown
-// rendering, so Markdown-It still escapes the restored code itself.
+// rendering, so Markdown-It still escapes the restored code itself. The mask
+// preserves the line structure exactly, so every line number computed from the
+// masked text is the document's real line.
 export function maskLatexCodeSegments(text) {
   const sourceLines = text.split("\n");
   const fenceRanges = findFencedCodeRanges(sourceLines);
-  const endByStart = new Map(fenceRanges);
-  const startByLine = new Map();
-  for (const [start, end] of fenceRanges) {
-    for (let index = start; index <= end; index += 1) {
-      startByLine.set(index, start);
-    }
-  }
   const segments = [];
 
+  const fenceStartByLine = new Map();
+  const fenceEndByStart = new Map(fenceRanges);
+  for (const [start, end] of fenceRanges) {
+    for (let index = start; index <= end; index += 1) {
+      fenceStartByLine.set(index, start);
+    }
+  }
+
+  // Pass 1: a fence becomes one token on its first line and blank lines
+  // afterwards, so the document's line count is preserved exactly.
   const maskedLines = sourceLines.map((line, index) => {
-    const fenceStart = startByLine.get(index);
+    const fenceStart = fenceStartByLine.get(index);
     if (fenceStart === undefined) {
-      return maskInlineCodeSpans(line, segments);
+      return line;
     }
     if (fenceStart !== index) {
       return "";
@@ -240,11 +245,12 @@ export function maskLatexCodeSegments(text) {
     const token = makeCodeSegmentToken();
     segments.push({
       token,
-      content: sourceLines.slice(fenceStart, endByStart.get(fenceStart) + 1).join("\n")
+      content: sourceLines.slice(fenceStart, fenceEndByStart.get(fenceStart) + 1).join("\n")
     });
     return token;
   });
 
+  maskClosedInlineCodeSpans(maskedLines, segments, fenceStartByLine);
   return { text: maskedLines.join("\n"), segments };
 }
 
@@ -260,15 +266,101 @@ function makeCodeSegmentToken() {
   return `@@CLASSROOM_TOOLKIT_CODE_${crypto.randomUUID().replace(/-/g, "")}@@`;
 }
 
-// Only same-line spans are masked: cross-paragraph backtick pairing in
-// Markdown-It differs from a whole-text scan, and a wrong pairing must never
-// hide math from validation while Markdown-It still renders it.
-function maskInlineCodeSpans(line, segments) {
-  return line.replace(/(`+)[^`]*?\1/g, (span) => {
-    const token = makeCodeSegmentToken();
-    segments.push({ token, content: span });
-    return token;
-  });
+function lineIndexAtOffset(lineOffsets, offset) {
+  let low = 0;
+  let high = lineOffsets.length - 1;
+  while (low < high) {
+    const middle = (low + high + 1) >> 1;
+    if (lineOffsets[middle] <= offset) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+  return low;
+}
+
+// CommonMark inline code spans: a backtick run opens a span that the next run
+// of EQUAL length closes; shorter or longer runs in between are content. A
+// span may cross single newlines inside a paragraph and dies at blank lines or
+// fences. Only closed spans are masked — markdown-it renders math inside an
+// unclosed backtick run, so the validator must keep checking it.
+function maskClosedInlineCodeSpans(maskedLines, segments, fenceStartByLine) {
+  const lineOffsets = [];
+  let offset = 0;
+  for (const line of maskedLines) {
+    lineOffsets.push(offset);
+    offset += line.length + 1;
+  }
+  const joined = maskedLines.join("\n");
+
+  const spans = [];
+  let pending = null;
+  let index = 0;
+  while (index < joined.length) {
+    if (joined[index] === "`") {
+      let runEnd = index;
+      while (runEnd < joined.length && joined[runEnd] === "`") {
+        runEnd += 1;
+      }
+      const runLength = runEnd - index;
+      if (pending === null) {
+        if (!isEscapedDelimiter(joined, index)) {
+          pending = { start: index, length: runLength };
+        }
+      } else if (runLength === pending.length) {
+        spans.push([pending.start, runEnd]);
+        pending = null;
+      }
+      index = runEnd;
+      continue;
+    }
+    if (pending !== null && joined[index] === "\n") {
+      const lineIndex = lineIndexAtOffset(lineOffsets, index);
+      const nextLineIndex = lineIndex + 1;
+      const paragraphEnds = nextLineIndex >= maskedLines.length
+        || maskedLines[nextLineIndex].trim() === ""
+        || fenceStartByLine.has(nextLineIndex);
+      if (paragraphEnds) {
+        pending = null;
+      }
+    }
+    index += 1;
+  }
+
+  // Apply edits right-to-left so the offsets of not-yet-applied spans remain
+  // valid while the masked lines mutate.
+  for (const [startOffset, endOffset] of spans.reverse()) {
+    const startLine = lineIndexAtOffset(lineOffsets, startOffset);
+    const endLine = lineIndexAtOffset(lineOffsets, endOffset - 1);
+    if (startLine === endLine) {
+      const lineStart = lineOffsets[startLine];
+      const token = makeCodeSegmentToken();
+      segments.push({ token, content: joined.slice(startOffset, endOffset) });
+      maskedLines[startLine] = maskedLines[startLine].slice(0, startOffset - lineStart)
+        + token
+        + maskedLines[startLine].slice(endOffset - lineStart);
+      continue;
+    }
+    // Multi-line span: each affected line segment gets its own token, which
+    // keeps both the line count and the restored text exact.
+    const closerLineStart = lineOffsets[endLine];
+    const closerColumn = endOffset - closerLineStart;
+    const closerToken = makeCodeSegmentToken();
+    segments.push({ token: closerToken, content: maskedLines[endLine].slice(0, closerColumn) });
+    maskedLines[endLine] = closerToken + maskedLines[endLine].slice(closerColumn);
+
+    for (let line = endLine - 1; line > startLine; line -= 1) {
+      const token = makeCodeSegmentToken();
+      segments.push({ token, content: maskedLines[line] });
+      maskedLines[line] = token;
+    }
+
+    const openerColumn = startOffset - lineOffsets[startLine];
+    const openerToken = makeCodeSegmentToken();
+    segments.push({ token: openerToken, content: maskedLines[startLine].slice(openerColumn) });
+    maskedLines[startLine] = maskedLines[startLine].slice(0, openerColumn) + openerToken;
+  }
 }
 
 function findFencedCodeRanges(sourceLines) {
