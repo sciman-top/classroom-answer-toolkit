@@ -41,7 +41,7 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "schemaVersion": { "const": "1.1" },
+    "schemaVersion": { "const": "1.2" },
     "kind": { "const": "live-answer-generation-summary" },
     "generatedAt": { "type": "string" },
     "provider": { "type": "string" },
@@ -72,9 +72,19 @@
       "required": [
         "mode",
         "qualityProfile",
+        "requestedQualityProfile",
+        "resolvedQualityProfile",
+        "requestedPreset",
+        "resolvedPreset",
+        "activePreset",
         "qualityDegraded",
         "selectedRole",
+        "orderedPresets",
         "orderedRoles",
+        "orderedQualityProfiles",
+        "orderedExecutionSlots",
+        "executionSlot",
+        "executionSlotCount",
         "target",
         "resolvedRole",
         "attemptedRoles"
@@ -93,11 +103,23 @@
           ]
         },
         "qualityProfile": { "type": "string" },
+        "requestedQualityProfile": { "type": "string" },
+        "resolvedQualityProfile": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
+        "requestedPreset": { "enum": [ "sol", "terra", "luna" ] },
+        "resolvedPreset": { "anyOf": [ { "enum": [ "sol", "terra", "luna" ] }, { "type": "null" } ] },
+        "activePreset": { "anyOf": [ { "enum": [ "sol", "terra", "luna" ] }, { "type": "null" } ] },
         "qualityDegraded": { "type": "boolean" },
         "selectedRole": {
           "anyOf": [ { "type": "string" }, { "type": "null" } ]
         },
         "orderedRoles": { "type": "array", "items": { "type": "string" } },
+        "orderedPresets": { "type": "array", "items": { "enum": [ "sol", "terra", "luna" ] } },
+        "orderedQualityProfiles": { "type": "array", "items": { "type": "string" } },
+        "orderedExecutionSlots": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "executionSlot": {
+          "anyOf": [ { "type": "integer", "minimum": 1 }, { "type": "null" } ]
+        },
+        "executionSlotCount": { "type": "integer", "minimum": 1, "maximum": 5 },
         "target": { "type": "string" },
         "resolvedRole": {
           "anyOf": [ { "type": "string" }, { "type": "null" } ]
@@ -178,6 +200,9 @@
           "provider",
           "model",
           "reasoningEffort",
+          "preset",
+          "qualityProfile",
+          "executionSlot",
           "status",
           "retryAfterMs",
           "ok",
@@ -195,6 +220,9 @@
           "reasoningEffort": {
             "anyOf": [ { "type": "string" }, { "type": "null" } ]
           },
+          "preset": { "anyOf": [ { "enum": [ "sol", "terra", "luna" ] }, { "type": "null" } ] },
+          "qualityProfile": { "type": "string" },
+          "executionSlot": { "type": "integer", "minimum": 1, "maximum": 5 },
           "status": { "anyOf": [ { "type": "integer" }, { "type": "null" } ] },
           "retryAfterMs": {
             "anyOf": [ { "type": "integer" }, { "type": "null" } ]

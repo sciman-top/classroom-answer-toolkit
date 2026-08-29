@@ -3,6 +3,16 @@
   "sourcePdfSha256": "3f419b1779ebec02f74c694966924a2931611f3525d3d17701946bb63abfc4fa",
   "regions": [
     {
+      "id": "q23-figure-24-fault-circuit-topology",
+      "label": "Q23 Figure 24 (3): trace voltage-meter leads to nodes; name the single component; do not use intended wiring or combine series components",
+      "page": 8,
+      "questionNumber": 23,
+      "x": 0.10,
+      "y": 0.19,
+      "width": 0.53,
+      "height": 0.39
+    },
+    {
       "id": "q23-figure-25-meters",
       "label": "Question 23 Figure 25 voltage and current meter dials with their visible terminals",
       "page": 8,

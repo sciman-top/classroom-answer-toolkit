@@ -49,7 +49,10 @@ test("writer output survives package relocation and foreign-CWD validation", asy
     assert.equal(written.status, 0, `writer stderr: ${written.stderr}`);
 
     // Relocate the package, then validate with a CWD outside both copies.
-    fs.cpSync(root, relocatedRoot, { recursive: true });
+    // Exercise the asynchronous copy path used by deliver-answer.mjs. This is
+    // intentionally not fs.cpSync: that Node API has crashed on Windows when
+    // a real delivery directory contains CJK path segments.
+    await fs.promises.cp(root, relocatedRoot, { recursive: true });
     const foreignCwd = path.join(os.tmpdir(), "delivery-portability-cwd");
     fs.mkdirSync(foreignCwd, { recursive: true });
     const relocatedManifest = path.join(relocatedRoot, "answer.delivery-manifest.json");

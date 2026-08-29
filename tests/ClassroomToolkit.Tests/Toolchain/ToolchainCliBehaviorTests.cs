@@ -614,6 +614,139 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
+    public async Task LiveWorkflowResumesHashBoundBlindCandidateWithoutRepeatingGeneration()
+    {
+        var root = FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowResume", Guid.NewGuid().ToString("N"));
+        var fakeNodeDirectory = Path.Combine(testRoot, "fake-node");
+        var failedDirectory = Path.Combine(testRoot, "failed");
+        var resumedDirectory = Path.Combine(testRoot, "resumed");
+        var sourcePath = Path.Combine(testRoot, "exam.pdf");
+        var referencePath = Path.Combine(testRoot, "exam-answers.pdf");
+        var promptPath = Path.Combine(testRoot, "prompt.md");
+        var envPath = Path.Combine(testRoot, ".env");
+        var candidatePath = Path.Combine(failedDirectory, "exam盲答候选.md");
+        var summaryPath = Path.Combine(failedDirectory, "exam.blind-generation.summary.json");
+        var failedReceiptPath = Path.Combine(failedDirectory, "exam.workflow-run.json");
+        Directory.CreateDirectory(fakeNodeDirectory);
+        Directory.CreateDirectory(failedDirectory);
+        File.WriteAllText(sourcePath, "%PDF-source");
+        File.WriteAllText(referencePath, "%PDF-reference");
+        File.WriteAllText(promptPath, "# prompt");
+        File.WriteAllText(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false");
+        File.WriteAllText(candidatePath, "# 已完成的盲答\n");
+        File.WriteAllText(summaryPath, "{\"kind\":\"live-answer-generation-summary\"}");
+
+        Dictionary<string, object> FileReceipt(string path)
+        {
+            var bytes = File.ReadAllBytes(path);
+            return new Dictionary<string, object>
+            {
+                ["path"] = path,
+                ["bytes"] = bytes.Length,
+                ["sha256"] = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()
+            };
+        }
+
+        var priorReceipt = new Dictionary<string, object?>
+        {
+            ["kind"] = "live-answer-workflow-run",
+            ["status"] = "failed",
+            ["inputs"] = new Dictionary<string, object?>
+            {
+                ["sourcePdf"] = FileReceipt(sourcePath),
+                ["referencePdf"] = FileReceipt(referencePath),
+                ["prompt"] = FileReceipt(promptPath),
+                ["blindFocusRegions"] = null,
+                ["visualAuditFocusRegions"] = null
+            },
+            ["phases"] = new Dictionary<string, object>
+            {
+                ["blindGeneration"] = new Dictionary<string, object>
+                {
+                    ["status"] = "completed",
+                    ["summary"] = FileReceipt(summaryPath),
+                    ["artifact"] = FileReceipt(candidatePath)
+                }
+            }
+        };
+        File.WriteAllText(failedReceiptPath, JsonSerializer.Serialize(priorReceipt));
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
+            "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"),
+            """
+            $ErrorActionPreference = "Stop"
+            $tool = [IO.Path]::GetFileName($args[0])
+            $toolArgs = @($args | Select-Object -Skip 1)
+            function Get-Option([string]$Name) {
+                for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
+                    if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
+                }
+                return $null
+            }
+            function Write-Text([string]$PathValue, [string]$Value) {
+                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PathValue))) | Out-Null
+                [IO.File]::WriteAllText([IO.Path]::GetFullPath($PathValue), $Value, [Text.UTF8Encoding]::new($false))
+            }
+            switch ($tool) {
+                "review-source-pdf.mjs" {
+                    $out = Get-Option "--out"
+                    Write-Text (Join-Path $out "source.page-1.png") "png"
+                    Write-Text (Join-Path $out "manifest.json") '{"pages":[{}]}'
+                }
+                "answer-request.mjs" {
+                    $output = Get-Option "--output"
+                    if ($output -like "*盲答候选.md") { throw "blind generation must not be called during resume" }
+                    Write-Text $output "# 物理试卷参考答案`n"
+                    Write-Text (Get-Option "--summary-out") '{"kind":"live-answer-generation-summary"}'
+                }
+                "answer-diff-report.mjs" { Write-Text $toolArgs[2] "# diff`n" }
+                "deliver-answer.mjs" {
+                    $pdf = [IO.Path]::GetFullPath($toolArgs[1])
+                    $base = Join-Path ([IO.Path]::GetDirectoryName($pdf)) ([IO.Path]::GetFileNameWithoutExtension($pdf))
+                    Write-Text $pdf "%PDF-delivery"
+                    Write-Text ($base + ".snapshot.json") '{"snapshotId":"test"}'
+                    Write-Text ($base + ".delivery-manifest.json") '{"kind":"delivery-manifest"}'
+                }
+                "validate-json.mjs" { exit 0 }
+                default { throw "Unexpected fake node tool: $tool" }
+            }
+            """);
+
+        try
+        {
+            var pathValue = fakeNodeDirectory + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+            var result = await RunAsyncWithEnvironment(
+                "pwsh",
+                root,
+                new Dictionary<string, string?> { ["PATH"] = pathValue },
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/run-live-answer-workflow.ps1",
+                "-SourcePdf", sourcePath,
+                "-ReferencePdf", referencePath,
+                "-OutputDirectory", resumedDirectory,
+                "-PromptFile", promptPath,
+                "-ConfigEnvFile", envPath,
+                "-ResumeFromWorkflowReceipt", failedReceiptPath,
+                "-SkipVisualAudit");
+
+            result.ExitCode.Should().Be(0, result.Output);
+            using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(resumedDirectory, "exam.workflow-run.json")));
+            var receipt = document.RootElement;
+            receipt.GetProperty("status").GetString().Should().Be("succeeded");
+            receipt.GetProperty("phases").GetProperty("blindGeneration").GetProperty("artifact").GetProperty("sha256").GetString()
+                .Should().Be(FileReceipt(candidatePath)["sha256"].ToString());
+            receipt.GetProperty("resume").GetProperty("workflowReceipt").GetProperty("sha256").GetString()
+                .Should().Be(FileReceipt(failedReceiptPath)["sha256"].ToString());
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task LiveWorkflowWritesSuccessReceiptAndBlocksPromptDrift()
     {
         var root = FindRepoRoot();

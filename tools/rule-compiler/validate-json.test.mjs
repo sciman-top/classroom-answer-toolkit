@@ -108,7 +108,7 @@ test("workflow-run schema rejects drift", () => {
 
 function buildSummaryFixture() {
   return {
-    schemaVersion: "1.1",
+    schemaVersion: "1.2",
     kind: "live-answer-generation-summary",
     generatedAt: "2026-08-25T12:01:00.000Z",
     provider: "primary",
@@ -125,9 +125,19 @@ function buildSummaryFixture() {
     routing: {
       mode: "blind_generation",
       qualityProfile: "sol-xhigh",
+      requestedQualityProfile: "sol-xhigh",
+      resolvedQualityProfile: "sol-xhigh",
+      requestedPreset: "sol",
+      resolvedPreset: "sol",
+      activePreset: "sol",
       qualityDegraded: false,
       selectedRole: "primary",
+      orderedPresets: ["sol", "terra", "luna"],
       orderedRoles: ["primary", "fallback_1"],
+      orderedQualityProfiles: ["sol-xhigh", "sol-xhigh"],
+      orderedExecutionSlots: [1, 1],
+      executionSlot: 1,
+      executionSlotCount: 5,
       target: "all",
       resolvedRole: "primary",
       attemptedRoles: ["primary"]
@@ -153,6 +163,9 @@ function buildSummaryFixture() {
       provider: "primary",
       model: "gpt-5.6-sol",
       reasoningEffort: "xhigh",
+      preset: "sol",
+      qualityProfile: "sol-xhigh",
+      executionSlot: 1,
       status: 200,
       retryAfterMs: null,
       ok: true,

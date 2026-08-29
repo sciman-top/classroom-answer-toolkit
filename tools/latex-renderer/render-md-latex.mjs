@@ -138,6 +138,100 @@ function injectMath(html) {
   return output;
 }
 
+const voidHtmlElements = new Set([
+  "area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+  "meta", "param", "source", "track", "wbr"
+]);
+
+// Markdown-it emits one top-level block element per paragraph, table, heading,
+// or controlled graphic. Keep those blocks intact so a question cannot leave
+// only its final formula lines on a nearly empty trailing page.
+function splitTopLevelHtmlBlocks(html) {
+  const tagPattern = /<\/?([a-z][\w:-]*)(?:\s[^<>]*?)?\/?\s*>/giu;
+  const blocks = [];
+  let depth = 0;
+  let rootStart = null;
+  let previousEnd = 0;
+
+  for (const match of html.matchAll(tagPattern)) {
+    const tag = match[1].toLowerCase();
+    const source = match[0];
+    const isClosing = source.startsWith("</");
+    const isSelfClosing = /\/\s*>$/u.test(source) || voidHtmlElements.has(tag);
+
+    if (isClosing) {
+      if (depth > 0) {
+        depth -= 1;
+      }
+      if (depth === 0 && rootStart !== null) {
+        const end = (match.index ?? 0) + source.length;
+        blocks.push({
+          prefix: html.slice(previousEnd, rootStart),
+          html: html.slice(rootStart, end)
+        });
+        previousEnd = end;
+        rootStart = null;
+      }
+      continue;
+    }
+
+    if (depth === 0 && rootStart === null) {
+      rootStart = match.index ?? 0;
+    }
+    if (!isSelfClosing) {
+      depth += 1;
+    } else if (depth === 0 && rootStart !== null) {
+      const end = (match.index ?? 0) + source.length;
+      blocks.push({
+        prefix: html.slice(previousEnd, rootStart),
+        html: html.slice(rootStart, end)
+      });
+      previousEnd = end;
+      rootStart = null;
+    }
+  }
+
+  if (previousEnd < html.length) {
+    blocks.push({ prefix: html.slice(previousEnd), html: "" });
+  }
+  return blocks;
+}
+
+function isQuestionBlock(blockHtml) {
+  return /^<p(?:\s[^>]*)?>\s*\d{1,3}[.．、]/u.test(blockHtml)
+    || /^<ol\b[^>]*\bstart\s*=\s*["']?\d{1,3}/iu.test(blockHtml);
+}
+
+function isHeadingBlock(blockHtml) {
+  return /^<h[1-6](?:\s[^>]*)?>/iu.test(blockHtml);
+}
+
+function wrapQuestionBlocks(html) {
+  const blocks = splitTopLevelHtmlBlocks(html);
+  let output = "";
+  let inQuestion = false;
+
+  for (const block of blocks) {
+    const startsQuestion = isQuestionBlock(block.html);
+    const startsHeading = isHeadingBlock(block.html);
+    if (inQuestion && (startsQuestion || startsHeading)) {
+      output += "</div>\n";
+      inQuestion = false;
+    }
+    output += block.prefix;
+    if (startsQuestion) {
+      output += '<div class="answer-question">';
+      inQuestion = true;
+    }
+    output += block.html;
+  }
+
+  if (inQuestion) {
+    output += "</div>\n";
+  }
+  return output;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -260,7 +354,7 @@ const withResolvedImages = resolveLocalImageDefinitions(
   inputPath
 );
 const renderedMarkdown = md.render(replaceMath(withResolvedImages));
-const body = injectAnswerGraphics(injectMath(renderedMarkdown), expanded.graphics);
+const body = wrapQuestionBlocks(injectAnswerGraphics(injectMath(renderedMarkdown), expanded.graphics));
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const katexDistDir = path.join(toolDir, "node_modules", "katex", "dist");
@@ -315,6 +409,11 @@ h2 {
 
 p {
   margin: 0 0 ${renderProfile.typography.paragraphMarginBottomPt}pt;
+}
+
+.answer-question {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 table {

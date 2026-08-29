@@ -140,6 +140,42 @@
       "type": "array",
       "items": { "$ref": "#/$defs/fileReceipt" }
     },
+    "resume": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": [ "workflowReceipt", "blindGeneration", "reusedPhases" ],
+          "additionalProperties": false,
+          "properties": {
+            "workflowReceipt": { "$ref": "#/$defs/fileReceipt" },
+            "reusedPhases": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "blindGeneration",
+                  "semanticFindings",
+                  "semanticMerge",
+                  "visualFindings",
+                  "visualMerge",
+                  "referenceReview"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "blindGeneration": {
+              "type": "object",
+              "required": [ "summary", "artifact" ],
+              "additionalProperties": false,
+              "properties": {
+                "summary": { "$ref": "#/$defs/fileReceipt" },
+                "artifact": { "$ref": "#/$defs/fileReceipt" }
+              }
+            }
+          }
+        }
+      ]
+    },
     "diagnostics": {
       "type": "object",
       "required": [ "retainedWorkRoot" ],

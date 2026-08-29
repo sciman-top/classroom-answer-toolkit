@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
@@ -121,7 +122,7 @@ function makeDeliveryReviewPath(pdfPath) {
   );
 }
 
-function main() {
+async function main() {
   const { positional, options } = parseArgs(process.argv.slice(2));
   const callerCwd = process.env.INIT_CWD || process.cwd();
 
@@ -229,7 +230,10 @@ function main() {
   // Keep a delivery-owned copy beside the PDF so archives remain self-contained.
   const deliveryReviewDir = makeDeliveryReviewPath(outputPath);
   removePathRecursive(deliveryReviewDir);
-  fs.cpSync(reviewOutputDir, deliveryReviewDir, { recursive: true });
+  // On Windows, Node's synchronous recursive copy can terminate the process
+  // with STATUS_STACK_BUFFER_OVERRUN for real delivery paths containing CJK
+  // names. The asynchronous implementation copies the same tree safely.
+  await fsp.cp(reviewOutputDir, deliveryReviewDir, { recursive: true });
 
   const cleanupArgs = ["--keep-review"];
   if (!options.keepReview) {
@@ -276,7 +280,7 @@ function main() {
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(2);

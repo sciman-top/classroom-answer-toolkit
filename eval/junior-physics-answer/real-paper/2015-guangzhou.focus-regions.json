@@ -3,6 +3,36 @@
   "sourcePdfSha256": "534d8eee3b99446d514af736aaf4cd8e36f2803154f7778c0f656f1832b7510c",
   "regions": [
     {
+      "id": "q22-figure-24-spring-scale",
+      "label": "Question 22 Figure 24 spring scale: inspect only the scale zero, tick spacing, pointer reading position, and visible hook/load indicator",
+      "page": 7,
+      "questionNumber": 22,
+      "x": 0.14,
+      "y": 0.21,
+      "width": 0.23,
+      "height": 0.36
+    },
+    {
+      "id": "q22-figure-25-thermometer",
+      "label": "Question 22 Figure 25 thermometer: inspect only the Celsius scale, minor divisions, and liquid-column top used for the reading",
+      "page": 7,
+      "questionNumber": 22,
+      "x": 0.31,
+      "y": 0.22,
+      "width": 0.25,
+      "height": 0.28
+    },
+    {
+      "id": "q22-figure-26-stopwatch",
+      "label": "Question 22 Figure 26 stopwatch: inspect both dials; the top minute zero/terminal boundary reads zero until crossed, not the adjacent printed terminal number",
+      "page": 7,
+      "questionNumber": 22,
+      "x": 0.57,
+      "y": 0.21,
+      "width": 0.38,
+      "height": 0.34
+    },
+    {
       "id": "q23-figure-28-voltage-meter",
       "label": "Question 23 Figure 28 voltage meter: inspect only this printed 0-3 V dial, its pointer, numbered scale, small divisions, and visible terminals",
       "page": 7,
@@ -10,7 +40,19 @@
       "x": 0.47,
       "y": 0.47,
       "width": 0.24,
-      "height": 0.18
+      "height": 0.18,
+      "analogMeter": {
+        "rangeMin": 0,
+        "rangeMax": 3,
+        "divisions": 30,
+        "pivotX": 0.49,
+        "pivotY": 0.76,
+        "scaleStartAngleDegrees": -136,
+        "scaleEndAngleDegrees": -46,
+        "pointerRadiusMin": 0.12,
+        "pointerRadiusMax": 0.58,
+        "darkThreshold": 90
+      }
     },
     {
       "id": "q23-figure-28-current-meter",
@@ -20,7 +62,19 @@
       "x": 0.68,
       "y": 0.47,
       "width": 0.25,
-      "height": 0.18
+      "height": 0.18,
+      "analogMeter": {
+        "rangeMin": 0,
+        "rangeMax": 0.6,
+        "divisions": 30,
+        "pivotX": 0.46,
+        "pivotY": 0.76,
+        "scaleStartAngleDegrees": -136,
+        "scaleEndAngleDegrees": -46,
+        "pointerRadiusMin": 0.12,
+        "pointerRadiusMax": 0.58,
+        "darkThreshold": 90
+      }
     }
   ]
 }

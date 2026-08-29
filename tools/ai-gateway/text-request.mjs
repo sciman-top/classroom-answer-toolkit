@@ -92,6 +92,11 @@ function parseArgs(argv) {
 function redactAttempt(attempt) {
   return {
     provider: attempt.provider,
+    model: attempt.model ?? null,
+    reasoningEffort: attempt.reasoningEffort ?? null,
+    preset: attempt.preset ?? null,
+    qualityProfile: attempt.qualityProfile ?? null,
+    executionSlot: attempt.executionSlot ?? null,
     ok: attempt.ok,
     retryable: attempt.retryable,
     status: attempt.status,

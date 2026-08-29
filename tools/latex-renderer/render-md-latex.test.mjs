@@ -50,3 +50,51 @@ test("renderer converts a multiline inline math fence without leaking LaTeX sour
     fs.rmSync(workDirectory, { recursive: true, force: true });
   }
 });
+
+test("renderer keeps a question's trailing formula block together near a page boundary", () => {
+  const workDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-answer-pagination-"));
+  const markdownPath = path.join(workDirectory, "question-pagination.md");
+  const pdfPath = path.join(workDirectory, "question-pagination.pdf");
+  const reviewDirectory = path.join(workDirectory, "review");
+  const prefix = Array.from({ length: 20 }, (_value, index) =>
+    `前置内容 ${index + 1}，用于填充分页测试。`
+  ).join("\n\n");
+  fs.writeFileSync(markdownPath, [
+    "# 物理试卷参考答案",
+    "",
+    prefix,
+    "",
+    "24. （1）Q24-BEGIN",
+    "",
+    "（2）保持水面恢复到原标记位置。",
+    "",
+    "玩具鸭漂浮时，$F_{\\text{浮}}=G_{\\text{鸭}}$。",
+    "",
+    "Q24-END"
+  ].join("\n"), "utf8");
+
+  try {
+    execFileSync(process.execPath, [
+      "render-md-latex.mjs",
+      markdownPath,
+      pdfPath,
+      "--subject-pack", "junior-physics-answer"
+    ], { cwd: toolDirectory, stdio: "pipe" });
+    execFileSync(process.execPath, [
+      "review-source-pdf.mjs",
+      pdfPath,
+      "--out", reviewDirectory,
+      "--pages", "all"
+    ], { cwd: toolDirectory, stdio: "pipe" });
+
+    const pageTexts = fs.readdirSync(reviewDirectory)
+      .filter((fileName) => fileName.endsWith(".text-layer.txt"))
+      .sort()
+      .map((fileName) => fs.readFileSync(path.join(reviewDirectory, fileName), "utf8"));
+    const questionPage = pageTexts.findIndex((pageText) => pageText.includes("Q24-BEGIN"));
+    assert.notEqual(questionPage, -1);
+    assert.match(pageTexts[questionPage], /Q24-END/u);
+  } finally {
+    fs.rmSync(workDirectory, { recursive: true, force: true });
+  }
+});
