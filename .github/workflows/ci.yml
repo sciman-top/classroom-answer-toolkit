@@ -38,4 +38,5 @@ jobs:
         run: |
           npm --prefix tools/ai-gateway run test:answer
           npm --prefix tools/latex-renderer run test:render
+          dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate!=ToolchainIntegration"
           dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate=ToolchainIntegration"

@@ -12,7 +12,14 @@ import {
   makeRenderTempHtmlPath
 } from "./pdf-output-path.mjs";
 import { loadRenderProfile } from "./render-profiles.mjs";
-import { mapInlineMath } from "./inline-math.mjs";
+import {
+  findUnbalancedLatexDelimiterPositions,
+  mapInlineMath,
+  maskLatexCodeSegments,
+  normalizeLatexParenDelimiters,
+  repairSplitMathSpans,
+  restoreLatexCodeSegments
+} from "./inline-math.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 import { getDefaultSubjectPack, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
@@ -50,6 +57,10 @@ if (!/\.md$/i.test(inputPath)) {
 }
 if (outputPath.toLowerCase() === inputPath.toLowerCase()) {
   console.error("Refusing to render: output PDF path must differ from the input Markdown path.");
+  process.exit(2);
+}
+if (!fs.existsSync(inputPath)) {
+  console.error(`Input Markdown not found: ${inputPath}`);
   process.exit(2);
 }
 const snapshot = loadRequiredResolvedSnapshot(
@@ -119,15 +130,37 @@ function stashMath(tex, displayMode) {
 }
 
 function replaceMath(markdown) {
-  let text = markdown.replace(/\$\$([\s\S]+?)\$\$/g, (_match, tex) =>
-    stashMath(tex, true)
-  );
-  text = text.replace(/\\\[([\s\S]+?)\\\]/g, (_match, tex) =>
-    stashMath(tex, true)
-  );
-  // The validator consumes the same scanner via inline-math.mjs; keep both sides
-  // on one implementation so validated documents cannot render differently.
-  return mapInlineMath(text, (tex) => stashMath(tex, false));
+  const masked = maskLatexCodeSegments(markdown);
+  let text = normalizeLatexParenDelimiters(repairSplitMathSpans(masked.text));
+  // Fail closed on delimiters the single pass below cannot consume; without this
+  // guard the leftover `\(`/`\[` reaches the PDF as literal source
+  // (2015 regression10 class of delivery defects).
+  const unbalancedPositions = findUnbalancedLatexDelimiterPositions(text);
+  if (unbalancedPositions.length > 0) {
+    const lineNumbers = [...new Set(unbalancedPositions.map((position) => lineNumberAt(text, position)))]
+      .sort((a, b) => a - b);
+    throw new Error(
+      `Unbalanced \\(...\\) or \\[...\\] LaTeX delimiters on line(s) ${lineNumbers.join(", ")}; `
+      + "literal source would reach the PDF. Run validate:answer for details."
+    );
+  }
+  try {
+    text = text.replace(/\$\$([\s\S]+?)\$\$/g, (_match, tex) =>
+      stashMath(tex, true)
+    );
+    text = text.replace(/\\\[([\s\S]+?)\\\]/g, (_match, tex) =>
+      stashMath(tex, true)
+    );
+    // The validator consumes the same scanner via inline-math.mjs; keep both sides
+    // on one implementation so validated documents cannot render differently.
+    return restoreLatexCodeSegments(mapInlineMath(text, (tex) => stashMath(tex, false)), masked.segments);
+  } catch (error) {
+    throw new Error(`LaTeX math failed the strict renderer contract; run validate:answer for line-precise errors. ${error.message}`);
+  }
+}
+
+function lineNumberAt(text, offset) {
+  return text.slice(0, offset).split("\n").length;
 }
 
 function injectMath(html) {
@@ -503,6 +536,7 @@ fs.writeFileSync(tempHtmlPath, html, "utf8");
 const RENDER_PDF_TIMEOUT_MS = 120_000;
 const browserPdfOutputPath = makeBrowserPdfOutputPath(outputPath);
 let browser = null;
+let committedPdf = false;
 try {
   if (fs.existsSync(browserPdfOutputPath)) {
     fs.unlinkSync(browserPdfOutputPath);
@@ -544,15 +578,27 @@ try {
   } finally {
     clearTimeout(pdfTimeoutGuard);
   }
-  commitBrowserPdfOutput(browserPdfOutputPath, outputPath);
+  try {
+    commitBrowserPdfOutput(browserPdfOutputPath, outputPath);
+    committedPdf = true;
+  } catch (commitError) {
+    // On Windows a locked target (e.g. the PDF open in a reader) fails the
+    // rename. Deleting the temp would destroy the finished render, so keep it
+    // and tell the user where it is.
+    const preservedHint = fs.existsSync(browserPdfOutputPath)
+      ? ` The finished render is preserved at ${browserPdfOutputPath}.`
+      : "";
+    throw new Error(`Could not replace the target PDF: ${commitError.message}.${preservedHint}`);
+  }
 } finally {
   if (browser) {
     await browser.close().catch(() => {});
   }
-  for (const temporaryPath of [tempHtmlPath, browserPdfOutputPath]) {
-    if (fs.existsSync(temporaryPath)) {
-      fs.unlinkSync(temporaryPath);
-    }
+  if (fs.existsSync(tempHtmlPath)) {
+    fs.unlinkSync(tempHtmlPath);
+  }
+  if (committedPdf && fs.existsSync(browserPdfOutputPath)) {
+    fs.unlinkSync(browserPdfOutputPath);
   }
 }
 

@@ -107,4 +107,21 @@ export function listSubjectPacks({ repositoryRoot = repoRoot } = {}) {
       || left.assetId.localeCompare(right.assetId));
 }
 
+// Mirrors scripts/subject-pack-tooling.ps1 Get-SubjectPackSnapshotOutputPath:
+// the default profile compiles to the pack's canonical snapshot path; every
+// other profile inserts its name before the extension. Gates, bootstrap, and
+// eval must all land on these same files so a validated snapshot cannot drift
+// from the one delivery consumes.
+export function resolveProfileSnapshotRelativePath(subjectPack, profile, repositoryRoot = repoRoot) {
+  const manifestPath = path.join(repositoryRoot, "prompts", String(subjectPack), "manifest.json");
+  const pack = describeSubjectPack(manifestPath, repositoryRoot);
+  const snapshotRelativePath = path.relative(repositoryRoot, pack.snapshotPath);
+  if (profile === pack.defaultProfile) {
+    return snapshotRelativePath;
+  }
+  const extension = path.extname(snapshotRelativePath);
+  const baseName = path.basename(snapshotRelativePath, extension);
+  return path.join(path.dirname(snapshotRelativePath), `${baseName}.${profile}${extension}`);
+}
+
 export { primarySubjectPackAssetId };

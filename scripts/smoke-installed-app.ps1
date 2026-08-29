@@ -66,7 +66,7 @@ function Write-JsonFileAtomic {
     try {
         [IO.File]::WriteAllText(
             $temporaryPath,
-            (($Value | ConvertTo-Json -Depth 10) + [Environment]::NewLine),
+            (($Value | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
             [Text.UTF8Encoding]::new($false))
         [IO.File]::Move($temporaryPath, $PathValue, $true)
     }

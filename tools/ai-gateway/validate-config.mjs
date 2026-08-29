@@ -724,7 +724,9 @@ export async function probeTextProvider(config, provider, timeoutMs) {
     result = await callTextProviderInSharedSlot(config, provider, {
       prompt: "Return exactly OK.",
       timeoutMs,
-      maxOutputTokens: 8
+      // Reasoning tokens count against this cap; 8 could never complete under a
+      // configured xhigh effort, so the probe reported healthy endpoints as down.
+      maxOutputTokens: 512
     });
   } catch (error) {
     if (!(error instanceof ExecutionSlotTimeoutError)) {
@@ -964,7 +966,21 @@ export async function callTextProvider(provider, options) {
       };
     }
 
-    const parsed = JSON.parse(bodyText);
+    let parsed;
+    try {
+      parsed = JSON.parse(bodyText);
+    } catch {
+      // A 200 with a non-JSON body is a misbehaving endpoint, not a network
+      // error; report it as such instead of a generic parse-message failure.
+      return {
+        provider: provider.role,
+        ok: false,
+        retryable: false,
+        status: response.status,
+        output: "",
+        error: `Provider response was not JSON: ${summarizeResponseBody(bodyText)}`
+      };
+    }
     const output = extractTextOutput(parsed);
     return {
       provider: provider.role,

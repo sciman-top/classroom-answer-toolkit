@@ -146,8 +146,11 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         {
             throw;
         }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException or InvalidOperationException)
+        catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException or InvalidOperationException or OperationCanceledException)
         {
+            // HttpClient's own 30s timeout surfaces as TaskCanceledException with
+            // the caller's token untouched, so the first filter does not take it;
+            // it must degrade to the Chinese status, not escape as a raw message.
             return UpdateCheckResult.Unavailable($"更新检查失败：{ex.Message}");
         }
     }

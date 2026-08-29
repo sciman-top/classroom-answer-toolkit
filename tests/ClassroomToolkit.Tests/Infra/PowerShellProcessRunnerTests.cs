@@ -56,16 +56,35 @@ public sealed class PowerShellProcessRunnerTests
     {
         var runner = new PowerShellProcessRunner();
         var clock = Stopwatch.StartNew();
-        var action = () => runner.RunAsync(
-            "pwsh",
-            ["-NoProfile", "-Command", "Start-Sleep -Seconds 30"],
-            Path.GetTempPath(),
-            timeout: TimeSpan.FromMilliseconds(500));
+        var processIdPath = Path.Combine(Path.GetTempPath(), $"runner-timeout-{Guid.NewGuid():N}.pid");
+        int? processId = null;
+        try
+        {
+            var action = () => runner.RunAsync(
+                "pwsh",
+                [
+                    "-NoProfile",
+                    "-Command",
+                    $"Set-Content -LiteralPath '{processIdPath.Replace("'", "''")}' -Value $PID; Start-Sleep -Seconds 30"
+                ],
+                Path.GetTempPath(),
+                timeout: TimeSpan.FromMilliseconds(500));
 
-        (await action.Should().ThrowAsync<TimeoutException>())
-            .Which.Message.Should().Contain("exceeded").And.Contain("pwsh").And.Contain("terminated");
-        clock.Stop();
-        clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(15));
+            (await action.Should().ThrowAsync<TimeoutException>())
+                .Which.Message.Should().Contain("exceeded").And.Contain("pwsh").And.Contain("terminated");
+            processId = await WaitForPidFileAsync(processIdPath, TimeSpan.FromSeconds(5));
+            (await WaitForProcessExitAsync(processId.Value, TimeSpan.FromSeconds(5))).Should().BeTrue("a timeout must terminate the child process");
+            clock.Stop();
+            clock.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(15));
+        }
+        finally
+        {
+            if (processId is int knownProcessId)
+            {
+                StopProcessIfRunning(knownProcessId);
+            }
+            File.Delete(processIdPath);
+        }
     }
 
     [Fact]
@@ -116,8 +135,10 @@ public sealed class PowerShellProcessRunnerTests
         var runner = new PowerShellProcessRunner();
         var clock = Stopwatch.StartNew();
         var orphanScript = Path.Combine(Path.GetTempPath(), $"orphan-{Guid.NewGuid():N}.js");
+        var orphanPidPath = Path.Combine(Path.GetTempPath(), $"orphan-{Guid.NewGuid():N}.pid");
         await File.WriteAllTextAsync(orphanScript,
-            "require('child_process').spawn(process.execPath,['-e','setTimeout(()=>{},60000)'],{detached:true,stdio:['ignore','inherit','inherit']}).unref();");
+            "const child = require('child_process').spawn(process.execPath,['-e','setTimeout(()=>{},60000)'],{detached:true,stdio:['ignore','inherit','inherit']});"
+            + $"require('node:fs').writeFileSync('{orphanPidPath.Replace("\\", "\\\\").Replace("'", "\\'")}', String(child.pid));child.unref();");
         try
         {
             var action = () => runner.RunAsync(
@@ -133,7 +154,97 @@ public sealed class PowerShellProcessRunnerTests
         }
         finally
         {
+            if (File.Exists(orphanPidPath) && int.TryParse(await File.ReadAllTextAsync(orphanPidPath), out var orphanProcessId))
+            {
+                StopProcessIfRunning(orphanProcessId);
+                await WaitForProcessExitAsync(orphanProcessId, TimeSpan.FromSeconds(5));
+            }
             File.Delete(orphanScript);
+            File.Delete(orphanPidPath);
+        }
+    }
+
+    // A cold pwsh start (AV scan, first-run JIT) can lag the 500ms timeout by a
+    // lot before the script writes its pid, so poll instead of reading once.
+    private static async Task<int> WaitForPidFileAsync(string path, TimeSpan timeout)
+    {
+        var deadline = Stopwatch.GetTimestamp() + (long)(timeout.TotalSeconds * Stopwatch.Frequency);
+        while (Stopwatch.GetTimestamp() < deadline)
+        {
+            try
+            {
+                return int.Parse(await File.ReadAllTextAsync(path));
+            }
+            catch (Exception ex) when (ex is FileNotFoundException
+                or DirectoryNotFoundException
+                or IOException
+                or FormatException)
+            {
+                // Missing, mid-write, or still empty: keep polling.
+                await Task.Delay(50);
+            }
+        }
+
+        throw new TimeoutException($"pid file was not written within {timeout.TotalSeconds:0.#}s: {path}");
+    }
+
+    private static async Task<bool> WaitForProcessExitAsync(int processId, TimeSpan timeout)
+    {
+        var deadline = Stopwatch.GetTimestamp() + (long)(timeout.TotalSeconds * Stopwatch.Frequency);
+        while (Stopwatch.GetTimestamp() < deadline)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(processId);
+                // GetProcessById can return an unrelated process when Windows
+                // recycled the pid; only a live pwsh still counts as running.
+                if (!IsAlivePowershellProcess(process))
+                {
+                    return true;
+                }
+            }
+            catch (ArgumentException)
+            {
+                return true;
+            }
+
+            await Task.Delay(50);
+        }
+
+        return false;
+    }
+
+    private static bool IsAlivePowershellProcess(Process process)
+    {
+        try
+        {
+            if (process.HasExited)
+            {
+                return false;
+            }
+
+            return process.ProcessName.StartsWith("pwsh", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            // Exit state raced the query; treat it as gone.
+            return false;
+        }
+    }
+
+    private static void StopProcessIfRunning(int processId)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            if (IsAlivePowershellProcess(process))
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch (ArgumentException)
+        {
+            // The expected teardown state is already reached.
         }
     }
 }

@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-29T12:05:53.842Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "2bf32565b9c2bddaf9237ca449703060fc89eb847ef761e63ddc4c1bdf66fede",
+  "mode": "reference_review",
+  "sourcePageCount": 18,
+  "auditImageCount": 0,
+  "referencePageCount": 4,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "reference_review",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "sol",
+      "luna"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "sol-xhigh",
+      "luna-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2015-terra-xhigh-v819-regression10\\2015广州中考视觉审计候选.md",
+  "candidateSha256": "9561448b0dcaa721a6125bb8086fd223c3992f08719c3c88cc592ad23c4cd0e2",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\source-exam-text.txt",
+  "sourceTextSha256": "b37417e2db52ca465fce04d94309455bcf3809f683fdd9f1db978014a334e2bb",
+  "referenceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\reference-answer-text.txt",
+  "referenceTextSha256": "48df78f5a9e82e71999c53258881d4ccddf003e180dd6141a4c30ce8cb545b69",
+  "pageCount": 22,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-001.png",
+      "sha256": "104db3fc34b33f995edb2c038c51fc9de639daf4e391aae75b90ea6ba74420f4",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-002.png",
+      "sha256": "e568979bf0de7987baf6b6d0c7690aaf38aec024cb961b394f31aaf543e2c42c",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-003.png",
+      "sha256": "e0c865a61790e2b8116462ffc43a87a5464cdc1f6023981c47e8f5b1779e85eb",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-004.png",
+      "sha256": "6872e1bda28117179ca23b933584c9b6c3f7eba14a067b6d4639d69d47b75f5f",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-004.q-013.focus-01.q13-figure-13-mirror-rod.png",
+      "sha256": "2bac538603d244a3e931d82e1f6e62b7ef70b3349392dcdebdd4f72dc9277498",
+      "evidenceLabel": "Source exam focused crop: Question 13 Figure 13: plane mirror, vertical rod with point A at the top, rod movement direction arrow, and horizontal ground; source page 4; question 13. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-004.q-014.focus-02.q14-figure-14-lens-rays.png",
+      "sha256": "1b690a0eafcdfa73e9f5225f7a8c3305da3865e9a0e0a6ea838d4d3c7c43ac10",
+      "evidenceLabel": "Source exam focused crop: Question 14 Figure 14: convex lens, both F marks, film with pattern, and the exact paths of the two drawn incident rays relative to F and the optical center; source page 4; question 14. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-005.png",
+      "sha256": "93c3e15b1100bc97468171d4e15adfae9b082723720af7236743795d8909b67d",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-005.q-019.focus-01.q19-figure-20-pulley.png",
+      "sha256": "bcf51f674c413c754cb0daaa3704efd322cbfbc1c9d472f762433d09d923626d",
+      "evidenceLabel": "Source exam focused crop: Question 19 Figure 20: pulley group with force F1, force F2, height h, and which parts of rope move with the load; source page 5; question 19. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-006.png",
+      "sha256": "c3e64ddfab4e05283192e9a6ee8ff6aa7a72524a2d83b05f90fe6db4f359a50c",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-007.png",
+      "sha256": "dff0a543fedae959f9ca67ece39cfcad250c4b88b6875592eb7bce0887e8f798",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-007.q-022.focus-01.q22-figure-24-spring-scale.png",
+      "sha256": "e3a76075830886dea4c4b62ff9b18caa127a7bd68c8f421c27e074046d5d2e99",
+      "evidenceLabel": "Source exam focused crop: Question 22 Figure 24 spring scale: inspect only the scale zero, tick spacing, pointer reading position, and visible hook/load indicator; source page 7; question 22. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-007.q-022.focus-02.q22-figure-25-thermometer.png",
+      "sha256": "851fc8d1e8dd864bc759d750bb09364ca511efead9d56835628b62bcfc540ede",
+      "evidenceLabel": "Source exam focused crop: Question 22 Figure 25 thermometer: inspect only the Celsius scale, minor divisions, and liquid-column top used for the reading; source page 7; question 22. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-007.q-022.focus-03.q22-figure-26-stopwatch.png",
+      "sha256": "7c0ec3eac5a3843515d255f6920aa3ace2f94e07a6e08cf41b28ba65014a5f4f",
+      "evidenceLabel": "Source exam focused crop: Question 22 Figure 26 stopwatch: inspect both dials; the top minute zero/terminal boundary reads zero until crossed, not the adjacent printed terminal number; source page 7; question 22. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-007.q-023.focus-04.q23-figure-28-voltage-meter.png",
+      "sha256": "c939f268c3075be7ecb7a439c94d2e88ae477ad39b75f9063447e20bfdf21a31",
+      "evidenceLabel": "Source exam focused crop: Question 23 Figure 28 voltage meter: inspect only this printed 0-3 V dial, its pointer, numbered scale, small divisions, and visible terminals; source page 7; question 23. Deterministic source-pixel geometry measured range 0-3 across 30 divisions, pointer at division 17 (raw 17.342), giving 1.7. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-007.q-023.focus-05.q23-figure-28-current-meter.png",
+      "sha256": "15c5ecb2eb043df9d0f8dad6bfe0017c87881393ea1cf58ee2723633d2c1a8f2",
+      "evidenceLabel": "Source exam focused crop: Question 23 Figure 28 current meter: inspect only this printed 0-0.6 A dial, its pointer, numbered scale, small divisions, and visible terminals; source page 7; question 23. Deterministic source-pixel geometry measured range 0-0.6 across 30 divisions, pointer at division 12 (raw 11.783), giving 0.24. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-008.png",
+      "sha256": "23310c54a6761d816b0dd677744bf74e39e4d2701756e38636c157e852e4bf75",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-008.q-023.focus-01.q23-figure-29-fault-wiring.png",
+      "sha256": "9230c3d9bf49d211954272b8848b97cd0a5df28c9033cfd743b396bc3e9f7320",
+      "evidenceLabel": "Source exam focused crop: Question 23 Figure 29 faulty wiring with subquestions 5-6: trace every wire from both battery poles and mark each branch node; source page 8; question 23. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\pages\\2015广州中考.page-008.q-024.focus-02.q24-figure-30-apparatus.png",
+      "sha256": "b249983fe0914c6e265dd901ec0cc3a21dc5f2de614e04c53b7d23fb3f0d0989",
+      "evidenceLabel": "Source exam focused crop: Question 24 Figure 30 apparatus: inspect the water tank, floating toy duck, water surface, and graduated cylinder available for the buoyancy method; source page 8; question 24. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\reference-pages\\2015广州中考答案.page-001.png",
+      "sha256": "c516b0e9c3a1d93dbf805b826d358c52b45582b294077dee31a39932fd6c8cfe",
+      "evidenceLabel": "Reference answer page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\reference-pages\\2015广州中考答案.page-002.png",
+      "sha256": "d1f26dc0f23d1fb75bbd8cbbc7c37425ac7a8e536258b2194152043570f04ae0",
+      "evidenceLabel": "Reference answer page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\reference-pages\\2015广州中考答案.page-003.png",
+      "sha256": "0525db6fafe0e0ba4fe55f3774f3d4dd32a38ddace1911880f42421cb0ab688c",
+      "evidenceLabel": "Reference answer page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\6102f7ed260e4077acebf3564b3c28ae\\reference-pages\\2015广州中考答案.page-004.png",
+      "sha256": "f2d32bb2b3dddbca300e1b6d0dcb92f5dc30b362d308cf3b94880504d1b428c3",
+      "evidenceLabel": "Reference answer page crop: page 4; region 1/1, horizontal tile 1/1."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2015-terra-xhigh-v819-regression10\\2015广州中考参考答案.md",
+  "outputSha256": "567d15f47819dc3aadc1271124b0f633b0a6d9237eab2ac7d6a2bd6aeaabd201",
+  "answerCharacters": 2167,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 169698,
+      "requestBytes": 5329974,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

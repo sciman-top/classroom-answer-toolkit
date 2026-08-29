@@ -262,7 +262,7 @@ function Write-JsonFileAtomic {
     try {
         [IO.File]::WriteAllText(
             $temporaryPath,
-            (($Value | ConvertTo-Json -Depth 12) + [Environment]::NewLine),
+            (($Value | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
             [Text.UTF8Encoding]::new($false))
         [IO.File]::Move($temporaryPath, $resolvedPath, $true)
     }
@@ -378,6 +378,7 @@ $referenceReviewSummaryPath = Join-Path $outputRoot "${baseName}.reference-revie
 $workflowReceiptPath = Join-Path $outputRoot "${baseName}.workflow-run.json"
 $deliveryManifestPath = Join-Path $outputRoot "${baseName}参考答案.delivery-manifest.json"
 $deliverySnapshotPath = Join-Path $outputRoot "${baseName}参考答案.snapshot.json"
+$deliveryReviewDirectory = Join-Path $outputRoot "${baseName}参考答案.review"
 $workRoot = Join-Path $env:TEMP ("classroom-answer-toolkit\live-answer-workflow\" + [Guid]::NewGuid().ToString("N"))
 $pageDirectory = Join-Path $workRoot "pages"
 $visualAuditPageDirectory = Join-Path $workRoot "visual-audit-pages"
@@ -435,6 +436,7 @@ Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
     WorkflowReceipt = $workflowReceiptPath
     DeliveryManifest = $deliveryManifestPath
     DeliverySnapshot = $deliverySnapshotPath
+    DeliveryReview = $deliveryReviewDirectory
 }
 
 $resumeProvenance = if ($resumeWorkflowReceiptPath) {
@@ -462,10 +464,11 @@ foreach ($summaryPath in @($blindSummaryPath, $semanticFindingsSummaryPath, $sem
 }
 
 # Previous-run finals must never survive into a failed rerun as a seemingly complete
-# delivery set; quarantine them under .stale-runs/<runId> before this run writes anything.
+# delivery set; this includes the delivery-owned review directory. Quarantine them
+# under .stale-runs/<runId> before this run writes anything.
 $staleRunDirectory = Join-Path $outputRoot (".stale-runs/" + $workflowRunId)
-foreach ($finalPath in @($answerMarkdownPath, $answerPdfPath, $deliveryManifestPath, $deliverySnapshotPath)) {
-    if (Test-Path -LiteralPath $finalPath -PathType Leaf) {
+foreach ($finalPath in @($answerMarkdownPath, $answerPdfPath, $deliveryManifestPath, $deliverySnapshotPath, $deliveryReviewDirectory)) {
+    if (Test-Path -LiteralPath $finalPath) {
         New-Item -ItemType Directory -Force -Path $staleRunDirectory | Out-Null
         Move-Item -LiteralPath $finalPath -Destination $staleRunDirectory -Force
     }
@@ -707,6 +710,11 @@ function New-AnswerRequestArguments {
 }
 
 try {
+    # Resume runs still execute non-reused AI phases (semantic/visual findings),
+    # so the egress override must cover every entry path, not just fresh
+    # blindGeneration; otherwise -ResumeFromWorkflowReceipt fails its first live
+    # request while the same .env works for a fresh run.
+    $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
     New-Item -ItemType Directory -Force -Path $pageDirectory | Out-Null
 
@@ -745,7 +753,6 @@ try {
     }
     else {
         Write-Host "[live-answer-workflow] generate answer Markdown from $($pageImages.Count) page(s)"
-        $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
         $currentPhase = "blindGeneration"
         $phaseStates[$currentPhase].status = "in_progress"
         Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts

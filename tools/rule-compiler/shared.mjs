@@ -61,10 +61,6 @@ export function createSnapshotId(payload) {
   return `snapshot-${sha256Hex(stableStringify(payload)).slice(0, 16)}`;
 }
 
-export function readJsonIfExists(filePath) {
-  return fs.existsSync(filePath) ? readJsonFile(filePath) : null;
-}
-
 export function listJsonFiles(directoryPath) {
   if (!fs.existsSync(directoryPath)) {
     return [];

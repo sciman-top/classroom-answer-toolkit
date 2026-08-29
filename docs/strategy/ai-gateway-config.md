@@ -55,7 +55,7 @@ pwsh -NoProfile -File scripts/manage-ai-gateway-recovery-reconciler.ps1 -Mode St
 pwsh -NoProfile -File scripts/manage-ai-gateway-recovery-reconciler.ps1 -Mode Uninstall
 ```
 
-任务名为 `ClassroomAnswerToolkit-AiGatewayRecovery`，以当前交互用户身份运行，默认持续 365 天；再次执行 `Install` 会原位更新定义。它只发送 `sol-xhigh` 的最小 `Return exactly OK.` 请求，直接调用 Cockpit API、**不占用五个业务执行槽位**。首次 probe 在 Sol 失败后的 `PRESET_COOLDOWN_MS`（默认 2 分钟）后才允许；成功后每 5 分钟复测，失败后退避至 15 分钟，并加最多 ±30 秒的抖动。必须连续 2 次精确 `OK` 才设置 `recoveryReady`；probe 不会把 `activePreset` 伪装成 Sol，下一次真实业务请求成功走 Sol 后才真正更新活动 preset。
+任务名为 `ClassroomAnswerToolkit-AiGatewayRecovery`，以 S4U 批处理登录（非交互会话，不闪控制台窗口，锁屏/未登录期间照常运行），默认持续 365 天；再次执行 `Install` 会原位更新定义。`Install`/`Uninstall` 涉及 S4U 登记类型，需要管理员权限（否则报"拒绝访问"），`Status`/`RunOnce` 不需要。它只发送低推理强度（reasoning=low、512 输出 token 上限）的最小 `Return exactly OK.` 请求（推理 token 计入输出上限，业务档位的 xhigh 会让小上限探测永远无法完成），直接调用 Cockpit API、**不占用五个业务执行槽位**。首次 probe 在 Sol 失败后的 `PRESET_COOLDOWN_MS`（默认 2 分钟）后才允许；成功后每 5 分钟复测，失败后退避至 15 分钟，并加最多 ±30 秒的抖动。必须连续 2 次精确 `OK` 才设置 `recoveryReady`；probe 不会把 `activePreset` 伪装成 Sol，下一次真实业务请求成功走 Sol 后才真正更新活动 preset。
 
 `CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_ENABLED=true` 只允许该机制运行；仍必须同时满足 `.env` 的 `CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true` 和命令行 `--allow-cloud-egress`。所有时间和阈值可用 `RECOVERY_PROBE_INTERVAL_MS`、`RECOVERY_PROBE_FAILURE_INTERVAL_MS`、`RECOVERY_PROBE_SUCCESS_THRESHOLD`、`RECOVERY_PROBE_JITTER_MS` 与 `RECOVERY_PROBE_TIMEOUT_MS` 覆盖。没有启动 `watch:recovery` 时，系统保留按业务请求的既有回退路径，但不会产生后台恢复探测。
 

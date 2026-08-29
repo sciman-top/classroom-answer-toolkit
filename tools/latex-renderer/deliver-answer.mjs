@@ -19,8 +19,8 @@ const usage = `Usage:
   npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--review-scale 2] [--skip-validate]
 
 Examples:
-  npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md"
-  npm --prefix tools/latex-renderer run deliver -- "样例交付/能量-效率参考答案.md" --keep-review
+  npm --prefix tools/latex-renderer run deliver -- "<答案.md>"
+  npm --prefix tools/latex-renderer run deliver -- "<答案.md>" --keep-review
 
 Behavior:
   1. Render the answer Markdown to PDF.

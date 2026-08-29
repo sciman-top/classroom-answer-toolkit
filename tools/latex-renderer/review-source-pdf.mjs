@@ -23,8 +23,8 @@ const usage = `Usage:
   npm run review-source-pdf -- <input.pdf> [--out <dir>] [--pages all|1,3,5-7,last] [--scale 1.8] [--vertical-tiles 2] [--question-regions] [--horizontal-tiles 2] [--tile-overlap 0.15] [--focus-regions-file <regions.json>] [--ocr chi_sim]
 
 Examples:
-  npm run review-source-pdf -- "../../样例交付/能量-效率.pdf"
-  npm run review-source-pdf -- "../../样例交付/能量-效率.pdf" --pages 1,last --scale 2
+  npm run review-source-pdf -- "../../<试卷.pdf>"
+  npm run review-source-pdf -- "../../<试卷.pdf>" --pages 1,last --scale 2
 `;
 
 function requireValue(argv, index, flag) {

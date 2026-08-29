@@ -56,3 +56,6 @@ eval/**/results/*
 # OS/editor noise
 Thumbs.db
 .DS_Store
+
+# Visual Studio editor caches
+.vs/

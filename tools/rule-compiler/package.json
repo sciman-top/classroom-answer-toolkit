@@ -7,16 +7,10 @@
     "compile:snapshot": "node compile-snapshot.mjs",
     "validate:assets": "node validate-assets.mjs",
     "validate:spec-boundary": "node validate-spec-boundary.mjs",
-    "test:spec-boundary": "node --test validate-spec-boundary.test.mjs",
     "validate:cross-subject": "node validate-cross-subject.mjs",
     "resolve:profile": "node resolve-profile.mjs",
     "validate:json": "node validate-json.mjs",
-    "test:validate-json": "node --test validate-json.test.mjs",
     "list:subject-packs": "node list-subject-packs.mjs",
-    "test:registry": "node --test subject-pack-registry.test.mjs",
-    "health": "node workspace-health.mjs",
-    "test:health": "node --test workspace-health.test.mjs",
-    "test:merge-rules": "node --test merge-rules.test.mjs",
-    "test:schema-validator": "node --test schema-validator.test.mjs"
+    "health": "node workspace-health.mjs"
   }
 }

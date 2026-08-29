@@ -65,7 +65,10 @@ foreach ($selectedSubjectPack in $selectedSubjectPacks) {
         $outputPath = Get-SubjectPackSnapshotOutputPath -SubjectPack $selectedSubjectPack -Profile $profile
         $relativeOutputPath = Get-RelativePath -BasePath $repoRoot -TargetPath $outputPath
         Invoke-GateStep ("snapshot:{0}/{1}" -f $selectedSubjectPack.AssetId, $profile) {
-            & npm --prefix tools/rule-compiler run compile:snapshot -- --subject-pack $selectedSubjectPack.AssetId --profile $profile --out $relativeOutputPath
+            # Direct node call: per-pack npm --prefix cold starts cost 1-2s each
+            # and the snapshot writer resolves --out against the repo root, not
+            # the process CWD, so the npm layer buys nothing here.
+            & node (Join-Path $repoRoot "tools/rule-compiler/compile-snapshot.mjs") --subject-pack $selectedSubjectPack.AssetId --profile $profile --out $relativeOutputPath
         } ("Snapshot compilation failed for {0}/{1}." -f $selectedSubjectPack.AssetId, $profile)
     }
 }

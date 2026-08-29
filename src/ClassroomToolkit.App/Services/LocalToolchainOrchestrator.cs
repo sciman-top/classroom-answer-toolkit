@@ -387,7 +387,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     {
         using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
         var root = document.RootElement;
-        var snapshot = root.GetProperty("snapshot");
         var review = root.GetProperty("review");
         var status = root.GetProperty("status");
         // Manifest paths may be relative to the manifest's own directory
@@ -402,10 +401,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             ResolveManifestEntryPath(manifestDirectory, root.GetProperty("output").GetString()
                 ?? throw new InvalidOperationException("Manifest output is empty.")),
             root.GetProperty("snapshotId").GetString(),
-            root.TryGetProperty("snapshotPath", out var snapshotPathElement)
-                ? ResolveManifestEntryPath(manifestDirectory, snapshotPathElement.GetString() ?? "")
-                : null,
-            snapshot.GetProperty("version").GetString(),
             root.GetProperty("profile").GetString()
                 ?? throw new InvalidOperationException("Manifest profile is empty."),
             ResolveManifestEntryPath(manifestDirectory, review.GetProperty("outputDir").GetString()
@@ -446,8 +441,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         string InputPath,
         string OutputPath,
         string? SnapshotId,
-        string? SnapshotPath,
-        string? SnapshotVersion,
         string Profile,
         string? ReviewDirectoryPath,
         bool DeliveryComplete);
