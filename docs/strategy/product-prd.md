@@ -60,7 +60,7 @@
 
 - **WPF 定位为 developer/operator companion，冻结 runtime bundle 投资。** 当前真实用户是熟悉仓库与本机工具链的开发者/维护者；冻结期间仅接受安全、兼容性、进程生命周期、诊断与合同修复，暂缓教师工作流 UI、复杂界面与 runtime packaging。runtime bundle 重立项须同时满足：明确非开发者目标用户与场景、明确运行模式（在线/离线 provider）、provider 稳定性与预算授权、运行时清单/版本/签名/升级/回滚方案、至少一次代表性非开发者试用与教师验收、并证明相对仓库伴随模式确实降低部署成本而非转移安装负担。M4 兼任产品化决策门；只有该门通过，后续里程碑才实施 runtime bundle。
 - **2026 回归基线暂不建立。** 在来源/使用权确认、是否纳入长期回归的方向决策、首次真实运行授权（约 6 次 AI 请求）、质量档与失败重试策略、blind/visual/reference/delivery 证据保留策略全部齐备前，两份 PDF 只能标记为待授权输入，不得称为 baseline，也不得把文件入库解释为回归链完成。
-- **Teacher Acceptance 保持产品未闭合项，不由工程门禁代替。** 两份既有基线均 `teacherAccepted: false`；在真实验收记录存在前，交付最高状态只能是 reference-reviewed 或相应机器验证状态。最小真实验收协议：指定教师与试卷；记录查看版本及 manifest/hash；记录接受、拒绝或修改意见；结果写回对应 workflow receipt 或独立 acceptance record；只有记录存在且绑定产物哈希才可进入 teacher-accepted。
+- **Teacher Acceptance 保持产品未闭合项，不由工程门禁代替。** `2025广州中考-original-三档复跑` 是已有真实验收记录绑定的独立交付，已可称 Teacher Accepted；`eval/real-paper` 中的 2024/2025 baseline 仍分别保持 `teacherAccepted: false`，不得把前者外推给 baseline 或未来重跑。其余交付在真实验收记录存在前，最高状态只能是 reference-reviewed 或相应机器验证状态。最小真实验收协议：指定教师与试卷；记录查看版本及 manifest/hash；记录接受、拒绝或修改意见；结果写回对应 workflow receipt 或独立 acceptance record；只有记录存在且绑定产物哈希才可进入 teacher-accepted。
 - **M4/VISION-101 维持 blocked。** authority、provider 稳定性与预算任一缺失即保持 blocked；代码准备度、mock 测试与本地门禁不能替代缺失的外部授权或运行预算。
 
 ## Success measures

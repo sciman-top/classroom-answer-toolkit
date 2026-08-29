@@ -224,7 +224,16 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
     private bool CanUpdateInstalledApplication()
     {
-        return File.Exists(Path.Combine(_applicationDirectory, "ClassroomToolkit.App.exe"))
+        // A developer build also has ClassroomToolkit.App.exe and can resolve the
+        // repository's updater. Only the preview installer owns <workspace>/app;
+        // accepting an arbitrary apphost directory would let an update replace a
+        // bin/Debug output tree rather than an installed application.
+        var expectedInstalledApplicationDirectory = Path.GetFullPath(Path.Combine(_repositoryRoot, "app"));
+        return string.Equals(
+                _applicationDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                expectedInstalledApplicationDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase)
+            && File.Exists(Path.Combine(_applicationDirectory, "ClassroomToolkit.App.exe"))
             && File.Exists(Path.Combine(_repositoryRoot, "scripts", "update-release.ps1"));
     }
 

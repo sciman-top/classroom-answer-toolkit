@@ -6,9 +6,14 @@ import path from "node:path";
 import { EXECUTION_SLOT_COUNT, MODEL_FAMILY_PREFERENCE } from "./profile-matrix.mjs";
 
 const HEALTH_FILE_NAME = "preset-health.json";
+const HEALTH_LOCK_FILE_NAME = "preset-health.lock.json";
 const SLOT_DIRECTORY_NAME = "execution-slots";
 const LEASE_GRACE_MS = 10_000;
 const SLOT_WAIT_INTERVAL_MS = 25;
+const HEALTH_LOCK_TIMEOUT_MS = 2_000;
+const HEALTH_LOCK_LEASE_MS = 10_000;
+const HEALTH_LOCK_WAIT_INTERVAL_MS = 10;
+const HEALTH_LOCK_WAIT_SIGNAL = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
 
 export const DEFAULT_PRESET_COOLDOWN_MS = 120_000;
 export const DEFAULT_RECOVERY_PROBE_INTERVAL_MS = 300_000;
@@ -58,6 +63,10 @@ function ensureRuntimeDirectory(directory) {
 
 function healthPath(config) {
   return path.join(ensureRuntimeDirectory(resolveGatewayRuntimeDirectory(config)), HEALTH_FILE_NAME);
+}
+
+function healthLockPath(config) {
+  return path.join(ensureRuntimeDirectory(resolveGatewayRuntimeDirectory(config)), HEALTH_LOCK_FILE_NAME);
 }
 
 function defaultHealthState() {
@@ -131,44 +140,120 @@ function writePresetHealth(config, value) {
   fs.renameSync(temporary, target);
 }
 
-export function recordPresetSuccess(config, preset, now = Date.now()) {
-  const health = readPresetHealth(config);
-  if (!MODEL_FAMILY_PREFERENCE.includes(preset)) {
-    return health;
+function tryAcquirePresetHealthLock(config) {
+  const filePath = healthLockPath(config);
+  const token = crypto.randomUUID();
+  const now = Date.now();
+  try {
+    const descriptor = fs.openSync(filePath, "wx");
+    try {
+      fs.writeFileSync(descriptor, JSON.stringify({
+        token,
+        pid: process.pid,
+        expiresAt: now + HEALTH_LOCK_LEASE_MS
+      }), "utf8");
+    } finally {
+      fs.closeSync(descriptor);
+    }
+  } catch (error) {
+    if (!error || typeof error !== "object" || error.code !== "EEXIST") {
+      throw error;
+    }
+    removeExpiredLease(filePath, now);
+    return null;
   }
-  health.activePreset = preset;
-  health.presets[preset] = {
-    consecutiveFailures: 0,
-    cooldownUntil: 0,
-    lastSuccessAt: now,
-    lastFailureAt: health.presets[preset].lastFailureAt,
-    recovery: health.presets[preset].recovery ?? defaultRecoveryState()
+
+  return {
+    release() {
+      const lease = readLease(filePath);
+      if (lease?.token === token) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (error) {
+          if (!error || typeof error !== "object" || error.code !== "ENOENT") {
+            throw error;
+          }
+        }
+      }
+    }
   };
-  writePresetHealth(config, health);
-  return health;
+}
+
+// Preset health steers later cross-process requests, so an atomic file replace
+// alone is insufficient: two read-modify-write operations could lose a newly
+// selected fallback preset or cooldown. This short lock is deliberately
+// separate from execution slots because it protects metadata, not business work.
+export function acquirePresetHealthLock(config, timeoutMs = HEALTH_LOCK_TIMEOUT_MS) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+    throw new Error("Preset health lock timeout must be a positive integer.");
+  }
+
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const lock = tryAcquirePresetHealthLock(config);
+    if (lock) {
+      return lock;
+    }
+
+    const remainingMs = timeoutMs - (Date.now() - startedAt);
+    Atomics.wait(HEALTH_LOCK_WAIT_SIGNAL, 0, 0, Math.min(HEALTH_LOCK_WAIT_INTERVAL_MS, Math.max(1, remainingMs)));
+  }
+
+  return null;
+}
+
+function updatePresetHealth(config, update) {
+  const lock = acquirePresetHealthLock(config);
+  if (!lock) {
+    throw new Error("Timed out waiting to update preset health state.");
+  }
+
+  try {
+    const health = readPresetHealth(config);
+    update(health);
+    writePresetHealth(config, health);
+    return health;
+  } finally {
+    lock.release();
+  }
+}
+
+export function recordPresetSuccess(config, preset, now = Date.now()) {
+  if (!MODEL_FAMILY_PREFERENCE.includes(preset)) {
+    return readPresetHealth(config);
+  }
+  return updatePresetHealth(config, (health) => {
+    health.activePreset = preset;
+    health.presets[preset] = {
+      consecutiveFailures: 0,
+      cooldownUntil: 0,
+      lastSuccessAt: now,
+      lastFailureAt: health.presets[preset].lastFailureAt,
+      recovery: health.presets[preset].recovery ?? defaultRecoveryState()
+    };
+  });
 }
 
 export function recordPresetFailure(config, preset, now = Date.now()) {
-  const health = readPresetHealth(config);
   if (!MODEL_FAMILY_PREFERENCE.includes(preset)) {
-    return health;
+    return readPresetHealth(config);
   }
-  const prior = health.presets[preset];
-  const cooldownMs = Number.isInteger(config.presetCooldownMs) && config.presetCooldownMs > 0
-    ? config.presetCooldownMs
-    : DEFAULT_PRESET_COOLDOWN_MS;
-  health.presets[preset] = {
-    consecutiveFailures: prior.consecutiveFailures + 1,
-    cooldownUntil: now + cooldownMs,
-    lastSuccessAt: prior.lastSuccessAt,
-    lastFailureAt: now,
-    recovery: defaultRecoveryState()
-  };
-  if (health.activePreset === preset) {
-    health.activePreset = null;
-  }
-  writePresetHealth(config, health);
-  return health;
+  return updatePresetHealth(config, (health) => {
+    const prior = health.presets[preset];
+    const cooldownMs = Number.isInteger(config.presetCooldownMs) && config.presetCooldownMs > 0
+      ? config.presetCooldownMs
+      : DEFAULT_PRESET_COOLDOWN_MS;
+    health.presets[preset] = {
+      consecutiveFailures: prior.consecutiveFailures + 1,
+      cooldownUntil: now + cooldownMs,
+      lastSuccessAt: prior.lastSuccessAt,
+      lastFailureAt: now,
+      recovery: defaultRecoveryState()
+    };
+    if (health.activePreset === preset) {
+      health.activePreset = null;
+    }
+  });
 }
 
 export function recoveryProbeEligibility(config, health = defaultHealthState(), now = Date.now()) {
@@ -195,32 +280,31 @@ export function recoveryProbeEligibility(config, health = defaultHealthState(), 
 }
 
 export function recordRecoveryProbeResult(config, preset, ok, now = Date.now(), random = Math.random) {
-  const health = readPresetHealth(config);
   if (!MODEL_FAMILY_PREFERENCE.includes(preset)) {
-    return health;
+    return readPresetHealth(config);
   }
-  const settings = recoverySettings(config);
-  const prior = health.presets[preset];
-  const recovery = prior.recovery ?? defaultRecoveryState();
-  const consecutiveProbeSuccesses = ok ? recovery.consecutiveProbeSuccesses + 1 : 0;
-  const jitter = settings.jitterMs === 0
-    ? 0
-    : Math.round((random() * 2 - 1) * settings.jitterMs);
-  health.presets[preset] = {
-    consecutiveFailures: ok ? prior.consecutiveFailures : prior.consecutiveFailures + 1,
-    cooldownUntil: ok ? prior.cooldownUntil : now + settings.failureIntervalMs,
-    lastSuccessAt: prior.lastSuccessAt,
-    lastFailureAt: ok ? prior.lastFailureAt : now,
-    recovery: {
-      consecutiveProbeSuccesses,
-      recoveryReady: ok && consecutiveProbeSuccesses >= settings.successThreshold,
-      lastProbeAt: now,
-      lastProbeSucceededAt: ok ? now : recovery.lastProbeSucceededAt,
-      nextProbeAt: now + (ok ? settings.intervalMs : settings.failureIntervalMs) + jitter
-    }
-  };
-  writePresetHealth(config, health);
-  return health;
+  return updatePresetHealth(config, (health) => {
+    const settings = recoverySettings(config);
+    const prior = health.presets[preset];
+    const recovery = prior.recovery ?? defaultRecoveryState();
+    const consecutiveProbeSuccesses = ok ? recovery.consecutiveProbeSuccesses + 1 : 0;
+    const jitter = settings.jitterMs === 0
+      ? 0
+      : Math.round((random() * 2 - 1) * settings.jitterMs);
+    health.presets[preset] = {
+      consecutiveFailures: ok ? prior.consecutiveFailures : prior.consecutiveFailures + 1,
+      cooldownUntil: ok ? prior.cooldownUntil : now + settings.failureIntervalMs,
+      lastSuccessAt: prior.lastSuccessAt,
+      lastFailureAt: ok ? prior.lastFailureAt : now,
+      recovery: {
+        consecutiveProbeSuccesses,
+        recoveryReady: ok && consecutiveProbeSuccesses >= settings.successThreshold,
+        lastProbeAt: now,
+        lastProbeSucceededAt: ok ? now : recovery.lastProbeSucceededAt,
+        nextProbeAt: now + (ok ? settings.intervalMs : settings.failureIntervalMs) + jitter
+      }
+    };
+  });
 }
 
 export function presetOrderForRequest(requestedPreset, health = defaultHealthState(), now = Date.now(), options = {}) {

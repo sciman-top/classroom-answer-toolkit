@@ -217,6 +217,36 @@ public sealed class ReleaseUpdateServiceTests
         }
     }
 
+    [Fact]
+    public async Task CheckAsync_SkipsSourceBuildEvenWhenItContainsAnApphostAndUpdater()
+    {
+        var repositoryRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-update-{Guid.NewGuid():N}");
+        var debugApplicationDirectory = Path.Combine(repositoryRoot, "src", "ClassroomToolkit.App", "bin", "Debug", "net10.0-windows");
+        Directory.CreateDirectory(Path.Combine(repositoryRoot, "scripts"));
+        Directory.CreateDirectory(debugApplicationDirectory);
+        File.WriteAllText(Path.Combine(repositoryRoot, "scripts", "update-release.ps1"), "# updater");
+        File.WriteAllText(Path.Combine(debugApplicationDirectory, "ClassroomToolkit.App.exe"), "debug apphost");
+        try
+        {
+            using var client = new HttpClient(new StaticResponseHandler("{}"));
+            using var service = new ReleaseUpdateService(
+                repositoryRoot,
+                debugApplicationDirectory,
+                httpClient: client,
+                currentVersion: new Version(1, 0, 0));
+
+            var result = await service.CheckAsync();
+
+            result.Succeeded.Should().BeTrue();
+            result.UpdateAvailable.Should().BeFalse();
+            result.Message.Should().Contain("源码");
+        }
+        finally
+        {
+            Directory.Delete(repositoryRoot, recursive: true);
+        }
+    }
+
     private sealed class InstalledApplicationFixture : IDisposable
     {
         public InstalledApplicationFixture()

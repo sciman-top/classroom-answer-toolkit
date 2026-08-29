@@ -158,7 +158,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             LastDeliveryManifestPath = delivery.DeliveryManifestPath;
             LastReviewDirectoryPath = delivery.ReviewDirectoryPath;
             LastSnapshotId = delivery.SnapshotId ?? string.Empty;
-            StatusMessage = "答案交付完成";
+            StatusMessage = "排版交付完成（rendered；不代表语义正确或教师验收）";
         });
     }
 

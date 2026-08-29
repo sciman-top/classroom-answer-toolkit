@@ -70,7 +70,7 @@ public sealed class MainViewModelTests
 
             await viewModel.DeliverCommand.ExecuteAsync(null);
 
-            viewModel.StatusMessage.Should().Be("答案交付完成");
+            viewModel.StatusMessage.Should().Be("排版交付完成（rendered；不代表语义正确或教师验收）");
             viewModel.LastOutputPdfPath.Should().Be(@"D:\out\answer.pdf");
             orchestrator.LastDeliveryRequest.Should().NotBeNull();
         }

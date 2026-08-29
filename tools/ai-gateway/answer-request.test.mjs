@@ -29,7 +29,7 @@ import {
   runLiveTextProbes,
   validateConfig
 } from "./validate-config.mjs";
-import { presetOrderForRequest } from "./gateway-runtime.mjs";
+import { acquirePresetHealthLock, presetOrderForRequest } from "./gateway-runtime.mjs";
 
 test("answer transport keeps the application timeout authoritative", () => {
   assert.deepEqual(resolveAnswerTransportPolicy(600000, ""), {
@@ -544,6 +544,28 @@ function spawnLeaseChild(runtimeDirectory, slots, holdMs, eventsPath) {
   });
 }
 
+function spawnPresetHealthLockChild(runtimeDirectory, holdMs, eventsPath) {
+  const runtimeModuleUrl = new URL("./gateway-runtime.mjs", import.meta.url).href;
+  const source = [
+    'import { appendFileSync } from "node:fs";',
+    `import { acquirePresetHealthLock } from ${JSON.stringify(runtimeModuleUrl)};`,
+    'const [runtimeDirectory, holdMsText, eventsPath] = process.argv.slice(1);',
+    'const lock = acquirePresetHealthLock({ runtimeDirectory }, 5000);',
+    'if (!lock) { process.exitCode = 2; } else {',
+    '  appendFileSync(eventsPath, JSON.stringify({ event: "acquire" }) + "\\n");',
+    '  await new Promise((resolve) => setTimeout(resolve, Number(holdMsText)));',
+    '  appendFileSync(eventsPath, JSON.stringify({ event: "release" }) + "\\n");',
+    '  lock.release();',
+    '}'
+  ].join("\n");
+  const child = spawn(process.execPath, ["--input-type=module", "--eval", source, runtimeDirectory, String(holdMs), eventsPath], {
+    stdio: "ignore"
+  });
+  return once(child, "exit").then(([code]) => {
+    assert.equal(code, 0);
+  });
+}
+
 function maxConcurrentLeaseEvents(eventsPath) {
   const events = readFileSync(eventsPath, "utf8")
     .trim()
@@ -579,6 +601,22 @@ test("execution leases cap concurrent independent CLI processes at the configure
       spawnLeaseChild(runtimeDirectory, [1, 2], 80, eventsPath)
     ]);
     assert.equal(maxConcurrentLeaseEvents(eventsPath), 2);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("preset-health lock serializes independent CLI processes separately from execution slots", async () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-health-lock-"));
+  const runtimeDirectory = path.join(directory, "runtime");
+  const eventsPath = path.join(directory, "health-lock-events.jsonl");
+  try {
+    writeFileSync(eventsPath, "", "utf8");
+    await Promise.all([
+      spawnPresetHealthLockChild(runtimeDirectory, 80, eventsPath),
+      spawnPresetHealthLockChild(runtimeDirectory, 80, eventsPath)
+    ]);
+    assert.equal(maxConcurrentLeaseEvents(eventsPath), 1);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
