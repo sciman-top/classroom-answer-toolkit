@@ -197,7 +197,12 @@ export function selectAnswerRoute(config, modeOrOptions = {}, target = "all", re
   const qualityProfile = resolveQualityProfile(mode, requestedQualityProfile);
   const requestedPreset = presetForProfile(qualityProfile);
   const requestedTier = tierForProfile(qualityProfile);
-  const presetRoutes = presetOrderForRequest(requestedPreset, presetHealth ?? undefined).map((preset) => {
+  const presetRoutes = presetOrderForRequest(
+    requestedPreset,
+    presetHealth ?? undefined,
+    undefined,
+    { recoveryProbeEnabled: config.recoveryProbeEnabled === true }
+  ).map((preset) => {
     const resolvedQualityProfile = profileForPresetTier(preset, requestedTier);
     const providers = resolvedQualityProfile
       ? providersForPresetProfile(config, preset, resolvedQualityProfile, target)

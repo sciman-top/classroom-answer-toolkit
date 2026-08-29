@@ -37,6 +37,28 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
 
 `probe:text --provider all` 在显式 preset-slot 配置下会通过每个去重后的连接依次验证全部 9 个 profile 的 model/effort 投影，并返回各 preset 中首个匹配槽位；它是能力探测，不是答案正确性验收。`/v1/models` 只证明模型标识可见，不能替代 effort 组合的请求探测。
 
+## Sol 恢复探测器
+
+当 `Terra-only` 或 `Luna-only` 因 Sol 故障成为活动 preset 时，可由独立的 recovery reconciler 低频确认 Sol 是否恢复：
+
+```powershell
+npm --prefix tools/ai-gateway run reconcile:recovery -- --allow-cloud-egress
+# 持续运行；适合临时的前台观察。
+npm --prefix tools/ai-gateway run watch:recovery -- --allow-cloud-egress
+```
+
+将自动运行投影到当前 Windows 用户时，使用可逆的 PowerShell 7 入口；它每分钟执行一次本地状态检查，只有 deadline 到期才会实际请求 Sol：
+
+```powershell
+pwsh -NoProfile -File scripts/manage-ai-gateway-recovery-reconciler.ps1 -Mode Install -StartNow
+pwsh -NoProfile -File scripts/manage-ai-gateway-recovery-reconciler.ps1 -Mode Status
+pwsh -NoProfile -File scripts/manage-ai-gateway-recovery-reconciler.ps1 -Mode Uninstall
+```
+
+任务名为 `ClassroomAnswerToolkit-AiGatewayRecovery`，以当前交互用户身份运行，默认持续 365 天；再次执行 `Install` 会原位更新定义。它只发送 `sol-xhigh` 的最小 `Return exactly OK.` 请求，直接调用 Cockpit API、**不占用五个业务执行槽位**。首次 probe 在 Sol 失败后的 `PRESET_COOLDOWN_MS`（默认 2 分钟）后才允许；成功后每 5 分钟复测，失败后退避至 15 分钟，并加最多 ±30 秒的抖动。必须连续 2 次精确 `OK` 才设置 `recoveryReady`；probe 不会把 `activePreset` 伪装成 Sol，下一次真实业务请求成功走 Sol 后才真正更新活动 preset。
+
+`CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_ENABLED=true` 只允许该机制运行；仍必须同时满足 `.env` 的 `CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true` 和命令行 `--allow-cloud-egress`。所有时间和阈值可用 `RECOVERY_PROBE_INTERVAL_MS`、`RECOVERY_PROBE_FAILURE_INTERVAL_MS`、`RECOVERY_PROBE_SUCCESS_THRESHOLD`、`RECOVERY_PROBE_JITTER_MS` 与 `RECOVERY_PROBE_TIMEOUT_MS` 覆盖。没有启动 `watch:recovery` 时，系统保留按业务请求的既有回退路径，但不会产生后台恢复探测。
+
 `--timeout-ms` 是每次 attempt 从进入槽位队列开始计算的应用层 AbortController 总上限，默认 600 秒。槽位等待耗尽时会生成带 `EXECUTION_SLOT_TIMEOUT` 语义的 retryable attempt，并继续按既定模型族链路处理，不会无限排队。gateway 显式把 Undici `headersTimeout` 和 `bodyTimeout` 设为该值加 5 秒，使应用层计时器成为权威截止线，避免默认约 300 秒的响应头上限提前截断长推理。连接建立仍使用 Undici 的短超时。启用工作流 `-UseGatewayProxy` 时使用 `EnvHttpProxyAgent`，保持 `HTTP_PROXY`、`HTTPS_PROXY` 和 `NO_PROXY` 语义。
 
 `--provider primary|fallback|all` 过滤 preset 内的连接角色：`primary` 只请求主角色，`fallback` 只请求 fallback 角色，`all` 按 preset 优先级和角色顺序使用候选。provider 本地拒绝（401/403/404/405/413，即该 endpoint 自身的 key/URL/payload 问题）不终止整条链，改为继续尝试下一连接或下一 preset；其余非 retryable 失败仍 fail closed。页数、题型和风险信号不改变默认 preset 优先级。成功回执的 `routing` 明确记录 `requestedPreset`、`resolvedPreset`、实际唯一的 `activePreset`、请求与实际 quality profile、实际 `orderedPresets`、`orderedRoles`、`orderedExecutionSlots`、`selectedRole`、实际 `executionSlot` 和 target，不记录密钥；实际切到另一 preset 或不同推理档时 `qualityDegraded=true`。每个 attempt 同时记录实际 preset、profile、slot、model 和 reasoning effort。

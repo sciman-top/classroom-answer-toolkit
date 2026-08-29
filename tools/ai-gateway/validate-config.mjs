@@ -208,6 +208,11 @@ function boolValue(value) {
   return ["1", "true", "yes", "on"].includes(String(value ?? "").trim().toLowerCase());
 }
 
+function numberOrDefault(env, key, fallback) {
+  const value = get(env, key);
+  return value.length === 0 ? fallback : Number(value);
+}
+
 function readAiProvider(env, role, canonicalPrefix, legacyPrefix, inherited = null) {
   const hasCanonical = hasAny(env, `${canonicalPrefix}_`);
   const hasLegacy = hasAny(env, `${legacyPrefix}_`);
@@ -327,9 +332,15 @@ export function normalizeConfig(env) {
 
   return {
     cloudEgressEnabled: boolValue(get(env, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED")),
-    executionSlotCount: Number(get(env, "CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT") || DEFAULT_EXECUTION_SLOT_COUNT),
+    executionSlotCount: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT", DEFAULT_EXECUTION_SLOT_COUNT),
     runtimeDirectory: get(env, "CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY"),
-    presetCooldownMs: Number(get(env, "CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS") || 120000),
+    presetCooldownMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS", 120000),
+    recoveryProbeEnabled: boolValue(get(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_ENABLED")),
+    recoveryProbeIntervalMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_INTERVAL_MS", 300000),
+    recoveryProbeFailureIntervalMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_FAILURE_INTERVAL_MS", 900000),
+    recoveryProbeSuccessThreshold: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_SUCCESS_THRESHOLD", 2),
+    recoveryProbeJitterMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_JITTER_MS", 30000),
+    recoveryProbeTimeoutMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_TIMEOUT_MS", 10000),
     presetSlotBindings: presetSlotConfig.bindings,
     presetSlotsExplicit: presetSlotConfig.explicit,
     presetSlotErrors: presetSlotConfig.errors,
@@ -354,6 +365,24 @@ export function validateConfig(config, options, parseErrors) {
       || config.presetCooldownMs < 1000
       || config.presetCooldownMs > 3_600_000) {
     errors.push("AI preset cooldown must be an integer between 1000 and 3600000 milliseconds.");
+  }
+  for (const [key, value, minimum, maximum] of [
+    ["AI recovery probe interval", config.recoveryProbeIntervalMs, 60_000, 3_600_000],
+    ["AI recovery probe failure interval", config.recoveryProbeFailureIntervalMs, 60_000, 3_600_000],
+    ["AI recovery probe jitter", config.recoveryProbeJitterMs, 0, 300_000],
+    ["AI recovery probe timeout", config.recoveryProbeTimeoutMs, 1_000, 120_000]
+  ]) {
+    if (!Number.isInteger(value) || value < minimum || value > maximum) {
+      errors.push(`${key} must be an integer between ${minimum} and ${maximum} milliseconds.`);
+    }
+  }
+  if (!Number.isInteger(config.recoveryProbeSuccessThreshold)
+      || config.recoveryProbeSuccessThreshold < 1
+      || config.recoveryProbeSuccessThreshold > 5) {
+    errors.push("AI recovery probe success threshold must be an integer between 1 and 5.");
+  }
+  if (config.recoveryProbeFailureIntervalMs < config.recoveryProbeIntervalMs) {
+    errors.push("AI recovery probe failure interval must be greater than or equal to the normal interval.");
   }
   if (config.presetSlotsExplicit === true && config.executionSlotCount !== DEFAULT_EXECUTION_SLOT_COUNT) {
     errors.push(`AI execution slot count must be ${DEFAULT_EXECUTION_SLOT_COUNT} when preset slot bindings are configured.`);
@@ -525,6 +554,7 @@ function printHumanSummary(options, config, validation, liveResults = []) {
   console.log(`- cloud egress: ${config.cloudEgressEnabled ? "enabled" : "disabled"}`);
   console.log(`- execution slots: ${config.executionSlotCount}`);
   console.log(`- preset cooldown: ${config.presetCooldownMs}ms`);
+  console.log(`- recovery probe: ${config.recoveryProbeEnabled ? "enabled" : "disabled"}, interval=${config.recoveryProbeIntervalMs}ms, failureInterval=${config.recoveryProbeFailureIntervalMs}ms, successes=${config.recoveryProbeSuccessThreshold}, jitter=${config.recoveryProbeJitterMs}ms, timeout=${config.recoveryProbeTimeoutMs}ms`);
   console.log(`- preset slot bindings: ${JSON.stringify(config.presetSlotBindings)}`);
   for (const provider of config.providers) {
     const summary = summarizeProvider(provider);
@@ -1057,6 +1087,12 @@ export async function main() {
       executionSlotCount: config.executionSlotCount,
       runtimeDirectory: config.runtimeDirectory || null,
       presetCooldownMs: config.presetCooldownMs,
+      recoveryProbeEnabled: config.recoveryProbeEnabled,
+      recoveryProbeIntervalMs: config.recoveryProbeIntervalMs,
+      recoveryProbeFailureIntervalMs: config.recoveryProbeFailureIntervalMs,
+      recoveryProbeSuccessThreshold: config.recoveryProbeSuccessThreshold,
+      recoveryProbeJitterMs: config.recoveryProbeJitterMs,
+      recoveryProbeTimeoutMs: config.recoveryProbeTimeoutMs,
       presetSlotBindings: config.presetSlotBindings,
       presetSlotsExplicit: config.presetSlotsExplicit,
       providers: config.providers.map(summarizeProvider),

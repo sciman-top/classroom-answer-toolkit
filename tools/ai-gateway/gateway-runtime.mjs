@@ -11,6 +11,37 @@ const LEASE_GRACE_MS = 10_000;
 const SLOT_WAIT_INTERVAL_MS = 25;
 
 export const DEFAULT_PRESET_COOLDOWN_MS = 120_000;
+export const DEFAULT_RECOVERY_PROBE_INTERVAL_MS = 300_000;
+export const DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS = 900_000;
+export const DEFAULT_RECOVERY_PROBE_SUCCESS_THRESHOLD = 2;
+export const DEFAULT_RECOVERY_PROBE_JITTER_MS = 30_000;
+
+function defaultRecoveryState() {
+  return {
+    consecutiveProbeSuccesses: 0,
+    recoveryReady: false,
+    lastProbeAt: null,
+    lastProbeSucceededAt: null,
+    nextProbeAt: null
+  };
+}
+
+function recoverySettings(config = {}) {
+  return {
+    intervalMs: Number.isInteger(config.recoveryProbeIntervalMs) && config.recoveryProbeIntervalMs > 0
+      ? config.recoveryProbeIntervalMs
+      : DEFAULT_RECOVERY_PROBE_INTERVAL_MS,
+    failureIntervalMs: Number.isInteger(config.recoveryProbeFailureIntervalMs) && config.recoveryProbeFailureIntervalMs > 0
+      ? config.recoveryProbeFailureIntervalMs
+      : DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS,
+    successThreshold: Number.isInteger(config.recoveryProbeSuccessThreshold) && config.recoveryProbeSuccessThreshold > 0
+      ? config.recoveryProbeSuccessThreshold
+      : DEFAULT_RECOVERY_PROBE_SUCCESS_THRESHOLD,
+    jitterMs: Number.isInteger(config.recoveryProbeJitterMs) && config.recoveryProbeJitterMs >= 0
+      ? config.recoveryProbeJitterMs
+      : DEFAULT_RECOVERY_PROBE_JITTER_MS
+  };
+}
 
 function defaultRuntimeDirectory() {
   return path.join(os.tmpdir(), "classroom-answer-toolkit-ai-gateway");
@@ -31,7 +62,7 @@ function healthPath(config) {
 
 function defaultHealthState() {
   return {
-    version: 1,
+    version: 2,
     activePreset: null,
     presets: Object.fromEntries(MODEL_FAMILY_PREFERENCE.map((preset) => [preset, {
       consecutiveFailures: 0,
@@ -44,7 +75,7 @@ function defaultHealthState() {
 
 function normalizeHealthState(value) {
   const defaults = defaultHealthState();
-  if (!value || typeof value !== "object" || value.version !== 1) {
+  if (!value || typeof value !== "object" || ![1, 2].includes(value.version)) {
     return defaults;
   }
   const presets = {};
@@ -58,11 +89,23 @@ function normalizeHealthState(value) {
         ? source.cooldownUntil
         : 0,
       lastSuccessAt: Number.isFinite(source.lastSuccessAt) ? source.lastSuccessAt : null,
-      lastFailureAt: Number.isFinite(source.lastFailureAt) ? source.lastFailureAt : null
+      lastFailureAt: Number.isFinite(source.lastFailureAt) ? source.lastFailureAt : null,
+      recovery: {
+        consecutiveProbeSuccesses: Number.isInteger(source.recovery?.consecutiveProbeSuccesses)
+          && source.recovery.consecutiveProbeSuccesses >= 0
+          ? source.recovery.consecutiveProbeSuccesses
+          : 0,
+        recoveryReady: source.recovery?.recoveryReady === true,
+        lastProbeAt: Number.isFinite(source.recovery?.lastProbeAt) ? source.recovery.lastProbeAt : null,
+        lastProbeSucceededAt: Number.isFinite(source.recovery?.lastProbeSucceededAt)
+          ? source.recovery.lastProbeSucceededAt
+          : null,
+        nextProbeAt: Number.isFinite(source.recovery?.nextProbeAt) ? source.recovery.nextProbeAt : null
+      }
     };
   }
   return {
-    version: 1,
+    version: 2,
     activePreset: MODEL_FAMILY_PREFERENCE.includes(value.activePreset) ? value.activePreset : null,
     presets
   };
@@ -98,7 +141,8 @@ export function recordPresetSuccess(config, preset, now = Date.now()) {
     consecutiveFailures: 0,
     cooldownUntil: 0,
     lastSuccessAt: now,
-    lastFailureAt: health.presets[preset].lastFailureAt
+    lastFailureAt: health.presets[preset].lastFailureAt,
+    recovery: health.presets[preset].recovery ?? defaultRecoveryState()
   };
   writePresetHealth(config, health);
   return health;
@@ -117,7 +161,8 @@ export function recordPresetFailure(config, preset, now = Date.now()) {
     consecutiveFailures: prior.consecutiveFailures + 1,
     cooldownUntil: now + cooldownMs,
     lastSuccessAt: prior.lastSuccessAt,
-    lastFailureAt: now
+    lastFailureAt: now,
+    recovery: defaultRecoveryState()
   };
   if (health.activePreset === preset) {
     health.activePreset = null;
@@ -126,7 +171,59 @@ export function recordPresetFailure(config, preset, now = Date.now()) {
   return health;
 }
 
-export function presetOrderForRequest(requestedPreset, health = defaultHealthState(), now = Date.now()) {
+export function recoveryProbeEligibility(config, health = defaultHealthState(), now = Date.now()) {
+  if (config.recoveryProbeEnabled !== true) {
+    return { due: false, reason: "disabled", nextProbeAt: null };
+  }
+  if (!health.activePreset || health.activePreset === "sol") {
+    return { due: false, reason: "sol-not-degraded", nextProbeAt: null };
+  }
+  const sol = health.presets?.sol ?? {};
+  const recovery = sol.recovery ?? defaultRecoveryState();
+  if (recovery.recoveryReady) {
+    return { due: false, reason: "sol-ready", nextProbeAt: null };
+  }
+  const nextProbeAt = recovery.nextProbeAt
+    ?? (recovery.lastProbeAt !== null
+      ? recovery.lastProbeAt + recoverySettings(config).failureIntervalMs
+      : Math.max(sol.cooldownUntil ?? 0, now));
+  return {
+    due: now >= nextProbeAt,
+    reason: now >= nextProbeAt ? "due" : "waiting",
+    nextProbeAt
+  };
+}
+
+export function recordRecoveryProbeResult(config, preset, ok, now = Date.now(), random = Math.random) {
+  const health = readPresetHealth(config);
+  if (!MODEL_FAMILY_PREFERENCE.includes(preset)) {
+    return health;
+  }
+  const settings = recoverySettings(config);
+  const prior = health.presets[preset];
+  const recovery = prior.recovery ?? defaultRecoveryState();
+  const consecutiveProbeSuccesses = ok ? recovery.consecutiveProbeSuccesses + 1 : 0;
+  const jitter = settings.jitterMs === 0
+    ? 0
+    : Math.round((random() * 2 - 1) * settings.jitterMs);
+  health.presets[preset] = {
+    consecutiveFailures: ok ? prior.consecutiveFailures : prior.consecutiveFailures + 1,
+    cooldownUntil: ok ? prior.cooldownUntil : now + settings.failureIntervalMs,
+    lastSuccessAt: prior.lastSuccessAt,
+    lastFailureAt: ok ? prior.lastFailureAt : now,
+    recovery: {
+      consecutiveProbeSuccesses,
+      recoveryReady: ok && consecutiveProbeSuccesses >= settings.successThreshold,
+      lastProbeAt: now,
+      lastProbeSucceededAt: ok ? now : recovery.lastProbeSucceededAt,
+      nextProbeAt: now + (ok ? settings.intervalMs : settings.failureIntervalMs) + jitter
+    }
+  };
+  writePresetHealth(config, health);
+  return health;
+}
+
+export function presetOrderForRequest(requestedPreset, health = defaultHealthState(), now = Date.now(), options = {}) {
   const canonical = [requestedPreset, ...MODEL_FAMILY_PREFERENCE.filter((preset) => preset !== requestedPreset)];
   const ready = canonical.filter((preset) => (health.presets?.[preset]?.cooldownUntil ?? 0) <= now);
   const cooling = canonical.filter((preset) => !ready.includes(preset));
@@ -134,7 +231,12 @@ export function presetOrderForRequest(requestedPreset, health = defaultHealthSta
     return canonical;
   }
   const active = health.activePreset;
-  if (active && ready.includes(active) && cooling.includes(requestedPreset)) {
+  const recoveryPending = options.recoveryProbeEnabled === true
+    && requestedPreset === "sol"
+    && active
+    && active !== "sol"
+    && health.presets?.sol?.recovery?.recoveryReady !== true;
+  if (active && ready.includes(active) && (cooling.includes(requestedPreset) || recoveryPending)) {
     // A healthy fallback suppresses an unnecessary Sol probe at request start.
     // If it fails, however, recovery must re-probe Sol before Luna even while
     // Sol's prior cooldown has not elapsed.

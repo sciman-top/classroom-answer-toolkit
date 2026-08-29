@@ -8,7 +8,9 @@
     "validate:config": "node validate-config.mjs",
     "probe:text": "node validate-config.mjs --live text --provider all",
     "request:text": "node text-request.mjs",
-    "test:answer": "node --test answer-request.test.mjs answer-request.e2e.test.mjs validate-config.inherit.test.mjs answer-diff-report.test.mjs",
+    "reconcile:recovery": "node recovery-reconciler.mjs --once",
+    "watch:recovery": "node recovery-reconciler.mjs --watch",
+    "test:answer": "node --test answer-request.test.mjs answer-request.e2e.test.mjs recovery-reconciler.test.mjs validate-config.inherit.test.mjs answer-diff-report.test.mjs",
     "report:answer-diff": "node answer-diff-report.mjs"
   },
   "dependencies": {
