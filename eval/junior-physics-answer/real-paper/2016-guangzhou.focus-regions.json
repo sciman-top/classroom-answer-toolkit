@@ -3,6 +3,26 @@
   "sourcePdfSha256": "377de2f0a5c7c8a35bff908ac5a4527b671702ac4265bf9d9728e531ae541cee",
   "regions": [
     {
+      "id": "q11-figure-7-u-tube-airflow-four-cases",
+      "label": "Question 11 Figure 7: all four U-tube cases, which tube mouth each airflow/inflation/extraction acts on, and which side rises with height h",
+      "page": 3,
+      "questionNumber": 11,
+      "x": 0.15,
+      "y": 0.13,
+      "width": 0.72,
+      "height": 0.24
+    },
+    {
+      "id": "q13-figure-11-lens-imaging",
+      "label": "Question 13(2) Figure 11: inspect the convex lens, both F marks, and the exact position of object MN relative to F and 2F before judging magnification",
+      "page": 3,
+      "questionNumber": 13,
+      "x": 0.40,
+      "y": 0.74,
+      "width": 0.50,
+      "height": 0.20
+    },
+    {
       "id": "q21-figures-20-21-circuit-table-graph",
       "label": "Question 21 Figures 20 and 21: inspect the R1-R2 circuit, Table 2, U-I graph, and the separately stated 0.2 A and 0.4 A conditions",
       "page": 6,

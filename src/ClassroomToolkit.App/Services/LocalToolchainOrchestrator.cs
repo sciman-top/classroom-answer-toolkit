@@ -80,6 +80,13 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
 
             return ReadHealthReport(process.StandardOutput, workspace, subjectPack);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // A superseded health probe or app shutdown must be able to stop the
+            // Node child process. Treating it as a degraded report keeps obsolete
+            // probes running and overwrites the newest workspace state later.
+            throw;
+        }
         catch (Exception ex) when (ex is InvalidOperationException or TimeoutException or OperationCanceledException
             or IOException or JsonException)
         {

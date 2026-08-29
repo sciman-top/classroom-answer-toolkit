@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "sourcePdfSha256": "ab627c5c8ad8ca3b3c808a84fb568d265f80a7a50e952a03b06adc6447a27aa7",
+  "regions": [
+    {
+      "id": "q13-figures-a-b-bottles-and-optical-path",
+      "label": "Question 13 Figures a and b: inspect the thick/thin tube bottle thermometers and the laser-two-mirror optical path with screen point P",
+      "page": 5,
+      "questionNumber": 13,
+      "x": 0.04,
+      "y": 0.06,
+      "width": 0.40,
+      "height": 0.32
+    },
+    {
+      "id": "q14-figure-plate-lever",
+      "label": "Question 14 plate-carrying figure: inspect hand contact point A, pivot O, points B and C, and the plate geometry",
+      "page": 5,
+      "questionNumber": 14,
+      "x": 0.06,
+      "y": 0.47,
+      "width": 0.58,
+      "height": 0.13
+    },
+    {
+      "id": "q16-figure-rotary-switch-motor",
+      "label": "Question 16 rotary model figure: inspect motor terminals P and Q, electromagnet, pawl, OFF/I/II dial contacts I and II, steel wire, and clothes-drying rod",
+      "page": 6,
+      "questionNumber": 16,
+      "x": 0.06,
+      "y": 0.42,
+      "width": 0.52,
+      "height": 0.16
+    },
+    {
+      "id": "q17-figures-a-b-c-circuit-ammeter-holder",
+      "label": "Question 17 Figures a, b, c: rheostat terminals A/B and slider P, wires 1 and 2, meter ranges, the 0-0.6 A dial pointer, and the bare bulb holder",
+      "page": 7,
+      "questionNumber": 17,
+      "x": 0.04,
+      "y": 0.055,
+      "width": 0.65,
+      "height": 0.13
+    },
+    {
+      "id": "q18-figures-a-b-dryice-ruler",
+      "label": "Question 18 Figures a and b: inspect the dry-ice package and the ruler scale showing 0 to 2 cm with minor divisions and the ice block edge positions",
+      "page": 7,
+      "questionNumber": 18,
+      "x": 0.04,
+      "y": 0.79,
+      "width": 0.75,
+      "height": 0.11
+    }
+  ]
+}

@@ -142,6 +142,59 @@ public sealed class ReleaseUpdateServiceTests
         result.Message.Should().Contain("GitHub");
     }
 
+    [Theory]
+    [InlineData("not-a-sha256", 123L, "SHA-256")]
+    [InlineData("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0L, "大小")]
+    public async Task CheckAsync_RejectsInvalidPackageIntegrityMetadata(string sha256, long bytes, string expectedMessage)
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StaticResponseHandler($$"""
+            {
+              "version":"1.0.1",
+              "assets":[
+                {
+                  "kind":"app",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+                  "sha256":"{{sha256}}",
+                  "bytes":{{bytes}}
+                }
+              ]
+            }
+            """));
+        using var service = new ReleaseUpdateService(
+            fixture.RepositoryRoot,
+            fixture.AppDirectory,
+            "https://github.com/sciman-top/classroom-answer-toolkit/releases/latest/download/update-manifest.json",
+            client,
+            new Version(1, 0, 0));
+
+        var result = await service.CheckAsync();
+
+        result.Succeeded.Should().BeFalse();
+        result.UpdateAvailable.Should().BeFalse();
+        result.Update.Should().BeNull();
+        result.Message.Should().Contain(expectedMessage);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RefusesInvalidPackageMetadataBeforeStartingTheUpdater()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory);
+
+        var result = await service.InstallAsync(new UpdateInfo(
+            "1.0.1",
+            "1",
+            string.Empty,
+            "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+            "not-a-sha256",
+            123,
+            string.Empty));
+
+        result.Started.Should().BeFalse();
+        result.Message.Should().Contain("SHA-256");
+    }
+
     [Fact]
     public async Task CheckAsync_SkipsSourceWorkspaceWithoutInstalledApplication()
     {

@@ -56,6 +56,21 @@ public sealed class LocalToolchainOrchestratorTests
     }
 
     [Fact]
+    public async Task GetWorkspaceHealthReportAsync_PropagatesCallerCancellation()
+    {
+        using var workspace = new TemporaryWorkspace();
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            new CanceledHealthRunner());
+
+        var action = () => orchestrator.GetWorkspaceHealthReportAsync(cancellationToken: cancellation.Token);
+
+        await action.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
     public async Task DeliverInvokesRendererAndReadsManifest()
     {
         using var workspace = new TemporaryWorkspace();
@@ -261,6 +276,16 @@ public sealed class LocalToolchainOrchestratorTests
               .Replace(pdfPath, Path.GetFileName(pdfPath)));
             return Task.FromResult(new ProcessRunResult(0, "ok", ""));
         }
+    }
+
+    private sealed class CanceledHealthRunner : IProcessRunner
+    {
+        public Task<ProcessRunResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            string workingDirectory,
+            CancellationToken cancellationToken = default,
+            TimeSpan? timeout = null) => Task.FromCanceled<ProcessRunResult>(cancellationToken);
     }
 
     private sealed class TemporaryWorkspace : IDisposable

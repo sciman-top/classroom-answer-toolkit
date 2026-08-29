@@ -75,6 +75,56 @@
         "pointerRadiusMax": 0.58,
         "darkThreshold": 90
       }
+    },
+    {
+      "id": "q23-figure-29-fault-wiring",
+      "label": "Question 23 Figure 29 faulty wiring with subquestions 5-6: trace every wire from both battery poles and mark each branch node",
+      "page": 8,
+      "questionNumber": 23,
+      "x": 0.12,
+      "y": 0.10,
+      "width": 0.56,
+      "height": 0.27
+    },
+    {
+      "id": "q24-figure-30-apparatus",
+      "label": "Question 24 Figure 30 apparatus: inspect the water tank, floating toy duck, water surface, and graduated cylinder available for the buoyancy method",
+      "page": 8,
+      "questionNumber": 24,
+      "x": 0.50,
+      "y": 0.44,
+      "width": 0.42,
+      "height": 0.17
+    },
+    {
+      "id": "q13-figure-13-mirror-rod",
+      "label": "Question 13 Figure 13: plane mirror, vertical rod with point A at the top, rod movement direction arrow, and horizontal ground",
+      "page": 4,
+      "questionNumber": 13,
+      "x": 0.53,
+      "y": 0.44,
+      "width": 0.40,
+      "height": 0.14
+    },
+    {
+      "id": "q14-figure-14-lens-rays",
+      "label": "Question 14 Figure 14: convex lens, both F marks, film with pattern, and the exact paths of the two drawn incident rays relative to F and the optical center",
+      "page": 4,
+      "questionNumber": 14,
+      "x": 0.11,
+      "y": 0.71,
+      "width": 0.32,
+      "height": 0.11
+    },
+    {
+      "id": "q19-figure-20-pulley",
+      "label": "Question 19 Figure 20: pulley group with force F1, force F2, height h, and which parts of rope move with the load",
+      "page": 5,
+      "questionNumber": 19,
+      "x": 0.45,
+      "y": 0.60,
+      "width": 0.25,
+      "height": 0.18
     }
   ]
 }

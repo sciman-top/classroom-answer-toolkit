@@ -122,16 +122,15 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             }
 
             var asset = manifest.Assets?.FirstOrDefault(item => string.Equals(item.Kind, "app", StringComparison.OrdinalIgnoreCase));
-            if (asset is null || string.IsNullOrWhiteSpace(asset.Url) || string.IsNullOrWhiteSpace(asset.Sha256))
+            if (asset is null)
             {
-                return UpdateCheckResult.Unavailable("更新清单缺少 app 下载资产或 SHA-256");
+                return UpdateCheckResult.Unavailable("更新清单缺少 app 下载资产");
             }
 
-            if (!Uri.TryCreate(asset.Url, UriKind.Absolute, out var assetUri)
-                || assetUri.Scheme != Uri.UriSchemeHttps
-                || !IsAllowedDownloadHost(assetUri.Host))
+            var packageValidationError = ValidateUpdatePackage(asset.Url, asset.Sha256, asset.Bytes);
+            if (packageValidationError is not null)
             {
-                return UpdateCheckResult.Unavailable("更新资产 URL 不是允许的 HTTPS GitHub 地址");
+                return UpdateCheckResult.Unavailable(packageValidationError);
             }
 
             return UpdateCheckResult.Available(new UpdateInfo(
@@ -139,7 +138,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 targetWorkspaceContract,
                 manifest.ReleaseUrl ?? string.Empty,
                 asset.Url!,
-                asset.Sha256.ToLowerInvariant(),
+                asset.Sha256!.ToLowerInvariant(),
                 asset.Bytes,
                 manifest.ReleaseNotes ?? string.Empty));
         }
@@ -161,6 +160,15 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         if (!CanUpdateInstalledApplication())
         {
             return Task.FromResult(new UpdateInstallResult(false, "当前不是可更新的安装版目录"));
+        }
+
+        var packageValidationError = ValidateUpdatePackage(
+            update.PackageUrl,
+            update.PackageSha256,
+            update.PackageBytes);
+        if (packageValidationError is not null)
+        {
+            return Task.FromResult(new UpdateInstallResult(false, packageValidationError));
         }
 
         var updaterScript = Path.Combine(_repositoryRoot, "scripts", "update-release.ps1");
@@ -277,6 +285,28 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
         || host.Equals("objects.githubusercontent.com", StringComparison.OrdinalIgnoreCase)
         || host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase);
+
+    private static string? ValidateUpdatePackage(string? packageUrl, string? sha256, long bytes)
+    {
+        if (string.IsNullOrWhiteSpace(packageUrl) || string.IsNullOrWhiteSpace(sha256))
+        {
+            return "更新清单缺少 app 下载资产或 SHA-256";
+        }
+
+        if (!Uri.TryCreate(packageUrl, UriKind.Absolute, out var packageUri)
+            || packageUri.Scheme != Uri.UriSchemeHttps
+            || !IsAllowedDownloadHost(packageUri.Host))
+        {
+            return "更新资产 URL 不是允许的 HTTPS GitHub 地址";
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(sha256, "^[A-Fa-f0-9]{64}$"))
+        {
+            return "更新资产 SHA-256 格式无效";
+        }
+
+        return bytes > 0 ? null : "更新资产大小必须为正数";
+    }
 
     private static HttpClient CreateHttpClient()
     {

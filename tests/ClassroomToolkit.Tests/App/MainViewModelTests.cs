@@ -41,6 +41,21 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task SelectingAnotherSubjectPack_CancelsTheSupersededHealthProbe()
+    {
+        var orchestrator = new FakeOrchestrator(blockInitialHealth: true);
+        using var viewModel = new MainViewModel(orchestrator, new FakePathOpener());
+        await orchestrator.InitialHealthStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        viewModel.SelectedSubjectPack = "math-answer";
+
+        await orchestrator.InitialHealthCanceled.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        await orchestrator.LatestHealthCompleted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        orchestrator.LastHealthSubjectPack.Should().Be("math-answer");
+        viewModel.StatusCards[0].Detail.Should().Be("math-answer");
+    }
+
+    [Fact]
     public async Task DeliverUpdatesOutputArtifacts()
     {
         var markdownPath = Path.GetTempFileName();
@@ -96,17 +111,26 @@ public sealed class MainViewModelTests
         private readonly bool _blockCheck;
         private readonly string _checkOutput;
         private readonly bool _throwOnWorkspaceInfo;
+        private readonly bool _blockInitialHealth;
 
-        public FakeOrchestrator(bool blockCheck = false, string checkOutput = "ok", bool throwOnWorkspaceInfo = false)
+        public FakeOrchestrator(
+            bool blockCheck = false,
+            string checkOutput = "ok",
+            bool throwOnWorkspaceInfo = false,
+            bool blockInitialHealth = false)
         {
             _blockCheck = blockCheck;
             _checkOutput = checkOutput;
             _throwOnWorkspaceInfo = throwOnWorkspaceInfo;
+            _blockInitialHealth = blockInitialHealth;
         }
 
         public AnswerDeliveryRequest? LastDeliveryRequest { get; private set; }
         public string? LastHealthSubjectPack { get; private set; }
         public TaskCompletionSource CheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource InitialHealthStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource InitialHealthCanceled { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource LatestHealthCompleted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public ToolchainWorkspaceInfo GetWorkspaceInfo()
         {
@@ -120,7 +144,7 @@ public sealed class MainViewModelTests
                 true, true, "junior-physics-answer", ["junior-physics-answer", "math-answer"]);
         }
 
-        public Task<WorkspaceHealthReport> GetWorkspaceHealthReportAsync(
+        public async Task<WorkspaceHealthReport> GetWorkspaceHealthReportAsync(
             string? subjectPack = null,
             CancellationToken cancellationToken = default)
         {
@@ -131,10 +155,25 @@ public sealed class MainViewModelTests
 
             LastHealthSubjectPack = subjectPack;
             var selected = subjectPack ?? "junior-physics-answer";
-            return Task.FromResult(new WorkspaceHealthReport(
+            if (_blockInitialHealth && string.Equals(selected, "junior-physics-answer", StringComparison.Ordinal))
+            {
+                InitialHealthStarted.TrySetResult();
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    InitialHealthCanceled.TrySetResult();
+                    throw;
+                }
+            }
+
+            LatestHealthCompleted.TrySetResult();
+            return new WorkspaceHealthReport(
                 selected, ["junior-physics-answer", "math-answer"], "v8.14", "v8.14",
                 true, @"D:\repo\.snapshot-cache\resolved-snapshot.json",
-                true, 12, $"{selected} 主链就绪", []));
+                true, 12, $"{selected} 主链就绪", []);
         }
 
         public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default) =>

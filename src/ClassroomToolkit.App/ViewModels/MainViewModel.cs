@@ -19,6 +19,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly IUpdateService? _updateService;
     private readonly StringBuilder _activityLog = new();
     private CancellationTokenSource? _operationCancellation;
+    private CancellationTokenSource? _healthRefreshCancellation;
     private bool _suppressHealthRefresh;
     private int _healthRefreshVersion;
 
@@ -244,7 +245,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var result = await action(cancellationToken);
             ApplyExecution(result);
             StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
-            await RefreshHealthAsync();
+            await RefreshHealthAsync(cancellationToken);
         });
     }
 
@@ -303,14 +304,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // LATEST workspace health; the most recent operation result lives in
     // LastResultSummary and the activity log, so a successful health refresh
     // overwriting a toolchain verdict is intentional.
-    private async Task RefreshHealthAsync()
+    private async Task RefreshHealthAsync(CancellationToken cancellationToken = default)
     {
-        // Concurrent refreshes (startup, pack switching, post-check) resolve by
-        // versioning: only the latest request may apply its results.
-        var version = ++_healthRefreshVersion;
+        // A health probe starts a real Node process.  Versioning protects the UI
+        // from stale results, but cancelling the superseded probe protects the
+        // machine from doing up to two minutes of unnecessary work per switch.
+        var refreshCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var previousRefresh = Interlocked.Exchange(ref _healthRefreshCancellation, refreshCancellation);
+        previousRefresh?.Cancel();
+        var version = Interlocked.Increment(ref _healthRefreshVersion);
         try
         {
-            var health = await _toolchainOrchestrator.GetWorkspaceHealthReportAsync(SelectedSubjectPack);
+            var health = await _toolchainOrchestrator
+                .GetWorkspaceHealthReportAsync(SelectedSubjectPack, refreshCancellation.Token);
             if (version != _healthRefreshVersion)
             {
                 return;
@@ -323,6 +329,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
             StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases", health.EvalOk));
             StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现", health.AssetVersion == health.LatestProductionSpecVersion));
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException) when (refreshCancellation.IsCancellationRequested)
+        {
+            // A newer subject-pack selection already owns the health surface.
+        }
         catch (Exception ex)
         {
             if (version != _healthRefreshVersion)
@@ -332,6 +346,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             // Keep the previous status cards visible and surface the failure as a diagnostic.
             StatusMessage = $"工作区健康检查失败：{ex.Message}";
+        }
+        finally
+        {
+            Interlocked.CompareExchange(ref _healthRefreshCancellation, null, refreshCancellation);
         }
     }
 
@@ -372,5 +390,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _operationCancellation?.Cancel();
+        _healthRefreshCancellation?.Cancel();
     }
 }
