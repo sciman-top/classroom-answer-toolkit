@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-21T15:01:56.518Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c",
+  "mode": "visual_audit_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_merge",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2",
+      "fallback_3"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核候选.md",
+  "candidateSha256": "082f4e48ab3208eb17a1d1ec0321d520f1c62762d189d659b6779abfa0cae990",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考视觉审计发现.md",
+  "auditFindingsSha256": "9093271600002cb8298c6606a63b052776869484ae4511824c0414207fbfce9c",
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考视觉审计候选.md",
+  "outputSha256": "2d9f14d9272c233877043f578fbe559a6d88a69de75e3bf1f907469deb0a6485",
+  "answerCharacters": 2157,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 36889,
+      "requestBytes": 121375,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

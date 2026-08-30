@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-30T05:44:12.253Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "semantic_review_merge",
+  "sourcePageCount": 8,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "semantic_review_merge",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "luna",
+      "sol"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "luna-xhigh",
+      "sol-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考盲答候选.md",
+  "candidateSha256": "fadf577a5b99efed702ee8541d1206064442b6fefb14552baf53c36cc726858b",
+  "semanticFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核发现.md",
+  "semanticFindingsSha256": "9f3d9340204a33fd3a50cf8fb7a5f1be1b7c84403b48f611b772f4c0f50d8454",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\source-exam-text.txt",
+  "sourceTextSha256": "952b7c9f71a978f4e5fe6c82356645c03d5a147571ad15e3181c4a5838a9de04",
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 8,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-001.png",
+      "sha256": "82ff2f325b695b6f5fee879feb0f48447876184864c715e621dd35f2781e7164",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-002.png",
+      "sha256": "a576fe0b18cc1911a74e426be434120712067478e567f1e0fc11ffa4f95be235",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-003.png",
+      "sha256": "d5bb850c91fcc618dcdacdd91e19f81f2d5ec31f1909e89be6ca215193a50b57",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-004.png",
+      "sha256": "d025b21d6ad45926f4f6580ee51e7fb13f49bef7324f8de45b2da2e97b1b5ef8",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-005.png",
+      "sha256": "c6c3ae39a904f68c8c5935219e7e9198a5a67d9f14d74fd96c217ed3d46f9ea3",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-006.png",
+      "sha256": "5339414a6e78c62edd923baebeee3029cfa91d01af788b36c4b8bc00d254f1bd",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-007.png",
+      "sha256": "f56d74d2e88f1e367f06b7ae03eb0dbb51c8e3dfa951d5d367761ecdde831c31",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\pages\\2024广州中考.page-008.png",
+      "sha256": "adf7458806c31057631aabc2e879e4c45f8cef855da42a2bfe7fd668fabbabff",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核候选.md",
+  "outputSha256": "92ee2e7f61f97767f368cff976910d1bc2f7cd5db7ea40412c5bea9d3e4acec5",
+  "answerCharacters": 2386,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 125691,
+      "requestBytes": 3974797,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

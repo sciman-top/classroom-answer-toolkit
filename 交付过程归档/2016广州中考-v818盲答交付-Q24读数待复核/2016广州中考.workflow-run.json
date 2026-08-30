@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "2123e6a6e52f4b09a41a411b71687580",
+  "status": "succeeded",
+  "startedAt": "2026-08-29T16:37:12.5000167+00:00",
+  "finishedAt": "2026-08-29T16:53:42.8617135+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2016广州中考.pdf",
+      "bytes": 821294,
+      "sha256": "377de2f0a5c7c8a35bff908ac5a4527b671702ac4265bf9d9728e531ae541cee"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-reference-errata-r1\\2016广州中考答案-勘误后参考输入-r1.pdf",
+      "bytes": 954704,
+      "sha256": "6e65ca0adf1090edb084d1727f878f16078a83a451dc61b96c12b101732c7537"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\specs\\compiled\\试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+      "bytes": 115340,
+      "sha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45"
+    },
+    "blindFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2016-guangzhou.focus-regions.json",
+      "bytes": 3017,
+      "sha256": "f9079eff42b37a8b8d975dd1dad86ae6d84bb34f175a291dc5a4b0ad3b66c66b"
+    },
+    "visualAuditFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2016-guangzhou.focus-regions.json",
+      "bytes": 3017,
+      "sha256": "f9079eff42b37a8b8d975dd1dad86ae6d84bb34f175a291dc5a4b0ad3b66c66b"
+    }
+  },
+  "options": {
+    "provider": "primary",
+    "subjectPack": "junior-physics-answer",
+    "profile": "classroom",
+    "blindQualityProfile": "terra-xhigh",
+    "semanticQualityProfile": "terra-xhigh",
+    "visualQualityProfile": "terra-xhigh",
+    "referenceQualityProfile": "terra-xhigh",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "blindFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2016-guangzhou.focus-regions.json",
+    "visualAuditFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2016-guangzhou.focus-regions.json",
+    "skipVisualAudit": false,
+    "keepReview": false,
+    "useGatewayProxy": false,
+    "configEnvFile": "D:\\CODE\\classroom-answer-toolkit\\.env.cockpit"
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.blind-generation.summary.json",
+        "bytes": 10367,
+        "sha256": "ed38669e8cd3420ec4fe5fd6b5e9b76101b466b5e4b241249be712467f0c6a9a"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考盲答候选.md",
+        "bytes": 3379,
+        "sha256": "59f76d3bec14c89153d67cd50f7ff831c71d829bcc3910ace3e179d31bfbac92"
+      }
+    },
+    "semanticFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.semantic-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考语义复核发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.semantic-findings.summary.json",
+        "bytes": 10591,
+        "sha256": "d712f095d802a54aa0ba3b2a901f82a02a4837e69f8c40662b72d3da0cdbd323"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考语义复核发现.md",
+        "bytes": 10699,
+        "sha256": "00c94fe6f8f7a75fab9aa995c9defa3aee110fb41e5e8a6598b6673517f4c9b6"
+      }
+    },
+    "semanticMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.semantic-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考语义复核候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.semantic-merge.summary.json",
+        "bytes": 10792,
+        "sha256": "89de4ab6fe23393b603ad2603876412580b352b6ad016db2adefbc52153d53e5"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考语义复核候选.md",
+        "bytes": 3297,
+        "sha256": "1276417a8810e7d498f6d245542da66b71c01e44d8e2c360f091c4512d468d00"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.visual-findings.summary.json",
+        "bytes": 14284,
+        "sha256": "19b8cf03131449210a53d6a991e049f406cdc41d3d7c9b80dc720c8a120b7daa"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考视觉审计发现.md",
+        "bytes": 2317,
+        "sha256": "79adbf4d357e780c4d2be14c21c2ed07260647bb6fe3d8fb0bb54c1b1f6ce8f4"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.visual-merge.summary.json",
+        "bytes": 3098,
+        "sha256": "feb553f26339faaa9feea48972cabc22d3cddba2dc3e658c25a0e4856ee47466"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考视觉审计候选.md",
+        "bytes": 3297,
+        "sha256": "39ed81fb2a4744e954c9db4593da997da79e7796d0ca6db8a634b922011ea681"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考.reference-review.summary.json",
+        "bytes": 13646,
+        "sha256": "868cf20c64c874090f9f43f510c2c418b76186f0125f9ae441870127bcbf5b03"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.md",
+        "bytes": 3341,
+        "sha256": "e42a4a5ebc6e55227f30ea675d580e47e2239959915f3d48505b2cb5d5809ce7"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.pdf",
+        "bytes": 149447,
+        "sha256": "16ee6f2a583234534f5f3bcb5c3cca7952ed8e192af3f81e4f7aa8c22b960016"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.md",
+      "bytes": 3341,
+      "sha256": "e42a4a5ebc6e55227f30ea675d580e47e2239959915f3d48505b2cb5d5809ce7"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.pdf",
+      "bytes": 149447,
+      "sha256": "16ee6f2a583234534f5f3bcb5c3cca7952ed8e192af3f81e4f7aa8c22b960016"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.delivery-manifest.json",
+      "bytes": 3238,
+      "sha256": "db47929b4e7d94c354a88bc649f2492f42eece06accd9554b7b1f2d4cb2bce8a"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "58e48672fac9e256cc3ca501d5721f554cc8547d50cabee59873e062ecb27379"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考语义复核发现.md",
+      "bytes": 10699,
+      "sha256": "00c94fe6f8f7a75fab9aa995c9defa3aee110fb41e5e8a6598b6673517f4c9b6"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考语义复核候选.md",
+      "bytes": 3297,
+      "sha256": "1276417a8810e7d498f6d245542da66b71c01e44d8e2c360f091c4512d468d00"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考盲答与语义复核差异报告.md",
+      "bytes": 6129,
+      "sha256": "c76be026a6b9eab18f3449062d58096ffbe841d9f005a2ae3beec34acbdb715b"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考答案自动复核文本差异报告.md",
+      "bytes": 6548,
+      "sha256": "506a704bc0530692acefecf5bc8c471fd1e8d3c6fb44ad73e571356ca6c0a1ff"
+    }
+  ],
+  "resume": null,
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

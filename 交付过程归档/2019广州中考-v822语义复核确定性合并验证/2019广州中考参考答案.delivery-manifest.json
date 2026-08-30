@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-21T15:03:56.825Z",
+  "snapshotId": "snapshot-86a87353eccbba39",
+  "snapshotPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-86a87353eccbba39",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.md",
+  "output": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案",
+    "manifestPath": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.md",
+      "bytes": 3752,
+      "sha256": "314eddea4d30680a9f599aba917ba3557dcd879f0069cfaa4783b061c8bef311"
+    },
+    "output": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.pdf",
+      "bytes": 189216,
+      "sha256": "39e4f06347577056f005bdc7bce5f0df71097a40ec7697322e045ae4348cfbda"
+    },
+    "snapshot": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "4d768a2e433e1379ff67d2052d6c519ba5585ad99a1feec41fd7f5f776c0a7b8"
+    },
+    "reviewFiles": [
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\2019广州中考参考答案.page-001.png",
+        "bytes": 292254,
+        "sha256": "9e43d87a02fd2aefbe8d22c161385d9ed27a84c0d2a6d1b3802cb3398f4d9770"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\2019广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1283,
+        "sha256": "babeb7bade7e23a99588aaecb232f093d90f8f9fafd664b0718f13e8c28494a0"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\2019广州中考参考答案.page-002.png",
+        "bytes": 269184,
+        "sha256": "d92b7851bcfa4b2a28bffcf0a2f1ba03a12e7558b27b6acefc979eafa3d77223"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\2019广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1095,
+        "sha256": "95c7b8aca1c61b4aaf9b95b8296789f9dc02088eb3e27996754cd597e3096f14"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\2019广州中考参考答案.page-003.png",
+        "bytes": 188767,
+        "sha256": "fcfa0bf028fa1f35a25d1afbdc37c89550881b9974f575e7aa65fdf4d32935bc"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\2019广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 727,
+        "sha256": "3c9f6e1a4a4488e0a4dc53e875208b4833bcd10b870182faa11656f98acc33c8"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\manifest.json",
+        "bytes": 4182,
+        "sha256": "86e4acc405c5da59476a4bb89315780c52d9b5e0629a0c446d07c852b5ade3ac"
+      },
+      {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\.pdf-review\\正式交付__2019广州中考-v822语义复核确定性合并验证__2019广州中考参考答案\\review.html",
+        "bytes": 1481,
+        "sha256": "dffd8364aaa0370b80d586c122a633c44371298c42020a123cf582fa9e35a0d8"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

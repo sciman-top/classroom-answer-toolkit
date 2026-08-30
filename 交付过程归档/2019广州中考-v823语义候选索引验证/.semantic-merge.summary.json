@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-21T15:15:29.331Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c",
+  "mode": "semantic_review_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "semantic_review_merge",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考盲答候选.md",
+  "candidateSha256": "616fcc1b9f77983ef41e420863803f24340edce0c15dac282959e175d30d5efa",
+  "semanticFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v823语义候选索引验证\\2019广州中考语义复核发现.md",
+  "semanticFindingsSha256": "e6e7ece6180e01c7c030a3b1e8674c159cae4d2b0c7047ad279d682249a0a1a4",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v823语义候选索引验证\\2019广州中考语义复核候选.md",
+  "outputSha256": "d92cc34a29bbe7796d226efad21dbbe9ef4f8d365fe3765373b209615eef9a26",
+  "answerCharacters": 2051,
+  "referenceChoiceOverride": {
+    "applied": true,
+    "answers": null
+  },
+  "semanticChoiceOverride": {
+    "applied": true,
+    "questions": [
+      2,
+      12
+    ]
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 61697,
+      "requestBytes": 123380,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

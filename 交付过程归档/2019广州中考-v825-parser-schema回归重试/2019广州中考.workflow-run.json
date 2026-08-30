@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "aa28fe1872b34b2bac1a4ee5e3fdbb68",
+  "status": "failed",
+  "startedAt": "2026-08-22T01:40:22.1190951+00:00",
+  "finishedAt": "2026-08-22T01:40:37.8735054+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2019广州中考.pdf",
+      "bytes": 1254764,
+      "sha256": "85dd476db8eacd837f7a4590bac7c795ef5cf53f68a1c68a08f279e7d1731dba"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2019广州中考答案.pdf",
+      "bytes": 697141,
+      "sha256": "b4dfdef844f45be070eaf3db88961ede314eca829493b70e0ddbe17631c1d116"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 107775,
+      "sha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c"
+    },
+    "blindFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+      "bytes": 908,
+      "sha256": "fd77ea07dd32a6e35b14b87cdcff7f6ce31d089b54ba13e5e32bfeb1b9a52b76"
+    },
+    "visualAuditFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+      "bytes": 908,
+      "sha256": "fd77ea07dd32a6e35b14b87cdcff7f6ce31d089b54ba13e5e32bfeb1b9a52b76"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "blindFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+    "visualAuditFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "failed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考盲答候选.md",
+      "summary": null,
+      "artifact": null,
+      "error": "Node tool failed with exit code 1: D:\\CODE\\classroom-answer-toolkit\\tools\\ai-gateway\\answer-request.mjs"
+    },
+    "semanticFindings": {
+      "status": "pending",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考.semantic-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考语义复核发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "semanticMerge": {
+      "status": "pending",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考.semantic-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考语义复核候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualFindings": {
+      "status": "pending",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考视觉审计发现.md",
+      "summary": null,
+      "artifact": null
+    },
+    "visualMerge": {
+      "status": "pending",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考视觉审计候选.md",
+      "summary": null,
+      "artifact": null
+    },
+    "referenceReview": {
+      "status": "pending",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考参考答案.md",
+      "summary": null,
+      "artifact": null
+    },
+    "delivery": {
+      "status": "pending",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v825-parser-schema回归重试\\2019广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": null
+    }
+  },
+  "artifacts": [],
+  "diagnostics": {
+    "retainedWorkRoot": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\a3f52b52886d41f598d5c056cd9faa6b"
+  },
+  "error": "Node tool failed with exit code 1: D:\\CODE\\classroom-answer-toolkit\\tools\\ai-gateway\\answer-request.mjs"
+}

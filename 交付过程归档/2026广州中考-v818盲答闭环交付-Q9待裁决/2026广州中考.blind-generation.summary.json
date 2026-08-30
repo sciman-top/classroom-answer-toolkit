@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-29T16:09:34.834Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "blind_generation",
+  "sourcePageCount": 14,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "blind_generation",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "sol",
+      "luna"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "sol-xhigh",
+      "luna-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": null,
+  "candidateSha256": null,
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\source-exam-text.txt",
+  "sourceTextSha256": "a2b2a4258c364de1c399eb9ca7dfb8c69ab09e33f67147207b045c8f8667c9e7",
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 14,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-001.png",
+      "sha256": "52d61b761565de591dd826c7c1611bb9323601ef8abfc491c4ee23bf4dd00517",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-002.png",
+      "sha256": "99cb5c5b2dceedd69db3edbf173fd9d545d0c44ad893723046052ff905787e70",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-003.png",
+      "sha256": "b7084020af657ca4525f074dc9c0e2e8e1a2ebe469afea149f042cadbd5b8829",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-003.q-009.focus-01.q9-figure-flashlight-lens-options.png",
+      "sha256": "d984e94fdb34e783542a0b6577500fd7e070d31000c9dd2e220d473f7b98fd0c",
+      "evidenceLabel": "Source exam focused crop: Question 9 flashlight lens ray diagrams: compare each option's incident and outgoing ray angles against the principal axis before judging divergence change; source page 3; question 9. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-004.png",
+      "sha256": "964343042640d92910ee9412b99b357a9bd8e08ee12e499f96746320e57a42b5",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-005.png",
+      "sha256": "f9b3f88ae949c16e378b49b29d0b862b645662a0c6a6324e87d7f9c80dd09a44",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-005.q-013.focus-01.q13-figures-a-b-bottles-and-optical-path.png",
+      "sha256": "7a564f78ae74ceed2f6102db70a450ccfda2cf66000a651a287401557b50019f",
+      "evidenceLabel": "Source exam focused crop: Question 13 Figures a and b: inspect the thick/thin tube bottle thermometers and the laser-two-mirror optical path with screen point P; source page 5; question 13. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-005.q-014.focus-02.q14-figure-plate-lever.png",
+      "sha256": "4a447fe2c0343fb207a75ce085b59e76599f58432408d98a44977b5fb2e594e1",
+      "evidenceLabel": "Source exam focused crop: Question 14 plate-carrying figure: inspect hand contact point A, pivot O, points B and C, and the plate geometry; source page 5; question 14. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-006.png",
+      "sha256": "66d4220283dde38d98270ed6dedbf04234316bc499b738c6fe0b9fbeb3b17152",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-006.q-016.focus-01.q16-figure-rotary-switch-motor.png",
+      "sha256": "609af155df687275d0a1469b8b8f3f04f0e6f6fe3c6849c196b1df38d141ecc7",
+      "evidenceLabel": "Source exam focused crop: Question 16 rotary model figure: inspect motor terminals P and Q, electromagnet, pawl, OFF/I/II dial contacts I and II, steel wire, and clothes-drying rod; source page 6; question 16. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-007.png",
+      "sha256": "45d81209267245255286638fe741495501d131efabd96647e29097904055b10a",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-007.q-017.focus-01.q17-figures-a-b-c-circuit-ammeter-holder.png",
+      "sha256": "11eb11400e476bb3aeea8f6922844560528d125942bf850d5cf6f6b6d289601d",
+      "evidenceLabel": "Source exam focused crop: Question 17 Figures a, b, c: rheostat terminals A/B and slider P, wires 1 and 2, meter ranges, the 0-0.6 A dial pointer, and the bare bulb holder; source page 7; question 17. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-007.q-018.focus-02.q18-figures-a-b-dryice-ruler.png",
+      "sha256": "bce900445964b4e8f9aa9dfc3791fdef2f6627ff8746b7243da06140ba1c2118",
+      "evidenceLabel": "Source exam focused crop: Question 18 Figures a and b: inspect the dry-ice package and the ruler scale showing 0 to 2 cm with minor divisions and the ice block edge positions; source page 7; question 18. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\bba950c103b94d258b2b0e3c6f38ea4e\\pages\\2026广州中考.page-008.png",
+      "sha256": "da55eb7fc99220708417a8f50bc5a66d9807c9961fd239223de8caaedd5d33aa",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考盲答候选.md",
+  "outputSha256": "ab083ce5df6e46535a9650536c63019585adef380513cc4b0cd44a7ee9cd4123",
+  "answerCharacters": 1832,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 234499,
+      "requestBytes": 5402077,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

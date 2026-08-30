@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-29T16:46:38.285Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "semantic_review_findings",
+  "sourcePageCount": 15,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "semantic_review_findings",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "sol",
+      "luna"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "sol-xhigh",
+      "luna-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考盲答候选.md",
+  "candidateSha256": "59f76d3bec14c89153d67cd50f7ff831c71d829bcc3910ace3e179d31bfbac92",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\source-exam-text.txt",
+  "sourceTextSha256": "12a4393de287d78d03759da556c9d05e701e602929ed12b2291c594d108e983a",
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 15,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-001.png",
+      "sha256": "005d79f8fc2d2bfbdc0ef98637f5478377f2a74fc1d263a0105112ed2c362f97",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-002.png",
+      "sha256": "439d0c3179aec5ea3a96a3e296075471113f3ce7d0e273fe9744f8a92e9ac565",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-003.png",
+      "sha256": "91bbc6cb74b0cd073374c59ec17eec86abf678fb3b06e1611094a0d97631499a",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-003.q-011.focus-01.q11-figure-7-u-tube-airflow-four-cases.png",
+      "sha256": "9194fd01c4cddac205e37e608915f15af32b496ab01cce53995f51b347262dd1",
+      "evidenceLabel": "Source exam focused crop: Question 11 Figure 7: all four U-tube cases, which tube mouth each airflow/inflation/extraction acts on, and which side rises with height h; source page 3; question 11. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-003.q-013.focus-02.q13-figure-11-lens-imaging.png",
+      "sha256": "a39ce662b54e549cf6c3d4b0a8ad50bcde05acc8018efef7d9305951d3f96e8d",
+      "evidenceLabel": "Source exam focused crop: Question 13(2) Figure 11: inspect the convex lens, both F marks, and the exact position of object MN relative to F and 2F before judging magnification; source page 3; question 13. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-004.png",
+      "sha256": "d1e9ac10570248aef5c32b202bdd37ca62ad1462c0d15eeb8f2b67d4d8a411a5",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-005.png",
+      "sha256": "2d5741348c8154d7bfbe11b56c3157395b7c0daf4fdf27b3fe4187af501cb758",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-006.png",
+      "sha256": "dcd6f0a621200e03a36ea6475d1dec3baf732f56f91f4283a1c464f3d3963a61",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-006.q-021.focus-01.q21-figures-20-21-circuit-table-graph.png",
+      "sha256": "20d96ff6fa70474e0053e80a65d16598c03ad4756a9437fcf8167d7c690dd18f",
+      "evidenceLabel": "Source exam focused crop: Question 21 Figures 20 and 21: inspect the R1-R2 circuit, Table 2, U-I graph, and the separately stated 0.2 A and 0.4 A conditions; source page 6; question 21. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-007.png",
+      "sha256": "5a1e23ac0fd95ad77d5497052acaf8281ccdc17cb4ad12e7826e6ea6875c5f92",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-007.q-022.focus-01.q22-figure-24-voltage-meter.png",
+      "sha256": "8b83b2e211bffa3660b304f8f499b66963cfa612c7385bc751f692375cc47c99",
+      "evidenceLabel": "Source exam focused crop: Question 22 Figure 24 voltage meter dial, pointer, printed scale, and visible terminals; source page 7; question 22. Deterministic source-pixel geometry measured range 0-3 across 30 divisions, pointer at division 10 (raw 9.981), giving 1. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-007.q-022.focus-02.q22-figure-24-current-meter.png",
+      "sha256": "b043aa4a1ee7952276288ab3b9ef71de528a48a0d1a13e58ef7583ca1e090556",
+      "evidenceLabel": "Source exam focused crop: Question 22 Figure 24 current meter dial, pointer, printed scale, and visible terminals; source page 7; question 22. Deterministic source-pixel geometry measured range 0-0.6 across 30 divisions, pointer at division 10 (raw 10.177), giving 0.2. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-007.q-023.focus-03.q23-figure-27-coils-and-current.png",
+      "sha256": "7de04c3c1fba8e1ceee7586061f150e4e28503c78cfd6f632d5580d537a2750f",
+      "evidenceLabel": "Source exam focused crop: Question 23 Figure 27: inspect both coil windings, current-arrow directions, magnets 1 and 2, and the labelled left-right sea-turtle direction; source page 7; question 23. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-008.png",
+      "sha256": "91fde96c00aaf3e7c47136e4b9b3849307883e4bdf62d5b16cecd128feb1f25d",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\dd5173c187eb47c881711e1d1926bb22\\pages\\2016广州中考.page-008.q-024.focus-01.q24-figure-28-dynamometer-scale.png",
+      "sha256": "7c40b2f1b05cd979e8e18be2224f3dee33e8f72b49b521a34a5bfd319da7f0c5",
+      "evidenceLabel": "Source exam focused crop: Question 24 Figure 28 spring dynamometer pointer line and printed 0-5 N scale; source page 8; question 24. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2016-terra-xhigh-regression2\\2016广州中考语义复核发现.md",
+  "outputSha256": "00c94fe6f8f7a75fab9aa995c9defa3aee110fb41e5e8a6598b6673517f4c9b6",
+  "answerCharacters": 5458,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 261511,
+      "requestBytes": 4591553,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

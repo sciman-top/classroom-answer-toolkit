@@ -1,0 +1,348 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-30T05:50:51.306Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "visual_audit_findings",
+  "sourcePageCount": 0,
+  "auditImageCount": 50,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_findings",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "luna",
+      "sol"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "luna-xhigh",
+      "sol-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核候选.md",
+  "candidateSha256": "92ee2e7f61f97767f368cff976910d1bc2f7cd5db7ea40412c5bea9d3e4acec5",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 50,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-001.tile-01.x-01.png",
+      "sha256": "1bf7f8fb90ca3b3583bf7a9f7290adc1d2de9d5247fa385a45132557deb6efae",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 1; region 1/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-001.tile-01.x-02.png",
+      "sha256": "5c95707fa71932ae1af805e8051350c442e8484bf77cf61776eb9948103751d7",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 1; region 1/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-002.tile-02.x-01.png",
+      "sha256": "608f4e55adcec0a6ce3f8c5e8a7b58b9a27836ffd807517c8a8a18f69a02310f",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 2; region 2/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-002.tile-02.x-02.png",
+      "sha256": "54571af74a4d9f61d905fbb1ec68c3c409e8d98f96395f02ecf3570655b428ce",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 2; region 2/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-003.tile-03.x-01.png",
+      "sha256": "b56c976f18105e08c778364c36cdb7ca7a5cfb051ab4eb1a71eb5d2f44756d4c",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 3; region 3/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-003.tile-03.x-02.png",
+      "sha256": "e0d722a8612a9d124bdbb6f459ae34200239582c75245ee48641852d534028e5",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 3; region 3/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-004.tile-04.x-01.png",
+      "sha256": "d81859c9dd1ca89597e37cb07578b23b2ee2a45e355ceaabda81b37b1c22e168",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 4; region 4/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-001.q-004.tile-04.x-02.png",
+      "sha256": "4e2ed33b26be70b5577385b310764b6b69d7f8a1c21ce2adb1cb6b0f86f1bf9a",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; question 4; region 4/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-002.q-004.tile-01.x-01.png",
+      "sha256": "0dfad6a9a8aafbe2a6e24d451e0b6a343b311c442017cc13a13f31ef69634ed1",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; question 4; region 1/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-002.q-004.tile-01.x-02.png",
+      "sha256": "68a6119c86485dad42a4a7d9a7e39713dff862fe329b372f093049c5d4e72be2",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; question 4; region 1/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-002.q-005.tile-02.x-01.png",
+      "sha256": "f217cdfe95a35d31d942c031deba36ee3e7d37c9e85aeded1f8a6f3f61607547",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; question 5; region 2/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-002.q-005.tile-02.x-02.png",
+      "sha256": "0732b4a1783375ccdd0c2b74261c2d304f259a3cf7bf5c350d94e0029806f36a",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; question 5; region 2/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-002.q-006.tile-03.x-01.png",
+      "sha256": "4ab85edecaefe34a87bdf72082569d380bed313f3ec90822adb2e01fc8032efb",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; question 6; region 3/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-002.q-006.tile-03.x-02.png",
+      "sha256": "b6a24e5a2e30455fb77cd45d623e0f12561d9fc5e3955c0d9899cba52a97911c",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; question 6; region 3/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-006.tile-01.x-01.png",
+      "sha256": "c4c8b300caa14e21266703fc9351b8f1dde8c4bc5831582b9cc1b5558cc08b1c",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 6; region 1/5, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-006.tile-01.x-02.png",
+      "sha256": "c4c8b300caa14e21266703fc9351b8f1dde8c4bc5831582b9cc1b5558cc08b1c",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 6; region 1/5, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-007.tile-02.x-01.png",
+      "sha256": "4ceeaeac079f0e8e60749e068eaf0c48c8178dd57fe8b8dd17c2cb619a1bfe52",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 7; region 2/5, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-007.tile-02.x-02.png",
+      "sha256": "2cbe90741c934cb92e09c5f5e34fff1b1016b02ab2e1a120272552a6fca076e9",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 7; region 2/5, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-008.tile-03.x-01.png",
+      "sha256": "135c26f8612f7fc475a2bb857b23ebfc336373d7033eb7d311a21d48e1f0f4d3",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 8; region 3/5, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-008.tile-03.x-02.png",
+      "sha256": "38d7172e0d4e0d035ca3410986228d7d16a3225c1b95e0d85fc88fb0982b87a3",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 8; region 3/5, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-009.tile-04.x-01.png",
+      "sha256": "6a0e881fafe23a94efdbd8858e6c94e816602b977c6259c1818c87ca20558753",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 9; region 4/5, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-009.tile-04.x-02.png",
+      "sha256": "ba4a8f4d800ea8c8e333138202ff2fd078fe989987983770a53b8abf8017bf52",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 9; region 4/5, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-010.tile-05.x-01.png",
+      "sha256": "c5f7e80b12ff5c7d5e9480fa13b77fd31ae87c366a63d7a396585b70c49b5b3d",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 10; region 5/5, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-003.q-010.tile-05.x-02.png",
+      "sha256": "a70d7fb10f0dfbb5e65c36fe00721f299b3ca744394c0bbc7fa905ed95de2c5e",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; question 10; region 5/5, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-004.q-010.tile-01.x-01.png",
+      "sha256": "239eea509512f74ff78274b9ec2d8a27d9fc29a2e4eb5f6b1724dd983a258b29",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; question 10; region 1/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-004.q-010.tile-01.x-02.png",
+      "sha256": "6ec3931a2e07257521a7b9a172408944a67bced2bc2a568f2414d2ba8a9b0a9f",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; question 10; region 1/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-004.q-011.tile-02.x-01.png",
+      "sha256": "4052c86bcc8021f1f7afa0522e36a75b2b91db03a8cc362226ddabcdf2b79eb7",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; question 11; region 2/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-004.q-011.tile-02.x-02.png",
+      "sha256": "2a2a1d8c6f60dfa9391c4f0a6baff6f9db376550cf0ada7d8a2ce52451e05c27",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; question 11; region 2/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-004.q-012.tile-03.x-01.png",
+      "sha256": "292529c4939c38a4e47b11b06e365313a9e4cf737e114f1e1caa7a44d570e066",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; question 12; region 3/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-004.q-012.tile-03.x-02.png",
+      "sha256": "f5f1a379d8bb96581fded8f45ec51596642fc7f1c8c96d5dc68769c513662915",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; question 12; region 3/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-005.q-012.tile-01.x-01.png",
+      "sha256": "5980d43e8c24009ec7dd5379b4a3da6474819f28e1687478bde3b569242b774b",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; question 12; region 1/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-005.q-012.tile-01.x-02.png",
+      "sha256": "000ea9121420a6770cddb95261924dcff3a3e2a58b7c0a70e7e977b4ac738b45",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; question 12; region 1/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-005.q-013.tile-02.x-01.png",
+      "sha256": "703f3d622744fc5ff795fa3ff109fae04427084e02d718fab433f72b7b56b1ef",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; question 13; region 2/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-005.q-013.tile-02.x-02.png",
+      "sha256": "6bd2c1ae2ba74deea972cdb0351100516a11a30cfd93282a12036fa418815ab4",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; question 13; region 2/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-005.q-014.tile-03.x-01.png",
+      "sha256": "04a225ceebde644a3b63688f178fad9e5695095535c39d18e3fec84ce58ecceb",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; question 14; region 3/3, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-005.q-014.tile-03.x-02.png",
+      "sha256": "bdc9d3fa5bb5e002b4e2bd444321909baae29fb4e74abd9857c34e2574aaaaeb",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; question 14; region 3/3, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-014.tile-01.x-01.png",
+      "sha256": "49780a9e58963375894d8f984e16eabdc931e235a5bc0157bd20313140c77144",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 14; region 1/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-014.tile-01.x-02.png",
+      "sha256": "fab73fcd57b4fe9068dade79d46335e957c33e02d058100ccfe07d6ec6b25b69",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 14; region 1/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-015.tile-02.x-01.png",
+      "sha256": "7d4b78d529465b7bec92724b6dd884c610d84e6e1bd71128812a44fbbc1e9c44",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 15; region 2/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-015.tile-02.x-02.png",
+      "sha256": "065476b5bd21a8057d5b2fb1e155414ca0f40beb9c37fbf819b69d123ed094e7",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 15; region 2/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-016.tile-03.x-01.png",
+      "sha256": "f453cd22fe3a2c39de6200681bd3115f0365590f6303eb4a442eaff9b77ed981",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 16; region 3/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-016.tile-03.x-02.png",
+      "sha256": "b8a185840580e7fbe2864a005bd29dfa31aba9ba31d2234b3f89a48487692250",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 16; region 3/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-017.tile-04.x-01.png",
+      "sha256": "0614f684e22b2b39820e0c66a8c87beeae21633bee2d44829cabd0e904297dd1",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 17; region 4/4, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-006.q-017.tile-04.x-02.png",
+      "sha256": "23bb4e70c66da101e376d4061f5e377b14a7e2db24cbc5421658cc73871276cd",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; question 17; region 4/4, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-007.q-017.tile-01.x-01.png",
+      "sha256": "49c81911c176e0b328753d7e0ac1861c8788325871a4c8dc101a9b142f104e4b",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; question 17; region 1/2, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-007.q-017.tile-01.x-02.png",
+      "sha256": "4e8be033bc25e05ef8a37db8125e3661702d1e2a146edcc2d07ebaa9bd88b8d6",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; question 17; region 1/2, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-007.q-018.tile-02.x-01.png",
+      "sha256": "780288126765c2f0b02d81b2415879e3ada44717bbcf74888163455eeaa679dc",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; question 18; region 2/2, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-007.q-018.tile-02.x-02.png",
+      "sha256": "56b4ace2193869c6473d7e2a88d0c092e380e241f1807be90414c33565f04100",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; question 18; region 2/2, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-008.q-018.tile-01.x-01.png",
+      "sha256": "f2dd767159e7af7867ead53fea43777b5828c564693e400dfc1e45a20baf8ba2",
+      "evidenceLabel": "No-reference visual audit source page crop: page 8; question 18; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\f51145fd540b47ad87541894aca2d9c8\\visual-audit-pages\\2024广州中考.page-008.q-018.tile-01.x-02.png",
+      "sha256": "9b5a48be23227833f2458ad544686ad3b9828bc035907cd938096f3acaef16be",
+      "evidenceLabel": "No-reference visual audit source page crop: page 8; question 18; region 1/1, horizontal tile 2/2."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考视觉审计发现.md",
+  "outputSha256": "1946b37776be174cd2a8fe6227ca065dca5fe6f7ab8cb8b8dc82aab8679923a2",
+  "answerCharacters": 1625,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 395936,
+      "requestBytes": 11517991,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

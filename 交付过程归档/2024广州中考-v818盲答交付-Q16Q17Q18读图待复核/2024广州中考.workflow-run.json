@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "1d21345de76f448fb1ffe6a8fabbd884",
+  "status": "succeeded",
+  "startedAt": "2026-08-30T05:28:32.7919045+00:00",
+  "finishedAt": "2026-08-30T05:54:29.6787281+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2024广州中考.pdf",
+      "bytes": 1649497,
+      "sha256": "f6a3a77585343e30722ef5e09cda58795fa752e2d86c74d0dda3c89e159311ef"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2024广州中考（解析版）.pdf",
+      "bytes": 1291410,
+      "sha256": "5b588bd2ed97be333da83a1f50031fe7f3adf66c8532506a481c97ed09adda95"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\specs\\compiled\\试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+      "bytes": 115340,
+      "sha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45"
+    },
+    "blindFocusRegions": null,
+    "visualAuditFocusRegions": null
+  },
+  "options": {
+    "provider": "primary",
+    "subjectPack": "junior-physics-answer",
+    "profile": "classroom",
+    "blindQualityProfile": "terra-xhigh",
+    "semanticQualityProfile": "terra-xhigh",
+    "visualQualityProfile": "terra-xhigh",
+    "referenceQualityProfile": "terra-xhigh",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "blindFocusRegionsFile": null,
+    "visualAuditFocusRegionsFile": null,
+    "skipVisualAudit": false,
+    "keepReview": false,
+    "useGatewayProxy": false,
+    "configEnvFile": "D:\\CODE\\classroom-answer-toolkit\\.env.cockpit"
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.blind-generation.summary.json",
+        "bytes": 5783,
+        "sha256": "70857784d2e6a3afec862312ced1e22c208cc7b61d262b7b8f86256f04430936"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考盲答候选.md",
+        "bytes": 3370,
+        "sha256": "fadf577a5b99efed702ee8541d1206064442b6fefb14552baf53c36cc726858b"
+      }
+    },
+    "semanticFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.semantic-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.semantic-findings.summary.json",
+        "bytes": 6007,
+        "sha256": "41e8b7ae1f30e7c188ede7bf13eefaaebd0b1f2168d38423589094e83069f64c"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核发现.md",
+        "bytes": 8485,
+        "sha256": "9f3d9340204a33fd3a50cf8fb7a5f1be1b7c84403b48f611b772f4c0f50d8454"
+      }
+    },
+    "semanticMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.semantic-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.semantic-merge.summary.json",
+        "bytes": 6209,
+        "sha256": "543d68db82606e40c4bd5f5c548c38261fb048ac30ec8814abe81c801106069b"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核候选.md",
+        "bytes": 3229,
+        "sha256": "92ee2e7f61f97767f368cff976910d1bc2f7cd5db7ea40412c5bea9d3e4acec5"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.visual-findings.summary.json",
+        "bytes": 24331,
+        "sha256": "1b30a688bb375fdf07ae108588f4ea0f709979a0edf5c7efe4403d63fca8f0a9"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考视觉审计发现.md",
+        "bytes": 3126,
+        "sha256": "1946b37776be174cd2a8fe6227ca065dca5fe6f7ab8cb8b8dc82aab8679923a2"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.visual-merge.summary.json",
+        "bytes": 3098,
+        "sha256": "0756b7bd74df9acadd5259e789ee342d612c733a9b6ebb07f91bca81308121a6"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考视觉审计候选.md",
+        "bytes": 3229,
+        "sha256": "9728d8afbea72008278515cc4f03b5db7ddc2223458a2377cb424f312e1eb3d7"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考.reference-review.summary.json",
+        "bytes": 12891,
+        "sha256": "b2d1b48cf6007e897803fa5c9b53a50874b13516706eebfd126cb53223f9b2bf"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.md",
+        "bytes": 3653,
+        "sha256": "ce50dcd609108987e6bae28c44a9f0969985140b72a74e6f97c68b5539ff2340"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.pdf",
+        "bytes": 126096,
+        "sha256": "7884a6d4f80d775ffe3965a990429441208ea79a439765374f6f631f314c2615"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.md",
+      "bytes": 3653,
+      "sha256": "ce50dcd609108987e6bae28c44a9f0969985140b72a74e6f97c68b5539ff2340"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.pdf",
+      "bytes": 126096,
+      "sha256": "7884a6d4f80d775ffe3965a990429441208ea79a439765374f6f631f314c2615"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.delivery-manifest.json",
+      "bytes": 3239,
+      "sha256": "35ba038ba1ba7d51be72e41cbeccdcc9dff3d295062491e2208cace177c55b82"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "32345b8d20e34e29bf4d4d55dda39c60825b57f10a7813d3859c876927471877"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核发现.md",
+      "bytes": 8485,
+      "sha256": "9f3d9340204a33fd3a50cf8fb7a5f1be1b7c84403b48f611b772f4c0f50d8454"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考语义复核候选.md",
+      "bytes": 3229,
+      "sha256": "92ee2e7f61f97767f368cff976910d1bc2f7cd5db7ea40412c5bea9d3e4acec5"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考盲答与语义复核差异报告.md",
+      "bytes": 5832,
+      "sha256": "d0a3d3b2091b5ac84e32a68990a52246df9991967f6b48c3015645782709d117"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2024-terra-xhigh-regression1\\2024广州中考答案自动复核文本差异报告.md",
+      "bytes": 6527,
+      "sha256": "5cafb6d3b2afd0c5000a770d018720b3acd9fdf9a991a3e82ea100ab542b7277"
+    }
+  ],
+  "resume": null,
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

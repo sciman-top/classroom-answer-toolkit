@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-21T14:54:16.357Z",
+  "provider": "primary",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/junior-physics-answer/spec.md",
+  "promptSha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c",
+  "mode": "semantic_review_merge",
+  "sourcePageCount": 0,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "semantic_review_merge",
+    "selectedRole": "primary",
+    "orderedRoles": [
+      "primary",
+      "fallback_1",
+      "fallback_2"
+    ],
+    "target": "all"
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考盲答候选.md",
+  "candidateSha256": "616fcc1b9f77983ef41e420863803f24340edce0c15dac282959e175d30d5efa",
+  "semanticFindingsPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核发现.md",
+  "semanticFindingsSha256": "a233514d8bbd1a8b42388e9f8f37c3c13020739c7b5cae7d1ea92d99b93733fd",
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 0,
+  "pageImages": [],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核候选.md",
+  "outputSha256": "082f4e48ab3208eb17a1d1ec0321d520f1c62762d189d659b6779abfa0cae990",
+  "answerCharacters": 2136,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-sol",
+      "reasoningEffort": "xhigh",
+      "status": 200,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 32942,
+      "requestBytes": 122794,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": true
+      },
+      "error": ""
+    }
+  ]
+}

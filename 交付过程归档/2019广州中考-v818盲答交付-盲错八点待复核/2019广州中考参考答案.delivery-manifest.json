@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:53:53.984Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2019广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2019广州中考参考答案.md",
+  "output": "2019广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2019广州中考参考答案.review",
+    "manifestPath": "2019广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2019广州中考参考答案.md",
+      "bytes": 3776,
+      "sha256": "c4158cdc672e726bff9671c5a74ff3924c85da7656d7ccc2590b2f2c22b1b1e0"
+    },
+    "output": {
+      "path": "2019广州中考参考答案.pdf",
+      "bytes": 183202,
+      "sha256": "cab0c3c765b6f74a76e08bddafa073d800a2812060be7e8a35809ec28e09f4c6"
+    },
+    "snapshot": {
+      "path": "2019广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "de1ee8d1a8009efddde16e8ce6fa1d8fe7b15caa54bf5fb347eab5cae17d30c0"
+    },
+    "reviewFiles": [
+      {
+        "path": "2019广州中考参考答案.review/2019广州中考参考答案.page-001.png",
+        "bytes": 245204,
+        "sha256": "2f5c4ede56c3d59cf6dc6e6389b8ebdbf38406e050f9b2c1516658fbdc68febf"
+      },
+      {
+        "path": "2019广州中考参考答案.review/2019广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1022,
+        "sha256": "757d06ef478ef7514d7175db1fafa2ad8388036f8f4c4134b6b278683d9a0aaf"
+      },
+      {
+        "path": "2019广州中考参考答案.review/2019广州中考参考答案.page-002.png",
+        "bytes": 270203,
+        "sha256": "8c1e6dbba9b147f499c6a64dbed9053112909145e3dc18673fa34a4fa2e981b5"
+      },
+      {
+        "path": "2019广州中考参考答案.review/2019广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1092,
+        "sha256": "8d927e9feefbc68d8e2cb3a43fd6c88cb8bea68e3d198b67eb95169233a41dba"
+      },
+      {
+        "path": "2019广州中考参考答案.review/2019广州中考参考答案.page-003.png",
+        "bytes": 288510,
+        "sha256": "fe2c4768057f08ebefbdeb5378c531ff4090e70f5139750b0d5fd9955cb41245"
+      },
+      {
+        "path": "2019广州中考参考答案.review/2019广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 1058,
+        "sha256": "803bd34337365febdd474964e7d3947fd04717868925e66e96308071a9476bcb"
+      },
+      {
+        "path": "2019广州中考参考答案.review/manifest.json",
+        "bytes": 4191,
+        "sha256": "b9c836e79948695d1347c3e45878b09336b92bf8919b502dea6ae92cf92af8ce"
+      },
+      {
+        "path": "2019广州中考参考答案.review/review.html",
+        "bytes": 1482,
+        "sha256": "6f24746931cc12952b0c8352c66991596040b34e3596646ada9eb34df3eda412"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

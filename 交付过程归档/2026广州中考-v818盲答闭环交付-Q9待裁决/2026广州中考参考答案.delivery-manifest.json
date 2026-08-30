@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:54:37.675Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2026广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2026广州中考参考答案.md",
+  "output": "2026广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2026广州中考参考答案.review",
+    "manifestPath": "2026广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2026广州中考参考答案.md",
+      "bytes": 3323,
+      "sha256": "e2c582e30d1aa39257c774d1b6462a6c752647f05597ee7c15585ca292c4dee1"
+    },
+    "output": {
+      "path": "2026广州中考参考答案.pdf",
+      "bytes": 149066,
+      "sha256": "211cf03ca8819097a174d28d891f2f2fec61026016e33a5bee04f439c0330e12"
+    },
+    "snapshot": {
+      "path": "2026广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "0e11956c5d30d3f6aae26c628f474cb5e5d20b52d243a7628b6f823a6d2eb197"
+    },
+    "reviewFiles": [
+      {
+        "path": "2026广州中考参考答案.review/2026广州中考参考答案.page-001.png",
+        "bytes": 282175,
+        "sha256": "59f9ed2c69217e04844e19abd4515e546f32afec8d7695afc8a0a854b3caa5fc"
+      },
+      {
+        "path": "2026广州中考参考答案.review/2026广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1147,
+        "sha256": "3adf75949304fc72162b92d2ce5398542515f6604dc129cb0663992fe66d4e2e"
+      },
+      {
+        "path": "2026广州中考参考答案.review/2026广州中考参考答案.page-002.png",
+        "bytes": 263511,
+        "sha256": "f42e45059bb3ac078d9de211095b07fb4f82e2a4afe0b3207dce15476ecdf761"
+      },
+      {
+        "path": "2026广州中考参考答案.review/2026广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 974,
+        "sha256": "cacd7b0f5dc70c171c459179cc67e455e6f52d767eb7d9d701d57987bb120a84"
+      },
+      {
+        "path": "2026广州中考参考答案.review/2026广州中考参考答案.page-003.png",
+        "bytes": 127327,
+        "sha256": "7c7d5e16f0f29c8feb2fe47523b531910529075170fa8b977ad45142961d8315"
+      },
+      {
+        "path": "2026广州中考参考答案.review/2026广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 335,
+        "sha256": "f79ac7bc35a8d7e00954cd0b0d42e819714098fbcb61275cd00d4524f30c9e6b"
+      },
+      {
+        "path": "2026广州中考参考答案.review/manifest.json",
+        "bytes": 4155,
+        "sha256": "b6fa80f9569aedb05e178ceb5eb57b18d94766bdc010d1ed7284b0403c5b5ca0"
+      },
+      {
+        "path": "2026广州中考参考答案.review/review.html",
+        "bytes": 1478,
+        "sha256": "fec49f49e8a54c89596c5b453a357ad8c311f8c6b39cee881c5c20aa6f1f094a"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

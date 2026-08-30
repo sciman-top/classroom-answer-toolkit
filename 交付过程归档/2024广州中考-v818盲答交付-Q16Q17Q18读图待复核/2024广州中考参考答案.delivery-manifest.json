@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:54:28.095Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2024广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2024广州中考参考答案.md",
+  "output": "2024广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2024广州中考参考答案.review",
+    "manifestPath": "2024广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2024广州中考参考答案.md",
+      "bytes": 4328,
+      "sha256": "9672460715c4434dbf8eff8504e0e2a7808846c09f69d4fb7d2622509ffd3d8c"
+    },
+    "output": {
+      "path": "2024广州中考参考答案.pdf",
+      "bytes": 154671,
+      "sha256": "7d4a87ae21b31b260a7a8921ed5877a6aa9189d684e23b403bf6e10082e536d0"
+    },
+    "snapshot": {
+      "path": "2024广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "b91a7e2cf4724a651a8ab5360b0aa25eecadbbbd07e28b265687544b8aaf79d1"
+    },
+    "reviewFiles": [
+      {
+        "path": "2024广州中考参考答案.review/2024广州中考参考答案.page-001.png",
+        "bytes": 245143,
+        "sha256": "ea26b00c3a9be3c969cfeb00473184304d396a353ae67938ed9b2e871328e403"
+      },
+      {
+        "path": "2024广州中考参考答案.review/2024广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1074,
+        "sha256": "1131ea26843c662893cc885d950ab08d1a129b7e8e7f11a9919e42a638794b02"
+      },
+      {
+        "path": "2024广州中考参考答案.review/2024广州中考参考答案.page-002.png",
+        "bytes": 234320,
+        "sha256": "1c1f2e115c522770af9962e57a6bdcb137ea93e0ca0901ec3b9870399e309fdc"
+      },
+      {
+        "path": "2024广州中考参考答案.review/2024广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 933,
+        "sha256": "34220054148f430a2dd3f9d3812f6ce061062a8bd65909f8a461a47d7cf43568"
+      },
+      {
+        "path": "2024广州中考参考答案.review/2024广州中考参考答案.page-003.png",
+        "bytes": 286673,
+        "sha256": "e1dd31124ff96093a1dd54e3ec16de930492de915ec0f619ce0a0e21ac18634c"
+      },
+      {
+        "path": "2024广州中考参考答案.review/2024广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 1009,
+        "sha256": "24f472ad79f7ef7f671c75b5f4b1a29bd5d3cca67047e75012411f7a2bbd7738"
+      },
+      {
+        "path": "2024广州中考参考答案.review/manifest.json",
+        "bytes": 4218,
+        "sha256": "74a383cd0c757256d5550088dcc730f66bce5e7fac9bd2e25e1a5b5696526b6a"
+      },
+      {
+        "path": "2024广州中考参考答案.review/review.html",
+        "bytes": 1485,
+        "sha256": "960473128d0b5923e115b12c9a62a4357cf06b52fb2991a377a801f67e3bbd48"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

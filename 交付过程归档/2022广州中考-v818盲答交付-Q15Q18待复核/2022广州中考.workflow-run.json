@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "c951cda063c848c8b07a10858de60fcb",
+  "status": "succeeded",
+  "startedAt": "2026-08-30T04:49:10.6021352+00:00",
+  "finishedAt": "2026-08-30T05:09:45.4488558+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2022广州中考.pdf",
+      "bytes": 1829178,
+      "sha256": "66c5959ae3db3fa2d521b234d371c5fa05ef84763ffc1a5a9ed8bd9adce16101"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2022广州中考-参考答案.pdf",
+      "bytes": 1524553,
+      "sha256": "519a730083d49f576effa9f9d099c0f2731022ff94bc80bbe5e64713d2016120"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\specs\\compiled\\试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+      "bytes": 115340,
+      "sha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45"
+    },
+    "blindFocusRegions": null,
+    "visualAuditFocusRegions": null
+  },
+  "options": {
+    "provider": "primary",
+    "subjectPack": "junior-physics-answer",
+    "profile": "classroom",
+    "blindQualityProfile": "terra-xhigh",
+    "semanticQualityProfile": "terra-xhigh",
+    "visualQualityProfile": "terra-xhigh",
+    "referenceQualityProfile": "terra-xhigh",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "blindFocusRegionsFile": null,
+    "visualAuditFocusRegionsFile": null,
+    "skipVisualAudit": false,
+    "keepReview": false,
+    "useGatewayProxy": false,
+    "configEnvFile": "D:\\CODE\\classroom-answer-toolkit\\.env.cockpit"
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.blind-generation.summary.json",
+        "bytes": 5783,
+        "sha256": "9dcbdbfc41f260f7a724b32510daf589015bbc6c4f0f6115f590ba18ea241324"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考盲答候选.md",
+        "bytes": 2393,
+        "sha256": "0f929ef5d6f242d95974f3b6511b92eb17a040513a8a2f92b831a8db48a16e21"
+      }
+    },
+    "semanticFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.semantic-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考语义复核发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.semantic-findings.summary.json",
+        "bytes": 6007,
+        "sha256": "a5e7e7fa6153a513e4c5c1988233e07dfb7cefc8fc5636fe692a8e3fd323c98f"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考语义复核发现.md",
+        "bytes": 10863,
+        "sha256": "d6d8ce9bf2cb2d85129c5912a753f02de8bbefe31d780759cbdb672dd28829ae"
+      }
+    },
+    "semanticMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.semantic-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考语义复核候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.semantic-merge.summary.json",
+        "bytes": 6209,
+        "sha256": "7e1466f82d60bab265fc2926f80def1bdc7777a9e7ad9aa0b29cca0a1e23038b"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考语义复核候选.md",
+        "bytes": 2392,
+        "sha256": "2ce2f040d2d0e38add74319a7369ef26ab33fc88468d1d5d07738170bc2453ef"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.visual-findings.summary.json",
+        "bytes": 9463,
+        "sha256": "4de15aedaabb941251c5221afea9b7cf7253bc132304c476aeb0b7ef78489e8a"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考视觉审计发现.md",
+        "bytes": 2371,
+        "sha256": "db10ddfd14b819d4e83f6827cf25b3fde517b02cdca8a0a565bdf512bf11f23e"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.visual-merge.summary.json",
+        "bytes": 3098,
+        "sha256": "a38c56d95fa7b1a8fb7021a3c04d7100a5f7af308b69ff27f1142672672eed93"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考视觉审计候选.md",
+        "bytes": 2392,
+        "sha256": "2ce2f040d2d0e38add74319a7369ef26ab33fc88468d1d5d07738170bc2453ef"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考.reference-review.summary.json",
+        "bytes": 13248,
+        "sha256": "9e09ac59e06430cc425ef820bf1457b6f5ca359cf0dc386d9a72aa53bc3804da"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.md",
+        "bytes": 2542,
+        "sha256": "75c5d41bf3b5703d5cb9ab728b23d24f66b1c3b6442585aeff0840c5d8a065ab"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.pdf",
+        "bytes": 123836,
+        "sha256": "3dd9b9753f83f30b8077851b2a83b5840cc3f886bf37175a9dd04a018a6d26d4"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.md",
+      "bytes": 2542,
+      "sha256": "75c5d41bf3b5703d5cb9ab728b23d24f66b1c3b6442585aeff0840c5d8a065ab"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.pdf",
+      "bytes": 123836,
+      "sha256": "3dd9b9753f83f30b8077851b2a83b5840cc3f886bf37175a9dd04a018a6d26d4"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.delivery-manifest.json",
+      "bytes": 2783,
+      "sha256": "0844984510ffd1cf30068885e81a467f7d9ccebfae66ffaf368a4c2a29309bf3"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "fab70fadaec37aaa0e9ec73b6c1ff76fb51cbee66577bf0696bd4fc88b6f095b"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考语义复核发现.md",
+      "bytes": 10863,
+      "sha256": "d6d8ce9bf2cb2d85129c5912a753f02de8bbefe31d780759cbdb672dd28829ae"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考语义复核候选.md",
+      "bytes": 2392,
+      "sha256": "2ce2f040d2d0e38add74319a7369ef26ab33fc88468d1d5d07738170bc2453ef"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考盲答与语义复核差异报告.md",
+      "bytes": 4733,
+      "sha256": "3b71d4d2d7fb3ce2e37b585a1032f87efed32333b0bf05a31a78eefba91c804a"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2022-terra-xhigh-regression1\\2022广州中考答案自动复核文本差异报告.md",
+      "bytes": 5446,
+      "sha256": "cde9872b5753e774b569c58a493f564ba687ef8701a30ba531cfd4a629a990e1"
+    }
+  ],
+  "resume": null,
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

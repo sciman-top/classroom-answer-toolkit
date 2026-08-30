@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:52:54.118Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2015广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2015广州中考参考答案.md",
+  "output": "2015广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2015广州中考参考答案.review",
+    "manifestPath": "2015广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2015广州中考参考答案.md",
+      "bytes": 4015,
+      "sha256": "7f041a90c882ad99db905182e1decd3cfe18c2fe71a1e721df1639870468a2b6"
+    },
+    "output": {
+      "path": "2015广州中考参考答案.pdf",
+      "bytes": 168304,
+      "sha256": "0d8e92292cdfcc52bd7bd1a08c3a259c9f46869f903656367d2f985cac0ff5d0"
+    },
+    "snapshot": {
+      "path": "2015广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "7f992dcb309bb637e319914a8905a2b307ec7baff3d1801f08f4a672f31db481"
+    },
+    "reviewFiles": [
+      {
+        "path": "2015广州中考参考答案.review/2015广州中考参考答案.page-001.png",
+        "bytes": 218053,
+        "sha256": "44d5285798e932142fcb86721168d6d01927f89dcba09c6e60f113ade0439c62"
+      },
+      {
+        "path": "2015广州中考参考答案.review/2015广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 845,
+        "sha256": "20b609750d1a1f9a8a9a1054d8c7bb42e702e040d7ea7b14489b5ba12af04ed2"
+      },
+      {
+        "path": "2015广州中考参考答案.review/2015广州中考参考答案.page-002.png",
+        "bytes": 288141,
+        "sha256": "8f7b3da51632fbb98ee3e2e9ff7778a4f856b72d3841b47d80a962c6059efae3"
+      },
+      {
+        "path": "2015广州中考参考答案.review/2015广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1204,
+        "sha256": "456e246c380587fd4e6f190b31f42f52dfc114e01dddf9666b13096af03a465f"
+      },
+      {
+        "path": "2015广州中考参考答案.review/2015广州中考参考答案.page-003.png",
+        "bytes": 270578,
+        "sha256": "c94fb592a2d1b3701743e8d86da412c878171577d12e83b90ca619e355215adc"
+      },
+      {
+        "path": "2015广州中考参考答案.review/2015广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 1018,
+        "sha256": "9be97459f549433bffd07770abad2812f7441becb581ceb89043a9b38db7e124"
+      },
+      {
+        "path": "2015广州中考参考答案.review/manifest.json",
+        "bytes": 4047,
+        "sha256": "a693f6af1b91daf9be25f1b4bc20b8afa0e26a8ba5bc8251fdf75d08993af983"
+      },
+      {
+        "path": "2015广州中考参考答案.review/review.html",
+        "bytes": 1466,
+        "sha256": "5be30639bd4e5c69221653c30c6a80075894099369fb3fcd428b2c11cafbe719"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

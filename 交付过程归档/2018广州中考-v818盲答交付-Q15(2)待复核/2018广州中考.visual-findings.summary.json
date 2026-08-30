@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-30T03:29:40.790Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "visual_audit_findings",
+  "sourcePageCount": 0,
+  "auditImageCount": 27,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_findings",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "luna",
+      "sol"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "luna-xhigh",
+      "sol-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2018-terra-xhigh-regression1\\2018广州中考语义复核候选.md",
+  "candidateSha256": "8ee738ab73abb7960a68736b3c49db6402bfb27f41de8b7cf0e3d1d8950b3c73",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 27,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-001.tile-01.x-01.png",
+      "sha256": "2e3bc2dfadab441503181f7b21b5ee6ac0d4737afa2b3ee1d6aa9141938dd296",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-001.tile-01.x-02.png",
+      "sha256": "9384e0bc7ffaf97967bc810537345cd23e0aa318f0cfee7266a7632ac9d13cc9",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-002.tile-01.x-01.png",
+      "sha256": "99ee9b92284ada3407b9ad4fc3fab0beeef362519d32ae853b94d1b3ea925647",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-002.tile-01.x-02.png",
+      "sha256": "d2452db5b2e561e6977447009fe574fff2dd8473526cf56fb2e90b4c1574804b",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-003.q-009.focus-01.q9-figure-8-phase-transition-arrows.png",
+      "sha256": "6ec478497a714907a4fe8671047da57fcc8eada76f1f16847a55623a4e626773",
+      "evidenceLabel": "No-reference visual audit source focused crop: Q9 Figure 8: inspect arrow directions and heat labels, including M→乙 放热, 乙→丙 吸热, and 丙→甲 bottom arrow 吸热; source page 3; question 9. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-003.tile-01.x-01.png",
+      "sha256": "87c3a20ee8bf28d73cb47a2ac980b56d2102e29f995bb4fff0044cea5403e45c",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-003.tile-01.x-02.png",
+      "sha256": "0d75a6c46d8b76aa461deeaafaed00b7c9db65d0a7b593bb7d6e26dfa2feb13e",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-004.q-009.focus-01.q9-question-and-options.png",
+      "sha256": "b51f268ef7eeb57f848dbd8c031767d6537580ee5fdb0b05e12bb02b256c93b0",
+      "evidenceLabel": "No-reference visual audit source focused crop: Question 9 stem and four ordered phase-state options; source page 4; question 9. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-004.tile-01.x-01.png",
+      "sha256": "3f545d6862b8a4e2b9340199d00923cae48d1371eea8f4810d7c9320da2f38a5",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-004.tile-01.x-02.png",
+      "sha256": "254e936240f40d24039a9e691a42c66f2595d27820c72e02f2629a963853a643",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-005.q-013.focus-01.q13-figure-13-lens-rays.png",
+      "sha256": "dafe687a271a2f346a98423dddd4ffe1e960b1cbe00a978e3864baea44de5297",
+      "evidenceLabel": "No-reference visual audit source focused crop: Q13 Figure 13: compare rays before/after lens; record converging, parallel or diverging and whether convergence increases or decreases; source page 5; question 13. Deterministic source-pixel ray geometry found the post-lens rays converging less than the pre-lens continuation (intersection positions 0.5965 and 0.6366). Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-005.tile-01.x-01.png",
+      "sha256": "182075adb23de4dbcaf00786fba9d8d9f70c8461a409a03726be8c6b8a524af5",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-005.tile-01.x-02.png",
+      "sha256": "646e10261b40bd88f4d2e352d8e40d97df0001121cf18cf761765353f7a13543",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-006.tile-01.x-01.png",
+      "sha256": "d43163d5ee9935b1d882ce4bbb755ad7afc276c9ca0cf05379119af70fc6e236",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-006.tile-01.x-02.png",
+      "sha256": "f872debe12f419eb493d8fc5ce165d7b17f9cbeb822fa547214e1a4f025d4bf9",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-007.tile-01.x-01.png",
+      "sha256": "17327b337169e60a97cc026b470b5b64b7d37b996c051ece9c9c0b12aba09de9",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-007.tile-01.x-02.png",
+      "sha256": "8545d2f2495a9af35e8de8786f9b910976f1c2cb4833fdc1467f18adb44f066f",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-008.tile-01.x-01.png",
+      "sha256": "1084edb302da5bb466919426e2650a0624f483ac5780a0ee0f9033ef927c38b3",
+      "evidenceLabel": "No-reference visual audit source page crop: page 8; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-008.tile-01.x-02.png",
+      "sha256": "fc81849619ae638f72b31213ee5c94f4fc26c59c86662cb76f5725716c6d660b",
+      "evidenceLabel": "No-reference visual audit source page crop: page 8; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-009.q-022.focus-01.q22-figures-21-22-circuit-and-components.png",
+      "sha256": "688e6b0d44c905fe35ad0ebf895a02daa98ed21dab9bab87fe05b8a79766e547",
+      "evidenceLabel": "No-reference visual audit source focused crop: Question 22 Figures 21 and 22 circuit topology, meters, resistor, rheostat, switch, and battery; source page 9; question 22. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-009.tile-01.x-01.png",
+      "sha256": "601b5565e8a4107ea7fbbd547bc807552d994d0b2bfb153389b1b16d0265b516",
+      "evidenceLabel": "No-reference visual audit source page crop: page 9; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-009.tile-01.x-02.png",
+      "sha256": "3a2c3e7b7e8cc57431610c0c30fb9ace16d0841beeae3a4516f41ba991f794f2",
+      "evidenceLabel": "No-reference visual audit source page crop: page 9; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-010.q-023.focus-01.q23-figure-25-thermometer-inset.png",
+      "sha256": "d6e04a9dcd43c8ddbb02f1519305d71ccdff7f3ced8bd9389058391ea4519fc1",
+      "evidenceLabel": "No-reference visual audit source focused crop: Q23 Figure 25: count equal small divisions between 50 and 60 and align red liquid top to the directly visible tick; source page 10; question 23. Deterministic source-pixel linear-scale geometry measured range 50-60 across 10 divisions, indicator at division 8 (raw 8.012), giving 58. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-010.tile-01.x-01.png",
+      "sha256": "0dd0301ce0b481c91cc05386546e487798d1e601863018c245371b767cb24b83",
+      "evidenceLabel": "No-reference visual audit source page crop: page 10; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-010.tile-01.x-02.png",
+      "sha256": "f56d87d580ea818b68bd29d2c160da06b53924a85216beccba559b62046845ac",
+      "evidenceLabel": "No-reference visual audit source page crop: page 10; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-011.tile-01.x-01.png",
+      "sha256": "54a5de6ec769035a910bbeb29cc8f392904a32817d608d63946de14bfe013e07",
+      "evidenceLabel": "No-reference visual audit source page crop: page 11; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\b337af01e5334b6bb9abb967cb635d70\\visual-audit-pages\\2018广州中考.page-011.tile-01.x-02.png",
+      "sha256": "18635d3aa2ae4c480a5e83f8156dbda81b32cb7154d7aa7c5de79be0f33df59e",
+      "evidenceLabel": "No-reference visual audit source page crop: page 11; region 1/1, horizontal tile 2/2."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2018-terra-xhigh-regression1\\2018广州中考视觉审计发现.md",
+  "outputSha256": "31f87ce021f86d766d09fe1864962ed0efd94541dbacab399763841516269cdb",
+  "answerCharacters": 2536,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 344126,
+      "requestBytes": 13565386,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

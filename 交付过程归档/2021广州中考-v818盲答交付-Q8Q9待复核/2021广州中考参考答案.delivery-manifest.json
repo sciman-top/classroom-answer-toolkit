@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:54:03.890Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2021广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2021广州中考参考答案.md",
+  "output": "2021广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2021广州中考参考答案.review",
+    "manifestPath": "2021广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2021广州中考参考答案.md",
+      "bytes": 3328,
+      "sha256": "9fa9ac9dd7439d5dcb5b1e523521826fffd1dd5e759be2a4fa1e69972e657891"
+    },
+    "output": {
+      "path": "2021广州中考参考答案.pdf",
+      "bytes": 159843,
+      "sha256": "44fc636ecc1785e16a4f0bfc3d7ebb2a27056a080fcf87503c6b09f6cbeb6965"
+    },
+    "snapshot": {
+      "path": "2021广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "efba97a87218df8553f1bf828bd05d314fbb4ea9ab86ab8104b3eef8fb1191c1"
+    },
+    "reviewFiles": [
+      {
+        "path": "2021广州中考参考答案.review/2021广州中考参考答案.page-001.png",
+        "bytes": 261787,
+        "sha256": "c4ca9e6073db7f53732faf3d6ef185b3dd48b48e2d3fa4b3326f192dedf93db3"
+      },
+      {
+        "path": "2021广州中考参考答案.review/2021广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1060,
+        "sha256": "091b53bfcb2d590af315f46c9e042f69443aa1c5031687366affdc5cb0d6e1fb"
+      },
+      {
+        "path": "2021广州中考参考答案.review/2021广州中考参考答案.page-002.png",
+        "bytes": 301539,
+        "sha256": "5b326b42fa8de9211908eb3fd7880a0c3c5e42cecf09610cab5f523ed71647ae"
+      },
+      {
+        "path": "2021广州中考参考答案.review/2021广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1230,
+        "sha256": "e75b10ab2358f7152bbf0aca6c46c051a02252c9e159c71bdbff0aaeeeb29907"
+      },
+      {
+        "path": "2021广州中考参考答案.review/2021广州中考参考答案.page-003.png",
+        "bytes": 142124,
+        "sha256": "dcd7a5f14b09a2c229feb0bc5362e98745a33e55b26d708a0d753465c484d999"
+      },
+      {
+        "path": "2021广州中考参考答案.review/2021广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 383,
+        "sha256": "44ddef2a8cb2009cdc4ad736b8feef103e2fe95ecb259143f907e71e90bbd319"
+      },
+      {
+        "path": "2021广州中考参考答案.review/manifest.json",
+        "bytes": 4119,
+        "sha256": "1a6863dd744621ad35538f282cb5fb404746c70aa2b4adf27614e47bf8f269bf"
+      },
+      {
+        "path": "2021广州中考参考答案.review/review.html",
+        "bytes": 1474,
+        "sha256": "b5c22404c2c724a64077f7bd53f75208997267357d059be61c6c3c6121f3d23a"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

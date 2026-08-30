@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "d28d111e98cc4517bc5f8832ca327aeb",
+  "status": "succeeded",
+  "startedAt": "2026-08-21T14:40:30.3943582+00:00",
+  "finishedAt": "2026-08-21T15:03:57.0950612+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2019广州中考.pdf",
+      "bytes": 1254764,
+      "sha256": "85dd476db8eacd837f7a4590bac7c795ef5cf53f68a1c68a08f279e7d1731dba"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2019广州中考答案.pdf",
+      "bytes": 697141,
+      "sha256": "b4dfdef844f45be070eaf3db88961ede314eca829493b70e0ddbe17631c1d116"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\junior-physics-answer\\spec.md",
+      "bytes": 107775,
+      "sha256": "72d32ebbb401c343edbcc4de1ca211e53e2ff8b6e8e8c642392799c96f89100c"
+    },
+    "blindFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+      "bytes": 908,
+      "sha256": "fd77ea07dd32a6e35b14b87cdcff7f6ce31d089b54ba13e5e32bfeb1b9a52b76"
+    },
+    "visualAuditFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+      "bytes": 908,
+      "sha256": "fd77ea07dd32a6e35b14b87cdcff7f6ce31d089b54ba13e5e32bfeb1b9a52b76"
+    }
+  },
+  "options": {
+    "provider": "all",
+    "profile": "classroom",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "blindFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+    "visualAuditFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2019-guangzhou.focus-regions.json",
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": true
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.blind-generation.summary.json",
+        "bytes": 6166,
+        "sha256": "32d93e3ccde5638303943e79e6f40c6654f399dda9eff6901de1522a782d213f"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考盲答候选.md",
+        "bytes": 3421,
+        "sha256": "616fcc1b9f77983ef41e420863803f24340edce0c15dac282959e175d30d5efa"
+      }
+    },
+    "semanticFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.semantic-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.semantic-findings.summary.json",
+        "bytes": 6385,
+        "sha256": "03c0f88b9a3abc3e47321285f29906f55f91a3676d0d9bb46a848d2dcd63c230"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核发现.md",
+        "bytes": 7410,
+        "sha256": "a233514d8bbd1a8b42388e9f8f37c3c13020739c7b5cae7d1ea92d99b93733fd"
+      }
+    },
+    "semanticMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.semantic-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.semantic-merge.summary.json",
+        "bytes": 2342,
+        "sha256": "a01230b1d021eee66827c91820f24698d9bb3f5831cda1d1a30368d95eb4bdf5"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核候选.md",
+        "bytes": 3513,
+        "sha256": "082f4e48ab3208eb17a1d1ec0321d520f1c62762d189d659b6779abfa0cae990"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.visual-findings.summary.json",
+        "bytes": 10351,
+        "sha256": "e47f4c42f7a936d2c4c4ba9ddb9bbfe04a8e14beaee37624c309d77894f25786"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考视觉审计发现.md",
+        "bytes": 5553,
+        "sha256": "9093271600002cb8298c6606a63b052776869484ae4511824c0414207fbfce9c"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.visual-merge.summary.json",
+        "bytes": 2362,
+        "sha256": "82114f56bf1ce38ef83d8562df5e0325cfe6265d2b800525c887ec8a5853c78b"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考视觉审计候选.md",
+        "bytes": 3534,
+        "sha256": "2d9f14d9272c233877043f578fbe559a6d88a69de75e3bf1f907469deb0a6485"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考.reference-review.summary.json",
+        "bytes": 13520,
+        "sha256": "4a7edd27d9e36214578274c1ab76e754507ced3350eb195927c7d84fae7721e6"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.md",
+        "bytes": 3752,
+        "sha256": "314eddea4d30680a9f599aba917ba3557dcd879f0069cfaa4783b061c8bef311"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.pdf",
+        "bytes": 189216,
+        "sha256": "39e4f06347577056f005bdc7bce5f0df71097a40ec7697322e045ae4348cfbda"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.md",
+      "bytes": 3752,
+      "sha256": "314eddea4d30680a9f599aba917ba3557dcd879f0069cfaa4783b061c8bef311"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.pdf",
+      "bytes": 189216,
+      "sha256": "39e4f06347577056f005bdc7bce5f0df71097a40ec7697322e045ae4348cfbda"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.delivery-manifest.json",
+      "bytes": 5005,
+      "sha256": "e5261c7f165c7f50b08ed6b65229cf6856941812bb0a508aa903b4c693631150"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考参考答案.snapshot.json",
+      "bytes": 10507,
+      "sha256": "4d768a2e433e1379ff67d2052d6c519ba5585ad99a1feec41fd7f5f776c0a7b8"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核发现.md",
+      "bytes": 7410,
+      "sha256": "a233514d8bbd1a8b42388e9f8f37c3c13020739c7b5cae7d1ea92d99b93733fd"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考语义复核候选.md",
+      "bytes": 3513,
+      "sha256": "082f4e48ab3208eb17a1d1ec0321d520f1c62762d189d659b6779abfa0cae990"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考盲答与语义复核差异报告.md",
+      "bytes": 4807,
+      "sha256": "f1febc36fc300000650c0f2682f6454731ca96c458143f5f10f0c58026a2dcc2"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\正式交付\\2019广州中考-v822语义复核确定性合并验证\\2019广州中考答案自动复核文本差异报告.md",
+      "bytes": 7873,
+      "sha256": "4a155b61b23d3ede53ba7ffbe6167bc489277c49998630588169f6067e20382d"
+    }
+  ],
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

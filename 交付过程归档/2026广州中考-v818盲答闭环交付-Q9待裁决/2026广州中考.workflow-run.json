@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "live-answer-workflow-run",
+  "runId": "cb698ab2d22d4ce3b4f29ce2d0f62cc5",
+  "status": "succeeded",
+  "startedAt": "2026-08-29T16:05:37.4223441+00:00",
+  "finishedAt": "2026-08-29T16:23:06.2860276+00:00",
+  "inputs": {
+    "sourcePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2026广州中考.pdf",
+      "bytes": 691740,
+      "sha256": "ab627c5c8ad8ca3b3c808a84fb568d265f80a7a50e952a03b06adc6447a27aa7"
+    },
+    "referencePdf": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\广州物理中考试卷\\2026广州中考（解析版）.pdf",
+      "bytes": 1657921,
+      "sha256": "5079fdb7ae508e6f22dba8e999d7942ccba7796db357b2be9f012daa83ab90d1"
+    },
+    "prompt": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\prompts\\specs\\compiled\\试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+      "bytes": 115340,
+      "sha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45"
+    },
+    "blindFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2026-guangzhou.focus-regions.json",
+      "bytes": 2192,
+      "sha256": "143be3f33373f06770407ad6705dbd4ae51afa8d56fb9daf7f1834ae2bf30611"
+    },
+    "visualAuditFocusRegions": {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2026-guangzhou.focus-regions.json",
+      "bytes": 2192,
+      "sha256": "143be3f33373f06770407ad6705dbd4ae51afa8d56fb9daf7f1834ae2bf30611"
+    }
+  },
+  "options": {
+    "provider": "primary",
+    "subjectPack": "junior-physics-answer",
+    "profile": "classroom",
+    "blindQualityProfile": "terra-xhigh",
+    "semanticQualityProfile": "terra-xhigh",
+    "visualQualityProfile": "terra-xhigh",
+    "referenceQualityProfile": "terra-xhigh",
+    "visualDetail": "original",
+    "maxOutputTokens": 24000,
+    "timeoutMs": 600000,
+    "reviewScale": 2.0,
+    "visualAuditScale": 4.0,
+    "blindFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2026-guangzhou.focus-regions.json",
+    "visualAuditFocusRegionsFile": "D:\\CODE\\classroom-answer-toolkit\\eval\\junior-physics-answer\\real-paper\\2026-guangzhou.focus-regions.json",
+    "skipVisualAudit": false,
+    "keepReview": true,
+    "useGatewayProxy": false,
+    "configEnvFile": "D:\\CODE\\classroom-answer-toolkit\\.env.cockpit"
+  },
+  "phases": {
+    "blindGeneration": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.blind-generation.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考盲答候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.blind-generation.summary.json",
+        "bytes": 9657,
+        "sha256": "a8d8bfa6fc2f9c6e7868f46c9cb06b39d1fc211531b72f30cdb73a28b5f41e51"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考盲答候选.md",
+        "bytes": 2517,
+        "sha256": "ab083ce5df6e46535a9650536c63019585adef380513cc4b0cd44a7ee9cd4123"
+      }
+    },
+    "semanticFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.semantic-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考语义复核发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.semantic-findings.summary.json",
+        "bytes": 9881,
+        "sha256": "cff22210f1ec372817751c8905540fd741f6118b04170e02a4ae3cb72eb9668c"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考语义复核发现.md",
+        "bytes": 9056,
+        "sha256": "07e5b812deac4658bf2709e71c37a3ee2f7ab2d8f8547c6e646cbc8d61ba573b"
+      }
+    },
+    "semanticMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.semantic-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考语义复核候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.semantic-merge.summary.json",
+        "bytes": 10082,
+        "sha256": "608c9e1ffa33b87af09c4bc262a9a179325f474797bbe37f60cac6490d35d928"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考语义复核候选.md",
+        "bytes": 2473,
+        "sha256": "6b3a8c6c114679c9dce4890afbd494dfb5fd6812dd5f0bc490b65082ca01711b"
+      }
+    },
+    "visualFindings": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.visual-findings.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考视觉审计发现.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.visual-findings.summary.json",
+        "bytes": 13539,
+        "sha256": "ed37137d762448aefe7f9e75d0e84b0a5aefbc3fa65097c61930c6e2ab2a61de"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考视觉审计发现.md",
+        "bytes": 3372,
+        "sha256": "db591c6ea0da6c33f38258703a2f25b849cc3c13de27d83cf14a95e8c6e9eada"
+      }
+    },
+    "visualMerge": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.visual-merge.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考视觉审计候选.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.visual-merge.summary.json",
+        "bytes": 3098,
+        "sha256": "7b3a047a780cd33cee31db935f2838fcb850f0ddc182fdf3599ab600a507f6a4"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考视觉审计候选.md",
+        "bytes": 2473,
+        "sha256": "6b3a8c6c114679c9dce4890afbd494dfb5fd6812dd5f0bc490b65082ca01711b"
+      }
+    },
+    "referenceReview": {
+      "status": "completed",
+      "summaryPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.reference-review.summary.json",
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.md",
+      "summary": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考.reference-review.summary.json",
+        "bytes": 15975,
+        "sha256": "88835037bfb11e67be5f9208bc3e2c8416707787c13c4b5565682d88018742c9"
+      },
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.md",
+        "bytes": 2758,
+        "sha256": "da89a65cecf59755e6dd8de27c3a5ec446a41b735aa58180d4ed20dbee8505ce"
+      }
+    },
+    "delivery": {
+      "status": "completed",
+      "summaryPath": null,
+      "artifactPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.pdf",
+      "summary": null,
+      "artifact": {
+        "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.pdf",
+        "bytes": 113993,
+        "sha256": "5bd7316476b5793cc60ac9d89a99e5f3acc4d4024cda6e965e3a7f5a281df213"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.md",
+      "bytes": 2758,
+      "sha256": "da89a65cecf59755e6dd8de27c3a5ec446a41b735aa58180d4ed20dbee8505ce"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.pdf",
+      "bytes": 113993,
+      "sha256": "5bd7316476b5793cc60ac9d89a99e5f3acc4d4024cda6e965e3a7f5a281df213"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.delivery-manifest.json",
+      "bytes": 3238,
+      "sha256": "b98167d0782c6d0cd851a27bd6239893728bd689926f01e2c07b5aa991d00cf1"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "efd8bebd8152fe30def019667a2514d90365f75fd5dd168b3039e2c40904d835"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考语义复核发现.md",
+      "bytes": 9056,
+      "sha256": "07e5b812deac4658bf2709e71c37a3ee2f7ab2d8f8547c6e646cbc8d61ba573b"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考语义复核候选.md",
+      "bytes": 2473,
+      "sha256": "6b3a8c6c114679c9dce4890afbd494dfb5fd6812dd5f0bc490b65082ca01711b"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考盲答与语义复核差异报告.md",
+      "bytes": 4449,
+      "sha256": "805a1b52474a44e9ab1dff4ac8bf1bd34f97075c413ae2a30baeab14a3cd55cf"
+    },
+    {
+      "path": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2026-terra-xhigh-blind-run13\\2026广州中考答案自动复核文本差异报告.md",
+      "bytes": 5354,
+      "sha256": "4f14ba04149437cd8dece50b48822d818c40a8dfe7756b1dac27b27c2acbbaab"
+    }
+  ],
+  "resume": null,
+  "diagnostics": {
+    "retainedWorkRoot": null
+  },
+  "error": null
+}

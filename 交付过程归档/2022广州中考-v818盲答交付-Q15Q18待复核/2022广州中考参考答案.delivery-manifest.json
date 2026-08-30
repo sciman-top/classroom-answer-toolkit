@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:53:58.916Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2022广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2022广州中考参考答案.md",
+  "output": "2022广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2022广州中考参考答案.review",
+    "manifestPath": "2022广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2022广州中考参考答案.md",
+      "bytes": 3135,
+      "sha256": "5d8fa2df291d8cb2dafed04d3a1f8b7b4136ce4479cab29562ba686911cd554a"
+    },
+    "output": {
+      "path": "2022广州中考参考答案.pdf",
+      "bytes": 157077,
+      "sha256": "04befc8709873a90fce318769810a932d6b4963a293803ebc20c5d5fbb5bb761"
+    },
+    "snapshot": {
+      "path": "2022广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "c5ea59b867889c80b0ce8c23a7962c98c0d727aed2b596ccf7b2d8d63ead9886"
+    },
+    "reviewFiles": [
+      {
+        "path": "2022广州中考参考答案.review/2022广州中考参考答案.page-001.png",
+        "bytes": 252950,
+        "sha256": "f3b44eaba79573220eda4cdadde1be6b3af02a306b87f076f5323281ad52776c"
+      },
+      {
+        "path": "2022广州中考参考答案.review/2022广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 1017,
+        "sha256": "4f1aae6cdcc73fcf159de218a00fbe20d6015e05d0a250088764f40172823c29"
+      },
+      {
+        "path": "2022广州中考参考答案.review/2022广州中考参考答案.page-002.png",
+        "bytes": 320341,
+        "sha256": "8aaeda86e7272b394ab1ce06423496d5096a4f9de8729c26a65e25af43b9710e"
+      },
+      {
+        "path": "2022广州中考参考答案.review/2022广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1276,
+        "sha256": "2c7d8010abd0c5e4dc1510b823019a43ba00fc522b7a78d398576aa6ba82f5d4"
+      },
+      {
+        "path": "2022广州中考参考答案.review/2022广州中考参考答案.page-003.png",
+        "bytes": 108990,
+        "sha256": "8fc345264f2ce26adfe96a6001fe7ea43d877da8d9a72ea9d1a7c8ac215f3d22"
+      },
+      {
+        "path": "2022广州中考参考答案.review/2022广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 277,
+        "sha256": "b9268ab666b226d587ffcd1fe3f74426d599fa6080f310faacdb80fb8cbd1f69"
+      },
+      {
+        "path": "2022广州中考参考答案.review/manifest.json",
+        "bytes": 4137,
+        "sha256": "f86b180ca7c929e1e396967c233720926c017c11c6d8d3349991968beb065d49"
+      },
+      {
+        "path": "2022广州中考参考答案.review/review.html",
+        "bytes": 1476,
+        "sha256": "602b159cc6a5620a0111af430ecb790f7b8c43bd673552247c388589af898ba0"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

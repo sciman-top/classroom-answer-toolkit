@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-30T04:20:58.473Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "visual_audit_findings",
+  "sourcePageCount": 0,
+  "auditImageCount": 18,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "visual_audit_findings",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "luna",
+      "sol"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "luna-xhigh",
+      "sol-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2020-terra-xhigh-regression1\\2020广州中考语义复核候选.md",
+  "candidateSha256": "66cbc5101217898231c052b24b3eb4821e3e6a335327cbb1e843c6cd2da60d92",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": null,
+  "sourceTextSha256": null,
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 18,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-001.tile-01.x-01.png",
+      "sha256": "63c8e52a2e5dc93150826b079f5ef045daf983516386a40c39ce0c65d77bedca",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-001.tile-01.x-02.png",
+      "sha256": "dfcc5d2aa92b8d0406bcba3c11c2e799df145899b77e9b1a149e849c1ae38034",
+      "evidenceLabel": "No-reference visual audit source page crop: page 1; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-002.tile-01.x-01.png",
+      "sha256": "75f10d07087eb3ccdcc2d0092ef0b8e4f71357dcdd1a297e1bf9ef8a1aec4754",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-002.tile-01.x-02.png",
+      "sha256": "d56ab796f2e7044f998b8ebfc41bacaf786c382a1f21d73cd6b41202e64e3da0",
+      "evidenceLabel": "No-reference visual audit source page crop: page 2; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-003.tile-01.x-01.png",
+      "sha256": "0bf68bd2b17f2979862c8c221b1440cee2383fb453dfffbf34420c7525b73355",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-003.tile-01.x-02.png",
+      "sha256": "7cea5ee35b5aabf03a795f4e065acdca0f1bafff1a0c0d88a3643e457a697823",
+      "evidenceLabel": "No-reference visual audit source page crop: page 3; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-004.tile-01.x-01.png",
+      "sha256": "82cfd80fde8a6f02089e875ec48b6ec3dca40dde1e1853f476518c97cf8bcdab",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-004.tile-01.x-02.png",
+      "sha256": "208d4b78535cb6e1c5fdf680eb928c2fe05213772486e2e859b9d18f1695c12d",
+      "evidenceLabel": "No-reference visual audit source page crop: page 4; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-005.tile-01.x-01.png",
+      "sha256": "23afb214ac7a706e040e3932d23eececb03aa7657526255d6afdcec28c3d9e17",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-005.tile-01.x-02.png",
+      "sha256": "de2a210e76ffaa1ac5c42409da71f40e78bf36ae280fccaa9cc539d843b1b1c5",
+      "evidenceLabel": "No-reference visual audit source page crop: page 5; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-006.tile-01.x-01.png",
+      "sha256": "ff7a693efc1bdeafdc6cbf8272ef51da6a08c47ffa1dd6454509c7a0a097f36a",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-006.tile-01.x-02.png",
+      "sha256": "e7f1582cfbeac31be3a42e28f8902ef9e4863fc3c00e5c52736e3a713c724656",
+      "evidenceLabel": "No-reference visual audit source page crop: page 6; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-007.tile-01.x-01.png",
+      "sha256": "c56bb1ac7f45e276713f840fa259ce1e97277836692a24a67f36627926926e36",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-007.tile-01.x-02.png",
+      "sha256": "5f6a31e61d70ef73d39a3a043a000a86e14ca1df81952480651b418d4178f903",
+      "evidenceLabel": "No-reference visual audit source page crop: page 7; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-008.tile-01.x-01.png",
+      "sha256": "4b63bd4fd83fca340f3aa112b9d25c3fc5000575b1ef6f01b9c60aaa99186c97",
+      "evidenceLabel": "No-reference visual audit source page crop: page 8; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-008.tile-01.x-02.png",
+      "sha256": "cb31bd80d37b828def99b25a57d3c16cddd62c0590e601b74a659a04a1daa254",
+      "evidenceLabel": "No-reference visual audit source page crop: page 8; region 1/1, horizontal tile 2/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-009.tile-01.x-01.png",
+      "sha256": "6ef23731a8b07f5a408cb16d4c295fd1ab6d7b8fe13437c75b4136d3645d5baf",
+      "evidenceLabel": "No-reference visual audit source page crop: page 9; region 1/1, horizontal tile 1/2."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\62ec5021d1e44789baef7e3742f93e20\\visual-audit-pages\\2020广州中考.page-009.tile-01.x-02.png",
+      "sha256": "680cf0371ec8146056a155896474b99ede0c6388d94b6bc69a7909c69f68b78e",
+      "evidenceLabel": "No-reference visual audit source page crop: page 9; region 1/1, horizontal tile 2/2."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2020-terra-xhigh-regression1\\2020广州中考视觉审计发现.md",
+  "outputSha256": "d189d5608bbe0926b0e9bc86f62ad54f4f9e2ec0b89515d7d17e1e77ccc5badc",
+  "answerCharacters": 1149,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 265435,
+      "requestBytes": 10463995,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

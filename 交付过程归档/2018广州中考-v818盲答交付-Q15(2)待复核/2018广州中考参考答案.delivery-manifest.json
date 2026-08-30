@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:53:12.469Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2018广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2018广州中考参考答案.md",
+  "output": "2018广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2018广州中考参考答案.review",
+    "manifestPath": "2018广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 4
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2018广州中考参考答案.md",
+      "bytes": 4475,
+      "sha256": "fddc78684d0f13f681a21d7fedaa4e8bf973c50958acb0e9e4d4d5cfdcf7e516"
+    },
+    "output": {
+      "path": "2018广州中考参考答案.pdf",
+      "bytes": 173251,
+      "sha256": "df6939212190d4299779920bf58e4dea4e42eeae12a70bd1ebc5c98bd29b8e29"
+    },
+    "snapshot": {
+      "path": "2018广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "ebc811a51346769fb2286e0d2c600fb7407a19bc54d68268930cefb556bf857b"
+    },
+    "reviewFiles": [
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-001.png",
+        "bytes": 204816,
+        "sha256": "0cfeaebf770105653612b2d7302677939c2c6ed12dd9c8e9ab6c85a63517ebac"
+      },
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 776,
+        "sha256": "b2ed3fa2ad1426c2e0b69aae892fab2d28c5428bd6f78c82b54637319f75061f"
+      },
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-002.png",
+        "bytes": 211632,
+        "sha256": "9ba6f3dd93de49fec65ea78fadfcd77ad80b89defa2405f15dd94191c978d476"
+      },
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 818,
+        "sha256": "c3b80c50ad72b692b1e7197703093d1371abcd9a2d79879e87b070230fcb2129"
+      },
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-003.png",
+        "bytes": 271793,
+        "sha256": "022d9120ffb21fdebd622c51d2ded9055de1b9e800ee6d17d570ad5ac3aeebed"
+      },
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 1090,
+        "sha256": "d252e10c04dbf1679b4475ff31b7cbd65d27727a69d86ae83ae1eab6f78c75a9"
+      },
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-004.png",
+        "bytes": 180576,
+        "sha256": "07aca78d575e8ae1ffb85f48291003d934f32394f7fcfc2f83d23c7ebef0c84a"
+      },
+      {
+        "path": "2018广州中考参考答案.review/2018广州中考参考答案.page-004.text-layer.txt",
+        "bytes": 554,
+        "sha256": "0765387a34e0b10594e76ec38ecaa48b89ae62c975d6cff9f6fa36f7e4f74721"
+      },
+      {
+        "path": "2018广州中考参考答案.review/manifest.json",
+        "bytes": 5135,
+        "sha256": "e9982ecc4fd33d83a8df6992443637f5498348a5160be640797c8d9e30696abb"
+      },
+      {
+        "path": "2018广州中考参考答案.review/review.html",
+        "bytes": 1691,
+        "sha256": "2f18813fd4e4a6ec6fb8e85bee28c75724c6db322d41c263d749d05d8dbd9bab"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:54:32.895Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2025广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2025广州中考参考答案.md",
+  "output": "2025广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2025广州中考参考答案.review",
+    "manifestPath": "2025广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2025广州中考参考答案.md",
+      "bytes": 3146,
+      "sha256": "9f73f942835b236ee15890e14d2fed2c8470b26f3380211162e129998ea7428f"
+    },
+    "output": {
+      "path": "2025广州中考参考答案.pdf",
+      "bytes": 148609,
+      "sha256": "c145108066947f00e2e9dad69d741fca5abe11eb4a5d525f0d4feac53ec91764"
+    },
+    "snapshot": {
+      "path": "2025广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "b9358c05e22067aca360cca259bd132e486e9ba2c6957dacfb78e52d3c507ad2"
+    },
+    "reviewFiles": [
+      {
+        "path": "2025广州中考参考答案.review/2025广州中考参考答案.page-001.png",
+        "bytes": 230555,
+        "sha256": "b15987898ac5425468bc58c585861f7bcbffbd44b72f9554cbd9edd214109036"
+      },
+      {
+        "path": "2025广州中考参考答案.review/2025广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 953,
+        "sha256": "96b5e1489e22ab59e32ea675571daae5ef7a81fdfd9a6049ebda42b9789ff135"
+      },
+      {
+        "path": "2025广州中考参考答案.review/2025广州中考参考答案.page-002.png",
+        "bytes": 286373,
+        "sha256": "c6fa7eac7f2dc9e274c587fc4d7cf180084acfd6ce0ced6d7c1a6f6bf550e933"
+      },
+      {
+        "path": "2025广州中考参考答案.review/2025广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1123,
+        "sha256": "c068f2773dddd5981af0310e10127199550f007b0820996beed64918f8886df8"
+      },
+      {
+        "path": "2025广州中考参考答案.review/2025广州中考参考答案.page-003.png",
+        "bytes": 125670,
+        "sha256": "b415d614285cb233e129d0f0cbb58d81adb95ab7734da05c78bdc88654d722af"
+      },
+      {
+        "path": "2025广州中考参考答案.review/2025广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 340,
+        "sha256": "88f0b22ea642d3f1773de4d4e5b26bfb18460741f82e35360916cd1b9dad373b"
+      },
+      {
+        "path": "2025广州中考参考答案.review/manifest.json",
+        "bytes": 4155,
+        "sha256": "fff8b7951dc9d89395be7c8d052a31b31474d2f2a36abf84b13731c67a1ca63c"
+      },
+      {
+        "path": "2025广州中考参考答案.review/review.html",
+        "bytes": 1478,
+        "sha256": "bb1a733dd669eb57f8ed4714bf1fb660e74ad350e893124e5fded1cf67dc2b67"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

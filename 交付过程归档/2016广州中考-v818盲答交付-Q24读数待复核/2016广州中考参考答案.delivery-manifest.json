@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:52:59.389Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2016广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2016广州中考参考答案.md",
+  "output": "2016广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2016广州中考参考答案.review",
+    "manifestPath": "2016广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 4
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2016广州中考参考答案.md",
+      "bytes": 3890,
+      "sha256": "fb2082a6a368b63da7a60192596ff8c788df6f329e08d5a910dc89184f347505"
+    },
+    "output": {
+      "path": "2016广州中考参考答案.pdf",
+      "bytes": 175899,
+      "sha256": "fe4da561b9888e9b4c45ba7f4fe756d5b7663303824232cc57a8b0f938e55c12"
+    },
+    "snapshot": {
+      "path": "2016广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "2df052e89a7463103e34c23ae02119cfb310f9ca7589e5b4deda065da7fddd50"
+    },
+    "reviewFiles": [
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-001.png",
+        "bytes": 231941,
+        "sha256": "2ab6993aea23d538f1baea86e13eecfa340c8aeb98d3480f47a35fe07ffcfb6c"
+      },
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 933,
+        "sha256": "62c23b6a37d693ac2a33dd7d40454ccec738625327f54c852ee1c61159a3a51f"
+      },
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-002.png",
+        "bytes": 183343,
+        "sha256": "72630615b0c92dd8abfe0a35cba76b1308d8a4e86093de155e867f554d50799e"
+      },
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 661,
+        "sha256": "41700ce5915a22fec9b486e6d4f84f042206fada58c330ebc2a05db4412fca78"
+      },
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-003.png",
+        "bytes": 318991,
+        "sha256": "7a3705e298a6d965d8be3e546ac8af364d66a213c7ae53a57435e69292668280"
+      },
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 1241,
+        "sha256": "53a4d867cdec57f710a9dff58c4975c6c79d0876e51f163d774eee84b2bb99ff"
+      },
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-004.png",
+        "bytes": 103039,
+        "sha256": "9ba4c09a42ba84bce105fba3b498b72403174d42fc2ea396f325cf529d4f9570"
+      },
+      {
+        "path": "2016广州中考参考答案.review/2016广州中考参考答案.page-004.text-layer.txt",
+        "bytes": 230,
+        "sha256": "ee4e39f02775353281fb8bf43c70d78fcb50646e86c2f583d1c44872fa949f3b"
+      },
+      {
+        "path": "2016广州中考参考答案.review/manifest.json",
+        "bytes": 5168,
+        "sha256": "0a44006ca63805f492ec31e5f46ddb398026e2ca09e7e4e7e0805c6fd738f67f"
+      },
+      {
+        "path": "2016广州中考参考答案.review/review.html",
+        "bytes": 1694,
+        "sha256": "2bd0e6fc770e11269e59fc904e326e73ebc7a5d7ae6289acc9682d1a3026f726"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}

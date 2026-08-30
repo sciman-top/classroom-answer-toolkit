@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-29T17:07:46.731Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "semantic_review_findings",
+  "sourcePageCount": 11,
+  "auditImageCount": 0,
+  "referencePageCount": 0,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "semantic_review_findings",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "sol",
+      "luna"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "sol-xhigh",
+      "luna-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2017-terra-xhigh-regression3\\2017广州中考盲答候选.md",
+  "candidateSha256": "1ee52f59ae76ba2a530e4f3b342a6909e166811b82acc08d412e99a75e16dfa3",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\source-exam-text.txt",
+  "sourceTextSha256": "315a453e333f482017ef254b36479f674b07d04c1d2e59de09242016106bf02e",
+  "referenceTextPath": null,
+  "referenceTextSha256": null,
+  "pageCount": 11,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-001.png",
+      "sha256": "b2b20365a8297d5ac3930f67ac59a456f6df3bd69aae418136e64197f5506c9e",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-002.png",
+      "sha256": "234eb75f150e9b409c54f4206aa996942061e5ed3988bb5a7979c2729c6b0f7b",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-003.png",
+      "sha256": "a05188df4772be37cccdcd6ab92abe68f09945c600fee20a3bac6f31b897daba",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-004.png",
+      "sha256": "a0aed6ee810645aec9af1fcdb519a55aa3efa52c2ee0b60cfcf33d5ba2dd08a6",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-005.png",
+      "sha256": "14ca4a25f8cd71ab44d3603539c74597e9b9b268f495914d8f2abdff1e97032a",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-006.png",
+      "sha256": "0bc1bfda0659d46e4273971c48edd8c01ecd84b4acbf63fc283e2019143cb8e0",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-007.png",
+      "sha256": "bfd7136895fbd0f160179821166ad7364bc9b4e1034a7377840e1ec41de067ce",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-008.png",
+      "sha256": "3d68ad2c481bcfdd4fd9edee3f8e7991aece3d4755c6a74bee65431e92f06f22",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-008.q-023.focus-01.q23-figure-24-fault-circuit-topology.png",
+      "sha256": "19ff87fa9992f6abc0a7d9525c8ac81fd53f1fdb0922a69ae930489bc5c749f5",
+      "evidenceLabel": "Source exam focused crop: Q23 Figure 24 (3): trace voltage-meter leads to nodes; name the single component; do not use intended wiring or combine series components; source page 8; question 23. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-008.q-023.focus-02.q23-figure-25-meters.png",
+      "sha256": "532e070f6dcbac6da3759c28a8b9a6a3b9a5e764bb61ff3e0434643482d93f9c",
+      "evidenceLabel": "Source exam focused crop: Question 23 Figure 25 voltage and current meter dials with their visible terminals; source page 8; question 23. Deterministic source-pixel geometry measured range 0-3 across 30 divisions, pointer at division 20 (raw 19.748), giving 2. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\2338172b66404d30a6bd7a72f44ac35a\\pages\\2017广州中考.page-008.q-023.focus-03.q23-figure-25-current-meter.png",
+      "sha256": "e5cbb3e7f615da11fb574aeec300dd3b933c8745cb927300e45a079accb30486",
+      "evidenceLabel": "Source exam focused crop: Question 23 Figure 25 current meter dial, pointer, scale labels, and visible terminals; source page 8; question 23. Deterministic source-pixel geometry measured range 0-0.6 across 30 divisions, pointer at division 5 (raw 5.331), giving 0.1. Inspect only the named visual part in this crop; all geometry is source evidence, not an answer key."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2017-terra-xhigh-regression3\\2017广州中考语义复核发现.md",
+  "outputSha256": "968059e80c1ab94ce93afa2df88fd9f239c0b3ed53408ad9bf2db4688c40925f",
+  "answerCharacters": 6065,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 340835,
+      "requestBytes": 4019963,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

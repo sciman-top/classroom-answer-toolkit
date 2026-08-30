@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "1.2",
+  "kind": "live-answer-generation-summary",
+  "generatedAt": "2026-08-30T04:48:05.754Z",
+  "provider": "primary",
+  "model": "gpt-5.6-terra",
+  "reasoningEffort": "xhigh",
+  "promptPath": "prompts/specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md",
+  "promptSha256": "09e805956939243c51208d3accd9637d4cec297466420c8cef55f2622b705d45",
+  "mode": "reference_review",
+  "sourcePageCount": 8,
+  "auditImageCount": 0,
+  "referencePageCount": 4,
+  "requestedVisualDetailMode": "original",
+  "providerVisualDetailMode": "original",
+  "routing": {
+    "mode": "reference_review",
+    "qualityProfile": "terra-xhigh",
+    "requestedQualityProfile": "terra-xhigh",
+    "resolvedQualityProfile": "terra-xhigh",
+    "requestedPreset": "terra",
+    "resolvedPreset": "terra",
+    "activePreset": "terra",
+    "qualityDegraded": false,
+    "selectedRole": "primary",
+    "orderedPresets": [
+      "terra",
+      "luna",
+      "sol"
+    ],
+    "orderedRoles": [
+      "primary"
+    ],
+    "orderedQualityProfiles": [
+      "terra-xhigh",
+      "luna-xhigh",
+      "sol-xhigh"
+    ],
+    "orderedExecutionSlots": [
+      1,
+      2
+    ],
+    "executionSlot": 1,
+    "executionSlotCount": 5,
+    "target": "primary",
+    "resolvedRole": "primary",
+    "attemptedRoles": [
+      "primary"
+    ]
+  },
+  "candidatePath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2021-terra-xhigh-regression1\\2021广州中考视觉审计候选.md",
+  "candidateSha256": "b53ed40beb5b1d41115309fff2ca34cbb5c103701e302241ec9f65519555762a",
+  "semanticFindingsPath": null,
+  "semanticFindingsSha256": null,
+  "auditFindingsPath": null,
+  "auditFindingsSha256": null,
+  "sourceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\source-exam-text.txt",
+  "sourceTextSha256": "4525330d28ae0e7b0e09bb399fa3e0bf2ee8a934469dd960f6fb88479798da3f",
+  "referenceTextPath": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\reference-answer-text.txt",
+  "referenceTextSha256": "4f85f7448f3c05599d89890fc913badcc9f41035c2f7cadb8cc22a3d465b66ee",
+  "pageCount": 12,
+  "pageImages": [
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-001.png",
+      "sha256": "7774106108a5467d2317955996c77b61563b934a81601a398bb094bd80158a59",
+      "evidenceLabel": "Source exam page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-002.png",
+      "sha256": "d2968010cf60ccd36d0b3615660f86721b51b19b86ae69ad55ef4b2c825f7c03",
+      "evidenceLabel": "Source exam page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-003.png",
+      "sha256": "335364676ad1f5e12e05bf2038c79815e111a53e0001b39f36ea55a281305bf3",
+      "evidenceLabel": "Source exam page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-004.png",
+      "sha256": "61e5772ae49fbad73b3f6f7aa778a559ce6dd3ebb94aecc94de0647c0fdfd929",
+      "evidenceLabel": "Source exam page crop: page 4; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-005.png",
+      "sha256": "fa5927861a115640a05519555b64b28b55f44d3013225cbb69c0c8d935227671",
+      "evidenceLabel": "Source exam page crop: page 5; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-006.png",
+      "sha256": "da367a40ab037f1ea9c27cb4a08a486f2febc3d41380853a63382d24733f4c82",
+      "evidenceLabel": "Source exam page crop: page 6; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-007.png",
+      "sha256": "7aea33e5a01efe2e346ee7db7866eb73181774559b031cb8cdd8fed27226f77a",
+      "evidenceLabel": "Source exam page crop: page 7; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\pages\\2021广州中考.page-008.png",
+      "sha256": "bf0e62e6827348d0363297455eed45a942875f650b2b5933e9e496924f7639af",
+      "evidenceLabel": "Source exam page crop: page 8; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\reference-pages\\2021广州中考-参考答案.page-001.png",
+      "sha256": "72b2dd945863bc337b8cb2cbb49b0a8553986a293b13805076e5f30c59021586",
+      "evidenceLabel": "Reference answer page crop: page 1; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\reference-pages\\2021广州中考-参考答案.page-002.png",
+      "sha256": "469b338b3d64e4534f2f016c5dbcc8a5ab4b2d304e09221b58a9cda72b5e89ea",
+      "evidenceLabel": "Reference answer page crop: page 2; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\reference-pages\\2021广州中考-参考答案.page-003.png",
+      "sha256": "396468dff829479e9469a54803f1598dca77b41c4bf5bc12e69902bafc670132",
+      "evidenceLabel": "Reference answer page crop: page 3; region 1/1, horizontal tile 1/1."
+    },
+    {
+      "path": "C:\\Users\\sciman\\AppData\\Local\\Temp\\classroom-answer-toolkit\\live-answer-workflow\\4d5a0a697f34487b8271bdf1281124d6\\reference-pages\\2021广州中考-参考答案.page-004.png",
+      "sha256": "c26e90205afe1565e1a07e770f2ca3fed4903e32ebd37e06e1b3243acaa65b49",
+      "evidenceLabel": "Reference answer page crop: page 4; region 1/1, horizontal tile 1/1."
+    }
+  ],
+  "outputPath": "D:\\CODE\\classroom-answer-toolkit\\artifacts\\work\\guangzhou-real-paper-audit\\2021-terra-xhigh-regression1\\2021广州中考参考答案.md",
+  "outputSha256": "95552d37dcc0083bd2a7190a7791a77c9e196c2598992eea1d2d5686d6a39485",
+  "answerCharacters": 1744,
+  "referenceChoiceOverride": {
+    "applied": false
+  },
+  "semanticChoiceOverride": {
+    "applied": false,
+    "questions": []
+  },
+  "attempts": [
+    {
+      "provider": "primary",
+      "model": "gpt-5.6-terra",
+      "reasoningEffort": "xhigh",
+      "preset": "terra",
+      "qualityProfile": "terra-xhigh",
+      "executionSlot": 1,
+      "status": 200,
+      "retryAfterMs": null,
+      "ok": true,
+      "retryable": false,
+      "attemptNumber": 1,
+      "durationMs": 138866,
+      "requestBytes": 5397991,
+      "transport": {
+        "applicationTimeoutMs": 600000,
+        "headersTimeoutMs": 605000,
+        "bodyTimeoutMs": 605000,
+        "environmentProxyEnabled": false
+      },
+      "error": ""
+    }
+  ]
+}

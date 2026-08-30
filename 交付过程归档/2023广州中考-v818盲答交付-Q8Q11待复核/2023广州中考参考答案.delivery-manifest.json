@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.1",
+  "kind": "delivery-manifest",
+  "generatedAt": "2026-08-30T10:54:42.395Z",
+  "snapshotId": "snapshot-3cb67ff4b60720ec",
+  "snapshotPath": "2023广州中考参考答案.snapshot.json",
+  "snapshot": {
+    "id": "snapshot-3cb67ff4b60720ec",
+    "version": "v8.18",
+    "profile": "classroom"
+  },
+  "subjectPack": "junior-physics-answer",
+  "profile": "classroom",
+  "input": "2023广州中考参考答案.md",
+  "output": "2023广州中考参考答案.pdf",
+  "review": {
+    "outputDir": "2023广州中考参考答案.review",
+    "manifestPath": "2023广州中考参考答案.review/manifest.json",
+    "scale": "2"
+  },
+  "ocr": {
+    "status": "not-requested",
+    "pageCount": 3
+  },
+  "graphics": {
+    "items": []
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "input": {
+      "path": "2023广州中考参考答案.md",
+      "bytes": 3072,
+      "sha256": "1a58e58ac2ccddf0845acc75409811d8261be09cba93dd278b00de51171a0c93"
+    },
+    "output": {
+      "path": "2023广州中考参考答案.pdf",
+      "bytes": 143288,
+      "sha256": "4c1bc3b46e3abe8ac9baf50ad26ee2e1bc1b07e9576554b8c95bb41198b3ccf2"
+    },
+    "snapshot": {
+      "path": "2023广州中考参考答案.snapshot.json",
+      "bytes": 10472,
+      "sha256": "928d34a6344f62c16d7fc542e892e6cf5b060e4d0f849375511dd7d36e2ab5a5"
+    },
+    "reviewFiles": [
+      {
+        "path": "2023广州中考参考答案.review/2023广州中考参考答案.page-001.png",
+        "bytes": 224920,
+        "sha256": "b413c540c4df2b534a1a38fde153e9f03031284f0ccc4bed73aa14da18ece17f"
+      },
+      {
+        "path": "2023广州中考参考答案.review/2023广州中考参考答案.page-001.text-layer.txt",
+        "bytes": 925,
+        "sha256": "60fbba789457c8cd85a12dc02c6e3fadaa24002a8228a0b2223f19a3430819b2"
+      },
+      {
+        "path": "2023广州中考参考答案.review/2023广州中考参考答案.page-002.png",
+        "bytes": 292276,
+        "sha256": "6bc854034dc018d50cc61bc741058e78ebcfa1b8bd9798ec4710da2f1ca14d27"
+      },
+      {
+        "path": "2023广州中考参考答案.review/2023广州中考参考答案.page-002.text-layer.txt",
+        "bytes": 1181,
+        "sha256": "e06cd1da760cb0b80882219ada2aa90c599ad00bd13898cb4e7c3c9334bb23f3"
+      },
+      {
+        "path": "2023广州中考参考答案.review/2023广州中考参考答案.page-003.png",
+        "bytes": 104446,
+        "sha256": "17e9469b6c9518dd87d422957462c77b708d9ce7ac211641c1d67c18cbb565b7"
+      },
+      {
+        "path": "2023广州中考参考答案.review/2023广州中考参考答案.page-003.text-layer.txt",
+        "bytes": 237,
+        "sha256": "250e5b550a2e6f72ba25b7e104bd1ee16e8abd8aa4bdd64033c5eb54368e9f84"
+      },
+      {
+        "path": "2023广州中考参考答案.review/manifest.json",
+        "bytes": 4128,
+        "sha256": "b24395374a54becd0f14fce1821febed737d37b80a51af759f2231e48013a7a6"
+      },
+      {
+        "path": "2023广州中考参考答案.review/review.html",
+        "bytes": 1475,
+        "sha256": "1d2a7be53f06f92130aa0a98ccb3c9ab072f37b37aa84dec96b33e4368171a4d"
+      }
+    ]
+  },
+  "status": {
+    "toolchainPassed": true,
+    "deliveryComplete": true,
+    "reviewArtifactReady": true
+  }
+}
