@@ -1,7 +1,7 @@
 #requires -Version 7
 [CmdletBinding()]
 param(
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = "1.0.2",
+    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = "1.0.3",
     [string]$DeliveryRoot = "",
     [string]$ReceiptPath = "artifacts\work\verification\release-simulation\release-simulation-receipt.json"
 )

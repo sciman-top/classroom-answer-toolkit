@@ -133,7 +133,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PrivateDev -Version 1.0.2 -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
+  -Mode PrivateDev -Version 1.0.3 -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
 ```
 
 在新机器导入时：
@@ -150,7 +150,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
 可由 AI 或自动化操作员执行不产生外部发布副作用的发布模拟验收：
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.2
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.3
 ```
 
 该回放使用临时 loopback 源驱动真实安装、更新、故障回滚和 PrivateDev 迁移脚本，结果是 `simulated-acceptance`，不能替代代码签名、GitHub 发布、普通用户实机、真实 provider 或教师/课堂验收。

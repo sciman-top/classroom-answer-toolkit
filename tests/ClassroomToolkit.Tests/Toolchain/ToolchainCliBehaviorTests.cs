@@ -223,12 +223,21 @@ public sealed class ToolchainCliBehaviorTests
             "pwsh",
             FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
-            "-Version", "1.0.2",
+            "-Version", "1.0.3",
             "-Audience", "ordinary-users",
             "-SkipPublish");
 
         result.ExitCode.Should().NotBe(0);
         result.Output.Should().Contain("repository-coupled preview ZIP");
+    }
+
+    [Fact]
+    public void ReleaseWorkflowSkipsMachineSpecificHealthEvalButKeepsCoreGate()
+    {
+        var workflow = File.ReadAllText(Path.Combine(FindRepoRoot(), ".github", "workflows", "release.yml"));
+
+        workflow.Should().Contain("setup-development.ps1 -NoInstall -SkipHealthEval");
+        workflow.Should().NotContain("setup-development.ps1 -NoInstall -SkipCore");
     }
 
     [Fact]

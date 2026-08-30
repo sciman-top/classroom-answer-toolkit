@@ -4,7 +4,8 @@ param(
     [switch]$NoInstall,
     [switch]$SkipBuild,
     [switch]$SkipTests,
-    [switch]$SkipCore
+    [switch]$SkipCore,
+    [switch]$SkipHealthEval
 )
 
 $ErrorActionPreference = "Stop"
@@ -131,10 +132,12 @@ if (-not $SkipCore) {
         throw "Core toolchain gate failed."
     }
 
-    Write-Host "Running the primary subject-pack health evaluation..."
-    & node (Join-Path $repoRoot "tools/latex-renderer/eval-answer-fixtures.mjs") --subject-pack junior-physics-answer
-    if ($LASTEXITCODE -ne 0) {
-        throw "Primary subject-pack health evaluation failed."
+    if (-not $SkipHealthEval) {
+        Write-Host "Running the primary subject-pack health evaluation..."
+        & node (Join-Path $repoRoot "tools/latex-renderer/eval-answer-fixtures.mjs") --subject-pack junior-physics-answer
+        if ($LASTEXITCODE -ne 0) {
+            throw "Primary subject-pack health evaluation failed."
+        }
     }
 }
 

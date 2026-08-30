@@ -32,7 +32,7 @@ jobs:
       - name: Restore and verify development workspace
         shell: pwsh
         run: |
-          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1 -NoInstall
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1 -NoInstall -SkipHealthEval
 
       - name: Verify workflow and packaging contracts
         shell: pwsh

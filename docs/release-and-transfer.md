@@ -27,7 +27,7 @@ creates the app and source ZIPs, writes `update-manifest.json`, generates an
 SPDX SBOM and provenance attestations, and publishes those assets plus
 `scripts/install-release.ps1` to the GitHub Release.
 
-The existing `v1.0.1` Release is a legacy tag snapshot. Version `1.0.2` and
+The existing `v1.0.1` Release is a legacy tag snapshot. Version `1.0.3` and
 later are represented only when their matching tag runs this workflow. Do not replace an existing
 Release asset manually with a locally generated ZIP; the manifest, SBOM and
 attestation must be produced by the same clean tagged source.
@@ -49,7 +49,7 @@ Repeatable operator work can be exercised without a second machine or a
 GitHub write by running:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.2
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.3
 ```
 
 The simulation serves the already verified candidate assets from a temporary
@@ -104,11 +104,11 @@ provider file is preserved on repeat runs. It never prints secret values.
 ```powershell
 # Public, committed source only. Rejects .env and .git.
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PublicSource -Version 1.0.2 -Output "D:\Transfer\ClassroomToolkit-source.zip"
+  -Mode PublicSource -Version 1.0.3 -Output "D:\Transfer\ClassroomToolkit-source.zip"
 
 # Current private working tree. Include secrets only with this explicit switch.
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PrivateDev -Version 1.0.2 -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
+  -Mode PrivateDev -Version 1.0.3 -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
 ```
 
 Every transfer ZIP carries `transfer-manifest.json`, which records file paths,
