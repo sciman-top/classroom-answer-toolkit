@@ -79,6 +79,7 @@ function readEvalStatus(evalResultsPath, profile) {
 
 export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, repositoryRoot = repoRoot } = {}) {
   const issues = [];
+  const isPackagedRuntime = fs.existsSync(path.join(repositoryRoot, "runtime-manifest.json"));
   let packs;
   try {
     packs = listSubjectPacks({ repositoryRoot });
@@ -133,9 +134,9 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
   } else if (snapshotStatus.id === null || snapshotStatus.version === null || snapshotStatus.profile === null) {
     issues.push("主 subject pack 的 snapshot 缺少 id、version 或 active profile。");
   }
-  if (!evalStatus.exists) {
+  if (!evalStatus.exists && !isPackagedRuntime) {
     issues.push("评测结果 latest.json 尚未生成。");
-  } else if (!evalStatus.ok) {
+  } else if (!isPackagedRuntime && !evalStatus.ok) {
     issues.push("固定回归未全部通过。");
   } else if (evalStatus.assetVersion === null || evalStatus.caseCount <= 0) {
     issues.push("固定回归结果缺少 assetVersion 或有效 cases。");

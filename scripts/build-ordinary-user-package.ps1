@@ -228,6 +228,14 @@ try {
         Copy-Item -LiteralPath $sourcePath -Destination (Join-Path $bundledNodeRoot $nodeFile) -Force
     }
 
+    [IO.Directory]::CreateDirectory((Join-Path $stageRoot ".snapshot-cache")) | Out-Null
+    foreach ($subjectPack in @("junior-physics-answer", "senior-physics-answer", "math-answer")) {
+        & (Join-Path $bundledNodeRoot "node.exe") (Join-Path $stageRoot "tools/rule-compiler/compile-snapshot.mjs") --subject-pack $subjectPack --profile classroom
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to compile packaged snapshot for $subjectPack."
+        }
+    }
+
     $appSignature = Sign-And-Verify -PathValue (Join-Path $stageRoot "ClassroomToolkit.App.exe") -Certificate $certificate
 
     Write-RuntimeManifest -DistributionMode "installer" -Certificate $certificate
