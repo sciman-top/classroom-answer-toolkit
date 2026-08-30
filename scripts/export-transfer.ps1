@@ -1,12 +1,12 @@
 #requires -Version 7
 param(
     [ValidateSet("PublicSource", "PrivateDev")][string]$Mode = "PublicSource",
-    [Parameter(Mandatory = $true)][string]$Output,
+    [string]$Output = "",
     [switch]$IncludeEnv,
     [switch]$IncludeGit,
     [switch]$IncludePublishedApp,
     [switch]$BuildPublishedApp,
-    [string]$Version = "0.0.0-dev"
+    [ValidatePattern('^$|^\d+\.\d+\.\d+$')][string]$Version = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,7 +15,29 @@ Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
-$outputPath = [IO.Path]::GetFullPath($Output)
+$Version = if ([string]::IsNullOrWhiteSpace($Version)) {
+    [xml]$project = Get-Content -LiteralPath (Join-Path $repoRoot "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj") -Raw -Encoding utf8
+    [string]$project.Project.PropertyGroup.Version
+}
+else {
+    $Version
+}
+if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+    throw "Unable to resolve a semantic delivery version from the application project: $Version"
+}
+$defaultDeliveryType = if ($Mode -eq "PrivateDev") { "private-transfer" } else { "source" }
+$defaultFileName = if ($Mode -eq "PrivateDev") {
+    "ClassroomToolkit-$Version-private-dev.zip"
+}
+else {
+    "ClassroomToolkit-$Version-source.zip"
+}
+$outputPath = if ([string]::IsNullOrWhiteSpace($Output)) {
+    Join-Path $repoRoot "artifacts/deliveries/$Version/$defaultDeliveryType/$defaultFileName"
+}
+else {
+    [IO.Path]::GetFullPath($Output)
+}
 $outputDirectory = [IO.Path]::GetDirectoryName($outputPath)
 [IO.Directory]::CreateDirectory($outputDirectory) | Out-Null
 

@@ -53,13 +53,13 @@ if (Test-Path -LiteralPath $deliveriesRoot -PathType Container) {
 
     $releaseRoot = Join-Path $deliveriesRoot $KeepVersion
     if (Test-Path -LiteralPath $releaseRoot -PathType Container) {
-        $sbomPath = Join-Path $releaseRoot "_manifest/spdx_2.2/manifest.spdx.json"
+        $sbomPath = Join-Path $releaseRoot "_release-metadata/sbom/spdx_2.2/manifest.spdx.json"
         if (Test-Path -LiteralPath $sbomPath -PathType Leaf) {
             try {
                 $sbom = Get-Content -LiteralPath $sbomPath -Raw -Encoding utf8 | ConvertFrom-Json
                 if ([string]$sbom.name -ne "ClassroomToolkit $KeepVersion") {
-                    [IO.Directory]::Delete((Join-Path $releaseRoot "_manifest"), $true)
-                    $removed.Add((Join-Path $releaseRoot "_manifest"))
+                    [IO.Directory]::Delete((Join-Path $releaseRoot "_release-metadata/sbom"), $true)
+                    $removed.Add((Join-Path $releaseRoot "_release-metadata/sbom"))
                 }
             }
             catch {
@@ -67,21 +67,10 @@ if (Test-Path -LiteralPath $deliveriesRoot -PathType Container) {
             }
         }
 
+        $expectedDirectories = @("installer", "source", "private-transfer", "_release-metadata")
         foreach ($item in @(Get-ChildItem -LiteralPath $releaseRoot -Force)) {
-            $keep = $item.Name -in @(
-                "update-manifest.json",
-                "_manifest",
-                "ClassroomToolkit-$KeepVersion-win-x64.zip",
-                "ClassroomToolkit-$KeepVersion-source.zip"
-            )
-            if (-not $keep -and $item.Name -match '^ClassroomToolkit-\d+\.\d+\.\d+-(win-x64|source)\.zip$') {
-                if ($item.PSIsContainer) {
-                    [IO.Directory]::Delete($item.FullName, $true)
-                }
-                else {
-                    [IO.File]::Delete($item.FullName)
-                }
-                $removed.Add($item.FullName)
+            if ($item.PSIsContainer -and $item.Name -notin $expectedDirectories) {
+                Write-Warning "Unknown delivery type was preserved: $($item.FullName)"
             }
         }
     }

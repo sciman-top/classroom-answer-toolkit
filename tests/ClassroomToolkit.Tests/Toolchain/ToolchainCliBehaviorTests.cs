@@ -217,6 +217,21 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
+    public async Task PackageReleaseRejectsRepositoryCoupledZipAsOrdinaryUserInstaller()
+    {
+        var result = await RunAsync(
+            "pwsh",
+            FindRepoRoot(),
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
+            "-Version", "1.0.2",
+            "-Audience", "ordinary-users",
+            "-SkipPublish");
+
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("repository-coupled preview ZIP");
+    }
+
+    [Fact]
     public async Task ArtifactCleanupKeepsCurrentDeliveryAndHistoryButRemovesWorkAndOldVersions()
     {
         var root = FindRepoRoot();
@@ -231,10 +246,12 @@ public sealed class ToolchainCliBehaviorTests
         {
             Directory.CreateDirectory(currentDelivery);
             Directory.CreateDirectory(oldDelivery);
+            Directory.CreateDirectory(Path.Combine(currentDelivery, "source"));
+            Directory.CreateDirectory(Path.Combine(oldDelivery, "source"));
             Directory.CreateDirectory(history);
             Directory.CreateDirectory(work);
-            File.WriteAllText(Path.Combine(currentDelivery, "ClassroomToolkit-1.0.1-source.zip"), "current");
-            File.WriteAllText(Path.Combine(oldDelivery, "ClassroomToolkit-1.0.0-source.zip"), "old");
+            File.WriteAllText(Path.Combine(currentDelivery, "source", "ClassroomToolkit-1.0.1-source.zip"), "current");
+            File.WriteAllText(Path.Combine(oldDelivery, "source", "ClassroomToolkit-1.0.0-source.zip"), "old");
             File.WriteAllText(Path.Combine(history, "receipt.json"), "history");
             File.WriteAllText(Path.Combine(work, "marker.txt"), "work");
 

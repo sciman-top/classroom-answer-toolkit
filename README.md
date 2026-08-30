@@ -133,7 +133,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PrivateDev -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
+  -Mode PrivateDev -Version 1.0.2 -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
 ```
 
 在新机器导入时：
@@ -150,16 +150,16 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
 可由 AI 或自动化操作员执行不产生外部发布副作用的发布模拟验收：
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.1
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.2
 ```
 
 该回放使用临时 loopback 源驱动真实安装、更新、故障回滚和 PrivateDev 迁移脚本，结果是 `simulated-acceptance`，不能替代代码签名、GitHub 发布、普通用户实机、真实 provider 或教师/课堂验收。
 
 ## 交付物目录
 
-本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。交付物放在 `artifacts/deliveries/<version>/`，历史证据放在 `artifacts/history/<kind>/<date-or-id>/`，构建/审计中间物放在 `artifacts/work/<kind>/`，三者不在同一层混放。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
+本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。每个版本的安装预览、公开源码和私用迁移包分别放在 `artifacts/deliveries/<version>/installer/preview/`、`source/` 和 `private-transfer/`，版本清单、SBOM 与 provenance 放在 `_release-metadata/`；历史证据放在 `artifacts/history/<kind>/<date-or-id>/`，构建/审计中间物放在 `artifacts/work/<kind>/`，三者不在同一层混放。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
 
-当前仓库提交的发布说明会明确标出 `developer/operator preview`、公开源码包和 PrivateDev 迁移包的边界；ordinary-user 标准版在没有有效 Authenticode 签名和代表性非开发者验收前不会发布。
+当前交付合同包含 ordinary-user 标准安装版、`developer/operator preview`、公开源码包和 PrivateDev 迁移包四类；标准安装版在没有可写 runtime bundle、有效 Authenticode 签名和代表性非开发者验收前保持 `blocked`，不会用 preview ZIP 代替发布。
 
 当前发布状态：GitHub 上的 `v1.0.1` 是已存在的 tag/release 资产；后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布。不要把本机 `artifacts/deliveries/<version>/` 候选包当作线上下载地址；发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
 

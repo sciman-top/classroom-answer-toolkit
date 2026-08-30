@@ -67,16 +67,33 @@ jobs:
             -nsu "ClassroomToolkit-$version" `
             -pm true `
             -D true
+          New-Item -ItemType Directory -Force -Path artifacts/deliveries/$version/_release-metadata/sbom | Out-Null
+          Move-Item `
+            -LiteralPath artifacts/deliveries/$version/_manifest/spdx_2.2 `
+            -Destination artifacts/deliveries/$version/_release-metadata/sbom/spdx_2.2
+          Remove-Item -LiteralPath artifacts/deliveries/$version/_manifest -Recurse -Force
+
+      - name: Bind versioned release metadata
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/write-release-metadata.ps1 `
+            -Version $version `
+            -SourceCommit $env:GITHUB_SHA
 
       - name: Attest release provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
-            artifacts/deliveries/*/ClassroomToolkit-*-win-x64.zip
-            artifacts/deliveries/*/ClassroomToolkit-*-source.zip
-            artifacts/deliveries/*/update-manifest.json
-            artifacts/deliveries/*/_manifest/spdx_2.2/manifest.spdx.json
-            scripts/install-release.ps1
+            artifacts/deliveries/*/installer/preview/ClassroomToolkit-*-win-x64.zip
+            artifacts/deliveries/*/installer/preview/install-release.ps1
+            artifacts/deliveries/*/installer/preview/update-manifest.json
+            artifacts/deliveries/*/source/ClassroomToolkit-*-source.zip
+            artifacts/deliveries/*/_release-metadata/sbom/spdx_2.2/manifest.spdx.json
+            artifacts/deliveries/*/_release-metadata/release-manifest.json
+            artifacts/deliveries/*/_release-metadata/checksums.sha256
 
       - name: Publish GitHub Release
         shell: pwsh
@@ -86,11 +103,13 @@ jobs:
         run: |
           $version = $env:RELEASE_TAG -replace '^v', ''
           gh release create $env:RELEASE_TAG `
-            "artifacts/deliveries/$version/ClassroomToolkit-$version-win-x64.zip" `
-            "artifacts/deliveries/$version/ClassroomToolkit-$version-source.zip" `
-            "artifacts/deliveries/$version/update-manifest.json" `
-            "artifacts/deliveries/$version/_manifest/spdx_2.2/manifest.spdx.json" `
-            "scripts/install-release.ps1" `
+            "artifacts/deliveries/$version/installer/preview/ClassroomToolkit-$version-win-x64.zip" `
+            "artifacts/deliveries/$version/installer/preview/install-release.ps1" `
+            "artifacts/deliveries/$version/installer/preview/update-manifest.json" `
+            "artifacts/deliveries/$version/source/ClassroomToolkit-$version-source.zip" `
+            "artifacts/deliveries/$version/_release-metadata/sbom/spdx_2.2/manifest.spdx.json" `
+            "artifacts/deliveries/$version/_release-metadata/release-manifest.json" `
+            "artifacts/deliveries/$version/_release-metadata/checksums.sha256" `
             --title "ClassroomToolkit $version developer/operator preview" `
             --generate-notes `
             --verify-tag

@@ -1,7 +1,7 @@
 #requires -Version 7
 [CmdletBinding()]
 param(
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = "1.0.1",
+    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = "1.0.2",
     [string]$DeliveryRoot = "",
     [string]$ReceiptPath = "artifacts\work\verification\release-simulation\release-simulation-receipt.json"
 )
@@ -18,6 +18,8 @@ $deliveryPath = if ([string]::IsNullOrWhiteSpace($DeliveryRoot)) {
 else {
     [IO.Path]::GetFullPath($DeliveryRoot)
 }
+$previewPath = Join-Path $deliveryPath "installer/preview"
+$sourcePath = Join-Path $deliveryPath "source"
 $receiptPath = Resolve-TransferPath -PathValue $ReceiptPath -BasePath $repoRoot
 $simulationRoot = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ("ClassroomToolkit-release-simulation-{0}" -f [Guid]::NewGuid().ToString("N"))))
 $serverRoot = Join-Path $simulationRoot "server"
@@ -196,18 +198,21 @@ function Start-LocalServer {
     param([Parameter(Mandatory = $true)]$LocalManifest)
 
     [IO.Directory]::CreateDirectory($serverRoot) | Out-Null
-    $assetNames = @("ClassroomToolkit-$Version-win-x64.zip", "ClassroomToolkit-$Version-source.zip")
-    foreach ($assetName in $assetNames) {
-        $sourcePath = Join-Path $deliveryPath $assetName
-        if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
-            throw "Delivery asset is missing: $sourcePath"
+    $assetLocations = [ordered]@{
+        "ClassroomToolkit-$Version-win-x64.zip" = Join-Path $previewPath "ClassroomToolkit-$Version-win-x64.zip"
+        "ClassroomToolkit-$Version-source.zip" = Join-Path $sourcePath "ClassroomToolkit-$Version-source.zip"
+    }
+    foreach ($assetName in $assetLocations.Keys) {
+        $assetPath = $assetLocations[$assetName]
+        if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf)) {
+            throw "Delivery asset is missing: $assetPath"
         }
-        Copy-Item -LiteralPath $sourcePath -Destination (Join-Path $serverRoot $assetName) -Force
+        Copy-Item -LiteralPath $assetPath -Destination (Join-Path $serverRoot $assetName) -Force
     }
 
     $port = Get-FreeLoopbackPort
     foreach ($asset in @($LocalManifest.assets)) {
-        if ($assetNames -notcontains [string]$asset.name) {
+        if ($assetLocations.Keys -notcontains [string]$asset.name) {
             throw "Unexpected delivery asset in manifest: $($asset.name)"
         }
         $asset.url = "http://127.0.0.1:$port/$([Uri]::EscapeDataString([string]$asset.name))"
@@ -270,9 +275,9 @@ try {
         throw "Release simulation requires a clean working tree."
     }
 
-    $manifestPath = Join-Path $deliveryPath "update-manifest.json"
-    $appZipPath = Join-Path $deliveryPath "ClassroomToolkit-$Version-win-x64.zip"
-    $sourceZipPath = Join-Path $deliveryPath "ClassroomToolkit-$Version-source.zip"
+    $manifestPath = Join-Path $previewPath "update-manifest.json"
+    $appZipPath = Join-Path $previewPath "ClassroomToolkit-$Version-win-x64.zip"
+    $sourceZipPath = Join-Path $sourcePath "ClassroomToolkit-$Version-source.zip"
     foreach ($path in @($manifestPath, $appZipPath, $sourceZipPath)) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
             throw "Required delivery file is missing: $path"
@@ -287,7 +292,15 @@ try {
             throw "Manifest is not the expected preview audience."
         }
         foreach ($asset in @($manifest.assets)) {
-            $assetPath = Join-Path $deliveryPath ([string]$asset.name)
+            $assetPath = if ([string]$asset.kind -eq "app") {
+                Join-Path $previewPath ([string]$asset.name)
+            }
+            elseif ([string]$asset.kind -eq "source") {
+                Join-Path $sourcePath ([string]$asset.name)
+            }
+            else {
+                throw "Unexpected manifest asset kind: $($asset.kind)"
+            }
             if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf)) { throw "Manifest asset is missing: $($asset.name)" }
             if ([string]$asset.sha256 -ne (Get-FileSha256 -PathValue $assetPath)) { throw "Manifest hash mismatch: $($asset.name)" }
             if ([long]$asset.bytes -ne (Get-Item -LiteralPath $assetPath).Length) { throw "Manifest byte mismatch: $($asset.name)" }

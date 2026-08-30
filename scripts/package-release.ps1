@@ -13,8 +13,15 @@ Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
+if ($Audience -eq "ordinary-users") {
+    throw ("Ordinary-user installer packaging is blocked until a signed, writable runtime bundle " +
+        "has an install, update, rollback and representative non-developer acceptance contract. " +
+        "The repository-coupled preview ZIP is not an ordinary-user installer.")
+}
 $outputParent = Resolve-TransferPath -PathValue $OutputDirectory -BasePath $repoRoot
 $outputRoot = Join-Path $outputParent $Version
+$previewRoot = Join-Path $outputRoot "installer/preview"
+$sourceRoot = Join-Path $outputRoot "source"
 $stageParent = Join-Path ([IO.Path]::GetTempPath()) ("ClassroomToolkit-release-{0}" -f [Guid]::NewGuid().ToString("N"))
 $appStageRoot = Join-Path $stageParent "app"
 $publishRoot = Join-Path $repoRoot "artifacts/work/publish/ClassroomToolkit.App"
@@ -121,7 +128,8 @@ if (-not [string]::IsNullOrWhiteSpace((& git -C $repoRoot status --porcelain --u
 
 [IO.Directory]::CreateDirectory($stageParent) | Out-Null
 [IO.Directory]::CreateDirectory($appStageRoot) | Out-Null
-[IO.Directory]::CreateDirectory($outputRoot) | Out-Null
+[IO.Directory]::CreateDirectory($previewRoot) | Out-Null
+[IO.Directory]::CreateDirectory($sourceRoot) | Out-Null
 
 try {
     if (-not $SkipPublish) {
@@ -145,11 +153,7 @@ try {
         throw "Published application version $publishedVersion does not match release version $Version."
     }
     $signature = Get-AuthenticodeSignature -FilePath $publishedExe
-    if ($Audience -eq "ordinary-users" -and [string]$signature.Status -ne "Valid") {
-        throw "Ordinary-user release requires a valid Authenticode signature; current status is $($signature.Status)."
-    }
-
-    $sourceArchive = Join-Path $outputRoot $sourceZipName
+    $sourceArchive = Join-Path $sourceRoot $sourceZipName
     Invoke-CheckedNative -FileName "git" -Arguments @("-C", $repoRoot, "archive", "--format=zip", "--output=$sourceArchive", "HEAD") -WorkingDirectory $repoRoot -FailureMessage "Unable to create the source archive."
 
     Copy-Item -Path (Join-Path $publishRoot "*") -Destination $appStageRoot -Recurse -Force
@@ -188,7 +192,7 @@ try {
             }
         )
     }
-    $appZipPath = Join-Path $outputRoot $appZipName
+    $appZipPath = Join-Path $previewRoot $appZipName
     if (Test-Path -LiteralPath $appZipPath) {
         Remove-Item -LiteralPath $appZipPath -Force
     }
@@ -199,11 +203,12 @@ try {
     $manifest.assets[0].bytes = $appItem.Length
     # Keep the manifest outside the package: embedding it would make its own
     # asset hash self-referential and impossible to verify deterministically.
-    $manifestPath = Join-Path $outputRoot "update-manifest.json"
+    $manifestPath = Join-Path $previewRoot "update-manifest.json"
     Write-JsonFileAtomic -PathValue $manifestPath -Value $manifest
+    Copy-Item -LiteralPath (Join-Path $repoRoot "scripts/install-release.ps1") -Destination (Join-Path $previewRoot "install-release.ps1") -Force
 
     Write-Host "Release package: $appZipPath"
-    Write-Host "Source package: $(Join-Path $outputRoot $sourceZipName)"
+    Write-Host "Source package: $(Join-Path $sourceRoot $sourceZipName)"
     Write-Host "Update manifest: $manifestPath"
     Write-Host "Application package SHA-256: $(Get-FileSha256 -PathValue $appZipPath)"
 }

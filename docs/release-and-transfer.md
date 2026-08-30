@@ -2,10 +2,11 @@
 
 ## Scope
 
-This repository distributes three intentionally separate artifacts:
+This repository defines four intentionally separate delivery types. The ordinary-user installer is a required product delivery type but remains blocked until its runtime, signing and acceptance contract is satisfied:
 
 | Artifact | Audience | Includes | Must not include |
 | --- | --- | --- | --- |
+| Ordinary-user installer | teachers and other Windows users | signed installer, writable runtime bundle, install/update/rollback contract | repository-coupled preview ZIP presented as a finished installer |
 | Developer/operator online preview | repository maintainers familiar with the local toolchain | independently verified published WPF application and matching public workspace | real `.env`, private papers, delivery outputs, `.git` |
 | `ClassroomToolkit-<version>-source.zip` | public developers | source, tests, scripts, prompt assets, lock files, `.env.example` | real `.env`, `node_modules`, local cache and delivery data |
 | PrivateDev transfer ZIP | the private maintainer only | current working-tree snapshot and, only when explicitly requested, `.env` / `.git` / app | GitHub Release publication or any shared distribution channel |
@@ -18,7 +19,7 @@ self-contained MSIX product.
 
 ## Public Release
 
-本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
+本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；其中 `installer/preview/` 放脚本安装预览，`source/` 放公开源码包，`private-transfer/` 放按需私用迁移包，`_release-metadata/` 放版本清单、SBOM 和 provenance。历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
 
 Create an annotated tag named `v<major>.<minor>.<patch>` and push that tag.
 The GitHub Actions workflow performs the local setup and integration gates,
@@ -26,9 +27,8 @@ creates the app and source ZIPs, writes `update-manifest.json`, generates an
 SPDX SBOM and provenance attestations, and publishes those assets plus
 `scripts/install-release.ps1` to the GitHub Release.
 
-The existing `v1.0.1` Release is a previously published tag snapshot. The
-post-release hardening currently on `main` is not represented by that Release
-until a new versioned tag runs this workflow. Do not replace an existing
+The existing `v1.0.1` Release is a legacy tag snapshot. Version `1.0.2` and
+later are represented only when their matching tag runs this workflow. Do not replace an existing
 Release asset manually with a locally generated ZIP; the manifest, SBOM and
 attestation must be produced by the same clean tagged source.
 
@@ -49,7 +49,7 @@ Repeatable operator work can be exercised without a second machine or a
 GitHub write by running:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.1
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.2
 ```
 
 The simulation serves the already verified candidate assets from a temporary
@@ -68,10 +68,11 @@ does not establish publisher identity, GitHub publication, UAC/antivirus or
 ordinary-user experience, live provider quality, or teacher/classroom
 acceptance.
 
-An ordinary-user standard edition and an offline full edition are intentionally
-not published. `package-release.ps1 -Audience ordinary-users` fails closed
-unless the application has a valid Authenticode signature. Productization
-remains blocked until a versioned runtime bundle includes the required
+An ordinary-user standard edition is part of the delivery contract but is not
+currently published; an offline full edition is not currently planned as a
+separate type. `package-release.ps1 -Audience ordinary-users` fails closed
+because the repository-coupled preview ZIP is not an installer. Productization
+remains blocked until a signed, versioned runtime bundle includes the required
 Node/runtime dependencies and assets, has a signed
 installation/update/rollback contract, and passes representative non-developer
 installation and acceptance checks.
@@ -103,11 +104,11 @@ provider file is preserved on repeat runs. It never prints secret values.
 ```powershell
 # Public, committed source only. Rejects .env and .git.
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PublicSource -Output "D:\Transfer\ClassroomToolkit-source.zip"
+  -Mode PublicSource -Version 1.0.2 -Output "D:\Transfer\ClassroomToolkit-source.zip"
 
 # Current private working tree. Include secrets only with this explicit switch.
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PrivateDev -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
+  -Mode PrivateDev -Version 1.0.2 -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
 ```
 
 Every transfer ZIP carries `transfer-manifest.json`, which records file paths,
