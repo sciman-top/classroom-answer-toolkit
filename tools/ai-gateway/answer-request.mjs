@@ -72,7 +72,7 @@ Options:
   --output <path>           Markdown output path
   --summary-out <path>      Optional atomic JSON receipt for this generation stage
   --provider <target>       primary, fallback, or all; default all
-  --quality-profile <name>  auto, sol-xhigh, sol-medium, sol-low, terra-xhigh, terra-high, terra-medium, luna-xhigh, luna-high, or luna-medium; default auto
+  --quality-profile <name>  auto, sol-high, sol-medium, sol-low, terra-xhigh, terra-high, terra-medium, luna-xhigh, luna-high, or luna-medium; default auto
   --visual-detail <mode>    low, high, or original; default original
   --max-output-tokens <n>   Maximum answer tokens; default 24000
   --timeout-ms <ms>         Per-provider timeout; default 600000

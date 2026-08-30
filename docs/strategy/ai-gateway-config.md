@@ -19,9 +19,9 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
   --quality-profile auto
 ```
 
-质量 profile 是网关唯一的模型选择接口，固定为三套、每套三档：Sol 为 `sol-xhigh`（`gpt-5.6-sol / xhigh`）、`sol-medium`（`gpt-5.6-sol / medium`）、`sol-low`（`gpt-5.6-sol / low`）；Terra 为 `terra-xhigh`、`terra-high`、`terra-medium`；Luna 为 `luna-xhigh`、`luna-high`、`luna-medium`。默认 `auto` 解析为 `sol-xhigh`。`reasoning.effort` 只调节同一模型的思考预算，不替代模型选择；具体组合仍由 profile 固定。
+质量 profile 是网关唯一的模型选择接口，固定为三套、每套三档：Sol 为 `sol-high`（`gpt-5.6-sol / high`）、`sol-medium`（`gpt-5.6-sol / medium`）、`sol-low`（`gpt-5.6-sol / low`）；Terra 为 `terra-xhigh`、`terra-high`、`terra-medium`；Luna 为 `luna-xhigh`、`luna-high`、`luna-medium`。默认 `auto` 解析为 `sol-high`。`reasoning.effort` 只调节同一模型的思考预算，不替代模型选择；具体组合仍由 profile 固定。
 
-每套 preset 都有自己的 5 槽绑定表。选择 `Sol-only` 后，5 个槽位只可绑定 `sol-xhigh`、`sol-medium`、`sol-low`，并可重复；Terra-only 和 Luna-only 遵循同一不变量。这样槽位只表达当前 preset 内的并发队列，绝不把不同模型族混为同一预设。修改映射只需修改对应的 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<1..5>`，不需要复制 Cockpit endpoint 或 API key。
+每套 preset 都有自己的 5 槽绑定表。选择 `Sol-only` 后，5 个槽位只可绑定 `sol-high`、`sol-medium`、`sol-low`，并可重复；Terra-only 和 Luna-only 遵循同一不变量。这样槽位只表达当前 preset 内的并发队列，绝不把不同模型族混为同一预设。修改映射只需修改对应的 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<1..5>`，不需要复制 Cockpit endpoint 或 API key。
 
 | 执行槽位 | 对应 profile | 作用 |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
 
 槽位映射是调度策略，不是质量排序。质量排序始终由 `Sol → Terra → Luna` 决定；路由在同一 profile 的候选 provider 失败后才进入下一个模型族，不能因为槽位空闲而跳过首选模型族。
 
-默认连通性路由按 preset 优先级 `Sol-only → Terra-only → Luna-only`。每次请求及每个 attempt 都只会激活一套 preset：先只在当前 preset 内使用一个固定 profile 和其匹配的槽位；Sol 故障后，才在 preset seam 处探测并切换到完整 Terra-only preset，Terra 不可用才切 Luna-only。跨 preset 时按相对档位而不是 effort 字面值映射：最高=`xhigh → xhigh → xhigh`，中档=`Sol/medium → Terra/high → Luna/high`，最低=`Sol/low → Terra/medium → Luna/medium`。运行时在 `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY`（未设置时为 OS 临时目录）保存活跃 preset 和冷却状态；当 Sol 冷却、Terra 健康时后续请求优先 Terra，Terra 后续故障时仍先重新探测 Sol、再探测 Luna。`CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS` 默认 120000 毫秒，范围为 1000–3600000。每个候选连接最多请求两次；超时、502、429、空输出或截断才进入下一 preset。每次 attempt 必须记录实际 preset、profile、model、reasoning effort、attempt number、耗时和请求字节数。高风险审批只是工作流的额外 policy/gate，既不增加第四档，也不改变单 preset、单模型族约束。
+默认连通性路由按 preset 优先级 `Sol-only → Terra-only → Luna-only`。每次请求及每个 attempt 都只会激活一套 preset：先只在当前 preset 内使用一个固定 profile 和其匹配的槽位；Sol 故障后，才在 preset seam 处探测并切换到完整 Terra-only preset，Terra 不可用才切 Luna-only。跨 preset 时按相对档位而不是 effort 字面值映射：最高=`Sol/high → Terra/xhigh → Luna/xhigh`，中档=`Sol/medium → Terra/high → Luna/high`，最低=`Sol/low → Terra/medium → Luna/medium`。运行时在 `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY`（未设置时为 OS 临时目录）保存活跃 preset 和冷却状态；当 Sol 冷却、Terra 健康时后续请求优先 Terra，Terra 后续故障时仍先重新探测 Sol、再探测 Luna。`CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS` 默认 120000 毫秒，范围为 1000–3600000。每个候选连接最多请求两次；超时、502、429、空输出或截断才进入下一 preset。每次 attempt 必须记录实际 preset、profile、model、reasoning effort、attempt number、耗时和请求字节数。高风险审批只是工作流的额外 policy/gate，既不增加第四档，也不改变单 preset、单模型族约束。
 
 `probe:text --provider all` 在显式 preset-slot 配置下会通过每个去重后的连接依次验证全部 9 个 profile 的 model/effort 投影，并返回各 preset 中首个匹配槽位；它是能力探测，不是答案正确性验收。`/v1/models` 只证明模型标识可见，不能替代 effort 组合的请求探测。
 

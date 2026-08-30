@@ -75,7 +75,7 @@ export const TASK_MODES = new Set([
 ]);
 
 const DEFAULT_QUALITY_PROFILE_BY_MODE = Object.freeze(Object.fromEntries(
-  [...TASK_MODES].map((mode) => [mode, "sol-xhigh"])
+  [...TASK_MODES].map((mode) => [mode, "sol-high"])
 ));
 const RETRYABLE_ATTEMPTS_PER_PROVIDER = 2;
 const nextSlotIndexByPresetProfile = new Map();

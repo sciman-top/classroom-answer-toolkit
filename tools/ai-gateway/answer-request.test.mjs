@@ -68,7 +68,7 @@ test("application timeout aborts before the longer transport timeout", async () 
     apiKey: "key",
     visionSurface: "responses",
     visionModel: "gpt-5.6-sol",
-    reasoningEffort: "xhigh"
+    reasoningEffort: "high"
   };
 
   try {
@@ -160,7 +160,7 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
     CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
     CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
-    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "high",
     CLASSROOM_TOOLKIT_AI_PRIMARY_EXECUTION_SLOT: "1",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_TEXT_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "medium",
@@ -195,7 +195,7 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
   assert.deepEqual(
     aiProviders.map(({ role, textModel, reasoningEffort }) => ({ role, textModel, reasoningEffort })),
     [
-      { role: "primary", textModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+      { role: "primary", textModel: "gpt-5.6-sol", reasoningEffort: "high" },
       { role: "fallback_1", textModel: "gpt-5.6-sol", reasoningEffort: "medium" },
       { role: "fallback_2", textModel: "gpt-5.6-sol", reasoningEffort: "low" },
       { role: "fallback_3", textModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
@@ -294,10 +294,10 @@ test("preset routes stay model-family closed and order preset failover", () => {
     { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
     { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "low" },
     { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
-    { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
   ];
   const solRoute = selectAnswerRoute({ providers }, "blind_generation", "all");
-  assert.equal(solRoute.qualityProfile, "sol-xhigh");
+  assert.equal(solRoute.qualityProfile, "sol-high");
   assert.equal(solRoute.requestedPreset, "sol");
   assert.equal(solRoute.activePreset, "sol");
   assert.deepEqual(solRoute.orderedPresets, ["sol", "terra", "luna"]);
@@ -305,7 +305,7 @@ test("preset routes stay model-family closed and order preset failover", () => {
     { role: "primary", visionModel: "gpt-5.6-sol" }
   ]);
   assert.deepEqual(solRoute.presetRoutes.map(({ preset, qualityProfile, orderedRoles }) => ({ preset, qualityProfile, orderedRoles })), [
-    { preset: "sol", qualityProfile: "sol-xhigh", orderedRoles: ["primary"] },
+    { preset: "sol", qualityProfile: "sol-high", orderedRoles: ["primary"] },
     { preset: "terra", qualityProfile: "terra-xhigh", orderedRoles: ["fallback_3"] },
     { preset: "luna", qualityProfile: "luna-xhigh", orderedRoles: ["fallback_6"] }
   ]);
@@ -317,7 +317,7 @@ test("preset routes stay model-family closed and order preset failover", () => {
   ]);
   assert.deepEqual(terraRoute.presetRoutes.map(({ preset, qualityProfile }) => ({ preset, qualityProfile })), [
     { preset: "terra", qualityProfile: "terra-xhigh" },
-    { preset: "sol", qualityProfile: "sol-xhigh" },
+    { preset: "sol", qualityProfile: "sol-high" },
     { preset: "luna", qualityProfile: "luna-xhigh" }
   ]);
 
@@ -340,9 +340,9 @@ test("each preset binds all five slots to only its own three profiles", () => {
     CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
     CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
-    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "high",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-high",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-low",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-medium",
@@ -361,7 +361,7 @@ test("each preset binds all five slots to only its own three profiles", () => {
   const route = selectAnswerRoute(config, "blind_generation", "all", "sol-medium");
   assert.equal(config.providers.length, 1);
   assert.equal(config.presetSlotsExplicit, true);
-  assert.deepEqual(config.presetSlotBindings.sol, ["sol-xhigh", "sol-xhigh", "sol-medium", "sol-low", "sol-medium"]);
+  assert.deepEqual(config.presetSlotBindings.sol, ["sol-high", "sol-high", "sol-medium", "sol-low", "sol-medium"]);
   assert.deepEqual(config.presetSlotBindings.terra, ["terra-xhigh", "terra-xhigh", "terra-high", "terra-medium", "terra-high"]);
   assert.deepEqual(config.presetSlotBindings.luna, ["luna-xhigh", "luna-xhigh", "luna-high", "luna-medium", "luna-high"]);
   assert.deepEqual(route.orderedQualityProfiles, ["sol-medium", "terra-high", "luna-high"]);
@@ -377,7 +377,7 @@ test("each preset binds all five slots to only its own three profiles", () => {
     ...config,
     presetSlotBindings: {
       ...config.presetSlotBindings,
-      sol: ["sol-xhigh", "terra-xhigh", "sol-medium", "sol-low", "sol-medium"]
+      sol: ["sol-high", "terra-xhigh", "sol-medium", "sol-low", "sol-medium"]
     }
   };
   const validation = validateConfig(invalidConfig, { allowMissingSecrets: false }, []);
@@ -409,7 +409,7 @@ test("execution slots serialize shared lanes and allow independent lanes to over
         apiKey: "key",
         visionSurface: "responses",
         visionModel: "gpt-5.6-sol",
-        reasoningEffort: "xhigh",
+        reasoningEffort: "high",
         executionSlot: 1
       },
       {
@@ -438,8 +438,8 @@ test("execution slots serialize shared lanes and allow independent lanes to over
   try {
     maxActive = 0;
     const sameSlot = await Promise.all([
-      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-xhigh" }),
-      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-xhigh" })
+      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-high" }),
+      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-high" })
     ]);
     assert.ok(sameSlot.every((result) => result.ok));
     assert.equal(maxActive, 1);
@@ -447,7 +447,7 @@ test("execution slots serialize shared lanes and allow independent lanes to over
 
     maxActive = 0;
     const differentSlots = await Promise.all([
-      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-xhigh" }),
+      requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-high" }),
       requestAnswerWithFailover(config, { ...requestOptions, qualityProfile: "sol-medium" })
     ]);
     assert.ok(differentSlots.every((result) => result.ok));
@@ -478,9 +478,9 @@ test("repeated preset bindings let one quality tier occupy its two assigned slot
     CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "key",
     CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
     CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
-    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "high",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-high",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
@@ -500,7 +500,7 @@ test("repeated preset bindings let one quality tier occupy its two assigned slot
     allowCloudEgress: true,
     provider: "all",
     mode: "blind_generation",
-    qualityProfile: "sol-xhigh",
+    qualityProfile: "sol-high",
     prompt: "repeated slot scheduling",
     imagePaths,
     visualDetailMode: "high",
@@ -639,9 +639,9 @@ test("live probes project one shared connection across all nine quality profiles
       CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
       CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
       CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
-      CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "high",
+      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-high",
+      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-high",
       CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
       CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
       CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
@@ -673,7 +673,7 @@ test("live probes project one shared connection across all nine quality profiles
       reasoningEffort,
       executionSlot
     })), [
-      { qualityProfile: "sol-xhigh", model: "gpt-5.6-sol", reasoningEffort: "xhigh", executionSlot: 1 },
+      { qualityProfile: "sol-high", model: "gpt-5.6-sol", reasoningEffort: "high", executionSlot: 1 },
       { qualityProfile: "sol-medium", model: "gpt-5.6-sol", reasoningEffort: "medium", executionSlot: 3 },
       { qualityProfile: "sol-low", model: "gpt-5.6-sol", reasoningEffort: "low", executionSlot: 5 },
       { qualityProfile: "terra-xhigh", model: "gpt-5.6-terra", reasoningEffort: "xhigh", executionSlot: 1 },
@@ -684,7 +684,7 @@ test("live probes project one shared connection across all nine quality profiles
       { qualityProfile: "luna-medium", model: "gpt-5.6-luna", reasoningEffort: "medium", executionSlot: 5 }
     ]);
     assert.deepEqual(calls.map(({ model, reasoning }) => ({ model, effort: reasoning.effort })), [
-      { model: "gpt-5.6-sol", effort: "xhigh" },
+      { model: "gpt-5.6-sol", effort: "high" },
       { model: "gpt-5.6-sol", effort: "medium" },
       { model: "gpt-5.6-sol", effort: "low" },
       { model: "gpt-5.6-terra", effort: "xhigh" },
@@ -744,7 +744,7 @@ test("auto failover probes Terra after Sol and probes Luna after a later Terra f
   const calls = [];
   let requestRound = 0;
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
     { lane: "ai", role: "fallback_3", baseUrl: "https://terra.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
     { lane: "ai", role: "fallback_6", baseUrl: "https://luna.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-luna", reasoningEffort: "xhigh" }
   ];
@@ -934,7 +934,7 @@ function createConfig(surface = "responses", runtimeDirectory = "") {
         apiKey: "primary-key",
         visionModel: "gpt-5.6-sol",
         visionSurface: surface,
-        reasoningEffort: "xhigh"
+        reasoningEffort: "high"
       },
       {
         lane: "ai",
@@ -943,7 +943,7 @@ function createConfig(surface = "responses", runtimeDirectory = "") {
         apiKey: "fallback-key",
         visionModel: "gpt-5.6-sol",
         visionSurface: surface,
-        reasoningEffort: "xhigh"
+        reasoningEffort: "high"
       }
     ]
   };
@@ -976,7 +976,7 @@ test("responses request sends the full prompt followed by every ordered page ima
 
     assert.equal(body.model, "gpt-5.6-sol");
     assert.equal(body.max_output_tokens, 16000);
-    assert.deepEqual(body.reasoning, { effort: "xhigh" });
+    assert.deepEqual(body.reasoning, { effort: "high" });
     assert.equal(body.input[0].content[0].type, "input_text");
     assert.match(body.input[0].content[0].text, /v8\.14/);
     assert.deepEqual(
@@ -1017,7 +1017,7 @@ test("chat completions request keeps page order and uses multimodal content", ()
     });
 
     assert.equal(body.max_tokens, 12000);
-    assert.equal(body.reasoning_effort, "xhigh");
+    assert.equal(body.reasoning_effort, "high");
     assert.deepEqual(
       body.messages[0].content.map((part) => part.type),
       ["text", "image_url", "image_url"]
@@ -1055,10 +1055,10 @@ test("reference review retries the same quality profile before using its matchin
 
     assert.equal(result.ok, true);
     assert.equal(result.provider, "fallback_1");
-    assert.equal(result.reasoningEffort, "xhigh");
+    assert.equal(result.reasoningEffort, "high");
     assert.equal(result.answerMarkdown, "# 参考答案\n\n1. B");
     assert.equal(calls.length, 3);
-    assert.equal(result.routing.qualityProfile, "sol-xhigh");
+    assert.equal(result.routing.qualityProfile, "sol-high");
     assert.equal(result.routing.qualityDegraded, false);
     assert.deepEqual(result.routing.orderedRoles, ["primary", "fallback_1"]);
     assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 2, 1]);
@@ -1080,7 +1080,7 @@ test("reference review uses an explicitly selected Terra profile without crossin
 
   const providers = [
     { role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
-    { role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
+    { role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
     { role: "fallback_2", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
     { role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ].map((provider) => ({
@@ -1243,8 +1243,8 @@ test("blind solving retries sol/xhigh twice and fails closed without a quality d
     return new Response(JSON.stringify({ error: "temporary" }), { status: 503 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
     { lane: "ai", role: "fallback_2", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
@@ -1261,8 +1261,8 @@ test("blind solving retries sol/xhigh twice and fails closed without a quality d
     });
     assert.equal(result.ok, false);
     assert.deepEqual(calls, [
-      { model: "gpt-5.6-sol", effort: "xhigh" },
-      { model: "gpt-5.6-sol", effort: "xhigh" }
+      { model: "gpt-5.6-sol", effort: "high" },
+      { model: "gpt-5.6-sol", effort: "high" }
     ]);
     assert.deepEqual(result.routing.orderedRoles, ["primary"]);
   } finally {
@@ -1271,7 +1271,7 @@ test("blind solving retries sol/xhigh twice and fails closed without a quality d
   }
 });
 
-test("blind solving retries sol/xhigh after one headers timeout", async () => {
+test("blind solving retries sol/high after one headers timeout", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -1286,8 +1286,8 @@ test("blind solving retries sol/xhigh after one headers timeout", async () => {
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
     { lane: "ai", role: "fallback_2", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
@@ -1302,10 +1302,10 @@ test("blind solving retries sol/xhigh after one headers timeout", async () => {
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.reasoningEffort, "xhigh");
+    assert.equal(result.reasoningEffort, "high");
     assert.deepEqual(calls, [
-      { url: "https://primary.example.com/v1/responses", effort: "xhigh" },
-      { url: "https://primary.example.com/v1/responses", effort: "xhigh" }
+      { url: "https://primary.example.com/v1/responses", effort: "high" },
+      { url: "https://primary.example.com/v1/responses", effort: "high" }
     ]);
     assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 2]);
   } finally {
@@ -1314,7 +1314,7 @@ test("blind solving retries sol/xhigh after one headers timeout", async () => {
   }
 });
 
-test("blind solving does not reach sol-medium after sol-xhigh retryable failures", async () => {
+test("blind solving does not reach sol-medium after sol-high retryable failures", async () => {
   const { directory, imagePaths } = createPageImages(1);
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -1326,7 +1326,7 @@ test("blind solving does not reach sol-medium after sol-xhigh retryable failures
     }
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
-  const providers = ["xhigh", "high", "medium"].map((reasoningEffort, index) => ({
+  const providers = ["high", "medium", "low"].map((reasoningEffort, index) => ({
     lane: "ai",
     role: index === 0 ? "primary" : `fallback_${index}`,
     baseUrl: "https://primary.example.com/v1",
@@ -1347,7 +1347,7 @@ test("blind solving does not reach sol-medium after sol-xhigh retryable failures
       timeoutMs: 1000
     });
     assert.equal(result.ok, false);
-    assert.deepEqual(calls, ["xhigh", "xhigh"]);
+    assert.deepEqual(calls, ["high", "high"]);
   } finally {
     globalThis.fetch = originalFetch;
     rmSync(directory, { recursive: true, force: true });
@@ -1370,7 +1370,7 @@ test("blind solving rejects a truncated payload and retries the same profile", a
     }
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
-  const providers = ["xhigh", "high", "medium"].map((reasoningEffort, index) => ({
+  const providers = ["high", "medium", "low"].map((reasoningEffort, index) => ({
     lane: "ai",
     role: index === 0 ? "primary" : `fallback_${index}`,
     baseUrl: "https://primary.example.com/v1",
@@ -1391,8 +1391,8 @@ test("blind solving rejects a truncated payload and retries the same profile", a
       timeoutMs: 1000
     });
     assert.equal(result.ok, true);
-    assert.equal(result.reasoningEffort, "xhigh");
-    assert.deepEqual(calls, ["xhigh", "xhigh"]);
+    assert.equal(result.reasoningEffort, "high");
+    assert.deepEqual(calls, ["high", "high"]);
     assert.equal(result.attempts.length, 2);
     assert.match(result.attempts[0].error, /status=incomplete \(max_output_tokens\).*truncated/);
     assert.equal(result.attempts[0].ok, false);
@@ -1419,7 +1419,7 @@ test("chat completions finish_reason=length is rejected instead of delivered", a
     apiKey: "key",
     visionSurface: "chat_completions",
     visionModel: "gpt-5.6-sol",
-    reasoningEffort: "xhigh"
+    reasoningEffort: "high"
   }];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
@@ -1456,8 +1456,8 @@ test("a 200 non-JSON body is retryable and the same profile retries", async () =
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
@@ -1493,8 +1493,8 @@ test("an empty 200 output is retryable and the same profile retries", async () =
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
@@ -1533,8 +1533,8 @@ test("a 429 with Retry-After stays retryable and the same profile retries", asyn
     return new Response(JSON.stringify({ output_text: "# 参考答案\n\n1. B" }), { status: 200 });
   };
   const providers = [
-    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "xhigh" }
+    { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_1", baseUrl: "https://fallback.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" }
   ];
   try {
     const result = await requestAnswerWithFailover({ cloudEgressEnabled: true, providers, runtimeDirectory: path.join(directory, ".gateway-runtime") }, {
@@ -1586,8 +1586,8 @@ test("reference review retries the same provider after one headers timeout", asy
     assert.equal(result.ok, true);
     assert.equal(result.provider, "primary");
     assert.deepEqual(calls, [
-      { url: "https://primary.example.com/v1/responses", effort: "xhigh" },
-      { url: "https://primary.example.com/v1/responses", effort: "xhigh" }
+      { url: "https://primary.example.com/v1/responses", effort: "high" },
+      { url: "https://primary.example.com/v1/responses", effort: "high" }
     ]);
     assert.deepEqual(result.attempts.map((attempt) => attempt.attemptNumber), [1, 2]);
   } finally {

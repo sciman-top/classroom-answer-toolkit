@@ -16,16 +16,16 @@ param(
     [ValidateSet("primary", "fallback", "all")]
     [string]$Provider = "all",
 
-    [ValidateSet("auto", "sol-xhigh", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
+    [ValidateSet("auto", "sol-high", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
     [string]$BlindQualityProfile = "auto",
 
-    [ValidateSet("auto", "sol-xhigh", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
+    [ValidateSet("auto", "sol-high", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
     [string]$SemanticQualityProfile = "auto",
 
-    [ValidateSet("auto", "sol-xhigh", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
+    [ValidateSet("auto", "sol-high", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
     [string]$VisualQualityProfile = "auto",
 
-    [ValidateSet("auto", "sol-xhigh", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
+    [ValidateSet("auto", "sol-high", "sol-medium", "sol-low", "terra-xhigh", "terra-high", "terra-medium", "luna-xhigh", "luna-high", "luna-medium")]
     [string]$ReferenceQualityProfile = "auto",
 
     [ValidateSet("classroom", "compact")]

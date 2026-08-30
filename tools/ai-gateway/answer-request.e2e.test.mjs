@@ -55,7 +55,7 @@ function providerEnv(baseUrl, roleSuffix, apiKey) {
     [`${prefix}_API_KEY`, apiKey],
     [`${prefix}_TEXT_MODEL`, "gpt-5.6-sol"],
     [`${prefix}_VISION_MODEL`, "gpt-5.6-sol"],
-    [`${prefix}_REASONING_EFFORT`, "xhigh"],
+    [`${prefix}_REASONING_EFFORT`, "high"],
     [`${prefix}_TEXT_SURFACE`, "chat_completions"],
     [`${prefix}_VISION_SURFACE`, "chat_completions"]
   ]);
@@ -69,7 +69,7 @@ const FAILover_OPTIONS = {
   mode: "answer",
   prompt: "p",
   provider: "all",
-  qualityProfile: "sol-xhigh",
+  qualityProfile: "sol-high",
   visualDetailMode: "original",
   maxOutputTokens: 2000,
   timeoutMs: 20000,
@@ -172,7 +172,7 @@ test("main() success path writes answer and schema-valid summary through a fake 
           "--images-dir", imagesDir,
           "--output", outputPath,
           "--summary-out", summaryPath,
-          "--quality-profile", "sol-xhigh",
+          "--quality-profile", "sol-high",
           "--allow-cloud-egress",
           "--timeout-ms", "30000"
         ], {
@@ -205,7 +205,7 @@ test("main() success path writes answer and schema-valid summary through a fake 
       assert.equal(summary.kind, "live-answer-generation-summary");
       assert.equal(summary.provider, "primary");
       assert.equal(summary.model, "gpt-5.6-sol");
-      assert.equal(summary.reasoningEffort, "xhigh");
+      assert.equal(summary.reasoningEffort, "high");
       assert.equal(summary.mode, "blind_generation");
       assert.equal(summary.outputSha256.length, 64);
     });
