@@ -27,9 +27,10 @@ if ($sourceCommit -notmatch '^[A-Fa-f0-9]{40}$') {
 }
 
 $requiredPublicPaths = @(
-    "installer/preview/ClassroomToolkit-$Version-win-x64.zip",
-    "installer/preview/install-release.ps1",
-    "installer/preview/update-manifest.json",
+    "installer/stable/ClassroomToolkit-$Version-setup.exe",
+    "installer/stable/install-manifest.json",
+    "installer/stable/update-manifest.json",
+    "portable/ClassroomToolkit-$Version-portable-win-x64.zip",
     "source/ClassroomToolkit-$Version-source.zip",
     "_release-metadata/sbom/spdx_2.2/manifest.spdx.json"
 )
@@ -41,18 +42,28 @@ foreach ($relativePath in $requiredPublicPaths) {
 }
 
 $stableSetupPath = Join-Path $versionRoot "installer/stable/ClassroomToolkit-$Version-setup.exe"
-$stableManifestPath = Join-Path $versionRoot "installer/stable/install-manifest.json"
-$stablePresent = (Test-Path -LiteralPath $stableSetupPath -PathType Leaf) -and
-    (Test-Path -LiteralPath $stableManifestPath -PathType Leaf)
-if ((Test-Path -LiteralPath $stableSetupPath -PathType Leaf) -xor (Test-Path -LiteralPath $stableManifestPath -PathType Leaf)) {
-    throw "Ordinary-user installer is incomplete; setup.exe and install-manifest.json must be present together."
+$setupSignature = Get-AuthenticodeSignature -LiteralPath $stableSetupPath
+if ($setupSignature.Status -ne [Management.Automation.SignatureStatus]::Valid) {
+    throw "Ordinary-user release metadata requires a valid Authenticode installer signature: $($setupSignature.Status)."
+}
+$installManifest = Get-Content -LiteralPath (Join-Path $versionRoot "installer/stable/install-manifest.json") -Raw -Encoding utf8 | ConvertFrom-Json
+if ([string]$installManifest.publisherSignature.status -ne "Valid" -or
+    [string]::IsNullOrWhiteSpace([string]$installManifest.publisherSignature.signerThumbprint) -or
+    -not [string]::Equals(
+        [string]$installManifest.publisherSignature.signerThumbprint,
+        [string]$setupSignature.SignerCertificate.Thumbprint,
+        [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Install manifest publisher identity does not match the signed setup executable."
 }
 
 $publicPaths = [Collections.Generic.List[string]]::new()
 $requiredPublicPaths | ForEach-Object { $publicPaths.Add($_) }
-if ($stablePresent) {
-    $publicPaths.Add("installer/stable/ClassroomToolkit-$Version-setup.exe")
-    $publicPaths.Add("installer/stable/install-manifest.json")
+if (Test-Path -LiteralPath (Join-Path $versionRoot "installer/preview/update-manifest.json") -PathType Leaf) {
+    @(
+        "installer/preview/ClassroomToolkit-$Version-win-x64.zip",
+        "installer/preview/install-release.ps1",
+        "installer/preview/update-manifest.json"
+    ) | ForEach-Object { $publicPaths.Add($_) }
 }
 $files = @($publicPaths | Sort-Object | ForEach-Object {
     $relativePath = $_
@@ -76,11 +87,15 @@ $manifest = [ordered]@{
         [ordered]@{
             kind = "ordinary-user-installer"
             visibility = "public"
-            status = if ($stablePresent) { "packaged" } else { "blocked" }
-            reason = if ($stablePresent) { $null } else { "signed writable runtime bundle and representative non-developer acceptance are not available" }
+            status = "packaged"
         },
         [ordered]@{
             kind = "preview-installer"
+            visibility = "public"
+            status = if (Test-Path -LiteralPath (Join-Path $versionRoot "installer/preview/update-manifest.json") -PathType Leaf) { "packaged" } else { "not-requested" }
+        },
+        [ordered]@{
+            kind = "portable-user-package"
             visibility = "public"
             status = "packaged"
         },

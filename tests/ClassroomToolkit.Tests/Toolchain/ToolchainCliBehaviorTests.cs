@@ -217,18 +217,18 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public async Task PackageReleaseRejectsRepositoryCoupledZipAsOrdinaryUserInstaller()
+    public async Task PackageReleaseRequiresSigningForOrdinaryUserInstaller()
     {
         var result = await RunAsync(
             "pwsh",
             FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
-            "-Version", "1.0.3",
+            "-Version", "1.0.4",
             "-Audience", "ordinary-users",
             "-SkipPublish");
 
         result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("repository-coupled preview ZIP");
+        result.Output.Should().Contain("code-signing certificate");
     }
 
     [Fact]

@@ -31,6 +31,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     {
         var repositoryRoot = _repositoryRootResolver.ResolveRepositoryRoot();
         var scriptsDirectory = Path.Combine(repositoryRoot, "scripts");
+        var packagedRuntime = IsPackagedRuntime(repositoryRoot);
         // Broken/locked pack manifests would otherwise vanish from the picker with
         // no trace; surface the locator issues on stderr (visible in smoke/console).
         var scanIssues = new List<string>();
@@ -44,8 +45,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             repositoryRoot,
             Path.Combine(scriptsDirectory, "bootstrap.ps1"),
             Path.Combine(scriptsDirectory, "check-toolchain.ps1"),
-            File.Exists(Path.Combine(scriptsDirectory, "bootstrap.ps1")),
-            File.Exists(Path.Combine(scriptsDirectory, "check-toolchain.ps1")),
+            packagedRuntime || File.Exists(Path.Combine(scriptsDirectory, "bootstrap.ps1")),
+            packagedRuntime || File.Exists(Path.Combine(scriptsDirectory, "check-toolchain.ps1")),
             subjectPacks.FirstOrDefault(pack => pack.AssetId == "junior-physics-answer")?.AssetId
                 ?? subjectPacks.FirstOrDefault()?.AssetId,
             subjectPacks.Select(pack => pack.AssetId).ToArray());
@@ -67,7 +68,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             }
 
             var process = await _processRunner.RunAsync(
-                "node",
+                ResolveNodeExecutable(workspace.RepositoryRoot),
                 arguments,
                 workspace.RepositoryRoot,
                 cancellationToken,
@@ -159,6 +160,17 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default)
     {
         var workspace = GetWorkspaceInfo();
+        if (IsPackagedRuntime(workspace.RepositoryRoot))
+        {
+            var now = DateTimeOffset.Now;
+            return Task.FromResult(ToolchainExecutionResult.Success(
+                ToolchainScriptKind.Bootstrap,
+                Path.Combine(workspace.RepositoryRoot, "runtime-manifest.json"),
+                now,
+                now,
+                "安装版运行时已随应用配置，无需执行开发环境 bootstrap。"));
+        }
+
         return RunScriptAsync(
             ToolchainScriptKind.Bootstrap,
             workspace.BootstrapScriptPath,
@@ -166,19 +178,40 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             cancellationToken);
     }
 
-    public Task<ToolchainExecutionResult> RunCheckAsync(
+    public async Task<ToolchainExecutionResult> RunCheckAsync(
         string? subjectPack = null,
         CancellationToken cancellationToken = default)
     {
         var workspace = GetWorkspaceInfo();
-        return RunScriptAsync(
+        if (IsPackagedRuntime(workspace.RepositoryRoot))
+        {
+            var startedAt = DateTimeOffset.Now;
+            var report = await GetWorkspaceHealthReportAsync(subjectPack, cancellationToken).ConfigureAwait(false);
+            var finishedAt = DateTimeOffset.Now;
+            return report.IsHealthy
+                ? ToolchainExecutionResult.Success(
+                    ToolchainScriptKind.Check,
+                    Path.Combine(workspace.RepositoryRoot, "runtime-manifest.json"),
+                    startedAt,
+                    finishedAt,
+                    report.Summary)
+                : ToolchainExecutionResult.Failure(
+                    ToolchainScriptKind.Check,
+                    Path.Combine(workspace.RepositoryRoot, "runtime-manifest.json"),
+                    1,
+                    startedAt,
+                    finishedAt,
+                    report.Summary);
+        }
+
+        return await RunScriptAsync(
             ToolchainScriptKind.Check,
             workspace.CheckScriptPath,
             workspace.RepositoryRoot,
             cancellationToken,
             string.IsNullOrWhiteSpace(subjectPack)
                 ? []
-                : ["-Mode", "Core", "-SubjectPack", subjectPack]);
+                : ["-Mode", "Core", "-SubjectPack", subjectPack]).ConfigureAwait(false);
     }
 
     public async Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
@@ -220,7 +253,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         }
 
         var process = await _processRunner.RunAsync(
-            "node",
+            ResolveNodeExecutable(workspace.RepositoryRoot),
             arguments,
             workspace.RepositoryRoot,
             cancellationToken,
@@ -381,6 +414,15 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         return process.ExitCode == 0
             ? ToolchainExecutionResult.Success(kind, scriptPath, startedAt, finishedAt, output)
             : ToolchainExecutionResult.Failure(kind, scriptPath, process.ExitCode, startedAt, finishedAt, output);
+    }
+
+    private static bool IsPackagedRuntime(string workspaceRoot) =>
+        File.Exists(Path.Combine(workspaceRoot, "runtime-manifest.json"));
+
+    private static string ResolveNodeExecutable(string workspaceRoot)
+    {
+        var bundledNode = Path.Combine(workspaceRoot, "runtime", "node", "node.exe");
+        return File.Exists(bundledNode) ? bundledNode : "node";
     }
 
     private static ManifestContext ReadManifestContext(string manifestPath)

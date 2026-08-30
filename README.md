@@ -157,9 +157,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptanc
 
 ## 交付物目录
 
-本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。每个版本的安装预览、公开源码和私用迁移包分别放在 `artifacts/deliveries/<version>/installer/preview/`、`source/` 和 `private-transfer/`，版本清单、SBOM 与 provenance 放在 `_release-metadata/`；历史证据放在 `artifacts/history/<kind>/<date-or-id>/`，构建/审计中间物放在 `artifacts/work/<kind>/`，三者不在同一层混放。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
+本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。每个版本的稳定安装版、绿色便携版、安装预览、公开源码和私用迁移包分别放在 `artifacts/deliveries/<version>/installer/preview/`、`source/` 和 `private-transfer/`，版本清单、SBOM 与 provenance 放在 `_release-metadata/`；历史证据放在 `artifacts/history/<kind>/<date-or-id>/`，构建/审计中间物放在 `artifacts/work/<kind>/`，三者不在同一层混放。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
 
-当前交付合同包含 ordinary-user 标准安装版、`developer/operator preview`、公开源码包和 PrivateDev 迁移包四类；标准安装版在没有可写 runtime bundle、有效 Authenticode 签名和代表性非开发者验收前保持 `blocked`，不会用 preview ZIP 代替发布。
+当前交付合同包含 ordinary-user 标准安装版、ordinary-user 绿色便携版、`developer/operator preview`、公开源码包和 PrivateDev 迁移包五类；标准安装版与绿色版共享版本化 runtime bundle，前者负责安装/更新/卸载，后者解压即用且不写注册表。只有完成代码签名和代表性非开发者验收后，才可标记为 stable 对外发布；不会用 preview ZIP 代替发布。
 
 当前发布状态：GitHub 上的 `v1.0.1` 是已存在的 tag/release 资产；后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布。不要把本机 `artifacts/deliveries/<version>/` 候选包当作线上下载地址；发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
 

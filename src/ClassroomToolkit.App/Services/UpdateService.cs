@@ -3,6 +3,9 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
 namespace ClassroomToolkit.App.Services;
@@ -118,13 +121,13 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             if (!string.Equals(targetWorkspaceContract, installedWorkspaceContract, StringComparison.Ordinal))
             {
                 return UpdateCheckResult.NoUpdate(
-                    $"新版本需要工作区合同 {targetWorkspaceContract}，当前安装为 {installedWorkspaceContract}；请使用预览安装器重新部署匹配工作区");
+                    $"新版本需要工作区合同 {targetWorkspaceContract}，当前安装为 {installedWorkspaceContract}；请运行新版安装程序完成升级");
             }
 
-            var asset = manifest.Assets?.FirstOrDefault(item => string.Equals(item.Kind, "app", StringComparison.OrdinalIgnoreCase));
+            var asset = manifest.Assets?.FirstOrDefault(item => string.Equals(item.Kind, "installer", StringComparison.OrdinalIgnoreCase));
             if (asset is null)
             {
-                return UpdateCheckResult.Unavailable("更新清单缺少 app 下载资产");
+                return UpdateCheckResult.Unavailable("更新清单缺少 installer 下载资产");
             }
 
             var packageValidationError = ValidateUpdatePackage(asset.Url, asset.Sha256, asset.Bytes);
@@ -155,14 +158,14 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         }
     }
 
-    public Task<UpdateInstallResult> InstallAsync(
+    public async Task<UpdateInstallResult> InstallAsync(
         UpdateInfo update,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!CanUpdateInstalledApplication())
         {
-            return Task.FromResult(new UpdateInstallResult(false, "当前不是可更新的安装版目录"));
+            return new UpdateInstallResult(false, "当前不是可更新的安装版目录");
         }
 
         var packageValidationError = ValidateUpdatePackage(
@@ -171,49 +174,104 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             update.PackageBytes);
         if (packageValidationError is not null)
         {
-            return Task.FromResult(new UpdateInstallResult(false, packageValidationError));
+            return new UpdateInstallResult(false, packageValidationError);
         }
 
-        var updaterScript = Path.Combine(_repositoryRoot, "scripts", "update-release.ps1");
-        if (!File.Exists(updaterScript))
-        {
-            return Task.FromResult(new UpdateInstallResult(false, $"更新脚本不存在：{updaterScript}"));
-        }
-
-        var executablePath = Path.Combine(_applicationDirectory, "ClassroomToolkit.App.exe");
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "pwsh",
-            WorkingDirectory = _repositoryRoot,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden
-        };
-        foreach (var argument in new[]
-        {
-            "-NoProfile",
-            "-ExecutionPolicy", "Bypass",
-            "-File", updaterScript,
-            "-PackageUrl", update.PackageUrl,
-            "-ExpectedSha256", update.PackageSha256,
-            "-ExpectedBytes", update.PackageBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            "-TargetAppDirectory", _applicationDirectory,
-            "-RepositoryRoot", _repositoryRoot,
-            "-ProcessId", Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            "-RestartExecutable", executablePath
-        })
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
+        var setupPath = Path.Combine(
+            Path.GetTempPath(),
+            $"ClassroomToolkit-{update.Version}-{Guid.NewGuid():N}-setup.exe");
         try
         {
+            using var response = await _httpClient.GetAsync(
+                update.PackageUrl,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+            await using (var destination = new FileStream(
+                setupPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                1024 * 128,
+                FileOptions.Asynchronous | FileOptions.SequentialScan))
+            {
+                await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+            }
+
+            var setupInfo = new FileInfo(setupPath);
+            if (setupInfo.Length != update.PackageBytes)
+            {
+                throw new InvalidDataException($"更新安装程序大小不匹配：expected {update.PackageBytes}, actual {setupInfo.Length}");
+            }
+
+            await using (var setupStream = File.OpenRead(setupPath))
+            {
+                var actualHash = Convert.ToHexString(await SHA256.HashDataAsync(setupStream, cancellationToken))
+                    .ToLowerInvariant();
+                if (!string.Equals(actualHash, update.PackageSha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidDataException("更新安装程序 SHA-256 不匹配");
+                }
+            }
+
+            var runtimeManifest = ReadRuntimeManifest();
+            if (string.IsNullOrWhiteSpace(runtimeManifest?.PublisherThumbprint))
+            {
+                throw new InvalidDataException("安装版运行时缺少 publisherThumbprint，无法验证更新发布者");
+            }
+            if (!WindowsAuthenticodeTrust.IsTrusted(setupPath))
+            {
+                throw new InvalidDataException("更新安装程序未通过 Windows Authenticode 信任验证");
+            }
+            var signer = X509CertificateLoader.LoadCertificateFromFile(setupPath);
+            if (!string.Equals(
+                signer.Thumbprint,
+                runtimeManifest.PublisherThumbprint,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException("更新安装程序发布者与当前安装版不一致");
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = setupPath,
+                WorkingDirectory = Path.GetDirectoryName(setupPath)!,
+                UseShellExecute = true
+            };
+            foreach (var argument in new[]
+            {
+                "/SP-",
+                "/SILENT",
+                "/SUPPRESSMSGBOXES",
+                "/NORESTART",
+                "/CLOSEAPPLICATIONS",
+                "/RESTARTAPPLICATIONS"
+            })
+            {
+                startInfo.ArgumentList.Add(argument);
+            }
+
             Process.Start(startInfo)?.Dispose();
-            return Task.FromResult(new UpdateInstallResult(true, $"已安排 {update.Version} 更新，应用即将重启"));
+            return new UpdateInstallResult(true, $"已启动 {update.Version} 安装程序，应用即将重启");
         }
-        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is HttpRequestException
+            or IOException
+            or InvalidOperationException
+            or System.ComponentModel.Win32Exception)
         {
-            return Task.FromResult(new UpdateInstallResult(false, $"无法启动更新器：{ex.Message}"));
+            try
+            {
+                if (File.Exists(setupPath))
+                {
+                    File.Delete(setupPath);
+                }
+            }
+            catch (IOException)
+            {
+            }
+
+            return new UpdateInstallResult(false, $"无法启动更新安装程序：{ex.Message}");
         }
     }
 
@@ -227,17 +285,17 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
     private bool CanUpdateInstalledApplication()
     {
-        // A developer build also has ClassroomToolkit.App.exe and can resolve the
-        // repository's updater. Only the preview installer owns <workspace>/app;
-        // accepting an arbitrary apphost directory would let an update replace a
-        // bin/Debug output tree rather than an installed application.
-        var expectedInstalledApplicationDirectory = Path.GetFullPath(Path.Combine(_repositoryRoot, "app"));
-        return string.Equals(
-                _applicationDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
-                expectedInstalledApplicationDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
-                StringComparison.OrdinalIgnoreCase)
-            && File.Exists(Path.Combine(_applicationDirectory, "ClassroomToolkit.App.exe"))
-            && File.Exists(Path.Combine(_repositoryRoot, "scripts", "update-release.ps1"));
+        if (!string.Equals(
+            _applicationDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            _repositoryRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var runtimeManifest = ReadRuntimeManifest();
+        return string.Equals(runtimeManifest?.DistributionMode, "installer", StringComparison.OrdinalIgnoreCase)
+            && File.Exists(Path.Combine(_applicationDirectory, "ClassroomToolkit.App.exe"));
     }
 
     private static Version GetCurrentVersion()
@@ -261,28 +319,26 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
     private string GetInstalledWorkspaceContract()
     {
-        var installRoot = Directory.GetParent(_repositoryRoot)?.FullName;
-        if (string.IsNullOrWhiteSpace(installRoot))
-        {
-            return LegacyWorkspaceContract;
-        }
+        return ParseWorkspaceContract(ReadRuntimeManifest()?.WorkspaceContract) ?? LegacyWorkspaceContract;
+    }
 
-        var receiptPath = Path.Combine(installRoot, "install-receipt.json");
-        if (!File.Exists(receiptPath))
+    private RuntimeManifest? ReadRuntimeManifest()
+    {
+        var manifestPath = Path.Combine(_repositoryRoot, "runtime-manifest.json");
+        if (!File.Exists(manifestPath))
         {
-            return LegacyWorkspaceContract;
+            return null;
         }
 
         try
         {
-            using var receiptStream = File.OpenRead(receiptPath);
-            var receipt = JsonSerializer.Deserialize<InstallReceipt>(receiptStream,
+            using var stream = File.OpenRead(manifestPath);
+            return JsonSerializer.Deserialize<RuntimeManifest>(stream,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return ParseWorkspaceContract(receipt?.WorkspaceContract) ?? LegacyWorkspaceContract;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
-            return LegacyWorkspaceContract;
+            return null;
         }
     }
 
@@ -302,7 +358,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
     {
         if (string.IsNullOrWhiteSpace(packageUrl) || string.IsNullOrWhiteSpace(sha256))
         {
-            return "更新清单缺少 app 下载资产或 SHA-256";
+            return "更新清单缺少 installer 下载资产或 SHA-256";
         }
 
         if (!Uri.TryCreate(packageUrl, UriKind.Absolute, out var packageUri)
@@ -347,8 +403,78 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         public long Bytes { get; set; }
     }
 
-    private sealed class InstallReceipt
+    private sealed class RuntimeManifest
     {
         public string? WorkspaceContract { get; set; }
+        public string? DistributionMode { get; set; }
+        public string? PublisherThumbprint { get; set; }
+    }
+
+    private static class WindowsAuthenticodeTrust
+    {
+        private static readonly Guid GenericVerifyV2 = new("00AAC56B-CD44-11D0-8CC2-00C04FC295EE");
+
+        public static bool IsTrusted(string filePath)
+        {
+            var fileInfo = new WinTrustFileInfo(filePath);
+            var data = new WinTrustData(fileInfo);
+            try
+            {
+                return WinVerifyTrust(IntPtr.Zero, GenericVerifyV2, data) == 0;
+            }
+            finally
+            {
+                data.Dispose();
+                fileInfo.Dispose();
+            }
+        }
+
+        [DllImport("wintrust.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+        private static extern int WinVerifyTrust(IntPtr hwnd, [MarshalAs(UnmanagedType.LPStruct)] Guid actionId, WinTrustData data);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private sealed class WinTrustFileInfo : IDisposable
+        {
+            private readonly IntPtr _filePath;
+            public uint StructureSize = (uint)Marshal.SizeOf<WinTrustFileInfo>();
+            public IntPtr FilePath;
+            public IntPtr FileHandle = IntPtr.Zero;
+            public IntPtr KnownSubject = IntPtr.Zero;
+
+            public WinTrustFileInfo(string filePath)
+            {
+                _filePath = Marshal.StringToCoTaskMemUni(filePath);
+                FilePath = _filePath;
+            }
+
+            public void Dispose() => Marshal.FreeCoTaskMem(_filePath);
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private sealed class WinTrustData : IDisposable
+        {
+            private readonly IntPtr _fileInfo;
+            public uint StructureSize = (uint)Marshal.SizeOf<WinTrustData>();
+            public IntPtr PolicyCallbackData = IntPtr.Zero;
+            public IntPtr SipClientData = IntPtr.Zero;
+            public uint UIChoice = 2;
+            public uint RevocationChecks = 0;
+            public uint UnionChoice = 1;
+            public IntPtr FileInfo;
+            public uint StateAction = 0;
+            public IntPtr StateData = IntPtr.Zero;
+            public string? UrlReference = null;
+            public uint ProviderFlags = 0x00000080;
+            public uint UIContext = 0;
+
+            public WinTrustData(WinTrustFileInfo fileInfo)
+            {
+                _fileInfo = Marshal.AllocCoTaskMem(Marshal.SizeOf<WinTrustFileInfo>());
+                Marshal.StructureToPtr(fileInfo, _fileInfo, false);
+                FileInfo = _fileInfo;
+            }
+
+            public void Dispose() => Marshal.FreeCoTaskMem(_fileInfo);
+        }
     }
 }

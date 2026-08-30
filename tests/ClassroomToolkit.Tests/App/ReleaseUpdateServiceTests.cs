@@ -9,7 +9,7 @@ namespace ClassroomToolkit.Tests.App;
 public sealed class ReleaseUpdateServiceTests
 {
     [Fact]
-    public async Task CheckAsync_AcceptsPowerShellStyleManifestAndFindsNewerApp()
+    public async Task CheckAsync_AcceptsInstallerManifestAndFindsNewerSetup()
     {
         using var fixture = new InstalledApplicationFixture();
         using var client = new HttpClient(new StaticResponseHandler("""
@@ -19,9 +19,9 @@ public sealed class ReleaseUpdateServiceTests
               "releaseUrl":"https://github.com/sciman-top/classroom-answer-toolkit/releases/tag/v1.0.1",
               "assets":[
                 {
-                  "kind":"app",
-                  "name":"ClassroomToolkit-1.0.1-win-x64.zip",
-                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+                  "kind":"installer",
+                  "name":"ClassroomToolkit-1.0.1-setup.exe",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
                   "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                   "bytes":123
                 }
@@ -49,15 +49,15 @@ public sealed class ReleaseUpdateServiceTests
     public async Task CheckAsync_RefusesAppOnlyUpdateWhenWorkspaceContractChanges()
     {
         using var fixture = new InstalledApplicationFixture();
-        fixture.WriteInstallReceipt("1");
+        fixture.WriteRuntimeManifest("1");
         using var client = new HttpClient(new StaticResponseHandler("""
             {
               "version":"1.0.1",
               "workspaceContract":"2",
               "assets":[
                 {
-                  "kind":"app",
-                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+                  "kind":"installer",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
                   "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                   "bytes":123
                 }
@@ -76,7 +76,7 @@ public sealed class ReleaseUpdateServiceTests
         result.Succeeded.Should().BeTrue();
         result.UpdateAvailable.Should().BeFalse();
         result.Update.Should().BeNull();
-        result.Message.Should().Contain("重新部署匹配工作区");
+        result.Message.Should().Contain("新版安装程序");
     }
 
     [Fact]
@@ -89,8 +89,8 @@ public sealed class ReleaseUpdateServiceTests
               "workspaceContract":"contract with spaces",
               "assets":[
                 {
-                  "kind":"app",
-                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+                  "kind":"installer",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
                   "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                   "bytes":123
                 }
@@ -120,7 +120,7 @@ public sealed class ReleaseUpdateServiceTests
               "version":"1.0.1",
               "assets":[
                 {
-                  "kind":"app",
+                  "kind":"installer",
                   "url":"https://example.invalid/update.zip",
                   "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                   "bytes":123
@@ -153,8 +153,8 @@ public sealed class ReleaseUpdateServiceTests
               "version":"1.0.1",
               "assets":[
                 {
-                  "kind":"app",
-                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+                  "kind":"installer",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
                   "sha256":"{{sha256}}",
                   "bytes":{{bytes}}
                 }
@@ -186,7 +186,7 @@ public sealed class ReleaseUpdateServiceTests
             "1.0.1",
             "1",
             string.Empty,
-            "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-win-x64.zip",
+            "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
             "not-a-sha256",
             123,
             string.Empty));
@@ -252,11 +252,14 @@ public sealed class ReleaseUpdateServiceTests
         public InstalledApplicationFixture()
         {
             Root = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-update-{Guid.NewGuid():N}");
-            RepositoryRoot = Path.Combine(Root, "workspace");
-            AppDirectory = Path.Combine(RepositoryRoot, "app");
-            Directory.CreateDirectory(Path.Combine(RepositoryRoot, "scripts"));
+            RepositoryRoot = Root;
+            AppDirectory = Root;
+            Directory.CreateDirectory(Path.Combine(RepositoryRoot, "tools"));
+            Directory.CreateDirectory(Path.Combine(RepositoryRoot, "prompts"));
+            Directory.CreateDirectory(Path.Combine(RepositoryRoot, "runtime", "node"));
+            File.WriteAllText(Path.Combine(RepositoryRoot, "runtime-manifest.json"), "{\"workspaceContract\":\"1\",\"distributionMode\":\"installer\"}");
+            File.WriteAllText(Path.Combine(RepositoryRoot, "runtime", "node", "node.exe"), "node");
             Directory.CreateDirectory(AppDirectory);
-            File.WriteAllText(Path.Combine(RepositoryRoot, "scripts", "update-release.ps1"), "# updater");
             File.WriteAllText(Path.Combine(AppDirectory, "ClassroomToolkit.App.exe"), "app");
         }
 
@@ -264,11 +267,11 @@ public sealed class ReleaseUpdateServiceTests
         public string RepositoryRoot { get; }
         public string AppDirectory { get; }
 
-        public void WriteInstallReceipt(string workspaceContract)
+        public void WriteRuntimeManifest(string workspaceContract)
         {
             File.WriteAllText(
-                Path.Combine(Root, "install-receipt.json"),
-                $$"""{"workspaceContract":"{{workspaceContract}}"}""");
+                Path.Combine(Root, "runtime-manifest.json"),
+                $$"""{"workspaceContract":"{{workspaceContract}}","distributionMode":"installer"}""");
         }
 
         public void Dispose()

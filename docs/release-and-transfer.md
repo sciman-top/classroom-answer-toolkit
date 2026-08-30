@@ -2,11 +2,12 @@
 
 ## Scope
 
-This repository defines four intentionally separate delivery types. The ordinary-user installer is a required product delivery type but remains blocked until its runtime, signing and acceptance contract is satisfied:
+This repository defines five intentionally separate delivery types. The installer and portable ZIP are the two ordinary-user product deliveries and share one versioned runtime bundle:
 
 | Artifact | Audience | Includes | Must not include |
 | --- | --- | --- | --- |
 | Ordinary-user installer | teachers and other Windows users | signed installer, writable runtime bundle, install/update/rollback contract | repository-coupled preview ZIP presented as a finished installer |
+| Ordinary-user portable ZIP | teachers and other Windows users | self-contained runtime, extract-and-run launch, no registry writes | Git, PowerShell, .NET SDK or system Node.js requirements |
 | Developer/operator online preview | repository maintainers familiar with the local toolchain | independently verified published WPF application and matching public workspace | real `.env`, private papers, delivery outputs, `.git` |
 | `ClassroomToolkit-<version>-source.zip` | public developers | source, tests, scripts, prompt assets, lock files, `.env.example` | real `.env`, `node_modules`, local cache and delivery data |
 | PrivateDev transfer ZIP | the private maintainer only | current working-tree snapshot and, only when explicitly requested, `.env` / `.git` / app | GitHub Release publication or any shared distribution channel |
@@ -19,13 +20,13 @@ self-contained MSIX product.
 
 ## Public Release
 
-本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；其中 `installer/preview/` 放脚本安装预览，`source/` 放公开源码包，`private-transfer/` 放按需私用迁移包，`_release-metadata/` 放版本清单、SBOM 和 provenance。历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
+本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；其中 `installer/stable/` 放普通用户安装程序及清单，`portable/` 放绿色版，`installer/preview/` 放可选脚本安装预览，`source/` 放公开源码包，`private-transfer/` 放按需私用迁移包，`_release-metadata/` 放版本清单、SBOM 和 provenance。历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
 
 Create an annotated tag named `v<major>.<minor>.<patch>` and push that tag.
 The GitHub Actions workflow performs the local setup and integration gates,
-creates the app and source ZIPs, writes `update-manifest.json`, generates an
-SPDX SBOM and provenance attestations, and publishes those assets plus
-`scripts/install-release.ps1` to the GitHub Release.
+creates the signed setup EXE, portable ZIP and source ZIP, writes
+`install-manifest.json` and `update-manifest.json`, generates an SPDX SBOM and
+provenance attestations, and publishes those assets to the GitHub Release.
 
 The existing `v1.0.1` Release is a legacy tag snapshot. Version `1.0.3` and
 later are represented only when their matching tag runs this workflow. Do not replace an existing
@@ -33,15 +34,11 @@ Release asset manually with a locally generated ZIP; the manifest, SBOM and
 attestation must be produced by the same clean tagged source.
 
 The manifest binds each asset to a URL, byte count and SHA-256, plus a
-`workspaceContract`. The WPF app only accepts a newer semantic version, a
-matching installed workspace contract, and an app asset hosted on GitHub HTTPS.
-The updater verifies the downloaded ZIP before it extracts it, waits for the
-main process to exit, moves the old app directory to a timestamped backup,
-requires a successful replacement smoke before normal restart, and restores
-the backup if replacement or smoke fails. When a release raises
-`workspaceContract`, it must be installed with
-the preview installer into a new empty destination; the updater will not
-silently replace a workspace, `.env`, or user files.
+`workspaceContract`. The installed WPF app only accepts a newer semantic
+version, a matching runtime contract, and an installer asset hosted on GitHub
+HTTPS. It verifies byte count and SHA-256 before launching the signed setup for
+an in-place upgrade. Portable copies do not self-replace while running; users
+download and extract the newer portable ZIP.
 
 ## Automated Simulation Acceptance
 
@@ -68,14 +65,11 @@ does not establish publisher identity, GitHub publication, UAC/antivirus or
 ordinary-user experience, live provider quality, or teacher/classroom
 acceptance.
 
-An ordinary-user standard edition is part of the delivery contract but is not
-currently published; an offline full edition is not currently planned as a
-separate type. `package-release.ps1 -Audience ordinary-users` fails closed
-because the repository-coupled preview ZIP is not an installer. Productization
-remains blocked until a signed, versioned runtime bundle includes the required
-Node/runtime dependencies and assets, has a signed
-installation/update/rollback contract, and passes representative non-developer
-installation and acceptance checks.
+`package-release.ps1 -Audience ordinary-users` builds both the setup EXE and
+portable ZIP from one runtime bundle. Local engineering may use
+`-AllowUnsignedCandidate` only to verify install/repair/uninstall and portable
+launch. Stable publication remains blocked until the setup and app have valid
+Authenticode signatures and a representative non-developer acceptance record.
 
 No code-signing certificate is configured by this repository. SHA-256 is an
 integrity check for the published Release asset; it is not a substitute for a

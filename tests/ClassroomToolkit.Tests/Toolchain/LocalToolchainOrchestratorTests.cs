@@ -71,6 +71,36 @@ public sealed class LocalToolchainOrchestratorTests
     }
 
     [Fact]
+    public async Task PackagedRuntime_UsesBundledNodeAndDoesNotInvokePowerShellBootstrap()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var nodePath = Path.Combine(workspace.Root, "runtime", "node", "node.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(nodePath)!);
+        File.WriteAllText(nodePath, "node");
+        File.WriteAllText(Path.Combine(workspace.Root, "runtime-manifest.json"), "{\"distributionMode\":\"portable\"}");
+        var runner = new DeliveryRunner(workspace.Root, healthJson: """
+            {
+              "primarySubjectPack":"junior-physics-answer",
+              "subjectPacks":["junior-physics-answer"],
+              "snapshotExists":true,
+              "evalOk":true,
+              "evalCaseCount":1,
+              "summary":"ready",
+              "issues":[]
+            }
+            """);
+        var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
+
+        await orchestrator.GetWorkspaceHealthReportAsync();
+        var bootstrap = await orchestrator.RunBootstrapAsync();
+
+        runner.FileName.Should().Be(nodePath);
+        bootstrap.Succeeded.Should().BeTrue();
+        bootstrap.Output.Should().Contain("无需执行开发环境 bootstrap");
+        runner.CallCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task DeliverInvokesRendererAndReadsManifest()
     {
         using var workspace = new TemporaryWorkspace();

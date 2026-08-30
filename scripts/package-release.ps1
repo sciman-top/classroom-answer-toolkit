@@ -1,23 +1,35 @@
 #requires -Version 7
 param(
     [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
-    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')][string]$WorkspaceContract = "1",
-    [ValidateSet("developer-operator-preview", "ordinary-users")][string]$Audience = "developer-operator-preview",
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')][string]$WorkspaceContract = "2",
+    [ValidateSet("developer-operator-preview", "ordinary-users")][string]$Audience = "ordinary-users",
     [string]$OutputDirectory = "artifacts\deliveries",
-    [switch]$SkipPublish
+    [string]$IsccPath = "",
+    [string]$SigningCertificateThumbprint = "",
+    [switch]$SkipPublish,
+    [switch]$AllowUnsignedCandidate
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+if ($Audience -eq "ordinary-users") {
+    $arguments = @{
+        Version = $Version
+        WorkspaceContract = $WorkspaceContract
+        OutputDirectory = $OutputDirectory
+        IsccPath = $IsccPath
+        SigningCertificateThumbprint = $SigningCertificateThumbprint
+        SkipPublish = $SkipPublish
+        AllowUnsignedCandidate = $AllowUnsignedCandidate
+    }
+    & (Join-Path $PSScriptRoot "build-ordinary-user-package.ps1") @arguments
+    exit $LASTEXITCODE
+}
+
 . (Join-Path $PSScriptRoot "transfer-common.ps1")
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
-if ($Audience -eq "ordinary-users") {
-    throw ("Ordinary-user installer packaging is blocked until a signed, writable runtime bundle " +
-        "has an install, update, rollback and representative non-developer acceptance contract. " +
-        "The repository-coupled preview ZIP is not an ordinary-user installer.")
-}
 $outputParent = Resolve-TransferPath -PathValue $OutputDirectory -BasePath $repoRoot
 $outputRoot = Join-Path $outputParent $Version
 $previewRoot = Join-Path $outputRoot "installer/preview"

@@ -67,7 +67,7 @@ if (Test-Path -LiteralPath $deliveriesRoot -PathType Container) {
             }
         }
 
-        $expectedDirectories = @("installer", "source", "private-transfer", "_release-metadata")
+        $expectedDirectories = @("installer", "portable", "source", "private-transfer", "_release-metadata")
         foreach ($item in @(Get-ChildItem -LiteralPath $releaseRoot -Force)) {
             if ($item.PSIsContainer -and $item.Name -notin $expectedDirectories) {
                 Write-Warning "Unknown delivery type was preserved: $($item.FullName)"

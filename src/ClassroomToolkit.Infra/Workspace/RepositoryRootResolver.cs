@@ -15,7 +15,7 @@ public sealed class RepositoryRootResolver
 
     public string ResolveRepositoryRoot()
     {
-        if (!string.IsNullOrWhiteSpace(_repositoryRootOverride) && IsRepositoryRoot(_repositoryRootOverride))
+        if (!string.IsNullOrWhiteSpace(_repositoryRootOverride) && IsWorkspaceRoot(_repositoryRootOverride))
         {
             return _repositoryRootOverride;
         }
@@ -23,7 +23,7 @@ public sealed class RepositoryRootResolver
         var current = new DirectoryInfo(_startDirectory);
         while (current is not null)
         {
-            if (IsRepositoryRoot(current.FullName))
+            if (IsWorkspaceRoot(current.FullName))
             {
                 return current.FullName;
             }
@@ -34,10 +34,16 @@ public sealed class RepositoryRootResolver
         return _startDirectory;
     }
 
-    private static bool IsRepositoryRoot(string directoryPath)
+    private static bool IsWorkspaceRoot(string directoryPath)
     {
-        return File.Exists(Path.Combine(directoryPath, "global.json"))
+        var isDevelopmentRepository = File.Exists(Path.Combine(directoryPath, "global.json"))
             && File.Exists(Path.Combine(directoryPath, "ClassroomToolkit.sln"))
             && Directory.Exists(Path.Combine(directoryPath, "scripts"));
+        var isPackagedRuntime = File.Exists(Path.Combine(directoryPath, "runtime-manifest.json"))
+            && Directory.Exists(Path.Combine(directoryPath, "tools"))
+            && Directory.Exists(Path.Combine(directoryPath, "prompts"))
+            && File.Exists(Path.Combine(directoryPath, "runtime", "node", "node.exe"));
+
+        return isDevelopmentRepository || isPackagedRuntime;
     }
 }

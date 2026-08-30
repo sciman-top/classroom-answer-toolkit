@@ -48,4 +48,26 @@ public sealed class RepositoryRootResolverTests
             Directory.Delete(tempRoot, recursive: true);
         }
     }
+
+    [Fact]
+    public void ResolveRepositoryRoot_FindsPackagedRuntimeRoot()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-runtime-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(tempRoot, "tools"));
+        Directory.CreateDirectory(Path.Combine(tempRoot, "prompts"));
+        Directory.CreateDirectory(Path.Combine(tempRoot, "runtime", "node"));
+        File.WriteAllText(Path.Combine(tempRoot, "runtime-manifest.json"), "{}");
+        File.WriteAllText(Path.Combine(tempRoot, "runtime", "node", "node.exe"), "node");
+
+        try
+        {
+            var nestedDirectory = Path.Combine(tempRoot, "user-data", "papers");
+            Directory.CreateDirectory(nestedDirectory);
+            new RepositoryRootResolver(nestedDirectory).ResolveRepositoryRoot().Should().Be(tempRoot);
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
 }

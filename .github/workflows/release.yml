@@ -39,6 +39,39 @@ jobs:
         run: |
           dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate=ToolchainIntegration"
 
+      - name: Ensure pinned Inno Setup compiler
+        shell: pwsh
+        run: |
+          $iscc = @(
+            "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+          if (-not $iscc) {
+            winget install --id JRSoftware.InnoSetup --exact --version 6.6.1 --silent --accept-package-agreements --accept-source-agreements
+            if ($LASTEXITCODE -ne 0) { throw "Unable to install Inno Setup 6.6.1." }
+          }
+
+      - name: Import protected code-signing certificate
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_BASE64) -or
+              [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD)) {
+            throw "Stable ordinary-user release requires WINDOWS_SIGNING_CERTIFICATE_BASE64 and WINDOWS_SIGNING_CERTIFICATE_PASSWORD."
+          }
+          $certificatePath = Join-Path $env:RUNNER_TEMP "classroom-toolkit-signing.pfx"
+          [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE_BASE64))
+          $password = ConvertTo-SecureString $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $certificate = Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          if (-not $certificate.HasPrivateKey) {
+            throw "Imported code-signing certificate has no private key."
+          }
+          "SIGNING_CERTIFICATE_THUMBPRINT=$($certificate.Thumbprint)" >> $env:GITHUB_ENV
+          Remove-Item -LiteralPath $certificatePath -Force
+
       - name: Build release packages
         shell: pwsh
         env:
@@ -47,8 +80,9 @@ jobs:
           $version = $env:RELEASE_TAG -replace '^v', ''
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package-release.ps1 `
             -Version $version `
-            -WorkspaceContract "1" `
-            -Audience developer-operator-preview
+            -WorkspaceContract "2" `
+            -Audience ordinary-users `
+            -SigningCertificateThumbprint $env:SIGNING_CERTIFICATE_THUMBPRINT
 
       - name: Generate release SBOM
         shell: pwsh
@@ -87,9 +121,10 @@ jobs:
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
-            artifacts/deliveries/*/installer/preview/ClassroomToolkit-*-win-x64.zip
-            artifacts/deliveries/*/installer/preview/install-release.ps1
-            artifacts/deliveries/*/installer/preview/update-manifest.json
+            artifacts/deliveries/*/installer/stable/ClassroomToolkit-*-setup.exe
+            artifacts/deliveries/*/installer/stable/install-manifest.json
+            artifacts/deliveries/*/installer/stable/update-manifest.json
+            artifacts/deliveries/*/portable/ClassroomToolkit-*-portable-win-x64.zip
             artifacts/deliveries/*/source/ClassroomToolkit-*-source.zip
             artifacts/deliveries/*/_release-metadata/sbom/spdx_2.2/manifest.spdx.json
             artifacts/deliveries/*/_release-metadata/release-manifest.json
@@ -103,13 +138,14 @@ jobs:
         run: |
           $version = $env:RELEASE_TAG -replace '^v', ''
           gh release create $env:RELEASE_TAG `
-            "artifacts/deliveries/$version/installer/preview/ClassroomToolkit-$version-win-x64.zip" `
-            "artifacts/deliveries/$version/installer/preview/install-release.ps1" `
-            "artifacts/deliveries/$version/installer/preview/update-manifest.json" `
+            "artifacts/deliveries/$version/installer/stable/ClassroomToolkit-$version-setup.exe" `
+            "artifacts/deliveries/$version/installer/stable/install-manifest.json" `
+            "artifacts/deliveries/$version/installer/stable/update-manifest.json" `
+            "artifacts/deliveries/$version/portable/ClassroomToolkit-$version-portable-win-x64.zip" `
             "artifacts/deliveries/$version/source/ClassroomToolkit-$version-source.zip" `
             "artifacts/deliveries/$version/_release-metadata/sbom/spdx_2.2/manifest.spdx.json" `
             "artifacts/deliveries/$version/_release-metadata/release-manifest.json" `
             "artifacts/deliveries/$version/_release-metadata/checksums.sha256" `
-            --title "ClassroomToolkit $version developer/operator preview" `
+            --title "ClassroomToolkit $version" `
             --generate-notes `
             --verify-tag
