@@ -134,18 +134,20 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
   } else if (snapshotStatus.id === null || snapshotStatus.version === null || snapshotStatus.profile === null) {
     issues.push("主 subject pack 的 snapshot 缺少 id、version 或 active profile。");
   }
-  if (!evalStatus.exists && !isPackagedRuntime) {
-    issues.push("评测结果 latest.json 尚未生成。");
-  } else if (!isPackagedRuntime && !evalStatus.ok) {
-    issues.push("固定回归未全部通过。");
-  } else if (evalStatus.assetVersion === null || evalStatus.caseCount <= 0) {
-    issues.push("固定回归结果缺少 assetVersion 或有效 cases。");
-  } else if (manifestVersion !== null && evalStatus.assetVersion !== manifestVersion) {
-    issues.push(`评测结果版本 ${evalStatus.assetVersion} 与资产版本 ${manifestVersion} 不一致。`);
-  } else if (snapshotStatus.id !== null && evalStatus.snapshotId !== snapshotStatus.id) {
-    issues.push(evalStatus.snapshotId === null
-      ? "评测结果未绑定当前 snapshot。"
-      : `评测结果 snapshot ${evalStatus.snapshotId} 与当前 snapshot ${snapshotStatus.id} 不一致。`);
+  if (!isPackagedRuntime) {
+    if (!evalStatus.exists) {
+      issues.push("评测结果 latest.json 尚未生成。");
+    } else if (!evalStatus.ok) {
+      issues.push("固定回归未全部通过。");
+    } else if (evalStatus.assetVersion === null || evalStatus.caseCount <= 0) {
+      issues.push("固定回归结果缺少 assetVersion 或有效 cases。");
+    } else if (manifestVersion !== null && evalStatus.assetVersion !== manifestVersion) {
+      issues.push(`评测结果版本 ${evalStatus.assetVersion} 与资产版本 ${manifestVersion} 不一致。`);
+    } else if (snapshotStatus.id !== null && evalStatus.snapshotId !== snapshotStatus.id) {
+      issues.push(evalStatus.snapshotId === null
+        ? "评测结果未绑定当前 snapshot。"
+        : `评测结果 snapshot ${evalStatus.snapshotId} 与当前 snapshot ${snapshotStatus.id} 不一致。`);
+    }
   }
 
   const uniqueIssues = [...new Set(issues)];
