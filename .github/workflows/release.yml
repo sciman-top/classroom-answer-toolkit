@@ -84,6 +84,16 @@ jobs:
             -Audience ordinary-users `
             -SigningCertificateThumbprint $env:SIGNING_CERTIFICATE_THUMBPRINT
 
+      - name: Accept ordinary-user packages
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $version = $env:RELEASE_TAG -replace '^v', ''
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-ordinary-user-package.ps1 `
+            -Version $version `
+            -DeliveryRoot "artifacts/deliveries/$version"
+
       - name: Generate release SBOM
         shell: pwsh
         env:

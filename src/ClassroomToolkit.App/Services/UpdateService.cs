@@ -224,9 +224,14 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             {
                 throw new InvalidDataException("更新安装程序未通过 Windows Authenticode 信任验证");
             }
-            var signer = X509CertificateLoader.LoadCertificateFromFile(setupPath);
+            // X509CertificateLoader.LoadCertificateFromFile expects a
+            // certificate file, not a PE image. Extract the Authenticode
+            // signer from the signed setup executable itself.
+#pragma warning disable SYSLIB0057 // PE Authenticode extraction has no X509CertificateLoader equivalent.
+            using var signer = X509Certificate.CreateFromSignedFile(setupPath);
+#pragma warning restore SYSLIB0057
             if (!string.Equals(
-                signer.Thumbprint,
+                signer.GetCertHashString(),
                 runtimeManifest.PublisherThumbprint,
                 StringComparison.OrdinalIgnoreCase))
             {

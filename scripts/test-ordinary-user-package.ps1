@@ -31,6 +31,11 @@ $portableRoot = Join-Path $testRoot "portable"
 $scenarios = [Collections.Generic.List[object]]::new()
 $failureMessage = $null
 
+# Inno Setup does not create the parent directory for /LOG itself. Create the
+# acceptance workspace before invoking setup so a missing log directory cannot
+# turn an otherwise valid install into a false-negative exit code.
+New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
+
 function Add-Scenario {
     param([string]$Name, [string]$Status, [string]$Summary)
     $scenarios.Add([ordered]@{ name = $Name; status = $Status; summary = $Summary })
