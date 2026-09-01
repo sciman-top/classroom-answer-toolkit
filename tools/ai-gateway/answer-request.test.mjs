@@ -286,12 +286,12 @@ test("visual findings and merge prompts separate evidence extraction from Markdo
 
 test("preset routes stay model-family closed and order preset failover", () => {
   const providers = [
-    { lane: "ai", role: "fallback_8", visionModel: "gpt-5.6-luna", reasoningEffort: "medium" },
-    { lane: "ai", role: "fallback_7", visionModel: "gpt-5.6-luna", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_6", visionModel: "gpt-5.6-luna", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_5", visionModel: "gpt-5.6-terra", reasoningEffort: "medium" },
-    { lane: "ai", role: "fallback_4", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_8", visionModel: "gpt-5.6-luna", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_7", visionModel: "gpt-5.6-luna", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_6", visionModel: "gpt-5.6-luna", reasoningEffort: "max" },
+    { lane: "ai", role: "fallback_5", visionModel: "gpt-5.6-terra", reasoningEffort: "high" },
+    { lane: "ai", role: "fallback_4", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
+    { lane: "ai", role: "fallback_3", visionModel: "gpt-5.6-terra", reasoningEffort: "max" },
     { lane: "ai", role: "fallback_2", visionModel: "gpt-5.6-sol", reasoningEffort: "low" },
     { lane: "ai", role: "fallback_1", visionModel: "gpt-5.6-sol", reasoningEffort: "medium" },
     { lane: "ai", role: "primary", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
@@ -306,25 +306,25 @@ test("preset routes stay model-family closed and order preset failover", () => {
   ]);
   assert.deepEqual(solRoute.presetRoutes.map(({ preset, qualityProfile, orderedRoles }) => ({ preset, qualityProfile, orderedRoles })), [
     { preset: "sol", qualityProfile: "sol-high", orderedRoles: ["primary"] },
-    { preset: "terra", qualityProfile: "terra-xhigh", orderedRoles: ["fallback_3"] },
-    { preset: "luna", qualityProfile: "luna-xhigh", orderedRoles: ["fallback_6"] }
+    { preset: "terra", qualityProfile: "terra-max", orderedRoles: ["fallback_3"] },
+    { preset: "luna", qualityProfile: "luna-max", orderedRoles: ["fallback_6"] }
   ]);
 
   const terraRoute = selectAnswerRoute({ providers }, "visual_audit_findings", "all", "terra-xhigh");
   assert.deepEqual(terraRoute.orderedPresets, ["terra", "sol", "luna"]);
   assert.deepEqual(terraRoute.providers.map(({ role, visionModel }) => ({ role, visionModel })), [
-    { role: "fallback_3", visionModel: "gpt-5.6-terra" }
+    { role: "fallback_4", visionModel: "gpt-5.6-terra" }
   ]);
   assert.deepEqual(terraRoute.presetRoutes.map(({ preset, qualityProfile }) => ({ preset, qualityProfile })), [
     { preset: "terra", qualityProfile: "terra-xhigh" },
-    { preset: "sol", qualityProfile: "sol-high" },
+    { preset: "sol", qualityProfile: "sol-medium" },
     { preset: "luna", qualityProfile: "luna-xhigh" }
   ]);
 
   const expectedTierRoutes = [
-    ["sol-medium", ["sol-medium", "terra-high", "luna-high"]],
-    ["terra-high", ["terra-high", "sol-medium", "luna-high"]],
-    ["luna-high", ["luna-high", "sol-medium", "terra-high"]]
+    ["sol-medium", ["sol-medium", "terra-xhigh", "luna-xhigh"]],
+    ["terra-xhigh", ["terra-xhigh", "sol-medium", "luna-xhigh"]],
+    ["luna-xhigh", ["luna-xhigh", "sol-medium", "terra-xhigh"]]
   ];
   for (const [profile, expectedProfiles] of expectedTierRoutes) {
     const route = selectAnswerRoute({ providers }, "reference_review", "all", profile);
@@ -346,25 +346,25 @@ test("each preset binds all five slots to only its own three profiles", () => {
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-low",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-medium",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-high",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-medium",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-high",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-high",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-medium",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-high"
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-xhigh"
   });
 
   const route = selectAnswerRoute(config, "blind_generation", "all", "sol-medium");
   assert.equal(config.providers.length, 1);
   assert.equal(config.presetSlotsExplicit, true);
   assert.deepEqual(config.presetSlotBindings.sol, ["sol-high", "sol-high", "sol-medium", "sol-low", "sol-medium"]);
-  assert.deepEqual(config.presetSlotBindings.terra, ["terra-xhigh", "terra-xhigh", "terra-high", "terra-medium", "terra-high"]);
-  assert.deepEqual(config.presetSlotBindings.luna, ["luna-xhigh", "luna-xhigh", "luna-high", "luna-medium", "luna-high"]);
-  assert.deepEqual(route.orderedQualityProfiles, ["sol-medium", "terra-high", "luna-high"]);
+  assert.deepEqual(config.presetSlotBindings.terra, ["terra-max", "terra-max", "terra-xhigh", "terra-high", "terra-xhigh"]);
+  assert.deepEqual(config.presetSlotBindings.luna, ["luna-max", "luna-max", "luna-xhigh", "luna-high", "luna-xhigh"]);
+  assert.deepEqual(route.orderedQualityProfiles, ["sol-medium", "terra-xhigh", "luna-xhigh"]);
   assert.deepEqual(route.orderedExecutionSlots, [3, 5]);
   assert.deepEqual(route.providers.map(({ role, visionModel, reasoningEffort, executionSlot }) => ({
     role, visionModel, reasoningEffort, executionSlot
@@ -484,16 +484,16 @@ test("repeated preset bindings let one quality tier occupy its two assigned slot
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
     CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-high",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-high",
-    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-medium",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-xhigh",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-high",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-high",
-    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-medium"
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-high"
   });
   config.runtimeDirectory = path.join(directory, ".gateway-runtime");
   const requestOptions = {
@@ -645,16 +645,16 @@ test("live probes project one shared connection across all nine quality profiles
       CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
       CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
       CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-high",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-high",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-medium",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-high",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-high",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-medium"
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-max",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-max",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-high",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-max",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-max",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-xhigh",
+      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-high"
     });
     runtimeDirectory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-probe-runtime-"));
     config.runtimeDirectory = runtimeDirectory;
@@ -676,23 +676,23 @@ test("live probes project one shared connection across all nine quality profiles
       { qualityProfile: "sol-high", model: "gpt-5.6-sol", reasoningEffort: "high", executionSlot: 1 },
       { qualityProfile: "sol-medium", model: "gpt-5.6-sol", reasoningEffort: "medium", executionSlot: 3 },
       { qualityProfile: "sol-low", model: "gpt-5.6-sol", reasoningEffort: "low", executionSlot: 5 },
-      { qualityProfile: "terra-xhigh", model: "gpt-5.6-terra", reasoningEffort: "xhigh", executionSlot: 1 },
-      { qualityProfile: "terra-high", model: "gpt-5.6-terra", reasoningEffort: "high", executionSlot: 3 },
-      { qualityProfile: "terra-medium", model: "gpt-5.6-terra", reasoningEffort: "medium", executionSlot: 5 },
-      { qualityProfile: "luna-xhigh", model: "gpt-5.6-luna", reasoningEffort: "xhigh", executionSlot: 1 },
-      { qualityProfile: "luna-high", model: "gpt-5.6-luna", reasoningEffort: "high", executionSlot: 3 },
-      { qualityProfile: "luna-medium", model: "gpt-5.6-luna", reasoningEffort: "medium", executionSlot: 5 }
+      { qualityProfile: "terra-max", model: "gpt-5.6-terra", reasoningEffort: "max", executionSlot: 1 },
+      { qualityProfile: "terra-xhigh", model: "gpt-5.6-terra", reasoningEffort: "xhigh", executionSlot: 3 },
+      { qualityProfile: "terra-high", model: "gpt-5.6-terra", reasoningEffort: "high", executionSlot: 5 },
+      { qualityProfile: "luna-max", model: "gpt-5.6-luna", reasoningEffort: "max", executionSlot: 1 },
+      { qualityProfile: "luna-xhigh", model: "gpt-5.6-luna", reasoningEffort: "xhigh", executionSlot: 3 },
+      { qualityProfile: "luna-high", model: "gpt-5.6-luna", reasoningEffort: "high", executionSlot: 5 }
     ]);
     assert.deepEqual(calls.map(({ model, reasoning }) => ({ model, effort: reasoning.effort })), [
       { model: "gpt-5.6-sol", effort: "high" },
       { model: "gpt-5.6-sol", effort: "medium" },
       { model: "gpt-5.6-sol", effort: "low" },
+      { model: "gpt-5.6-terra", effort: "max" },
       { model: "gpt-5.6-terra", effort: "xhigh" },
       { model: "gpt-5.6-terra", effort: "high" },
-      { model: "gpt-5.6-terra", effort: "medium" },
+      { model: "gpt-5.6-luna", effort: "max" },
       { model: "gpt-5.6-luna", effort: "xhigh" },
-      { model: "gpt-5.6-luna", effort: "high" },
-      { model: "gpt-5.6-luna", effort: "medium" }
+      { model: "gpt-5.6-luna", effort: "high" }
     ]);
   } finally {
     globalThis.fetch = originalFetch;
@@ -745,8 +745,8 @@ test("auto failover probes Terra after Sol and probes Luna after a later Terra f
   let requestRound = 0;
   const providers = [
     { lane: "ai", role: "primary", baseUrl: "https://primary.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-sol", reasoningEffort: "high" },
-    { lane: "ai", role: "fallback_3", baseUrl: "https://terra.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-terra", reasoningEffort: "xhigh" },
-    { lane: "ai", role: "fallback_6", baseUrl: "https://luna.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-luna", reasoningEffort: "xhigh" }
+    { lane: "ai", role: "fallback_3", baseUrl: "https://terra.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-terra", reasoningEffort: "max" },
+    { lane: "ai", role: "fallback_6", baseUrl: "https://luna.example.com/v1", apiKey: "key", visionSurface: "responses", visionModel: "gpt-5.6-luna", reasoningEffort: "max" }
   ];
   globalThis.fetch = async (_url, request) => {
     const body = JSON.parse(request.body);

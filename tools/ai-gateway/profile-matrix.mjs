@@ -3,12 +3,12 @@ export const QUALITY_PROFILES = Object.freeze({
   "sol-high": Object.freeze({ model: "gpt-5.6-sol", reasoningEffort: "high" }),
   "sol-medium": Object.freeze({ model: "gpt-5.6-sol", reasoningEffort: "medium" }),
   "sol-low": Object.freeze({ model: "gpt-5.6-sol", reasoningEffort: "low" }),
+  "terra-max": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "max" }),
   "terra-xhigh": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "xhigh" }),
   "terra-high": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "high" }),
-  "terra-medium": Object.freeze({ model: "gpt-5.6-terra", reasoningEffort: "medium" }),
+  "luna-max": Object.freeze({ model: "gpt-5.6-luna", reasoningEffort: "max" }),
   "luna-xhigh": Object.freeze({ model: "gpt-5.6-luna", reasoningEffort: "xhigh" }),
-  "luna-high": Object.freeze({ model: "gpt-5.6-luna", reasoningEffort: "high" }),
-  "luna-medium": Object.freeze({ model: "gpt-5.6-luna", reasoningEffort: "medium" })
+  "luna-high": Object.freeze({ model: "gpt-5.6-luna", reasoningEffort: "high" })
 });
 
 export const QUALITY_PROFILE_NAMES = new Set(["auto", ...Object.keys(QUALITY_PROFILES)]);
@@ -23,8 +23,8 @@ export const PRESET_NAMES = MODEL_FAMILY_PREFERENCE;
 // parallel capacity, but can never project a model from another preset.
 export const PRESET_PROFILES = Object.freeze({
   sol: Object.freeze(["sol-high", "sol-medium", "sol-low"]),
-  terra: Object.freeze(["terra-xhigh", "terra-high", "terra-medium"]),
-  luna: Object.freeze(["luna-xhigh", "luna-high", "luna-medium"])
+  terra: Object.freeze(["terra-max", "terra-xhigh", "terra-high"]),
+  luna: Object.freeze(["luna-max", "luna-xhigh", "luna-high"])
 });
 
 // Preset-local reasoning efforts differ, but the gateway always fails over by
@@ -33,12 +33,12 @@ export const PROFILE_TIERS = Object.freeze({
   "sol-high": "high",
   "sol-medium": "standard",
   "sol-low": "low",
-  "terra-xhigh": "high",
-  "terra-high": "standard",
-  "terra-medium": "low",
-  "luna-xhigh": "high",
-  "luna-high": "standard",
-  "luna-medium": "low"
+  "terra-max": "high",
+  "terra-xhigh": "standard",
+  "terra-high": "low",
+  "luna-max": "high",
+  "luna-xhigh": "standard",
+  "luna-high": "low"
 });
 
 export const PRESET_TIER_PROFILES = Object.freeze(Object.fromEntries(
@@ -52,8 +52,8 @@ export const PRESET_TIER_PROFILES = Object.freeze(Object.fromEntries(
 // Operators can override every binding with PRESET_<NAME>_SLOT_<N> variables.
 export const DEFAULT_PRESET_SLOT_BINDINGS = Object.freeze({
   sol: Object.freeze(["sol-high", "sol-high", "sol-medium", "sol-medium", "sol-low"]),
-  terra: Object.freeze(["terra-xhigh", "terra-xhigh", "terra-high", "terra-high", "terra-medium"]),
-  luna: Object.freeze(["luna-xhigh", "luna-xhigh", "luna-high", "luna-high", "luna-medium"])
+  terra: Object.freeze(["terra-max", "terra-max", "terra-xhigh", "terra-xhigh", "terra-high"]),
+  luna: Object.freeze(["luna-max", "luna-max", "luna-xhigh", "luna-xhigh", "luna-high"])
 });
 
 export function presetForProfile(profile) {
@@ -76,6 +76,6 @@ export function slotsForPresetProfile(bindings, preset, profile) {
 // The deprecated text request path keeps its historical highest-tier-only family
 // failover contract. The full profile order is used by live probes.
 export const TEXT_FAILOVER_PROFILES = Object.freeze(
-  ["sol-high", "terra-xhigh", "luna-xhigh"]
+  ["sol-high", "terra-max", "luna-max"]
     .map((profile) => Object.freeze({ profile, ...QUALITY_PROFILES[profile] }))
 );
