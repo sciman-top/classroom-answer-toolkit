@@ -16,6 +16,15 @@ test("renderer keeps Markdown tables as bordered, non-splitting layout blocks", 
   assert.match(rendererSource, /th,\s*td\s*\{[\s\S]*?border:\s*0\.5pt solid #333;/u);
 });
 
+test("renderer keeps section headings attached to the content that follows them", () => {
+  // 2026-08-30 2016 delivery review: a section heading could sit alone at the
+  // bottom of a page while its questions started on the next page.
+  const rendererSource = fs.readFileSync(path.join(toolDirectory, "render-md-latex.mjs"), "utf8");
+
+  assert.match(rendererSource, /h1\s*\{[\s\S]*?break-after:\s*avoid-page;/u);
+  assert.match(rendererSource, /h2\s*\{[\s\S]*?break-after:\s*avoid-page;/u);
+});
+
 test("renderer converts a multiline inline math fence without leaking LaTeX source", () => {
   const workDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-answer-render-"));
   const markdownPath = path.join(workDirectory, "multiline-math.md");
@@ -142,6 +151,59 @@ test("renderer keeps a question's trailing formula block together near a page bo
     const questionPage = pageTexts.findIndex((pageText) => pageText.includes("Q24-BEGIN"));
     assert.notEqual(questionPage, -1);
     assert.match(pageTexts[questionPage], /Q24-END/u);
+  } finally {
+    fs.rmSync(workDirectory, { recursive: true, force: true });
+  }
+});
+
+test("renderer splits a multi-question ordered list so the first question stays on the current page", () => {
+  // 2026-08-30 delivery regression: "11." .. "18." parsed as ONE <ol start="11">
+  // inside a single break-inside:avoid div, so Chromium pushed the whole list to
+  // a fresh page and left the previous page almost blank below the heading.
+  const workDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-answer-list-pagination-"));
+  const markdownPath = path.join(workDirectory, "list-pagination.md");
+  const pdfPath = path.join(workDirectory, "list-pagination.pdf");
+  const reviewDirectory = path.join(workDirectory, "review");
+  const prefix = Array.from({ length: 20 }, (_value, index) =>
+    `前置内容 ${index + 1}，用于填充分页测试。`
+  ).join("\n\n");
+  fs.writeFileSync(markdownPath, [
+    "# 物理试卷参考答案",
+    "",
+    prefix,
+    "",
+    "11. （1）Q11-BEGIN。",
+    "",
+    "12. Q12-MARKER。",
+    "",
+    "13. Q13-MARKER。",
+    "",
+    "14. Q14-MARKER。"
+  ].join("\n"), "utf8");
+
+  try {
+    execFileSync(process.execPath, [
+      "render-md-latex.mjs",
+      markdownPath,
+      pdfPath,
+      "--subject-pack", "junior-physics-answer"
+    ], { cwd: toolDirectory, stdio: "pipe" });
+    execFileSync(process.execPath, [
+      "review-source-pdf.mjs",
+      pdfPath,
+      "--out", reviewDirectory,
+      "--pages", "all"
+    ], { cwd: toolDirectory, stdio: "pipe" });
+
+    const pageTexts = fs.readdirSync(reviewDirectory)
+      .filter((fileName) => fileName.endsWith(".text-layer.txt"))
+      .sort()
+      .map((fileName) => fs.readFileSync(path.join(reviewDirectory, fileName), "utf8"));
+    assert.match(pageTexts[0], /Q11-BEGIN/u);
+    const fullText = pageTexts.join("\n");
+    assert.match(fullText, /Q12-MARKER/u);
+    assert.match(fullText, /Q13-MARKER/u);
+    assert.match(fullText, /Q14-MARKER/u);
   } finally {
     fs.rmSync(workDirectory, { recursive: true, force: true });
   }

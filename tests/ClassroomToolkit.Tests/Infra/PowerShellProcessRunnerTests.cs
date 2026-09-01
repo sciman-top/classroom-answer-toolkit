@@ -134,7 +134,12 @@ public sealed class PowerShellProcessRunnerTests
                     $"Set-Content -LiteralPath '{processIdPath.Replace("'", "''")}' -Value $PID; Start-Sleep -Seconds 30"
                 ],
                 Path.GetTempPath(),
-                timeout: TimeSpan.FromMilliseconds(500));
+                // The timeout starts when pwsh is launched, not after its script
+                // begins.  A cold Windows host can spend more than 500 ms loading
+                // pwsh before it reaches Set-Content, leaving no child PID for the
+                // lifecycle assertion below.  Five seconds preserves the timeout
+                // behavior under test while allowing the child to signal startup.
+                timeout: TimeSpan.FromSeconds(5));
 
             (await action.Should().ThrowAsync<TimeoutException>())
                 .Which.Message.Should().Contain("exceeded").And.Contain("pwsh").And.Contain("terminated");

@@ -239,6 +239,28 @@ function isHeadingBlock(blockHtml) {
   return /^<h[1-6](?:\s[^>]*)?>/iu.test(blockHtml);
 }
 
+function splitNumberedQuestionList(blockHtml) {
+  const olMatch = /^<ol(\s[^>]*?)?\sstart\s*=\s*["']?(\d{1,3})["']?([^>]*)>([\s\S]*)<\/ol>$/iu.exec(blockHtml);
+  if (!olMatch) {
+    return null;
+  }
+  const listInner = olMatch[4];
+  // Nested lists would break the flat <li> scan below; keep such a block whole.
+  if (/<[ou]l\b/iu.test(listInner)) {
+    return null;
+  }
+  const items = listInner.match(/<li(?:\s[^>]*)?>[\s\S]*?<\/li>/giu);
+  if (!items || items.length < 2) {
+    return null;
+  }
+  const startNumber = Number(olMatch[2]);
+  const leadingAttrs = olMatch[1] ?? "";
+  const trailingAttrs = olMatch[3] ?? "";
+  return items.map((item, index) =>
+    `<div class="answer-question"><ol start="${startNumber + index}"${leadingAttrs}${trailingAttrs}>${item}</ol></div>`
+  );
+}
+
 function wrapQuestionBlocks(html) {
   const blocks = splitTopLevelHtmlBlocks(html);
   let output = "";
@@ -253,6 +275,15 @@ function wrapQuestionBlocks(html) {
     }
     output += block.prefix;
     if (startsQuestion) {
+      // A markdown ordered list starting at a question number swallows every
+      // following question into one block; keeping that whole list inside a
+      // single break-inside:avoid div forces an almost-blank page whenever the
+      // list is taller than the remaining page space.
+      const questionListPieces = splitNumberedQuestionList(block.html);
+      if (questionListPieces) {
+        output += questionListPieces.join("\n");
+        continue;
+      }
       output += '<div class="answer-question">';
       inQuestion = true;
     }
@@ -430,6 +461,8 @@ h1 {
   line-height: ${renderProfile.typography.h1LineHeight};
   margin: 0 0 ${renderProfile.typography.h1MarginBottomPt}pt;
   font-weight: 700;
+  break-after: avoid-page;
+  page-break-after: avoid;
 }
 
 h2 {
@@ -438,6 +471,8 @@ h2 {
   margin: ${renderProfile.typography.h2MarginTopPt}pt 0 ${renderProfile.typography.h2MarginBottomPt}pt;
   color: #164a7a;
   font-weight: 700;
+  break-after: avoid-page;
+  page-break-after: avoid;
 }
 
 p {
@@ -594,7 +629,7 @@ try {
   if (browser) {
     await browser.close().catch(() => {});
   }
-  if (fs.existsSync(tempHtmlPath)) {
+  if (fs.existsSync(tempHtmlPath) && process.env.CLASSROOM_TOOLKIT_KEEP_RENDER_HTML !== "1") {
     fs.unlinkSync(tempHtmlPath);
   }
   if (committedPdf && fs.existsSync(browserPdfOutputPath)) {
