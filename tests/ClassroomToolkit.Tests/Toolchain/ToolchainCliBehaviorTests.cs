@@ -697,7 +697,29 @@ public sealed class ToolchainCliBehaviorTests
                 ["referencePdf"] = FileReceipt(referencePath),
                 ["prompt"] = FileReceipt(promptPath),
                 ["blindFocusRegions"] = null,
-                ["visualAuditFocusRegions"] = null
+                ["visualAuditFocusRegions"] = null,
+                ["configEnv"] = FileReceipt(envPath)
+            },
+            ["options"] = new Dictionary<string, object?>
+            {
+                ["provider"] = "all",
+                ["subjectPack"] = "junior-physics-answer",
+                ["profile"] = "classroom",
+                ["blindQualityProfile"] = "auto",
+                ["semanticQualityProfile"] = "auto",
+                ["visualQualityProfile"] = "auto",
+                ["referenceQualityProfile"] = "auto",
+                ["visualDetail"] = "original",
+                ["maxOutputTokens"] = 24000,
+                ["timeoutMs"] = 600000,
+                ["reviewScale"] = 2.0,
+                ["visualAuditScale"] = 4.0,
+                ["blindFocusRegionsFile"] = null,
+                ["visualAuditFocusRegionsFile"] = null,
+                ["skipVisualAudit"] = true,
+                ["keepReview"] = false,
+                ["useGatewayProxy"] = false,
+                ["configEnvFile"] = envPath
             },
             ["phases"] = new Dictionary<string, object>
             {
@@ -754,6 +776,24 @@ public sealed class ToolchainCliBehaviorTests
 
         try
         {
+            var driftedOptions = await RunAsyncWithEnvironment(
+                "pwsh",
+                root,
+                new Dictionary<string, string?> { ["PATH"] = fakeNodeDirectory + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH") },
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/run-live-answer-workflow.ps1",
+                "-SourcePdf", sourcePath,
+                "-ReferencePdf", referencePath,
+                "-OutputDirectory", Path.Combine(testRoot, "drifted"),
+                "-PromptFile", promptPath,
+                "-ConfigEnvFile", envPath,
+                "-ResumeFromWorkflowReceipt", failedReceiptPath,
+                "-Provider", "primary",
+                "-SkipVisualAudit");
+            driftedOptions.ExitCode.Should().NotBe(0);
+            driftedOptions.Output.Should().Contain("option does not match current provider");
+
             var pathValue = fakeNodeDirectory + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
             var result = await RunAsyncWithEnvironment(
                 "pwsh",

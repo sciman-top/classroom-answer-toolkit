@@ -1,3 +1,4 @@
+#requires -Version 7
 param(
     [string]$RuntimeIdentifier = "win-x64",
     [string]$PublishDir = "artifacts\work\publish\ClassroomToolkit.App",

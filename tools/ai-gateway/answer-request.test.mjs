@@ -626,9 +626,10 @@ test("live probes project one shared connection across all nine quality profiles
   const originalFetch = globalThis.fetch;
   const calls = [];
   let runtimeDirectory = null;
+  let probeOutput = "OK";
   globalThis.fetch = async (_url, request) => {
     calls.push(JSON.parse(request.body));
-    return new Response(JSON.stringify({ output_text: "OK" }), { status: 200 });
+    return new Response(JSON.stringify({ output_text: probeOutput }), { status: 200 });
   };
 
   try {
@@ -694,6 +695,16 @@ test("live probes project one shared connection across all nine quality profiles
       { model: "gpt-5.6-luna", effort: "xhigh" },
       { model: "gpt-5.6-luna", effort: "high" }
     ]);
+
+    probeOutput = "NOT OK";
+    const rejected = await runLiveTextProbes(config, {
+      live: "text",
+      allowCloudEgress: true,
+      provider: "primary",
+      timeoutMs: 1000
+    });
+    assert.equal(rejected.length, 9);
+    assert.ok(rejected.every((result) => !result.ok));
   } finally {
     globalThis.fetch = originalFetch;
     if (typeof runtimeDirectory === "string") {
@@ -1760,6 +1771,58 @@ test("reference review deterministically overwrites the two ten-question choice 
   assert.match(reviewed.markdown, /6—10：C、B、B、D、D/);
 });
 
+test("numbered reference extraction accepts consecutive 1..10 answer markers", () => {
+  const wellFormed = [
+    "1．【答案】B",
+    "2．【答案】A",
+    "3．【答案】A",
+    "4．【答案】D",
+    "5．【答案】A",
+    "6．【答案】C",
+    "7．【答案】B",
+    "8．【答案】B",
+    "9．【答案】D",
+    "10．【答案】D"
+  ].join("\n");
+
+  const reviewed = applyReferenceChoiceAnswers(
+    "# 物理试卷参考答案\n\n1—5：C、B、D、D、D\n6—10：C、B、C、D、D",
+    wellFormed
+  );
+
+  assert.equal(reviewed.applied, true);
+  assert.match(reviewed.markdown, /1—5：B、A、A、D、A/);
+  assert.match(reviewed.markdown, /6—10：C、B、B、D、D/);
+});
+
+test("enumerated explanation lines reject the numbered strategy instead of binding false answers", () => {
+  // A line-start enumeration inside an explanation previously created a false
+  // question segment; the consecutive-marker chain must reject the whole
+  // numbered strategy (fail-safe) rather than bind an answer to the number.
+  const contaminated = [
+    "1．【答案】B",
+    "2．【答案】A",
+    "解析：实验分三步完成。",
+    "3． 将小球由静止释放并计时",
+    "4．【答案】D",
+    "5．【答案】A",
+    "6．【答案】C",
+    "7．【答案】B",
+    "8．【答案】B",
+    "9．【答案】D",
+    "10．【答案】D"
+  ].join("\n");
+
+  const reviewed = applyReferenceChoiceAnswers(
+    "# 物理试卷参考答案\n\n1—5：C、B、D、D、D\n6—10：C、B、C、D、D",
+    contaminated
+  );
+
+  assert.equal(reviewed.applied, false);
+  assert.match(reviewed.markdown, /1—5：C、B、D、D、D/);
+  assert.match(reviewed.markdown, /6—10：C、B、C、D、D/);
+});
+
 test("semantic findings deterministically apply only explicit confirmed choice corrections", () => {
   const baseline = [
     "# 物理试卷参考答案",
@@ -1984,6 +2047,29 @@ test("directory-based image inputs print no deprecation warning", () => {
       assert.match(result.stderr, /Env file not found/);
       assert.doesNotMatch(result.stderr, /\[deprecated\]/);
     }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("semantic merge refuses to run without original source images", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-semantic-merge-images-"));
+  const missingEnvFile = path.join(directory, "missing.env");
+  const candidatePath = path.join(directory, "candidate.md");
+  const findingsPath = path.join(directory, "findings.md");
+  writeFileSync(candidatePath, "# 候选\n", "utf8");
+  writeFileSync(findingsPath, "# 发现\n", "utf8");
+  try {
+    const result = spawnSync(process.execPath, [
+      fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
+      "--config-env-file", missingEnvFile,
+      "--candidate-file", candidatePath,
+      "--semantic-findings-file", findingsPath,
+      "--output", path.join(directory, "merged.md")
+    ], { cwd: directory, encoding: "utf8" });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Semantic merge requires --images-dir/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

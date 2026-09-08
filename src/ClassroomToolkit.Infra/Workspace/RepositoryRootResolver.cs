@@ -15,9 +15,15 @@ public sealed class RepositoryRootResolver
 
     public string ResolveRepositoryRoot()
     {
-        if (!string.IsNullOrWhiteSpace(_repositoryRootOverride) && IsWorkspaceRoot(_repositoryRootOverride))
+        if (_repositoryRootOverride is not null)
         {
-            return _repositoryRootOverride;
+            if (IsWorkspaceRoot(_repositoryRootOverride))
+            {
+                return _repositoryRootOverride;
+            }
+
+            throw new InvalidOperationException(
+                $"Explicit repository root is not a ClassroomToolkit workspace root: {_repositoryRootOverride}");
         }
 
         var current = new DirectoryInfo(_startDirectory);
@@ -41,8 +47,7 @@ public sealed class RepositoryRootResolver
             && Directory.Exists(Path.Combine(directoryPath, "scripts"));
         var isPackagedRuntime = File.Exists(Path.Combine(directoryPath, "runtime-manifest.json"))
             && Directory.Exists(Path.Combine(directoryPath, "tools"))
-            && Directory.Exists(Path.Combine(directoryPath, "prompts"))
-            && File.Exists(Path.Combine(directoryPath, "runtime", "node", "node.exe"));
+            && Directory.Exists(Path.Combine(directoryPath, "prompts"));
 
         return isDevelopmentRepository || isPackagedRuntime;
     }

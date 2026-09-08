@@ -343,6 +343,9 @@ function validateOptions(options) {
   if (options.semanticFindingsOnly && (!options.imagesDir && options.imagePaths.length === 0)) {
     throw new Error("--semantic-findings-only requires --images-dir or at least one --image.");
   }
+  if (options.semanticFindingsFile && (!options.imagesDir && options.imagePaths.length === 0)) {
+    throw new Error("Semantic merge requires --images-dir or at least one original-source --image.");
+  }
   if (options.semanticFindingsOnly && (options.semanticFindingsFile || options.auditImagesDir
       || options.auditFindingsOnly || options.auditFindingsFile || options.referenceImagesDir)) {
     throw new Error("--semantic-findings-only cannot be combined with another review mode.");
@@ -483,6 +486,10 @@ export async function main() {
   if (!result.ok) {
     throw new Error(`${result.error}\n${JSON.stringify(result.attempts.map(redactAttempt), null, 2)}`);
   }
+
+  // Persist the paid raw output before any override or summary step can
+  // throw; losing a completed generation to post-processing is unrecoverable.
+  writeTextFileAtomic(options.outputPath, `${result.answerMarkdown}\n`);
 
   const semanticChoiceOverride = options.semanticFindingsFile
     ? applySemanticChoiceFindings(

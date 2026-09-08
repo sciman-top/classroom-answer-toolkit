@@ -104,10 +104,9 @@ if (-not (Test-Path -LiteralPath $envPath -PathType Leaf) -and (Test-Path -Liter
 Write-Host "Restoring the repository toolchain..."
 # -SkipSnapshots: the Core gate below runs validate:assets + snapshot
 # compilation exactly once; doing it in bootstrap too would duplicate the gate.
+# A .ps1 invoked with & never sets $LASTEXITCODE; inner scripts fail via
+# throw, which Stop preference propagates.
 & (Join-Path $repoRoot "scripts/bootstrap.ps1") -SkipSnapshots
-if ($LASTEXITCODE -ne 0) {
-    throw "Bootstrap failed."
-}
 
 if (-not $SkipBuild) {
     Write-Host "Building ClassroomToolkit.sln..."
@@ -128,9 +127,6 @@ if (-not $SkipTests) {
 if (-not $SkipCore) {
     Write-Host "Running the Core toolchain gate..."
     & (Join-Path $repoRoot "scripts/check-toolchain.ps1") -Mode Core -SubjectPack junior-physics-answer
-    if ($LASTEXITCODE -ne 0) {
-        throw "Core toolchain gate failed."
-    }
 
     if (-not $SkipHealthEval) {
         Write-Host "Running the primary subject-pack health evaluation..."

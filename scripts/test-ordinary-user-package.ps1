@@ -1,4 +1,4 @@
-#requires -Version 7
+#requires -Version 7.3
 param(
     [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
     [string]$DeliveryRoot = "",

@@ -2,38 +2,28 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
+import {
+  listSubjectPacks,
+  resolveProfileSnapshotRelativePath
+} from "../rule-compiler/subject-pack-registry.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
-const defaultSubjectPack = getDefaultSubjectPackName();
-const defaultSnapshotPath = path.join(repoRoot, ".snapshot-cache", "resolved-snapshot.json");
-
-function getDefaultSnapshotFileName(subjectPack) {
-  const canonicalSubjectPack = normalizeSubjectPackName(subjectPack, defaultSubjectPack);
-  if (canonicalSubjectPack === "junior-physics-answer") {
-    return "resolved-snapshot.json";
-  }
-
-  const normalizedSubjectPack = String(canonicalSubjectPack ?? "")
-    .trim()
-    .replace(/-answer$/u, "");
-
-  return normalizedSubjectPack
-    ? `resolved-snapshot.${normalizedSubjectPack}.json`
-    : "resolved-snapshot.json";
-}
 
 export function getDefaultSubjectPack() {
   return getDefaultSubjectPackName();
 }
 
-export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack()) {
-  const snapshotFileName = getDefaultSnapshotFileName(subjectPack);
-  if (snapshotFileName === "resolved-snapshot.json") {
-    return defaultSnapshotPath;
-  }
-
-  return path.join(repoRoot, ".snapshot-cache", snapshotFileName);
+export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack(), profile = null) {
+  const canonicalSubjectPack = normalizeSubjectPackName(subjectPack, getDefaultSubjectPack());
+  const pack = listSubjectPacks({ repositoryRoot: repoRoot })
+    .find((candidate) => candidate.assetId === canonicalSubjectPack);
+  const resolvedProfile = profile ?? pack?.defaultProfile ?? "classroom";
+  // The registry owns both the pack cache layout and profile suffix policy.
+  return path.join(
+    repoRoot,
+    resolveProfileSnapshotRelativePath(canonicalSubjectPack, resolvedProfile, repoRoot)
+  );
 }
 
 export function resolveSnapshotPath(snapshotPath, options = {}) {
@@ -44,7 +34,7 @@ export function resolveSnapshotPath(snapshotPath, options = {}) {
     return path.resolve(callerCwd, snapshotPath);
   }
 
-  return getDefaultSnapshotPath(subjectPack);
+  return getDefaultSnapshotPath(subjectPack, options.profile ?? null);
 }
 
 function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath(), options = {}) {

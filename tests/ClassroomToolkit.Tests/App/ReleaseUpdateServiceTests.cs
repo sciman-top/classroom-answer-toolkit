@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using ClassroomToolkit.App.Services;
 using FluentAssertions;
@@ -14,7 +15,9 @@ public sealed class ReleaseUpdateServiceTests
         using var fixture = new InstalledApplicationFixture();
         using var client = new HttpClient(new StaticResponseHandler("""
             {
-              "schemaVersion":"1.0",
+              "schemaVersion":"2.0",
+              "kind":"classroom-toolkit-update-manifest",
+              "channel":"stable",
               "version":"1.0.1",
               "releaseUrl":"https://github.com/sciman-top/classroom-answer-toolkit/releases/tag/v1.0.1",
               "assets":[
@@ -52,6 +55,8 @@ public sealed class ReleaseUpdateServiceTests
         fixture.WriteRuntimeManifest("1");
         using var client = new HttpClient(new StaticResponseHandler("""
             {
+              "schemaVersion":"2.0",
+              "kind":"classroom-toolkit-update-manifest",
               "version":"1.0.1",
               "workspaceContract":"2",
               "assets":[
@@ -85,6 +90,8 @@ public sealed class ReleaseUpdateServiceTests
         using var fixture = new InstalledApplicationFixture();
         using var client = new HttpClient(new StaticResponseHandler("""
             {
+              "schemaVersion":"2.0",
+              "kind":"classroom-toolkit-update-manifest",
               "version":"1.0.1",
               "workspaceContract":"contract with spaces",
               "assets":[
@@ -117,6 +124,8 @@ public sealed class ReleaseUpdateServiceTests
         using var fixture = new InstalledApplicationFixture();
         using var client = new HttpClient(new StaticResponseHandler("""
             {
+              "schemaVersion":"2.0",
+              "kind":"classroom-toolkit-update-manifest",
               "version":"1.0.1",
               "assets":[
                 {
@@ -150,6 +159,8 @@ public sealed class ReleaseUpdateServiceTests
         using var fixture = new InstalledApplicationFixture();
         using var client = new HttpClient(new StaticResponseHandler($$"""
             {
+              "schemaVersion":"2.0",
+              "kind":"classroom-toolkit-update-manifest",
               "version":"1.0.1",
               "assets":[
                 {
@@ -194,6 +205,139 @@ public sealed class ReleaseUpdateServiceTests
         result.Started.Should().BeFalse();
         result.Message.Should().Contain("SHA-256");
     }
+
+    [Fact]
+    public async Task CheckAsync_RejectsUnsupportedManifestSchema()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StaticResponseHandler("""
+            {
+              "schemaVersion":"1.0",
+              "kind":"classroom-toolkit-update-manifest",
+              "version":"1.0.1",
+              "assets":[
+                {
+                  "kind":"installer",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
+                  "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "bytes":123
+                }
+              ]
+            }
+            """));
+        using var service = new ReleaseUpdateService(
+            fixture.RepositoryRoot,
+            fixture.AppDirectory,
+            "https://github.com/sciman-top/classroom-answer-toolkit/releases/latest/download/update-manifest.json",
+            client,
+            new Version(1, 0, 0));
+
+        var result = await service.CheckAsync();
+
+        result.Succeeded.Should().BeFalse();
+        result.UpdateAvailable.Should().BeFalse();
+        result.Message.Should().Contain("schema");
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsContentLengthMismatchAndRemovesStagedInstaller()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new BinaryResponseHandler([1, 2, 3, 4]));
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var before = SnapshotStagedInstallers();
+        var result = await service.InstallAsync(ValidUpdateInfo(sha256: Sha256Of([1, 2, 3, 4]), bytes: 123));
+        var after = SnapshotStagedInstallers();
+
+        result.Started.Should().BeFalse();
+        result.Message.Should().Contain("大小不匹配");
+        after.Should().BeEquivalentTo(before);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsSha256MismatchAndRemovesStagedInstaller()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        var payload = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        using var client = new HttpClient(new BinaryResponseHandler(payload));
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var before = SnapshotStagedInstallers();
+        var result = await service.InstallAsync(ValidUpdateInfo(sha256: new string('b', 64), bytes: payload.Length));
+        var after = SnapshotStagedInstallers();
+
+        result.Started.Should().BeFalse();
+        result.Message.Should().Contain("SHA-256 不匹配");
+        after.Should().BeEquivalentTo(before);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RequiresPublisherThumbprintAndRemovesStagedInstaller()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        var payload = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        using var client = new HttpClient(new BinaryResponseHandler(payload));
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var before = SnapshotStagedInstallers();
+        var result = await service.InstallAsync(ValidUpdateInfo(sha256: Sha256Of(payload), bytes: payload.Length));
+        var after = SnapshotStagedInstallers();
+
+        result.Started.Should().BeFalse();
+        result.Message.Should().Contain("publisherThumbprint");
+        after.Should().BeEquivalentTo(before);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsChunkedPayloadAsItExceedsDeclaredSize()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        var payload = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        using var client = new HttpClient(new UnknownLengthResponseHandler(payload));
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var before = SnapshotStagedInstallers();
+        var result = await service.InstallAsync(ValidUpdateInfo(sha256: Sha256Of(payload), bytes: 4));
+        var after = SnapshotStagedInstallers();
+
+        result.Started.Should().BeFalse();
+        result.Message.Should().Contain("超过声明的大小限制");
+        after.Should().BeEquivalentTo(before);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsRedirectToUnapprovedHost()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new RedirectResponseHandler());
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var result = await service.InstallAsync(ValidUpdateInfo(new string('a', 64), 8));
+
+        result.Started.Should().BeFalse();
+        result.Message.Should().Contain("redirect");
+    }
+
+    // No unit test drives WindowsAuthenticodeTrust.IsTrusted: WinVerifyTrust
+    // access-violates natively on malformed unsigned input, and a meaningful
+    // trust check needs a real signed binary (covered by the packaging
+    // pipeline's Sign-And-Verify instead).
+
+    private static UpdateInfo ValidUpdateInfo(string sha256, long bytes) => new(
+        "9.9.9",
+        "1",
+        string.Empty,
+        "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v9.9.9/ClassroomToolkit-9.9.9-setup.exe",
+        sha256,
+        bytes,
+        string.Empty);
+
+    private static string[] SnapshotStagedInstallers() =>
+        Directory.GetFiles(Path.GetTempPath(), "ClassroomToolkit-9.9.9-*-setup.exe");
+
+    private static string Sha256Of(byte[] payload) =>
+        Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant();
 
     [Fact]
     public async Task CheckAsync_SkipsSourceWorkspaceWithoutInstalledApplication()
@@ -280,6 +424,66 @@ public sealed class ReleaseUpdateServiceTests
             {
                 Directory.Delete(Root, recursive: true);
             }
+        }
+    }
+
+    private sealed class BinaryResponseHandler : HttpMessageHandler
+    {
+        private readonly byte[] _content;
+
+        public BinaryResponseHandler(byte[] content)
+        {
+            _content = content;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(_content)
+            });
+    }
+
+    private sealed class UnknownLengthResponseHandler : HttpMessageHandler
+    {
+        private readonly byte[] _content;
+
+        public UnknownLengthResponseHandler(byte[] content)
+        {
+            _content = content;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new UnknownLengthContent(_content)
+            });
+    }
+
+    private sealed class RedirectResponseHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.Redirect)
+            {
+                Headers = { Location = new Uri("https://example.invalid/installer.exe") }
+            });
+    }
+
+    private sealed class UnknownLengthContent : HttpContent
+    {
+        private readonly byte[] _content;
+
+        public UnknownLengthContent(byte[] content)
+        {
+            _content = content;
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            stream.WriteAsync(_content).AsTask();
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
         }
     }
 

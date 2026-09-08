@@ -212,15 +212,19 @@ export function normalizeAnswerMarkdown(value) {
       `${open}${body.replace(/[\u3400-\u9fff]+/gu, (label) => `\\text{${label}}`)}${close}`);
 }
 
+// The grouped choice-line contract shared by candidate expansion and semantic
+// correction; applyReferenceChoiceAnswers deliberately handles only 1—5/6—10
+// because extractTenChoiceAnswers yields exactly ten letters.
+const CHOICE_RANGES = [
+  { start: 1, end: 5, pattern: /^\s*1\s*[—–-]\s*5\s*[:：]/u },
+  { start: 6, end: 10, pattern: /^\s*6\s*[—–-]\s*10\s*[:：]/u },
+  { start: 11, end: 12, pattern: /^\s*11\s*[—–-]\s*12\s*[:：]/u }
+];
+
 export function buildIndexedChoiceCandidate(markdown) {
   const lines = String(markdown ?? "").split(/\r?\n/u);
-  const ranges = [
-    { start: 1, end: 5, pattern: /^\s*1\s*[—–-]\s*5\s*[:：]/u },
-    { start: 6, end: 10, pattern: /^\s*6\s*[—–-]\s*10\s*[:：]/u },
-    { start: 11, end: 12, pattern: /^\s*11\s*[—–-]\s*12\s*[:：]/u }
-  ];
   const indexed = [];
-  for (const range of ranges) {
+  for (const range of CHOICE_RANGES) {
     const line = lines.find((candidateLine) => range.pattern.test(candidateLine));
     const answers = [...(line?.match(/[A-D](?=[、，,\s]|$)/gu) ?? [])];
     if (answers.length !== range.end - range.start + 1) {
@@ -241,26 +245,30 @@ function extractNumberedChoiceAnswers(referenceText) {
   // references such as “图 2．…” occur in explanations and must not split the
   // preceding question's answer segment.
   const markers = [...text.matchAll(/(?:^|\n|\f)\s*(1[0-2]|[1-9])[\.．]\s*/gmu)];
-  const answersByQuestion = new Map();
-  for (let index = 0; index < markers.length; index += 1) {
-    const questionNumber = Number(markers[index][1]);
-    const segmentStart = markers[index].index + markers[index][0].length;
-    const segmentEnd = markers[index + 1]?.index ?? text.length;
-    const answerMatches = [...text.slice(segmentStart, segmentEnd).matchAll(/(?:【\s*答案\s*】|故选\s*[：:])\s*([A-D])/igu)];
+  // A real reference sheet lists questions 1..10 as consecutive top-level
+  // markers. Enumerated "N." lines inside explanations interleave other
+  // numbers into the marker list; accepting them binds answers to the wrong
+  // question or fabricates one for an unanswered number. Require questions
+  // 1..10 on strictly consecutive markers, each carrying exactly one
+  // trailing 【答案】/故选 letter; anything else rejects the numbered
+  // strategy and falls back to the compact sequence search (fail-safe).
+  const answers = [];
+  let cursor = 0;
+  for (let question = 1; question <= 10; question += 1) {
+    const marker = markers[cursor];
+    if (!marker || Number(marker[1]) !== question) {
+      return null;
+    }
+    const segmentEnd = markers[cursor + 1]?.index ?? text.length;
+    const answerMatches = [...text.slice(marker.index + marker[0].length, segmentEnd).matchAll(/(?:【\s*答案\s*】|故选\s*[：:])\s*([A-D])/igu)];
     const answer = answerMatches.at(-1)?.[1]?.toUpperCase();
     if (!answer) {
-      continue;
+      return null;
     }
-    const existing = answersByQuestion.get(questionNumber);
-    if (existing && existing !== answer) {
-      throw new Error(`Reference text contains conflicting answers for choice question ${questionNumber}: ${existing}, ${answer}`);
-    }
-    answersByQuestion.set(questionNumber, answer);
+    answers.push(answer);
+    cursor += 1;
   }
-  if (Array.from({ length: 10 }, (_, index) => index + 1).every((number) => answersByQuestion.has(number))) {
-    return Array.from({ length: 10 }, (_, index) => answersByQuestion.get(index + 1)).join("");
-  }
-  return null;
+  return answers.join("");
 }
 
 export function extractTenChoiceAnswers(referenceText) {
@@ -339,13 +347,8 @@ export function applySemanticChoiceFindings(markdown, findings, baselineMarkdown
   }
   const lines = String(markdown).split("\n");
   const baselineLines = String(baselineMarkdown).split("\n");
-  const ranges = [
-    { start: 1, end: 5, pattern: /^\s*1\s*[—–-]\s*5\s*[:：]/u },
-    { start: 6, end: 10, pattern: /^\s*6\s*[—–-]\s*10\s*[:：]/u },
-    { start: 11, end: 12, pattern: /^\s*11\s*[—–-]\s*12\s*[:：]/u }
-  ];
   const applied = [];
-  for (const range of ranges) {
+  for (const range of CHOICE_RANGES) {
     const lineIndex = lines.findIndex((line) => range.pattern.test(line));
     const baselineLineIndex = baselineLines.findIndex((line) => range.pattern.test(line));
     if (lineIndex < 0 || baselineLineIndex < 0) {

@@ -135,9 +135,12 @@ async function main() {
     fail(usage);
   }
 
-  const inputPath = path.resolve(repoRoot, positional[0]);
+  // Positionals follow the render/validate CLIs: resolved against the caller's
+  // CWD (INIT_CWD under npm), not the tool's repo. Internal callers pass
+  // absolute paths and are unaffected.
+  const inputPath = path.resolve(callerCwd, positional[0]);
   const outputPath = positional[1]
-    ? path.resolve(repoRoot, positional[1])
+    ? path.resolve(callerCwd, positional[1])
     : path.resolve(
         path.dirname(inputPath),
         path.basename(inputPath).replace(/\.md$/i, ".pdf")
@@ -158,6 +161,7 @@ async function main() {
   const reviewOutputDir = makeReviewOutputDir(repoRoot, outputPath);
   const snapshotPath = resolveSnapshotPath(options.snapshotPath, {
     subjectPack: options.subjectPack,
+    profile: options.profile,
     callerCwd
   });
   const compileProfile = options.profile ?? "classroom";

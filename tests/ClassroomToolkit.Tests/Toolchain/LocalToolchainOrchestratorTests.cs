@@ -101,6 +101,26 @@ public sealed class LocalToolchainOrchestratorTests
     }
 
     [Fact]
+    public async Task PackagedRuntimeWithoutBundledNode_FailsClosed()
+    {
+        using var workspace = new TemporaryWorkspace();
+        File.WriteAllText(Path.Combine(workspace.Root, "runtime-manifest.json"), "{\"distributionMode\":\"portable\"}");
+        var runner = new DeliveryRunner(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
+
+        var health = await orchestrator.GetWorkspaceHealthReportAsync();
+        var (execution, delivery) = await orchestrator.RunDeliverAsync(new AnswerDeliveryRequest(
+            workspace.MarkdownPath, workspace.PdfPath, "classroom", false));
+
+        health.IsHealthy.Should().BeFalse();
+        health.Summary.Should().Contain("bundled Node.js");
+        execution.Succeeded.Should().BeFalse();
+        execution.Output.Should().Contain("bundled Node.js");
+        delivery.Should().BeNull();
+        runner.CallCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task DeliverInvokesRendererAndReadsManifest()
     {
         using var workspace = new TemporaryWorkspace();

@@ -29,7 +29,9 @@ export function resolveRepoPath(relativePath) {
 }
 
 export function readJsonFile(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  // Tolerate a UTF-8 BOM (e.g. an editor or Windows PowerShell 5.1 rewrite):
+  // JSON.parse rejects it with a misleading "Unexpected token" error.
+  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
 }
 
 export function writeJsonFile(filePath, value) {

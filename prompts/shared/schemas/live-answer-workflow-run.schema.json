@@ -60,14 +60,15 @@
     "finishedAt": { "type": "string" },
     "inputs": {
       "type": "object",
-      "required": [ "sourcePdf", "referencePdf", "prompt", "blindFocusRegions", "visualAuditFocusRegions" ],
+      "required": [ "sourcePdf", "referencePdf", "prompt", "blindFocusRegions", "visualAuditFocusRegions", "configEnv" ],
       "additionalProperties": false,
       "properties": {
         "sourcePdf": { "$ref": "#/$defs/fileReceipt" },
         "referencePdf": { "$ref": "#/$defs/fileReceipt" },
         "prompt": { "$ref": "#/$defs/fileReceipt" },
         "blindFocusRegions": { "$ref": "#/$defs/fileReceipt" },
-        "visualAuditFocusRegions": { "$ref": "#/$defs/fileReceipt" }
+        "visualAuditFocusRegions": { "$ref": "#/$defs/fileReceipt" },
+        "configEnv": { "$ref": "#/$defs/fileReceipt" }
       }
     },
     "options": {
@@ -90,7 +91,8 @@
         "skipVisualAudit",
         "keepReview",
         "useGatewayProxy",
-        "configEnvFile"
+        "configEnvFile",
+        "optionsFingerprint"
       ],
       "additionalProperties": false,
       "properties": {
@@ -111,7 +113,8 @@
         "skipVisualAudit": { "type": "boolean" },
         "keepReview": { "type": "boolean" },
         "useGatewayProxy": { "type": "boolean" },
-        "configEnvFile": { "type": "string" }
+        "configEnvFile": { "type": "string" },
+        "optionsFingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       }
     },
     "phases": {

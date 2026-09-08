@@ -57,7 +57,12 @@ public static class WorkspaceSubjectPackLocator
 
     private static WorkspaceSubjectPackPaths? TryReadSubjectPack(string manifestPath)
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        var json = File.ReadAllText(manifestPath);
+        if (json.Length > 0 && json[0] == '\uFEFF')
+        {
+            json = json[1..];
+        }
+        using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
         if (!root.TryGetProperty("kind", out var kindElement)

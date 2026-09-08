@@ -77,10 +77,9 @@ try {
 
     if ($IncludePublishedApp -or $BuildPublishedApp) {
         if ($BuildPublishedApp) {
+            # A .ps1 invoked with & never sets $LASTEXITCODE; publish-app fails
+            # via throw, which Stop preference propagates.
             & (Join-Path $repoRoot "scripts/publish-app.ps1")
-            if ($LASTEXITCODE -ne 0) {
-                throw "Published application build failed."
-            }
         }
 
         $publishRoot = Join-Path $repoRoot "artifacts/work/publish/ClassroomToolkit.App"

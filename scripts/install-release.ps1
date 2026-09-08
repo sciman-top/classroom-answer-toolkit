@@ -10,6 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+$script:MaximumDownloadBytes = 1GB
 
 function Assert-ApprovedGitHubUri {
     param(
@@ -23,6 +24,143 @@ function Assert-ApprovedGitHubUri {
     $allowedHosts = @("github.com", "objects.githubusercontent.com")
     if ($UriValue.Scheme -ne "https" -or (-not ($allowedHosts -contains $UriValue.Host.ToLowerInvariant()) -and -not $UriValue.Host.EndsWith(".githubusercontent.com", [StringComparison]::OrdinalIgnoreCase))) {
         throw "URL must use an approved GitHub HTTPS host: $UriValue"
+    }
+}
+
+function Assert-SafeAssetName {
+    param([Parameter(Mandatory = $true)][string]$AssetName)
+
+    $unsafe = (
+        ([string]::IsNullOrWhiteSpace($AssetName)) -or
+        ([IO.Path]::IsPathFullyQualified($AssetName)) -or
+        ($AssetName -match '[\\/]') -or
+        ($AssetName -in @('.', '..')) -or
+        ([IO.Path]::GetFileName($AssetName) -ne $AssetName) -or
+        ($AssetName.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0)
+    )
+    if ($unsafe) {
+        throw "Asset name must be a safe file basename: $AssetName"
+    }
+}
+
+function Invoke-ApprovedDownload {
+    param(
+        [Parameter(Mandatory = $true)][uri]$UriValue,
+        [Parameter(Mandatory = $true)][string]$TargetPath,
+        [Parameter(Mandatory = $true)][long]$ExpectedBytes,
+        [switch]$AllowLocalSimulation
+    )
+
+    if ($ExpectedBytes -le 0 -or $ExpectedBytes -gt $script:MaximumDownloadBytes) {
+        throw "Downloaded asset exceeds the permitted size: $ExpectedBytes bytes"
+    }
+
+    $handler = [Net.Http.HttpClientHandler]::new()
+    $handler.AllowAutoRedirect = $false
+    $client = [Net.Http.HttpClient]::new($handler)
+    try {
+        $currentUri = $UriValue
+        for ($redirect = 0; $redirect -le 5; $redirect++) {
+            Assert-ApprovedGitHubUri -UriValue $currentUri -AllowLocalSimulation:$AllowLocalSimulation
+            $response = $null
+            try {
+                $response = $client.GetAsync(
+                    $currentUri,
+                    [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+                if (@(
+                        [Net.HttpStatusCode]::MovedPermanently,
+                        [Net.HttpStatusCode]::Found,
+                        [Net.HttpStatusCode]::SeeOther,
+                        [Net.HttpStatusCode]::TemporaryRedirect,
+                        [Net.HttpStatusCode]::PermanentRedirect
+                    ) -contains $response.StatusCode) {
+                    if ($redirect -ge 5 -or $null -eq $response.Headers.Location) {
+                        throw "Too many or invalid redirects while downloading asset."
+                    }
+                    $currentUri = if ($response.Headers.Location.IsAbsoluteUri) {
+                        $response.Headers.Location
+                    }
+                    else {
+                        [uri]::new($currentUri, $response.Headers.Location)
+                    }
+                    continue
+                }
+
+                $response.EnsureSuccessStatusCode()
+                $declaredBytes = $response.Content.Headers.ContentLength
+                if ($declaredBytes.HasValue -and $declaredBytes.Value -ne $ExpectedBytes) {
+                    throw "Downloaded asset byte length mismatch. expected=$ExpectedBytes actual=$($declaredBytes.Value)"
+                }
+
+                $source = $null
+                $destination = $null
+                try {
+                    $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+                    $destination = [IO.File]::Open(
+                        $TargetPath,
+                        [IO.FileMode]::CreateNew,
+                        [IO.FileAccess]::Write,
+                        [IO.FileShare]::None)
+                    $buffer = [byte[]]::new(131072)
+                    [long]$totalBytes = 0
+                    while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                        $totalBytes += $read
+                        if ($totalBytes -gt $ExpectedBytes -or $totalBytes -gt $script:MaximumDownloadBytes) {
+                            throw "Downloaded asset exceeds the permitted size."
+                        }
+                        $destination.Write($buffer, 0, $read)
+                    }
+                    if ($totalBytes -ne $ExpectedBytes) {
+                        throw "Downloaded asset byte length mismatch. expected=$ExpectedBytes actual=$totalBytes"
+                    }
+                }
+                finally {
+                    if ($null -ne $destination) { $destination.Dispose() }
+                    if ($null -ne $source) { $source.Dispose() }
+                }
+                return
+            }
+            finally {
+                if ($null -ne $response) { $response.Dispose() }
+            }
+        }
+        throw "Too many redirects while downloading asset."
+    }
+    catch {
+        if (Test-Path -LiteralPath $TargetPath -PathType Leaf) {
+            Remove-Item -LiteralPath $TargetPath -Force -ErrorAction SilentlyContinue
+        }
+        throw
+    }
+    finally {
+        $client.Dispose()
+        $handler.Dispose()
+    }
+}
+
+function Assert-InstallerSignature {
+    param(
+        [Parameter(Mandatory = $true)][string]$InstallerPath,
+        [string]$ExpectedThumbprint,
+        [switch]$AllowLocalSimulation
+    )
+
+    if ($AllowLocalSimulation) {
+        return
+    }
+    if ([string]::IsNullOrWhiteSpace($ExpectedThumbprint)) {
+        throw "Stable update manifest is missing publisherThumbprint."
+    }
+    $signature = Get-AuthenticodeSignature -LiteralPath $InstallerPath
+    if ($signature.Status -ne [Management.Automation.SignatureStatus]::Valid) {
+        throw "Installer Authenticode signature is not valid: $($signature.Status)"
+    }
+    $actualThumbprint = [string]$signature.SignerCertificate.Thumbprint
+    if (-not [string]::Equals(
+            ($actualThumbprint -replace '\s', '').ToUpperInvariant(),
+            ($ExpectedThumbprint -replace '\s', '').ToUpperInvariant(),
+            [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Installer publisher thumbprint does not match the stable manifest."
     }
 }
 
@@ -68,8 +206,10 @@ function Download-VerifiedAsset {
         throw "Asset byte length is invalid: $($Asset.name)"
     }
 
-    $targetPath = Join-Path $DownloadDirectory ([string]$Asset.name)
-    Invoke-WebRequest -Uri $uri -OutFile $targetPath -UseBasicParsing
+    $assetName = [string]$Asset.name
+    Assert-SafeAssetName -AssetName $assetName
+    $targetPath = Join-Path $DownloadDirectory $assetName
+    Invoke-ApprovedDownload -UriValue $uri -TargetPath $targetPath -ExpectedBytes ([long]$Asset.bytes) -AllowLocalSimulation:$AllowLocalSimulation
     $actualBytes = (Get-Item -LiteralPath $targetPath).Length
     $actualHash = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualBytes -ne [long]$Asset.bytes -or $actualHash -ne $expectedHash.ToLowerInvariant()) {
@@ -100,7 +240,12 @@ else {
     [IO.Path]::GetFullPath($Destination)
 }
 
-if ((Test-Path -LiteralPath $targetRoot -PathType Container) -and @(Get-ChildItem -LiteralPath $targetRoot -Force).Count -gt 0) {
+# An explicitly requested destination is validated up front (and by
+# -ValidateDestinationOnly) without any network access. The default root's
+# emptiness is enforced inside the preview flow after the manifest schema is
+# known, so the stable channel can ignore the default location entirely.
+$destinationOccupied = (Test-Path -LiteralPath $targetRoot -PathType Container) -and @(Get-ChildItem -LiteralPath $targetRoot -Force).Count -gt 0
+if (-not [string]::IsNullOrWhiteSpace($Destination) -and $destinationOccupied) {
     throw "Destination is not empty. Preserve it and use Git/source updates or choose a new destination: $targetRoot"
 }
 if ($ValidateDestinationOnly) {
@@ -113,15 +258,48 @@ $downloadRoot = Join-Path $workRoot "downloads"
 $stageRoot = Join-Path $workRoot "stage"
 [IO.Directory]::CreateDirectory($downloadRoot) | Out-Null
 [IO.Directory]::CreateDirectory($stageRoot) | Out-Null
+$preserveWorkRoot = $false
 
 try {
     $manifestPath = Join-Path $downloadRoot "update-manifest.json"
     Invoke-WebRequest -Uri $manifestUri -OutFile $manifestPath -UseBasicParsing
     $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json
-    if ([string]$manifest.schemaVersion -ne "1.0" -or [string]$manifest.kind -ne "classroom-toolkit-update-manifest") {
+    $schemaVersion = [string]$manifest.schemaVersion
+    if (($schemaVersion -ne "1.0" -and $schemaVersion -ne "2.0") -or [string]$manifest.kind -ne "classroom-toolkit-update-manifest") {
         throw "Unsupported update manifest."
     }
     $workspaceContract = Get-WorkspaceContract -Manifest $manifest
+
+    if ($schemaVersion -eq "2.0") {
+        # Stable channel: the signed Inno installer owns the real install
+        # root and upgrade flow, so only verify the asset and launch it.
+        if (-not [string]::IsNullOrWhiteSpace($Destination)) {
+            throw "The stable update manifest manages its own install location; -Destination applies only to the preview workspace manifest."
+        }
+        $installerAsset = @($manifest.assets | Where-Object { $_.kind -eq "installer" }) | Select-Object -First 1
+        if ($null -eq $installerAsset) {
+            throw "Stable update manifest must provide an installer asset."
+        }
+        $installerPath = Download-VerifiedAsset -Asset $installerAsset -DownloadDirectory $downloadRoot -AllowLocalSimulation:$AllowLocalSimulation
+        Assert-InstallerSignature -InstallerPath $installerPath -ExpectedThumbprint ([string]$manifest.publisherThumbprint) -AllowLocalSimulation:$AllowLocalSimulation
+        $preserveWorkRoot = $true
+        if ($RunSetup) {
+            Start-Process -FilePath $installerPath -WorkingDirectory $downloadRoot
+            Write-Host "Started ClassroomToolkit $($manifest.version) installer: $installerPath"
+        }
+        else {
+            Write-Host "Verified ClassroomToolkit $($manifest.version) installer: $installerPath"
+            Write-Host "Run it to install, or rerun with -RunSetup to launch it automatically."
+        }
+        if ($Launch) {
+            Write-Host "The stable installer offers its own post-install launch option; -Launch applies to the preview workspace manifest."
+        }
+        return
+    }
+
+    if ((Test-Path -LiteralPath $targetRoot -PathType Container) -and @(Get-ChildItem -LiteralPath $targetRoot -Force).Count -gt 0) {
+        throw "Destination is not empty. Preserve it and use Git/source updates or choose a new destination: $targetRoot"
+    }
 
     $appAsset = @($manifest.assets | Where-Object { $_.kind -eq "app" }) | Select-Object -First 1
     $sourceAsset = @($manifest.assets | Where-Object { $_.kind -eq "source" }) | Select-Object -First 1
@@ -181,7 +359,7 @@ try {
     }
 }
 finally {
-    if (Test-Path -LiteralPath $workRoot) {
+    if (-not $preserveWorkRoot -and (Test-Path -LiteralPath $workRoot)) {
         Remove-Item -LiteralPath $workRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }

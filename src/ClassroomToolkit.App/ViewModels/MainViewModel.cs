@@ -142,12 +142,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanDeliver))]
     private async Task DeliverAsync()
     {
-        if (!File.Exists(SelectedAnswerMarkdownPath))
-        {
-            StatusMessage = "答案 Markdown 文件不存在，请重新选择";
-            return;
-        }
-
         await RunAsync("正在生成排版答案 PDF...", async cancellationToken =>
         {
             var (execution, delivery) = await _toolchainOrchestrator.RunDeliverAsync(
@@ -350,6 +344,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath, health.SnapshotExists));
             StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases", health.EvalOk));
             StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现", health.AssetVersion == health.LatestProductionSpecVersion));
+            SyncSubjectPacks(health.SubjectPacks);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -372,6 +367,44 @@ public partial class MainViewModel : ObservableObject, IDisposable
         finally
         {
             Interlocked.CompareExchange(ref _healthRefreshCancellation, null, refreshCancellation);
+        }
+    }
+
+    // A failed startup scan pins the picker to the fallback pack; every later
+    // successful health refresh repairs it from the freshly observed packs.
+    private void SyncSubjectPacks(IReadOnlyList<string> subjectPacks)
+    {
+        if (subjectPacks.Count == 0)
+        {
+            return;
+        }
+
+        var selectedPack = SelectedSubjectPack;
+        var selectionChanged = false;
+        _suppressHealthRefresh = true;
+        try
+        {
+            AvailableSubjectPacks.Clear();
+            foreach (var pack in subjectPacks)
+            {
+                AvailableSubjectPacks.Add(pack);
+            }
+
+            if (!AvailableSubjectPacks.Contains(selectedPack))
+            {
+                SelectedSubjectPack = AvailableSubjectPacks[0];
+                selectionChanged = true;
+            }
+        }
+        finally
+        {
+            _suppressHealthRefresh = false;
+        }
+
+        if (selectionChanged)
+        {
+            // The suppressed selection change would have started this refresh.
+            _ = RefreshHealthAsync();
         }
     }
 
@@ -399,6 +432,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (normalized.Length > MaxActivityLogCharacters)
         {
             normalized = normalized[^MaxActivityLogCharacters..];
+            // Dropping the front half of a surrogate pair would render the
+            // log's first character as U+FFFD; shed the orphan instead.
+            if (char.IsLowSurrogate(normalized[0]))
+            {
+                normalized = normalized[1..];
+            }
         }
 
         _activityLog.AppendLine(normalized);

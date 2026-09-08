@@ -746,7 +746,7 @@ export async function probeTextProvider(config, provider, timeoutMs) {
     model: provider.textModel,
     reasoningEffort: provider.reasoningEffort || null,
     executionSlot: provider.executionSlot ?? null,
-    ok: result.ok && result.output.toUpperCase().includes("OK"),
+    ok: result.ok && result.output.trim().toUpperCase() === "OK",
     status: result.status,
     output: result.output.slice(0, 80),
     error: result.error

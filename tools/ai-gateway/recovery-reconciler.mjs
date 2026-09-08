@@ -5,7 +5,8 @@ import {
   assertLiveEgressAllowed,
   callTextProvider,
   loadGatewayConfig,
-  repoRoot
+  repoRoot,
+  requireValue
 } from "./validate-config.mjs";
 import {
   readPresetHealth,
@@ -88,14 +89,6 @@ export function parseArgs(argv) {
     throw new Error("--timeout-ms must be an integer >= 1000.");
   }
   return options;
-}
-
-function requireValue(argv, index, flag) {
-  const value = argv[index];
-  if (typeof value !== "string" || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-  return value;
 }
 
 function providerOrder(role) {
@@ -187,7 +180,27 @@ export async function runSolRecoveryProbeOnce(config, options = {}) {
   }
 
   const ok = attempts.some((attempt) => attempt.ok);
-  const after = recordRecoveryProbeResult(config, "sol", ok, now);
+  // A long-running watcher must survive transient health-lock contention: the
+  // probe already ran, the next round re-records state, and answer-transport
+  // applies the same tolerance to its own health writes.
+  let after;
+  try {
+    after = recordRecoveryProbeResult(config, "sol", ok, now);
+  } catch (error) {
+    console.error(
+      `[gateway] Preset health update failed; retrying next round: ${error instanceof Error ? error.message : String(error)}`);
+    const current = readPresetHealth(config);
+    const recovery = current.presets?.sol?.recovery;
+    return {
+      ran: true,
+      reason: ok ? "sol-probe-succeeded" : "sol-probe-failed",
+      nextProbeAt: recovery?.nextProbeAt ?? null,
+      activePreset: current.activePreset,
+      recoveryReady: recovery?.recoveryReady === true,
+      consecutiveProbeSuccesses: recovery?.consecutiveProbeSuccesses ?? 0,
+      attempts
+    };
+  }
   return {
     ran: true,
     reason: ok ? "sol-probe-succeeded" : "sol-probe-failed",

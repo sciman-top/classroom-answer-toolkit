@@ -160,7 +160,9 @@ function Test-WorkflowFileReceiptMatches {
 function Assert-ResumeBlindGeneration {
     param(
         [Parameter(Mandatory = $true)][string]$ReceiptPath,
-        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$CurrentInputs
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$CurrentInputs,
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$CurrentOptions,
+        [Parameter(Mandatory = $true)][string]$CurrentOptionsFingerprint
     )
 
     if (-not (Test-Path -LiteralPath $ReceiptPath -PathType Leaf)) {
@@ -184,6 +186,28 @@ function Assert-ResumeBlindGeneration {
         PromptFile = "prompt"
         BlindFocusRegionsFile = "blindFocusRegions"
         VisualAuditFocusRegionsFile = "visualAuditFocusRegions"
+        ConfigEnvFile = "configEnv"
+    }
+
+    $priorOptions = $resumeReceipt.options
+    if ($null -eq $priorOptions) {
+        throw "Resume workflow receipt has no options binding; start a new run: $ReceiptPath"
+    }
+    foreach ($optionName in $CurrentOptions.Keys) {
+        $optionMismatch = (
+            (-not $priorOptions.ContainsKey($optionName)) -or
+            ($priorOptions[$optionName] -ne $CurrentOptions[$optionName])
+        )
+        if ($optionMismatch) {
+            throw "Resume workflow option does not match current $optionName`: $ReceiptPath"
+        }
+    }
+    $fingerprintMismatch = (
+        $priorOptions.ContainsKey("optionsFingerprint") -and
+        ($priorOptions.optionsFingerprint -ne $CurrentOptionsFingerprint)
+    )
+    if ($fingerprintMismatch) {
+        throw "Resume workflow options fingerprint does not match current options: $ReceiptPath"
     }
     foreach ($inputName in $inputNameMap.Keys) {
         $priorReceipt = $resumeReceipt.inputs[$inputNameMap[$inputName]]
@@ -406,7 +430,33 @@ $workflowInputReceipts = [ordered]@{
     PromptFile = Get-WorkflowFileReceipt -PathValue $promptPath
     BlindFocusRegionsFile = Get-WorkflowFileReceipt -PathValue $blindFocusRegionsPath
     VisualAuditFocusRegionsFile = Get-WorkflowFileReceipt -PathValue $visualAuditFocusRegionsPath
+    ConfigEnvFile = Get-WorkflowFileReceipt -PathValue $envFilePath
 }
+
+$workflowOptions = [ordered]@{
+    provider = $Provider
+    subjectPack = $SubjectPack
+    profile = $Profile
+    blindQualityProfile = $BlindQualityProfile
+    semanticQualityProfile = $SemanticQualityProfile
+    visualQualityProfile = $VisualQualityProfile
+    referenceQualityProfile = $ReferenceQualityProfile
+    visualDetail = $VisualDetail
+    maxOutputTokens = $MaxOutputTokens
+    timeoutMs = $TimeoutMs
+    reviewScale = $ReviewScale
+    visualAuditScale = $VisualAuditScale
+    blindFocusRegionsFile = $blindFocusRegionsPath
+    visualAuditFocusRegionsFile = $visualAuditFocusRegionsPath
+    skipVisualAudit = [bool]$SkipVisualAudit
+    keepReview = [bool]$KeepReview
+    useGatewayProxy = [bool]$UseGatewayProxy
+    configEnvFile = $envFilePath
+}
+$workflowOptionsJson = $workflowOptions | ConvertTo-Json -Compress -Depth 10
+$workflowOptionsFingerprint = [Convert]::ToHexString(
+    [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($workflowOptionsJson)))
+$workflowOptionsFingerprint = $workflowOptionsFingerprint.ToLowerInvariant()
 
 Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
     SourcePdf = $sourcePath
@@ -440,7 +490,11 @@ Assert-WorkflowOutputDoesNotOverwriteInput -Inputs @{
 }
 
 $resumeProvenance = if ($resumeWorkflowReceiptPath) {
-    Assert-ResumeBlindGeneration -ReceiptPath $resumeWorkflowReceiptPath -CurrentInputs $workflowInputReceipts
+    Assert-ResumeBlindGeneration `
+        -ReceiptPath $resumeWorkflowReceiptPath `
+        -CurrentInputs $workflowInputReceipts `
+        -CurrentOptions $workflowOptions `
+        -CurrentOptionsFingerprint $workflowOptionsFingerprint
 }
 else {
     $null
@@ -533,26 +587,28 @@ function Write-WorkflowReceipt {
             prompt = $workflowInputReceipts.PromptFile
             blindFocusRegions = $workflowInputReceipts.BlindFocusRegionsFile
             visualAuditFocusRegions = $workflowInputReceipts.VisualAuditFocusRegionsFile
+            configEnv = $workflowInputReceipts.ConfigEnvFile
         }
         options = [ordered]@{
-            provider = $Provider
-            subjectPack = $SubjectPack
-            profile = $Profile
-            blindQualityProfile = $BlindQualityProfile
-            semanticQualityProfile = $SemanticQualityProfile
-            visualQualityProfile = $VisualQualityProfile
-            referenceQualityProfile = $ReferenceQualityProfile
-            visualDetail = $VisualDetail
-            maxOutputTokens = $MaxOutputTokens
-            timeoutMs = $TimeoutMs
-            reviewScale = $ReviewScale
-            visualAuditScale = $VisualAuditScale
-            blindFocusRegionsFile = $blindFocusRegionsPath
-            visualAuditFocusRegionsFile = $visualAuditFocusRegionsPath
-            skipVisualAudit = [bool]$SkipVisualAudit
-            keepReview = [bool]$KeepReview
-            useGatewayProxy = [bool]$UseGatewayProxy
-            configEnvFile = $envFilePath
+            provider = $workflowOptions.provider
+            subjectPack = $workflowOptions.subjectPack
+            profile = $workflowOptions.profile
+            blindQualityProfile = $workflowOptions.blindQualityProfile
+            semanticQualityProfile = $workflowOptions.semanticQualityProfile
+            visualQualityProfile = $workflowOptions.visualQualityProfile
+            referenceQualityProfile = $workflowOptions.referenceQualityProfile
+            visualDetail = $workflowOptions.visualDetail
+            maxOutputTokens = $workflowOptions.maxOutputTokens
+            timeoutMs = $workflowOptions.timeoutMs
+            reviewScale = $workflowOptions.reviewScale
+            visualAuditScale = $workflowOptions.visualAuditScale
+            blindFocusRegionsFile = $workflowOptions.blindFocusRegionsFile
+            visualAuditFocusRegionsFile = $workflowOptions.visualAuditFocusRegionsFile
+            skipVisualAudit = $workflowOptions.skipVisualAudit
+            keepReview = $workflowOptions.keepReview
+            useGatewayProxy = $workflowOptions.useGatewayProxy
+            configEnvFile = $workflowOptions.configEnvFile
+            optionsFingerprint = $workflowOptionsFingerprint
         }
         phases = $phaseReceipts
         artifacts = $artifacts

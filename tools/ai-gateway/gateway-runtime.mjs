@@ -73,6 +73,13 @@ function healthLockPath(config) {
   return path.join(ensureRuntimeDirectory(resolveGatewayRuntimeDirectory(config)), HEALTH_LOCK_FILE_NAME);
 }
 
+function healthClaimDirectoryPath(config) {
+  return path.join(
+    ensureRuntimeDirectory(resolveGatewayRuntimeDirectory(config)),
+    `${HEALTH_LOCK_FILE_NAME}${RECLAIM_CLAIM_DIRECTORY_SUFFIX}`
+  );
+}
+
 function defaultHealthState() {
   return {
     version: 2,
@@ -162,7 +169,17 @@ function tryAcquirePresetHealthLock(config) {
     if (!error || typeof error !== "object" || error.code !== "EEXIST") {
       throw error;
     }
-    removeExpiredLease(filePath, now);
+    // Reclaiming the stale lock must be serialized like the slot leases:
+    // two waiters unlinks-and-recreates could otherwise both believe they
+    // hold the health lock and lose a read-modify-write.
+    if (!tryEnterReclaimSection(healthClaimDirectoryPath(config), now)) {
+      return null;
+    }
+    try {
+      removeExpiredLease(filePath, now);
+    } finally {
+      exitReclaimSection(healthClaimDirectoryPath(config));
+    }
     return null;
   }
 
@@ -340,19 +357,15 @@ function slotDirectory(config) {
 }
 
 // Cross-process mutex for lease reclamation, built on atomic directory
-// creation: for a given slot, exactly one waiter at a time may run
+// creation: for a given lock file, exactly one waiter at a time may run
 // check-expiry → unlink → re-create. A claimant that dies leaves the directory
-// behind; later waiters reap it once it is older than SLOT_CLAIM_STALE_MS
-// (a live claimant holds it for milliseconds).
-const SLOT_CLAIM_DIRECTORY_SUFFIX = ".claim";
-const SLOT_CLAIM_STALE_MS = 5_000;
+// behind; later waiters reap it once it is older than RECLAIM_CLAIM_STALE_MS
+// (a live claimant holds it for milliseconds). Shared by execution-slot
+// leases and the preset-health lock.
+const RECLAIM_CLAIM_DIRECTORY_SUFFIX = ".claim";
+const RECLAIM_CLAIM_STALE_MS = 5_000;
 
-function slotClaimDirectoryPath(config, slot) {
-  return path.join(slotDirectory(config), `slot-${slot}${SLOT_CLAIM_DIRECTORY_SUFFIX}`);
-}
-
-function tryEnterSlotReclaimSection(config, slot, now) {
-  const claimDirectory = slotClaimDirectoryPath(config, slot);
+function tryEnterReclaimSection(claimDirectory, now) {
   try {
     fs.mkdirSync(claimDirectory);
     return true;
@@ -363,7 +376,7 @@ function tryEnterSlotReclaimSection(config, slot, now) {
   }
   try {
     const stats = fs.statSync(claimDirectory);
-    if (now - stats.mtimeMs < SLOT_CLAIM_STALE_MS) {
+    if (now - stats.mtimeMs < RECLAIM_CLAIM_STALE_MS) {
       return false;
     }
     fs.rmSync(claimDirectory, { recursive: true, force: true });
@@ -373,14 +386,26 @@ function tryEnterSlotReclaimSection(config, slot, now) {
   return false;
 }
 
-function exitSlotReclaimSection(config, slot) {
+function exitReclaimSection(claimDirectory) {
   try {
-    fs.rmdirSync(slotClaimDirectoryPath(config, slot));
+    fs.rmdirSync(claimDirectory);
   } catch (error) {
     if (!error || typeof error !== "object" || error.code !== "ENOENT") {
       throw error;
     }
   }
+}
+
+function slotClaimDirectoryPath(config, slot) {
+  return path.join(slotDirectory(config), `slot-${slot}${RECLAIM_CLAIM_DIRECTORY_SUFFIX}`);
+}
+
+function tryEnterSlotReclaimSection(config, slot, now) {
+  return tryEnterReclaimSection(slotClaimDirectoryPath(config, slot), now);
+}
+
+function exitSlotReclaimSection(config, slot) {
+  exitReclaimSection(slotClaimDirectoryPath(config, slot));
 }
 
 // Caller must hold the slot's reclaim section, which makes the
@@ -441,7 +466,10 @@ function removeExpiredLease(filePath, now) {
     // already replaced the stale lease with its own fresh one, and deleting
     // that would silently break the slot's concurrency limit.
     const recheck = readLease(filePath);
-    if (recheck && !(recheck.token === lease.token && recheck.expiresAt === lease.expiresAt)) {
+    if (!recheck || !(recheck.token === lease.token && recheck.expiresAt === lease.expiresAt)) {
+      // The stale lease vanished (its holder released it) or was replaced
+      // while we were deciding. Unlinking now could destroy a waiter's fresh
+      // lock created in that gap, so there is nothing left to reclaim.
       return false;
     }
   } else {
@@ -501,32 +529,27 @@ function leaseHandle(filePath, token, slot) {
 function tryAcquireLease(config, slot, timeoutMs) {
   const filePath = leasePath(config, slot);
   const token = crypto.randomUUID();
+  // Creation must use the same per-slot claim as expiry reclamation. A
+  // fast-path write outside this section could create a fresh lease after a
+  // reclaimer read the stale one but before it unlinked it; the reclaimer
+  // would then delete the fresh lease and two workers could run together.
+  if (!tryEnterSlotReclaimSection(config, slot, Date.now())) {
+    return null;
+  }
   try {
-    writeLeaseFile(filePath, token, slot, timeoutMs);
-  } catch (error) {
-    if (!error || typeof error !== "object" || error.code !== "EEXIST") {
-      throw error;
-    }
-    if (!tryEnterSlotReclaimSection(config, slot, Date.now())) {
+    reclaimExpiredLeaseInSection(filePath, Date.now());
+    try {
+      writeLeaseFile(filePath, token, slot, timeoutMs);
+    } catch (error) {
+      if (!error || typeof error !== "object" || error.code !== "EEXIST") {
+        throw error;
+      }
       return null;
     }
-    try {
-      reclaimExpiredLeaseInSection(filePath, Date.now());
-      try {
-        writeLeaseFile(filePath, token, slot, timeoutMs);
-      } catch (createError) {
-        if (!createError || typeof createError !== "object" || createError.code !== "EEXIST") {
-          throw createError;
-        }
-        // A fast-path acquirer created its lease after our unlink; keep waiting.
-        return null;
-      }
-      return leaseHandle(filePath, token, slot);
-    } finally {
-      exitSlotReclaimSection(config, slot);
-    }
+    return leaseHandle(filePath, token, slot);
+  } finally {
+    exitSlotReclaimSection(config, slot);
   }
-  return leaseHandle(filePath, token, slot);
 }
 
 // Limits every local CLI process that shares the runtime directory.  Slots are

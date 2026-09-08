@@ -121,7 +121,7 @@ WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓�
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\install-release.ps1 -RunSetup -Launch
 ```
 
-该脚本只接受 GitHub HTTPS 清单和资产，校验 app/source 两个资产的 SHA-256 与字节数，拒绝越界 ZIP 条目。预览版会将匹配的公开源码工作区安装在本机，但源码仍是独立 Release 资产，不嵌入 app ZIP。setup 会执行 build、普通测试、Core 和主 subject-pack 健康 eval；首次安装会从 `.env.example` 创建本机 `.env`，但云出网仍为关闭状态，必须由使用者自行填写 provider 配置后才能请求 live AI。
+该脚本只接受 GitHub HTTPS 清单和资产，拒绝越界 ZIP 条目。对 preview 清单（schema 1.0），它校验 app/source 两个资产的 SHA-256 与字节数后展开公开工作区；对 stable 清单（schema 2.0），它校验签名 installer 资产后启动 Inno 安装程序，安装位置由安装程序自行管理（不支持 `-Destination`，`-RunSetup` 表示自动启动）。预览版会将匹配的公开源码工作区安装在本机，但源码仍是独立 Release 资产，不嵌入 app ZIP。setup 会执行 build、普通测试、Core 和主 subject-pack 健康 eval；首次安装会从 `.env.example` 创建本机 `.env`，但云出网仍为关闭状态，必须由使用者自行填写 provider 配置后才能请求 live AI。
 
 每个 Release 都声明 `workspaceContract`。合同相同的版本可自动更新应用；合同提升时客户端会拒绝只替换 app，避免应用、脚本和 prompt 静默错配。此时应保留现有工作区与 `.env`，再使用新 Release 的预览安装器部署到新的空目录。ordinary-user 标准安装版和绿色便携版已经实现并由同一版本化 runtime bundle 构建；本机可用 `-AllowUnsignedCandidate` 验证安装、修复、卸载和便携启动，但没有签名或代表性普通用户验收时不得标记为 stable。完整离线 AI 能力仍未提供：provider 请求仍需使用者自行配置并联网。
 

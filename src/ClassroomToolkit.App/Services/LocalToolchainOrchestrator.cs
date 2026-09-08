@@ -68,7 +68,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             }
 
             var process = await _processRunner.RunAsync(
-                ResolveNodeExecutable(workspace.RepositoryRoot),
+                ResolveNodeExecutable(workspace.RepositoryRoot)
+                    ?? throw new InvalidOperationException("安装版 runtime 缺少 bundled Node.js：请修复或重新安装运行时。"),
                 arguments,
                 workspace.RepositoryRoot,
                 cancellationToken,
@@ -219,7 +220,9 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         CancellationToken cancellationToken = default)
     {
         var workspace = GetWorkspaceInfo();
-        var answerPath = Path.GetFullPath(request.AnswerMarkdownPath);
+        // Relative user input resolves against the workspace root, not the
+        // launcher's CWD (Explorer-launched WinExE can start in System32).
+        var answerPath = AnswerArtifactPathResolver.ResolveUserPath(request.AnswerMarkdownPath, workspace.RepositoryRoot);
         var toolPath = Path.Combine(workspace.RepositoryRoot, "tools", "latex-renderer", "deliver-answer.mjs");
         var startedAt = DateTimeOffset.Now;
 
@@ -237,7 +240,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 $"Renderer tool not found: {toolPath}"), null);
         }
 
-        var outputPath = AnswerArtifactPathResolver.ResolveOutputPdfPath(answerPath, request.OutputPdfPath);
+        var outputPath = AnswerArtifactPathResolver.ResolveOutputPdfPath(answerPath, request.OutputPdfPath, workspace.RepositoryRoot);
         var subjectPack = string.IsNullOrWhiteSpace(request.SubjectPack)
             ? workspace.PrimarySubjectPack ?? "junior-physics-answer"
             : request.SubjectPack;
@@ -252,12 +255,24 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             arguments.Add("--keep-review");
         }
 
+        var nodeExecutable = ResolveNodeExecutable(workspace.RepositoryRoot);
+        if (nodeExecutable is null)
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.Deliver,
+                toolPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                "安装版 runtime 缺少 bundled Node.js：请修复或重新安装运行时。"), null);
+        }
+
         var process = await _processRunner.RunAsync(
-            ResolveNodeExecutable(workspace.RepositoryRoot),
+            nodeExecutable,
             arguments,
             workspace.RepositoryRoot,
             cancellationToken,
-            DeliverTimeout);
+            DeliverTimeout).ConfigureAwait(false);
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(process.StandardOutput, process.StandardError);
         var execution = process.ExitCode == 0
@@ -408,7 +423,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 ToolchainScriptKind.Bootstrap => BootstrapTimeout,
                 ToolchainScriptKind.Check => CheckTimeout,
                 _ => DeliverTimeout
-            });
+            }).ConfigureAwait(false);
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(process.StandardOutput, process.StandardError);
         return process.ExitCode == 0
@@ -419,10 +434,12 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     private static bool IsPackagedRuntime(string workspaceRoot) =>
         File.Exists(Path.Combine(workspaceRoot, "runtime-manifest.json"));
 
-    private static string ResolveNodeExecutable(string workspaceRoot)
+    private static string? ResolveNodeExecutable(string workspaceRoot)
     {
         var bundledNode = Path.Combine(workspaceRoot, "runtime", "node", "node.exe");
-        return File.Exists(bundledNode) ? bundledNode : "node";
+        return IsPackagedRuntime(workspaceRoot)
+            ? File.Exists(bundledNode) ? bundledNode : null
+            : "node";
     }
 
     private static ManifestContext ReadManifestContext(string manifestPath)

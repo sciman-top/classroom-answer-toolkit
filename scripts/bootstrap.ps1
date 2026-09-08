@@ -1,3 +1,4 @@
+#requires -Version 7
 param(
     # Callers that run check-toolchain Core/Full right after bootstrap must pass
     # this: the gate already runs validate:assets and snapshot compilation, and

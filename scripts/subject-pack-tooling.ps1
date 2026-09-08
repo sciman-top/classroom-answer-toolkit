@@ -1,3 +1,4 @@
+#requires -Version 7
 function Get-RelativePath {
     param(
         [Parameter(Mandatory = $true)]
@@ -32,10 +33,23 @@ function Get-SubjectPackMetadata {
         throw "Subject pack registry tool not found: $registryScript"
     }
 
-    $registryOutput = @(& node $registryScript 2>&1)
-    if ($LASTEXITCODE -ne 0) {
-        $diagnostics = (($registryOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine).Trim()
-        throw "Subject pack registry failed with exit code $LASTEXITCODE`: $registryScript`n$diagnostics"
+    # stdout is captured alone so a node warning on a healthy run can never
+    # corrupt the JSON parse; stderr goes to a temp file for the failure branch.
+    $stderrPath = Join-Path ([IO.Path]::GetTempPath()) ("subject-pack-registry-{0}.err" -f [Guid]::NewGuid().ToString("N"))
+    try {
+        $registryOutput = @(& node $registryScript 2>$stderrPath)
+        if ($LASTEXITCODE -ne 0) {
+            $diagnostics = if (Test-Path -LiteralPath $stderrPath -PathType Leaf) {
+                ((Get-Content -LiteralPath $stderrPath -Raw) ?? "").Trim()
+            }
+            else {
+                ""
+            }
+            throw "Subject pack registry failed with exit code $LASTEXITCODE`: $registryScript`n$diagnostics"
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $stderrPath -Force -ErrorAction SilentlyContinue
     }
 
     $registryJson = ($registryOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine

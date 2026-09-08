@@ -1,3 +1,4 @@
+#requires -Version 7
 param(
     [ValidateSet("Core", "Full")]
     [string]$Mode = "Core",

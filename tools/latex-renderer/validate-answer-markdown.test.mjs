@@ -3,7 +3,8 @@ import test from "node:test";
 import {
   findStrictKatexErrors,
   findLeakingDollarLines,
-  findUnbalancedLatexDelimiterLines
+  findUnbalancedLatexDelimiterLines,
+  findExecutableRawHtml
 } from "./validate-answer-markdown.mjs";
 import { repairSplitMathSpans } from "./inline-math.mjs";
 
@@ -150,6 +151,11 @@ test("fenced code is opaque to delimiter and dollar-parity checks with accurate 
   assert.deepEqual(findUnbalancedLatexDelimiterLines(fenced), [5]);
   // A lone `$` inside a fence must not flip the document's dollar parity.
   assert.deepEqual(findLeakingDollarLines("```text\n单个 $\n```\n正文 $v=2$。"), []);
+});
+
+test("fenced executable HTML examples are not treated as raw HTML", () => {
+  assert.equal(findExecutableRawHtml("```html\n<script>alert(1)</script>\n```"), null);
+  assert.match(findExecutableRawHtml("正文<script>alert(1)</script>"), /<script/iu);
 });
 
 test("cross-line inline code spans are masked like single-line spans", () => {

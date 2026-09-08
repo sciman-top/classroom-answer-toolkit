@@ -1,4 +1,4 @@
-#requires -Version 7
+#requires -Version 7.3
 param(
     [Parameter(Mandatory = $true)][uri]$PackageUrl,
     [Parameter(Mandatory = $true)][string]$ExpectedSha256,
@@ -14,6 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+$script:MaximumDownloadBytes = 1GB
 
 function Resolve-AbsolutePath {
     param([Parameter(Mandatory = $true)][string]$PathValue)
@@ -72,6 +73,101 @@ function Assert-ApprovedGitHubUri {
     }
 }
 
+function Invoke-ApprovedDownload {
+    param(
+        [Parameter(Mandatory = $true)][uri]$UriValue,
+        [Parameter(Mandatory = $true)][string]$TargetPath,
+        [Parameter(Mandatory = $true)][long]$ExpectedBytes,
+        [switch]$AllowLocalSimulation
+    )
+
+    if ($ExpectedBytes -le 0 -or $ExpectedBytes -gt $script:MaximumDownloadBytes) {
+        throw "Downloaded update exceeds the permitted size: $ExpectedBytes bytes"
+    }
+
+    $handler = [Net.Http.HttpClientHandler]::new()
+    $handler.AllowAutoRedirect = $false
+    $client = [Net.Http.HttpClient]::new($handler)
+    try {
+        $currentUri = $UriValue
+        for ($redirect = 0; $redirect -le 5; $redirect++) {
+            Assert-ApprovedGitHubUri -UriValue $currentUri -AllowLocalSimulation:$AllowLocalSimulation
+            $response = $null
+            try {
+                $response = $client.GetAsync(
+                    $currentUri,
+                    [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+                if (@(
+                        [Net.HttpStatusCode]::MovedPermanently,
+                        [Net.HttpStatusCode]::Found,
+                        [Net.HttpStatusCode]::SeeOther,
+                        [Net.HttpStatusCode]::TemporaryRedirect,
+                        [Net.HttpStatusCode]::PermanentRedirect
+                    ) -contains $response.StatusCode) {
+                    if ($redirect -ge 5 -or $null -eq $response.Headers.Location) {
+                        throw "Too many or invalid redirects while downloading update."
+                    }
+                    $currentUri = if ($response.Headers.Location.IsAbsoluteUri) {
+                        $response.Headers.Location
+                    }
+                    else {
+                        [uri]::new($currentUri, $response.Headers.Location)
+                    }
+                    continue
+                }
+
+                $response.EnsureSuccessStatusCode()
+                $declaredBytes = $response.Content.Headers.ContentLength
+                if ($declaredBytes.HasValue -and $declaredBytes.Value -ne $ExpectedBytes) {
+                    throw "Update byte length mismatch. expected=$ExpectedBytes actual=$($declaredBytes.Value)"
+                }
+
+                $source = $null
+                $destination = $null
+                try {
+                    $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+                    $destination = [IO.File]::Open(
+                        $TargetPath,
+                        [IO.FileMode]::CreateNew,
+                        [IO.FileAccess]::Write,
+                        [IO.FileShare]::None)
+                    $buffer = [byte[]]::new(131072)
+                    [long]$totalBytes = 0
+                    while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                        $totalBytes += $read
+                        if ($totalBytes -gt $ExpectedBytes -or $totalBytes -gt $script:MaximumDownloadBytes) {
+                            throw "Downloaded update exceeds the permitted size."
+                        }
+                        $destination.Write($buffer, 0, $read)
+                    }
+                    if ($totalBytes -ne $ExpectedBytes) {
+                        throw "Update byte length mismatch. expected=$ExpectedBytes actual=$totalBytes"
+                    }
+                }
+                finally {
+                    if ($null -ne $destination) { $destination.Dispose() }
+                    if ($null -ne $source) { $source.Dispose() }
+                }
+                return
+            }
+            finally {
+                if ($null -ne $response) { $response.Dispose() }
+            }
+        }
+        throw "Too many redirects while downloading update."
+    }
+    catch {
+        if (Test-Path -LiteralPath $TargetPath -PathType Leaf) {
+            Remove-Item -LiteralPath $TargetPath -Force -ErrorAction SilentlyContinue
+        }
+        throw
+    }
+    finally {
+        $client.Dispose()
+        $handler.Dispose()
+    }
+}
+
 if ($ExpectedSha256 -notmatch '^[A-Fa-f0-9]{64}$') {
     throw "ExpectedSha256 must be a 64-character SHA-256 value."
 }
@@ -97,7 +193,7 @@ $backupPath = "$targetApp.backup.$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ
 
 try {
     Write-Host "Downloading update asset..."
-    Invoke-WebRequest -Uri $PackageUrl -OutFile $downloadPath -UseBasicParsing
+    Invoke-ApprovedDownload -UriValue $PackageUrl -TargetPath $downloadPath -ExpectedBytes $ExpectedBytes -AllowLocalSimulation:$AllowLocalSimulation
     $actualBytes = (Get-Item -LiteralPath $downloadPath).Length
     if ($actualBytes -ne $ExpectedBytes) {
         throw "Update byte length mismatch. expected=$ExpectedBytes actual=$actualBytes"

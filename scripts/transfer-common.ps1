@@ -1,3 +1,4 @@
+#requires -Version 7
 # Shared helpers for source transfer and release packaging.
 # PowerShell 7 only: callers must run with pwsh -NoProfile.
 

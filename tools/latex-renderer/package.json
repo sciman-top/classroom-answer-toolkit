@@ -21,6 +21,7 @@
     "write:delivery-manifest": "node write-delivery-manifest.mjs"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.0",
     "katex": "^0.16.25",
     "markdown-it": "^14.3.0",
     "pdfjs-dist": "^6.2.108",

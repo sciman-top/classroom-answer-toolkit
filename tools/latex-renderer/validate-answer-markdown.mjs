@@ -287,10 +287,17 @@ function validateStrictKatex(source, rule, errors, warnings) {
   }
 }
 
+export function findExecutableRawHtml(source) {
+  // MarkdownIt renders raw HTML disabled, and fenced/inline code is literal
+  // text. Scan the code-masked source so a safe example does not become a
+  // false executable-HTML finding.
+  return maskLatexCodeSegments(source).text.match(/<\s*\/?\s*(?:script|iframe|object|embed|svg|style|link|meta)\b/iu)?.[0] ?? null;
+}
+
 function validateExecutableRawHtml(source, errors) {
-  const dangerousTag = source.match(/<\s*\/?\s*(?:script|iframe|object|embed|svg|style|link|meta)\b/iu);
+  const dangerousTag = findExecutableRawHtml(source);
   if (dangerousTag) {
-    errors.push(`Document contains executable raw HTML: ${dangerousTag[0]}.`);
+    errors.push(`Document contains executable raw HTML: ${dangerousTag}.`);
   }
 }
 
@@ -327,6 +334,7 @@ function main() {
 
   const snapshotPath = resolveSnapshotPath(options.snapshot, {
     subjectPack: options.subjectPack,
+    profile: options.profile,
     callerCwd
   });
   const snapshot = loadRequiredResolvedSnapshot(snapshotPath);

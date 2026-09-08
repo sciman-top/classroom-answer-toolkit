@@ -23,7 +23,9 @@ if ($Audience -eq "ordinary-users") {
         AllowUnsignedCandidate = $AllowUnsignedCandidate
     }
     & (Join-Path $PSScriptRoot "build-ordinary-user-package.ps1") @arguments
-    exit $LASTEXITCODE
+    # A .ps1 invoked with & never sets $LASTEXITCODE; build-ordinary fails via
+    # throw, which Stop preference propagates before this line is reached.
+    exit 0
 }
 
 . (Join-Path $PSScriptRoot "transfer-common.ps1")
@@ -145,13 +147,12 @@ if (-not [string]::IsNullOrWhiteSpace((& git -C $repoRoot status --porcelain --u
 
 try {
     if (-not $SkipPublish) {
+        # A .ps1 invoked with & never sets $LASTEXITCODE; publish-app fails via
+        # throw, which Stop preference propagates.
         & (Join-Path $repoRoot "scripts/publish-app.ps1") `
             -RuntimeIdentifier "win-x64" `
             -Version $Version `
             -SelfContained
-        if ($LASTEXITCODE -ne 0) {
-            throw "Release application publish failed."
-        }
     }
 
     if (-not (Test-Path -LiteralPath $publishRoot -PathType Container)) {

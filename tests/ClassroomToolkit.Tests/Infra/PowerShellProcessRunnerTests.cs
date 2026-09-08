@@ -7,6 +7,11 @@ namespace ClassroomToolkit.Tests.Infra;
 
 public sealed class PowerShellProcessRunnerTests
 {
+    // These lifecycle tests intentionally launch real node/pwsh children from
+    // PATH: the repository's gates all require that toolchain (bootstrap.ps1
+    // installs it), so a missing executable fails fast with the runner's own
+    // actionable diagnostic instead of silently skipping.
+
     [Fact]
     public async Task RunAsync_StartsNodeExecutableOnWindows()
     {

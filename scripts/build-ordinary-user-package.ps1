@@ -139,7 +139,11 @@ if ([string]$dependencies.schemaVersion -ne "1.0") {
 
 $projectPath = Join-Path $repoRoot "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj"
 [xml]$project = Get-Content -LiteralPath $projectPath -Raw -Encoding utf8
-$projectVersion = [string]$project.SelectSingleNode("/Project/PropertyGroup/Version").InnerText
+$versionNode = $project.SelectSingleNode("/Project/PropertyGroup/Version")
+if (-not $versionNode) {
+    throw "Project file is missing a Version property: $projectPath"
+}
+$projectVersion = [string]$versionNode.InnerText
 if ($projectVersion -ne $Version) {
     throw "Release version $Version does not match the source project version $projectVersion."
 }
@@ -163,10 +167,9 @@ $resolvedIsccPath = Resolve-IsccPath -RequestedPath $IsccPath
 
 try {
     if (-not $SkipPublish) {
+        # A .ps1 invoked with & never sets $LASTEXITCODE; publish-app fails via
+        # throw, which Stop preference propagates.
         & (Join-Path $repoRoot "scripts/publish-app.ps1") -RuntimeIdentifier "win-x64" -Version $Version -SelfContained
-        if ($LASTEXITCODE -ne 0) {
-            throw "Release application publish failed."
-        }
     }
     if (-not (Test-Path -LiteralPath $publishRoot -PathType Container)) {
         throw "Published application directory was not found: $publishRoot"
@@ -229,10 +232,23 @@ try {
     }
 
     [IO.Directory]::CreateDirectory((Join-Path $stageRoot ".snapshot-cache")) | Out-Null
-    foreach ($subjectPack in @("junior-physics-answer", "senior-physics-answer", "math-answer")) {
-        & (Join-Path $bundledNodeRoot "node.exe") (Join-Path $stageRoot "tools/rule-compiler/compile-snapshot.mjs") --subject-pack $subjectPack --profile classroom
+    # The subject-pack registry is the single source of pack/profile truth;
+    # hardcoding the list here would ship new packs without a bundled snapshot.
+    # Every registry entry is packaged (matching the previous explicit list,
+    # which deliberately included the experimental math pack). stdout is
+    # captured alone so node warnings can never corrupt the JSON.
+    $registryOutput = @(& (Join-Path $bundledNodeRoot "node.exe") (Join-Path $stageRoot "tools/rule-compiler/list-subject-packs.mjs"))
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to list subject packs for packaged snapshots."
+    }
+    $packagedPacks = @(@(($registryOutput -join "") | ConvertFrom-Json))
+    if ($packagedPacks.Count -eq 0) {
+        throw "The subject-pack registry returned no subject packs."
+    }
+    foreach ($subjectPack in $packagedPacks) {
+        & (Join-Path $bundledNodeRoot "node.exe") (Join-Path $stageRoot "tools/rule-compiler/compile-snapshot.mjs") --subject-pack $subjectPack.assetId --profile $subjectPack.defaultProfile
         if ($LASTEXITCODE -ne 0) {
-            throw "Unable to compile packaged snapshot for $subjectPack."
+            throw "Unable to compile packaged snapshot for $($subjectPack.assetId)."
         }
     }
 
@@ -303,6 +319,7 @@ try {
         sourceCommit = $currentCommit
         releaseUrl = "https://github.com/sciman-top/classroom-answer-toolkit/releases/tag/v$Version"
         releaseNotes = "Classroom Answer Toolkit $Version"
+        publisherThumbprint = if ($setupSignature.SignerCertificate) { $setupSignature.SignerCertificate.Thumbprint } else { $null }
         assets = @($installManifest.assets | ForEach-Object {
             [ordered]@{
                 kind = $_.kind

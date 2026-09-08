@@ -36,6 +36,21 @@ public sealed class WorkspaceSubjectPackLocatorTests
         issues.Should().ContainSingle(issue => issue.Contains("broken-pack"));
     }
 
+    [Fact]
+    public void FindSubjectPacks_AcceptsUtf8BomWrittenByLegacyEditors()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WritePack("junior-physics-answer", status: "active");
+        var manifestPath = Path.Combine(workspace.Root, "prompts", "junior-physics-answer", "manifest.json");
+        var json = File.ReadAllText(manifestPath);
+        File.WriteAllText(manifestPath, "\uFEFF" + json);
+
+        WorkspaceSubjectPackLocator.FindSubjectPacks(workspace.Root)
+            .Select(pack => pack.AssetId)
+            .Should()
+            .ContainSingle("junior-physics-answer");
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };

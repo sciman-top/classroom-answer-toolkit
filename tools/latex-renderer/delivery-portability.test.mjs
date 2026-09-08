@@ -69,6 +69,107 @@ test("writer output survives package relocation and foreign-CWD validation", asy
   }
 });
 
+test("writer emits a valid no-review manifest and packages external input", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-no-review-"));
+  const externalRoot = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-external-input-"));
+  const relocatedRoot = `${root}-moved`;
+  try {
+    const snapshotPath = path.join(root, "answer.snapshot.json");
+    writeJson(snapshotPath, compileResolvedSnapshot({
+      subjectPack: "junior-physics-answer",
+      profileName: "classroom"
+    }));
+    const externalInputPath = path.join(externalRoot, "answer.md");
+    fs.writeFileSync(externalInputPath, "# 外部输入\n", "utf8");
+    fs.writeFileSync(path.join(root, "answer.pdf"), "pdf fixture", "utf8");
+    const manifestPath = path.join(root, "answer.delivery-manifest.json");
+
+    const written = await runTool("write-delivery-manifest.mjs", [
+      "--input", externalInputPath,
+      "--output", path.join(root, "answer.pdf"),
+      "--snapshot-path", snapshotPath,
+      "--out", manifestPath
+    ]);
+    assert.equal(written.status, 0, `writer stderr: ${written.stderr}`);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    assert.equal(manifest.status.reviewArtifactReady, false);
+    assert.equal(manifest.review.outputDir, "");
+    assert.equal(manifest.review.manifestPath, "");
+    assert.equal(manifest.input, "answer.delivery-input.md");
+    assert.equal(fs.existsSync(path.join(root, manifest.input)), true);
+
+    await fs.promises.cp(root, relocatedRoot, { recursive: true });
+    const validated = await runTool("validate-delivery-manifest.mjs", [
+      "--manifest", path.join(relocatedRoot, "answer.delivery-manifest.json")
+    ], { cwd: os.tmpdir() });
+    assert.equal(validated.status, 0,
+      `validator stderr: ${validated.stderr}\nstdout: ${validated.stdout}`);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(externalRoot, { recursive: true, force: true });
+    fs.rmSync(relocatedRoot, { recursive: true, force: true });
+  }
+});
+
+test("writer packages external answer graphics and validates after relocation", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-graphic-input-"));
+  const externalRoot = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-graphic-source-"));
+  const relocatedRoot = `${root}-moved`;
+  try {
+    const snapshotPath = path.join(root, "answer.snapshot.json");
+    writeJson(snapshotPath, compileResolvedSnapshot({
+      subjectPack: "junior-physics-answer",
+      profileName: "classroom"
+    }));
+    const sourceAssets = path.join(externalRoot, "assets");
+    fs.mkdirSync(sourceAssets, { recursive: true });
+    fs.writeFileSync(path.join(externalRoot, "answer.md"),
+      "# 参考答案\n<!-- answer-graphic: assets/placement.json -->\n", "utf8");
+    writeJson(path.join(sourceAssets, "placement.json"), {
+      schemaVersion: "1.0",
+      kind: "placed-answer-graphic",
+      placedGraphicId: "external-placed",
+      graphicId: "external-graphic",
+      artifactId: "external-artifact",
+      questionRef: "1",
+      placementMode: "inline-medium",
+      targetBlock: "answer-body",
+      figureWidthMm: 120,
+      captionMode: "inline",
+      pageBreakPolicy: "avoid",
+      previewPath: "preview.svg"
+    });
+    fs.writeFileSync(path.join(sourceAssets, "preview.svg"), "<svg></svg>\n", "utf8");
+    fs.writeFileSync(path.join(root, "answer.pdf"), "pdf fixture", "utf8");
+    const manifestPath = path.join(root, "answer.delivery-manifest.json");
+
+    const written = await runTool("write-delivery-manifest.mjs", [
+      "--input", path.join(externalRoot, "answer.md"),
+      "--output", path.join(root, "answer.pdf"),
+      "--snapshot-path", snapshotPath,
+      "--out", manifestPath
+    ]);
+    assert.equal(written.status, 0, `writer stderr: ${written.stderr}`);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    assert.deepEqual(manifest.graphics.items.map((item) => item.graphicId), ["external-graphic"]);
+    assert.equal(manifest.graphics.items[0].placementPath, "assets/placement.json");
+    assert.equal(manifest.graphics.items[0].previewPath, "assets/preview.svg");
+    assert.ok(fs.existsSync(path.join(root, "assets", "placement.json")));
+    assert.ok(fs.existsSync(path.join(root, "assets", "preview.svg")));
+
+    await fs.promises.cp(root, relocatedRoot, { recursive: true });
+    const validated = await runTool("validate-delivery-manifest.mjs", [
+      "--manifest", path.join(relocatedRoot, "answer.delivery-manifest.json")
+    ], { cwd: os.tmpdir() });
+    assert.equal(validated.status, 0,
+      `validator stderr: ${validated.stderr}\nstdout: ${validated.stdout}`);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(externalRoot, { recursive: true, force: true });
+    fs.rmSync(relocatedRoot, { recursive: true, force: true });
+  }
+});
+
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");

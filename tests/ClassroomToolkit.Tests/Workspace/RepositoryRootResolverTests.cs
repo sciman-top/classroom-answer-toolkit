@@ -70,4 +70,26 @@ public sealed class RepositoryRootResolverTests
             Directory.Delete(tempRoot, recursive: true);
         }
     }
+
+    [Fact]
+    public void ResolveRepositoryRoot_FailsClosedForInvalidExplicitOverride()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-invalid-override-{Guid.NewGuid():N}");
+        var invalidRoot = Path.Combine(tempRoot, "not-a-workspace");
+        Directory.CreateDirectory(invalidRoot);
+
+        try
+        {
+            var resolver = new RepositoryRootResolver(tempRoot, invalidRoot);
+
+            var action = () => resolver.ResolveRepositoryRoot();
+
+            action.Should().Throw<InvalidOperationException>()
+                .WithMessage($"*{invalidRoot}*");
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
 }

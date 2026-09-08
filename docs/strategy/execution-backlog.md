@@ -6,7 +6,7 @@
 
 - status: blocked
 - goal: 针对真实错题建立有限、可验证的部件定位和结构化读数。
-- unlock_conditions: EVAL-101 verified；真实部件标注 authority 可用；provider endpoint 稳定；四类对象和预算获批。
+- unlock_conditions: 视觉读数 eval 基线 verified（原 EVAL-101，任务定义已按政策只留 Git 历史）；真实部件标注 authority 可用；provider endpoint 稳定；四类对象和预算获批。
 - forbidden_write_set: 通用 OCR/layout 平台、synthetic 证据链、审批队列、信任聚合系统。
 - truth_boundary: 局部读数正确不自动提升整卷 trusted 或 teacher accepted。
 - stop_conditions: 任一 unlock 条件缺失即保持 blocked；2026-08-02 audit 仍缺 authority、provider 稳定性和预算。

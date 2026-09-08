@@ -52,6 +52,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
     private static readonly Version DevelopmentVersion = new(0, 0, 0);
     private const string LegacyWorkspaceContract = "1";
+    private const long MaximumDownloadBytes = 1024L * 1024L * 1024L;
     private readonly HttpClient _httpClient;
     private readonly string _repositoryRoot;
     private readonly string _manifestUrl;
@@ -83,7 +84,15 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
         try
         {
-            using var response = await _httpClient.GetAsync(_manifestUrl, cancellationToken).ConfigureAwait(false);
+            if (!Uri.TryCreate(_manifestUrl, UriKind.Absolute, out var manifestUri))
+            {
+                return UpdateCheckResult.Unavailable("更新清单 URL 无效");
+            }
+
+            using var response = await GetApprovedResponseAsync(
+                manifestUri,
+                HttpCompletionOption.ResponseContentRead,
+                cancellationToken).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return UpdateCheckResult.Unavailable("GitHub Release 尚未发布更新清单");
@@ -98,6 +107,13 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             if (manifest is null)
             {
                 return UpdateCheckResult.Unavailable("更新清单为空");
+            }
+            if (!string.Equals(manifest.Kind, "classroom-toolkit-update-manifest", StringComparison.Ordinal)
+                || !string.Equals(manifest.SchemaVersion, "2.0", StringComparison.Ordinal))
+            {
+                // Only the stable 2.0 manifest carries the installer asset the
+                // auto-update flow consumes; anything else needs a manual setup.
+                return UpdateCheckResult.Unavailable("更新清单 schema 不受支持，请手动下载新安装程序");
             }
 
             var currentVersion = _currentVersion ?? GetCurrentVersion();
@@ -149,7 +165,13 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         {
             throw;
         }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException or InvalidOperationException or OperationCanceledException)
+        catch (Exception ex) when (ex is HttpRequestException
+            or IOException
+            or JsonException
+            or InvalidDataException
+            or InvalidOperationException
+            or UriFormatException
+            or OperationCanceledException)
         {
             // HttpClient's own 30s timeout surfaces as TaskCanceledException with
             // the caller's token untouched, so the first filter does not take it;
@@ -180,24 +202,32 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         var setupPath = Path.Combine(
             Path.GetTempPath(),
             $"ClassroomToolkit-{update.Version}-{Guid.NewGuid():N}-setup.exe");
+        var started = false;
         try
         {
-            using var response = await _httpClient.GetAsync(
-                update.PackageUrl,
+            if (!Uri.TryCreate(update.PackageUrl, UriKind.Absolute, out var packageUri))
+            {
+                throw new InvalidDataException("更新资产 URL 无效");
+            }
+
+            using var response = await GetApprovedResponseAsync(
+                packageUri,
                 HttpCompletionOption.ResponseHeadersRead,
                 cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-            await using (var destination = new FileStream(
-                setupPath,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                1024 * 128,
-                FileOptions.Asynchronous | FileOptions.SequentialScan))
+            // Reject a mismatched payload before streaming it to disk so a
+            // redirected or oversized asset cannot consume unbounded space.
+            var declaredContentLength = response.Content.Headers.ContentLength;
+            if (declaredContentLength is long contentLength && contentLength != update.PackageBytes)
             {
-                await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+                throw new InvalidDataException($"更新安装程序大小不匹配：expected {update.PackageBytes}, actual {contentLength}");
             }
+
+            await CopyResponseToFileBoundedAsync(
+                response.Content,
+                setupPath,
+                update.PackageBytes,
+                cancellationToken).ConfigureAwait(false);
 
             var setupInfo = new FileInfo(setupPath);
             if (setupInfo.Length != update.PackageBytes)
@@ -258,25 +288,37 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             }
 
             Process.Start(startInfo)?.Dispose();
+            started = true;
             return new UpdateInstallResult(true, $"已启动 {update.Version} 安装程序，应用即将重启");
         }
         catch (Exception ex) when (ex is HttpRequestException
             or IOException
+            or InvalidDataException
+            or UnauthorizedAccessException
             or InvalidOperationException
-            or System.ComponentModel.Win32Exception)
+            or System.ComponentModel.Win32Exception
+            or CryptographicException)
         {
-            try
+            return new UpdateInstallResult(false, $"无法启动更新安装程序：{ex.Message}");
+        }
+        finally
+        {
+            // Every failure path (integrity, trust, launch, cancellation)
+            // must remove the staged installer; only a started installer
+            // legitimately keeps the file alive.
+            if (!started)
             {
-                if (File.Exists(setupPath))
+                try
                 {
-                    File.Delete(setupPath);
+                    if (File.Exists(setupPath))
+                    {
+                        File.Delete(setupPath);
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
                 }
             }
-            catch (IOException)
-            {
-            }
-
-            return new UpdateInstallResult(false, $"无法启动更新安装程序：{ex.Message}");
         }
     }
 
@@ -378,12 +420,23 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             return "更新资产 SHA-256 格式无效";
         }
 
-        return bytes > 0 ? null : "更新资产大小必须为正数";
+        if (bytes <= 0)
+        {
+            return "更新资产大小必须为正数";
+        }
+
+        return bytes <= MaximumDownloadBytes
+            ? null
+            : $"更新资产大小超过允许上限 {MaximumDownloadBytes} bytes";
     }
 
     private static HttpClient CreateHttpClient()
     {
-        var client = new HttpClient
+        var handler = new HttpClientHandler
+        {
+            AllowAutoRedirect = false
+        };
+        var client = new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(30)
         };
@@ -391,8 +444,101 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         return client;
     }
 
+    private async Task<HttpResponseMessage> GetApprovedResponseAsync(
+        Uri initialUri,
+        HttpCompletionOption completionOption,
+        CancellationToken cancellationToken)
+    {
+        var currentUri = initialUri;
+        for (var redirect = 0; redirect <= 5; redirect++)
+        {
+            EnsureAllowedDownloadUri(currentUri);
+            using var request = new HttpRequestMessage(HttpMethod.Get, currentUri);
+            var response = await _httpClient.SendAsync(request, completionOption, cancellationToken).ConfigureAwait(false);
+            if (IsRedirect(response.StatusCode))
+            {
+                if (redirect >= 5 || response.Headers.Location is null)
+                {
+                    response.Dispose();
+                    throw new InvalidDataException("更新下载 redirect 链无效或过长");
+                }
+
+                var nextUri = response.Headers.Location.IsAbsoluteUri
+                    ? response.Headers.Location
+                    : new Uri(currentUri, response.Headers.Location);
+                response.Dispose();
+                currentUri = nextUri;
+                continue;
+            }
+
+            // The client is configured with auto-redirect disabled. Check the
+            // final request URI as a defense-in-depth guard for injected/custom
+            // handlers that may still follow redirects internally.
+            EnsureAllowedDownloadUri(response.RequestMessage?.RequestUri ?? currentUri);
+            return response;
+        }
+
+        throw new InvalidDataException("更新下载 redirect 链过长");
+    }
+
+    private static bool IsRedirect(HttpStatusCode statusCode) =>
+        statusCode is HttpStatusCode.MovedPermanently
+            or HttpStatusCode.Found
+            or HttpStatusCode.SeeOther
+            or HttpStatusCode.TemporaryRedirect
+            or HttpStatusCode.PermanentRedirect;
+
+    private static void EnsureAllowedDownloadUri(Uri uri)
+    {
+        if (uri.Scheme != Uri.UriSchemeHttps || !IsAllowedDownloadHost(uri.Host))
+        {
+            throw new InvalidDataException($"更新下载 redirect 指向不受信任的地址：{uri}");
+        }
+    }
+
+    private static async Task CopyResponseToFileBoundedAsync(
+        HttpContent content,
+        string targetPath,
+        long expectedBytes,
+        CancellationToken cancellationToken)
+    {
+        if (expectedBytes <= 0 || expectedBytes > MaximumDownloadBytes)
+        {
+            throw new InvalidDataException($"更新安装程序大小超出允许范围：{expectedBytes} bytes");
+        }
+
+        await using var source = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        await using var destination = new FileStream(
+            targetPath,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            1024 * 128,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        var buffer = new byte[1024 * 128];
+        long totalBytes = 0;
+        int read;
+        while ((read = await source.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) > 0)
+        {
+            totalBytes += read;
+            if (totalBytes > expectedBytes || totalBytes > MaximumDownloadBytes)
+            {
+                throw new InvalidDataException("更新安装程序超过声明的大小限制");
+            }
+
+            await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+        }
+
+        if (totalBytes != expectedBytes)
+        {
+            throw new InvalidDataException($"更新安装程序大小不匹配：expected {expectedBytes}, actual {totalBytes}");
+        }
+    }
+
     private sealed class ReleaseUpdateManifest
     {
+        public string? SchemaVersion { get; set; }
+        public string? Kind { get; set; }
         public string? Version { get; set; }
         public string? WorkspaceContract { get; set; }
         public string? ReleaseUrl { get; set; }
@@ -462,14 +608,18 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             public uint StructureSize = (uint)Marshal.SizeOf<WinTrustData>();
             public IntPtr PolicyCallbackData = IntPtr.Zero;
             public IntPtr SipClientData = IntPtr.Zero;
-            public uint UIChoice = 2;
-            public uint RevocationChecks = 0;
-            public uint UnionChoice = 1;
+            public uint UIChoice = 2; // WTD_UI_NONE
+            // WTD_REVOKE_NONE here on purpose: online revocation is enforced
+            // via ProviderFlags (WTD_REVOCATION_CHECK_ONLINE). Setting
+            // WTD_REVOKE_WHOLECHAIN instead crashed wintrust.dll on malformed
+            // unsigned input (native AV), so do not "harden" this field.
+            public uint RevocationChecks = 0; // WTD_REVOKE_NONE
+            public uint UnionChoice = 1; // WTD_CHOICE_FILE
             public IntPtr FileInfo;
             public uint StateAction = 0;
             public IntPtr StateData = IntPtr.Zero;
             public string? UrlReference = null;
-            public uint ProviderFlags = 0x00000080;
+            public uint ProviderFlags = 0x00000080; // WTD_REVOCATION_CHECK_ONLINE
             public uint UIContext = 0;
 
             public WinTrustData(WinTrustFileInfo fileInfo)

@@ -1,3 +1,4 @@
+#requires -Version 7
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [ValidateSet("Install", "Uninstall", "Status", "RunOnce")]

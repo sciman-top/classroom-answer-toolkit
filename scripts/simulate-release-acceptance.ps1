@@ -398,6 +398,72 @@ try {
         $exitedProcess.Dispose()
     }
 
+    $stableAppAsset = @($manifest.assets | Where-Object { $_.kind -eq "app" }) | Select-Object -First 1
+    $stableManifest = [ordered]@{
+        schemaVersion = "2.0"
+        kind = "classroom-toolkit-update-manifest"
+        channel = "stable"
+        audience = "ordinary-users"
+        version = $Version
+        workspaceContract = "2"
+        sourceCommit = $currentCommit
+        assets = @(
+            [ordered]@{
+                kind = "installer"
+                name = [string]$stableAppAsset.name
+                url = "$serverBaseUrl/$([Uri]::EscapeDataString([string]$stableAppAsset.name))"
+                sha256 = [string]$stableAppAsset.sha256
+                bytes = [long]$stableAppAsset.bytes
+            }
+        )
+    }
+    $stableManifestPath = Join-Path $serverRoot "stable-update-manifest.json"
+    [IO.File]::WriteAllText(
+        $stableManifestPath,
+        (($stableManifest | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
+        [Text.UTF8Encoding]::new($false))
+
+    Invoke-Scenario -Name "stable-installer-verified" -Summary "Verifies the stable-channel manifest, preserves the installer asset, and refuses -Destination." -Action {
+        $result = Invoke-PwshScript -ScriptPath (Join-Path $repoRoot "scripts/install-release.ps1") -Arguments @(
+            "-ManifestUrl", "$serverBaseUrl/stable-update-manifest.json",
+            "-AllowLocalSimulation")
+        Assert-Success -Result $result -Operation "stable installer verification"
+        if ($result.Output -notmatch "Verified ClassroomToolkit") {
+            throw "Stable channel did not report a verified installer: $($result.OutputTail)"
+        }
+        if ($result.Output -match "installer: ([^\r\n]+)") {
+            $keptInstaller = $Matches[1].Trim()
+            if (Test-Path -LiteralPath $keptInstaller -PathType Leaf) {
+                Remove-Item -LiteralPath (Split-Path -Parent $keptInstaller) -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
+    Invoke-Scenario -Name "stable-destination-rejection" -Summary "Rejects -Destination on the stable channel because the installer owns its location." -Action {
+        $result = Invoke-PwshScript -ScriptPath (Join-Path $repoRoot "scripts/install-release.ps1") -Arguments @(
+            "-ManifestUrl", "$serverBaseUrl/stable-update-manifest.json",
+            "-Destination", (Join-Path $simulationRoot "stable-dest"),
+            "-AllowLocalSimulation")
+        Assert-ExpectedFailure -Result $result -Operation "stable destination install" -ExpectedText "manages its own install location"
+    }
+
+    Invoke-Scenario -Name "unsupported-schema-rejection" -Summary "Rejects an update manifest with an unsupported schema version." -Action {
+        $futureManifestPath = Join-Path $serverRoot "future-update-manifest.json"
+        $futureManifest = [ordered]@{}
+        foreach ($property in $stableManifest.Keys) {
+            $futureManifest[$property] = $stableManifest[$property]
+        }
+        $futureManifest.schemaVersion = "9.9"
+        [IO.File]::WriteAllText(
+            $futureManifestPath,
+            (($futureManifest | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
+            [Text.UTF8Encoding]::new($false))
+        $result = Invoke-PwshScript -ScriptPath (Join-Path $repoRoot "scripts/install-release.ps1") -Arguments @(
+            "-ManifestUrl", "$serverBaseUrl/future-update-manifest.json",
+            "-AllowLocalSimulation")
+        Assert-ExpectedFailure -Result $result -Operation "future schema install" -ExpectedText "Unsupported update manifest"
+    }
+
     $privatePackage = Join-Path $simulationRoot "private-transfer.zip"
     $privateDestination = Join-Path $simulationRoot "private-import"
     [IO.Directory]::CreateDirectory((Join-Path $privateDestination "workspace")) | Out-Null
@@ -459,6 +525,7 @@ finally {
         simulatedCapabilities = @(
             "loopback verified download",
             "empty and occupied destination install",
+            "stable manifest installer verification",
             "successful update and smoke restart",
             "replacement failure and rollback",
             "PrivateDev transfer and .env preservation"

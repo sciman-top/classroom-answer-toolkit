@@ -13,7 +13,9 @@ function parseArgs(argv) {
   return parseArgvFlags(argv, {
     stringFlags: { assembly: true },
     booleanFlags: { check: true },
-    defaults: { assembly: null, check: false }
+    defaults: { assembly: null, check: false },
+    // A typo'd --check must not silently flip check mode into overwrite mode.
+    unknownFlag: "error"
   });
 }
 
@@ -24,7 +26,7 @@ function normalizeNewlines(text) {
 }
 
 function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
 }
 
 function listAssemblyFiles() {

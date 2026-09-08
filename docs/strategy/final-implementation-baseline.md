@@ -42,7 +42,7 @@ SourceExam
 以下能力不属于当前产品主链：synthetic 视觉观察/诊断/语义投影链、visual-evidence 聚合信任链、sample flywheel、review queue、synthetic answer generator、image-generation provider lane、Typst migration contract 和实验 answer-graphics CLI。
 
 - 不得新增对这些模块的 schema、WPF 控件、gate 或 roadmap 承诺。
-- frozen 工具、专属 schema 和 fixture 已由 ARCH-101 从 active tree 删除；WPF DTO 与空项目由独立 ARCH-102 切片处理。
+- frozen 工具、专属 schema 和 fixture 已从 active tree 删除，WPF DTO 与空项目也已独立清理（两个切片的任务定义已按政策只留 Git 历史）。
 - Git 历史和 change-evidence 承担追溯；不把旧代码、临时渲染产物、`.answer-graphics/` 或根目录旧提示词复制到 active tree。
 
 ## Invariants

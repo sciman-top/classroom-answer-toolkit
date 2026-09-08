@@ -47,7 +47,8 @@ function buildWorkflowRunReceipt({ status = "succeeded" } = {}) {
       referencePdf: null,
       prompt: fileReceipt("prompt.md"),
       blindFocusRegions: null,
-      visualAuditFocusRegions: null
+      visualAuditFocusRegions: null,
+      configEnv: fileReceipt(".env")
     },
     options: {
       provider: "all",
@@ -67,7 +68,8 @@ function buildWorkflowRunReceipt({ status = "succeeded" } = {}) {
       skipVisualAudit: true,
       keepReview: false,
       useGatewayProxy: false,
-      configEnvFile: "D:\\repo\\.env"
+      configEnvFile: "D:\\repo\\.env",
+      optionsFingerprint: sha
     },
     phases: {
       blindGeneration: phase(status === "succeeded" ? "completed" : "failed",
