@@ -18,10 +18,13 @@
     "visual:compare": "node visual-regression.mjs",
     "visual:smoke": "node visual-regression-smoke.mjs",
     "validate:delivery-manifest": "node validate-delivery-manifest.mjs",
-    "write:delivery-manifest": "node write-delivery-manifest.mjs"
+    "write:delivery-manifest": "node write-delivery-manifest.mjs",
+    "export:docx": "node export-answer-docx.mjs",
+    "build:docx-reference": "node build-docx-reference.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.0",
+    "fflate": "^0.8.3",
     "katex": "^0.16.25",
     "markdown-it": "^14.3.0",
     "pdfjs-dist": "^6.2.108",

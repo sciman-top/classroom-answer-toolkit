@@ -24,7 +24,7 @@
 - 已真实跑通 2025 广州中考原卷到 Markdown/PDF 的完整链路。
 - 默认主链不再把单次整卷盲答直接送去排版：先以 4x 重渲染原卷，按 PDF.js 题号切成每题两个带重叠的高清视窗（续页继承题号）执行独立视觉审计，再进入可选参考答案复核。
 - 局部高清审计能降低滑轮、刻度尺和钩码计数错误，但不能保证消除所有仪表盘歧义；未经参考答案或人工复核仍不得声明答案可信。
-- 2024/2025 实跑交付位于 `正式交付/`；仓内 `广州物理中考试卷/` 是明确版本化的广州真题 golden corpus。其他用户原卷仍可从任意路径输入，无需复制进仓库。
+- 2015-2026 实跑交付位于 `正式交付/广州物理中考参考答案/`（每年 PDF + Markdown + DOCX 三格式，目录结构与 `习题/` 一致）；`习题/广州物理中考试卷/` 是明确版本化的广州真题 golden corpus。其他用户原卷仍可从任意路径输入，无需复制进仓库。
 - 新实跑输出默认经 `scripts/archive-delivery-run.ps1` 归档到仓外并不入 Git（2017-2023 历史归档见 `docs/change-evidence/20260823-archive-2017-2023-deliveries.md`）；仅当同时具备可重复回归价值、权威输入来源、完整 hash/回执与明确真值边界时，才通过显式基线切片准入。
 - 可复现的页面图、裁剪图和诊断输出只写入 ignored `tmp/`；不得把它们重新提交。长期回归仅保留 `eval/real-paper/` 的最小 hash-bound 基准。
 
@@ -34,9 +34,9 @@
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-live-answer-workflow.ps1 `
-  -SourcePdf "广州物理中考试卷/2025广州中考.pdf" `
-  -ReferencePdf "广州物理中考试卷/2025广州中考（答案）.pdf" `
-  -OutputDirectory "正式交付/2025广州中考" `
+  -SourcePdf "习题/广州物理中考试卷/2025广州中考.pdf" `
+  -ReferencePdf "习题/广州物理中考试卷/2025广州中考（答案）.pdf" `
+  -OutputDirectory "tmp/runs/2025广州中考" `
   -KeepReview
 ```
 
@@ -50,11 +50,17 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-live-answer-workflow.p
 
 ```powershell
 npm --prefix tools/latex-renderer run deliver -- `
-  "正式交付/2025广州中考/2025广州中考参考答案.md" `
-  "正式交付/2025广州中考/2025广州中考参考答案.pdf" `
+  "正式交付/广州物理中考参考答案/2025广州中考参考答案.md" `
+  "正式交付/广州物理中考参考答案/2025广州中考参考答案.pdf" `
   --subject-pack junior-physics-answer `
   --profile classroom `
   --keep-review
+```
+
+从已交付的答案 Markdown 导出 Word 版本（LaTeX 公式转为 Word 原生 OMML 公式）：
+
+```powershell
+node tools/latex-renderer/export-answer-docx.mjs --markdown "正式交付/广州物理中考参考答案/2025广州中考参考答案.md"
 ```
 
 live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不存储密钥。
