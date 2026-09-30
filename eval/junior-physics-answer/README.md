@@ -29,6 +29,28 @@ render workflow.
 - backtick-wrapped math hard-gate regression
 - unbalanced LaTeX dollar hard-gate regression
 
+## Visual baseline comparison
+
+`baselines/visual/*.png` are compared against a fresh render with
+`tools/latex-renderer/visual-regression.mjs`, gated at `--max-diff-ratio 0.005`.
+
+A pixel only counts as different when some channel differs by more than
+`--channel-tolerance` (default 32/255). Exact equality is unusable for a
+cross-machine gate: the same page rendered on a developer machine and on a CI
+runner differs on roughly three quarters of its differing pixels by only
+1-16/255, purely from font antialiasing and browser rasterization. Measured on
+the six cases that used to fail CI, tolerance 32 moved the noise from
+0.51%-0.85% down to 0.00%-0.20%.
+
+The gate is not weakened by this: a deliberately injected layout regression
+(a heading margin changed from 15pt to 40pt) measured 1.70% at tolerance 0 and
+1.57% at tolerance 32, so it still fails by more than three times the threshold.
+Pass `--channel-tolerance 0` when you want the raw exact-equality count.
+
+Visual comparison is environment-coupled, so a failure also means "check the
+render environment", not necessarily "the layout regressed". Failed runs keep
+`.eval-work/` and CI uploads it as the `eval-work` artifact for that reason.
+
 ## Run
 
 ```powershell
