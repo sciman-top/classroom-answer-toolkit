@@ -34,7 +34,7 @@ public sealed class ArchiveDeliveryRunScriptTests
             var result = await RunScriptAsync(scriptPath, sandbox, driveRoot, runDirectory);
 
             result.ExitCode.Should().NotBe(0);
-            result.Output.Should().Contain("not a drive root");
+            result.NormalizedOutput.Should().Contain("not a drive root");
         }
         finally
         {
@@ -260,5 +260,18 @@ public sealed class ArchiveDeliveryRunScriptTests
         throw new InvalidOperationException("Repository root not found.");
     }
 
-    private sealed record ProcessResult(int ExitCode, string Output);
+    private sealed record ProcessResult(int ExitCode, string Output)
+    {
+        // Console error text is wrapped at the host width and every wrapped line
+        // carries a "|" gutter, so strip the gutter before collapsing whitespace
+        // or a phrase split across lines never matches.
+        public string NormalizedOutput
+        {
+            get
+            {
+                var withoutGutter = System.Text.RegularExpressions.Regex.Replace(Output, @"\r?\n\s*\|\s*", " ");
+                return string.Join(' ', withoutGutter.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            }
+        }
+    }
 }

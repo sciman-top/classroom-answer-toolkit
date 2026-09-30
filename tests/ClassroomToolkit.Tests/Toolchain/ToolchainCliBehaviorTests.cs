@@ -1062,7 +1062,7 @@ public sealed class ToolchainCliBehaviorTests
             "-KeepVersion", "1.0.1");
 
         result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("must be a directory named 'artifacts'");
+        result.NormalizedOutput.Should().Contain("must be a directory named 'artifacts'");
         // The guard exists to protect tracked source: prove it survived.
         Directory.Exists(Path.Combine(root, "tools")).Should().BeTrue();
         Directory.Exists(Path.Combine(root, "src")).Should().BeTrue();
@@ -1081,7 +1081,7 @@ public sealed class ToolchainCliBehaviorTests
             "-KeepVersion", "1.0.1");
 
         result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("must be a directory named 'artifacts'");
+        result.NormalizedOutput.Should().Contain("must be a directory named 'artifacts'");
     }
 
     [Fact]
@@ -1094,7 +1094,7 @@ public sealed class ToolchainCliBehaviorTests
             "-PublishDir", ".");
 
         result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("must stay under");
+        result.NormalizedOutput.Should().Contain("must stay under");
     }
 
     [Fact]
@@ -1108,7 +1108,7 @@ public sealed class ToolchainCliBehaviorTests
             "--profile", "classroom");
 
         result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("Invalid subject pack id");
+        result.NormalizedOutput.Should().Contain("Invalid subject pack id");
     }
 
     [Fact]
@@ -1139,5 +1139,20 @@ public sealed class ToolchainCliBehaviorTests
         throw new InvalidOperationException("Repository root not found.");
     }
 
-    private sealed record ProcessResult(int ExitCode, string Output);
+    private sealed record ProcessResult(int ExitCode, string Output)
+    {
+        // PowerShell wraps error text at the host width (which depends on the
+        // checkout path length) and prefixes every wrapped line with a "|"
+        // gutter. Without stripping the gutter a wrapped message reads
+        // "... must be a | directory named ...", so a multi-word assertion that
+        // passes on a short local path fails on CI.
+        public string NormalizedOutput
+        {
+            get
+            {
+                var withoutGutter = System.Text.RegularExpressions.Regex.Replace(Output, @"\r?\n\s*\|\s*", " ");
+                return string.Join(' ', withoutGutter.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            }
+        }
+    }
 }
