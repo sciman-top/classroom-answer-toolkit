@@ -262,16 +262,8 @@ public sealed class ArchiveDeliveryRunScriptTests
 
     private sealed record ProcessResult(int ExitCode, string Output)
     {
-        // Console error text is wrapped at the host width and every wrapped line
-        // carries a "|" gutter, so strip the gutter before collapsing whitespace
-        // or a phrase split across lines never matches.
-        public string NormalizedOutput
-        {
-            get
-            {
-                var withoutGutter = System.Text.RegularExpressions.Regex.Replace(Output, @"\r?\n\s*\|\s*", " ");
-                return string.Join(' ', withoutGutter.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-            }
-        }
+        // See ToolchainProcessOutput: ANSI escapes, the error-frame gutter and
+        // path-length-dependent wrapping all break naive message assertions.
+        public string NormalizedOutput => ToolchainProcessOutput.Normalize(Output);
     }
 }

@@ -1141,18 +1141,8 @@ public sealed class ToolchainCliBehaviorTests
 
     private sealed record ProcessResult(int ExitCode, string Output)
     {
-        // PowerShell wraps error text at the host width (which depends on the
-        // checkout path length) and prefixes every wrapped line with a "|"
-        // gutter. Without stripping the gutter a wrapped message reads
-        // "... must be a | directory named ...", so a multi-word assertion that
-        // passes on a short local path fails on CI.
-        public string NormalizedOutput
-        {
-            get
-            {
-                var withoutGutter = System.Text.RegularExpressions.Regex.Replace(Output, @"\r?\n\s*\|\s*", " ");
-                return string.Join(' ', withoutGutter.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-            }
-        }
+        // See ToolchainProcessOutput: ANSI escapes, the error-frame gutter and
+        // path-length-dependent wrapping all break naive message assertions.
+        public string NormalizedOutput => ToolchainProcessOutput.Normalize(Output);
     }
 }
