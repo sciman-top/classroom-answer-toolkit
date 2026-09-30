@@ -45,6 +45,13 @@ public sealed record UpdateInstallResult(
     bool Started,
     string Message);
 
+internal enum InstalledApplicationState
+{
+    NotInstalledCopy,
+    UpdateReady,
+    ManifestUnreadable
+}
+
 public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 {
     public const string DefaultManifestUrl =
@@ -77,7 +84,14 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
     public async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default)
     {
-        if (!CanUpdateInstalledApplication())
+        var installedState = GetInstalledApplicationState();
+        if (installedState == InstalledApplicationState.ManifestUnreadable)
+        {
+            // Fail closed and loudly: a corrupt manifest must not look like "no update".
+            return UpdateCheckResult.Unavailable("安装版 runtime-manifest.json 无法解析；请重新安装或修复应用后再检查更新");
+        }
+
+        if (installedState != InstalledApplicationState.UpdateReady)
         {
             return UpdateCheckResult.NoUpdate("当前是源码/调试运行，跳过安装版更新检查");
         }
@@ -185,7 +199,13 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!CanUpdateInstalledApplication())
+        var installedState = GetInstalledApplicationState();
+        if (installedState == InstalledApplicationState.ManifestUnreadable)
+        {
+            return new UpdateInstallResult(false, "安装版 runtime-manifest.json 无法解析；请重新安装或修复应用");
+        }
+
+        if (installedState != InstalledApplicationState.UpdateReady)
         {
             return new UpdateInstallResult(false, "当前不是可更新的安装版目录");
         }
@@ -330,19 +350,31 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         }
     }
 
-    private bool CanUpdateInstalledApplication()
+    /// <summary>
+    /// Distinguishes "this is not an installed copy" from "this is an installed
+    /// copy whose runtime manifest is present but unreadable". The latter used to
+    /// be reported as a successful "no update", silently disabling update checks.
+    /// </summary>
+    private InstalledApplicationState GetInstalledApplicationState()
     {
         if (!string.Equals(
             _applicationDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
             _repositoryRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
             StringComparison.OrdinalIgnoreCase))
         {
-            return false;
+            return InstalledApplicationState.NotInstalledCopy;
         }
 
-        var runtimeManifest = ReadRuntimeManifest();
+        var runtimeManifest = ReadRuntimeManifest(out var unreadable);
+        if (unreadable)
+        {
+            return InstalledApplicationState.ManifestUnreadable;
+        }
+
         return string.Equals(runtimeManifest?.DistributionMode, "installer", StringComparison.OrdinalIgnoreCase)
-            && File.Exists(Path.Combine(_applicationDirectory, "ClassroomToolkit.App.exe"));
+            && File.Exists(Path.Combine(_applicationDirectory, "ClassroomToolkit.App.exe"))
+            ? InstalledApplicationState.UpdateReady
+            : InstalledApplicationState.NotInstalledCopy;
     }
 
     private static Version GetCurrentVersion()
@@ -369,8 +401,11 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         return ParseWorkspaceContract(ReadRuntimeManifest()?.WorkspaceContract) ?? LegacyWorkspaceContract;
     }
 
-    private RuntimeManifest? ReadRuntimeManifest()
+    private RuntimeManifest? ReadRuntimeManifest() => ReadRuntimeManifest(out _);
+
+    private RuntimeManifest? ReadRuntimeManifest(out bool unreadable)
     {
+        unreadable = false;
         var manifestPath = Path.Combine(_repositoryRoot, "runtime-manifest.json");
         if (!File.Exists(manifestPath))
         {
@@ -380,11 +415,19 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         try
         {
             using var stream = File.OpenRead(manifestPath);
-            return JsonSerializer.Deserialize<RuntimeManifest>(stream,
+            var manifest = JsonSerializer.Deserialize<RuntimeManifest>(stream,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (manifest is null)
+            {
+                // Present but empty is corruption, not absence.
+                unreadable = true;
+            }
+
+            return manifest;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
+            unreadable = true;
             return null;
         }
     }

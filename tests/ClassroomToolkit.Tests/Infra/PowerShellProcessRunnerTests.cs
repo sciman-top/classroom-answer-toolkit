@@ -5,13 +5,13 @@ using FluentAssertions;
 
 namespace ClassroomToolkit.Tests.Infra;
 
+// These lifecycle tests intentionally launch real node/pwsh children from PATH
+// and include multi-second timeouts plus a 30s orphan-process wait, so they
+// belong to the integration gate: keeping them in the ordinary gate made it
+// take minutes and contradicted the documented Focused/Core/Full split.
+[Trait("Gate", "ToolchainIntegration")]
 public sealed class PowerShellProcessRunnerTests
 {
-    // These lifecycle tests intentionally launch real node/pwsh children from
-    // PATH: the repository's gates all require that toolchain (bootstrap.ps1
-    // installs it), so a missing executable fails fast with the runner's own
-    // actionable diagnostic instead of silently skipping.
-
     [Fact]
     public async Task RunAsync_StartsNodeExecutableOnWindows()
     {

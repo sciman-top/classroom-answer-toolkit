@@ -211,7 +211,13 @@ try {
     }
 
     $nodeArchivePath = Join-Path $workRoot "node-runtime.zip"
-    Invoke-WebRequest -UseBasicParsing -Uri ([string]$dependencies.node.archiveUrl) -OutFile $nodeArchivePath
+    $nodeArchiveUri = [uri]([string]$dependencies.node.archiveUrl)
+    # The pinned hash lives in this repository, so a redirect off the official
+    # distribution host would let a substituted archive fail only by accident.
+    if ($nodeArchiveUri.Scheme -ne "https" -or $nodeArchiveUri.Host.ToLowerInvariant() -ne "nodejs.org") {
+        throw "Node runtime archive must come from the official HTTPS host nodejs.org: $nodeArchiveUri"
+    }
+    Invoke-WebRequest -UseBasicParsing -Uri $nodeArchiveUri -OutFile $nodeArchivePath
     $nodeHash = Get-FileSha256 -PathValue $nodeArchivePath
     if ($nodeHash -ne ([string]$dependencies.node.sha256).ToLowerInvariant()) {
         throw "Node runtime archive SHA-256 mismatch. Expected $($dependencies.node.sha256), got $nodeHash."

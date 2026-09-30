@@ -3,6 +3,7 @@ import path from "node:path";
 import { Agent, EnvHttpProxyAgent, setGlobalDispatcher } from "undici";
 
 import { normalizeAnswerMarkdown } from "./answer-tasks.mjs";
+import { readResponseTextCapped, summarizeProviderErrorBody } from "../shared.mjs";
 import {
   assertLiveEgressAllowed,
   ExecutionSlotTimeoutError,
@@ -337,14 +338,6 @@ function extractTextOutput(parsed) {
   return "";
 }
 
-function summarizeBody(bodyText) {
-  try {
-    return JSON.stringify(JSON.parse(bodyText)).slice(0, 500);
-  } catch {
-    return bodyText.slice(0, 500);
-  }
-}
-
 function summarizeRequestError(error) {
   const message = error instanceof Error ? error.message : String(error);
   const cause = error && typeof error === "object" ? error.cause : null;
@@ -392,10 +385,15 @@ function parseRetryAfterMs(headers) {
     return 0;
   }
   const seconds = Number(raw);
-  if (!Number.isFinite(seconds) || seconds < 0) {
-    return 0;
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, 30_000);
   }
-  return Math.min(seconds * 1000, 30_000);
+  // RFC 7231 also allows an HTTP-date, which Number() cannot parse.
+  const retryAt = Date.parse(raw);
+  if (Number.isFinite(retryAt)) {
+    return Math.min(Math.max(retryAt - Date.now(), 0), 30_000);
+  }
+  return 0;
 }
 
 export function normalizeDetailForProvider(detail, visionModel) {
@@ -407,6 +405,10 @@ export function normalizeDetailForProvider(detail, visionModel) {
   return /^gpt-5\.6(?:-|$)/iu.test(visionModel ?? "") ? "original" : "high";
 }
 
+// Page images are inlined as base64, so an oversized file would multiply into
+// a request the provider rejects (or that exhausts memory) before any check.
+const maxInlineImageBytes = 24 * 1024 * 1024;
+
 function imageDataUrl(imagePath) {
   const extension = path.extname(imagePath).toLowerCase();
   const mimeType = extension === ".png"
@@ -414,6 +416,12 @@ function imageDataUrl(imagePath) {
     : extension === ".webp"
       ? "image/webp"
       : "image/jpeg";
+  const { size } = fs.statSync(imagePath);
+  if (size > maxInlineImageBytes) {
+    throw new Error(
+      `Image is too large to inline: ${imagePath} is ${size} bytes (limit ${maxInlineImageBytes}).`
+    );
+  }
   return `data:${mimeType};base64,${fs.readFileSync(imagePath).toString("base64")}`;
 }
 
@@ -507,7 +515,7 @@ async function callProvider(provider, options) {
       },
       body: requestBody
     });
-    const bodyText = await response.text();
+    const bodyText = await readResponseTextCapped(response);
     if (!response.ok) {
       return {
         provider: provider.role,
@@ -521,7 +529,7 @@ async function callProvider(provider, options) {
         retryable: isRetryableGatewayFailure(response.status),
         status: response.status,
         retryAfterMs: parseRetryAfterMs(response.headers),
-        error: summarizeBody(bodyText)
+        error: summarizeProviderErrorBody(bodyText)
       };
     }
     let parsed;

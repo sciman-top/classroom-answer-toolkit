@@ -28,10 +28,14 @@ creates the signed setup EXE, portable ZIP and source ZIP, writes
 `install-manifest.json` and `update-manifest.json`, generates an SPDX SBOM and
 provenance attestations, and publishes those assets to the GitHub Release.
 
-The existing `v1.0.1` Release is a legacy tag snapshot. Version `1.0.3` and
-later are represented only when their matching tag runs this workflow. Do not replace an existing
-Release asset manually with a locally generated ZIP; the manifest, SBOM and
+The existing `v1.0.1` Release is a legacy tag snapshot. Later versions are
+represented only when their matching tag runs this workflow. Do not replace an
+existing Release asset manually with a locally generated ZIP; the manifest, SBOM and
 attestation must be produced by the same clean tagged source.
+
+`<版本>` below is always the `<Version>` in
+`src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` (currently 1.0.4);
+`package-release.ps1` rejects a mismatch.
 
 The manifest binds each asset to a URL, byte count and SHA-256, plus a
 `workspaceContract`. The installed WPF app only accepts a newer semantic

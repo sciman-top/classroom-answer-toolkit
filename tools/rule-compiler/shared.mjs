@@ -10,6 +10,7 @@ const repoRoot = path.resolve(toolDir, "..", "..");
 const subjectPackAliases = new Map([
   ["physics-answer", "junior-physics-answer"]
 ]);
+const subjectPackNamePattern = /^[a-z0-9][a-z0-9-]{0,63}$/u;
 
 export function normalizeSubjectPackName(subjectPack, fallback = "junior-physics-answer") {
   if (typeof subjectPack !== "string" || subjectPack.trim().length === 0) {
@@ -17,7 +18,18 @@ export function normalizeSubjectPackName(subjectPack, fallback = "junior-physics
   }
 
   const trimmed = subjectPack.trim();
-  return subjectPackAliases.get(trimmed) ?? trimmed;
+  const canonical = subjectPackAliases.get(trimmed) ?? trimmed;
+
+  // The value is concatenated into repository paths such as
+  // prompts/<pack>/manifest.json, so an unvalidated name ("../../x") would read
+  // and write outside the repository. Subject pack ids are kebab-case only.
+  if (!subjectPackNamePattern.test(canonical)) {
+    throw new Error(
+      `Invalid subject pack id: ${JSON.stringify(subjectPack)}. Expected lowercase kebab-case, e.g. "junior-physics-answer".`
+    );
+  }
+
+  return canonical;
 }
 
 export function getDefaultSubjectPackName() {

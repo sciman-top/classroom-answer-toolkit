@@ -53,6 +53,32 @@ function Invoke-Scenario {
     }
 }
 
+# Start-Process -Wait has no timeout: a hung app or installer would block the
+# acceptance run forever. smoke-installed-app.ps1 already bounds its wait.
+$script:ProcessTimeoutSeconds = 600
+
+function Wait-ProcessBounded {
+    param(
+        [Parameter(Mandatory = $true)][Diagnostics.Process]$Process,
+        [Parameter(Mandatory = $true)][string]$Description,
+        [int]$TimeoutSeconds = $script:ProcessTimeoutSeconds
+    )
+
+    if (-not $Process.WaitForExit($TimeoutSeconds * 1000)) {
+        try {
+            $Process.Kill($true)
+        }
+        catch {
+            # Best effort: the timeout below still fails the scenario.
+        }
+        throw "$Description did not exit within $TimeoutSeconds seconds and was terminated."
+    }
+    # Flush the asynchronous redirected-output readers before the caller reads
+    # the log files, otherwise the tail of the output can be missing.
+    $Process.WaitForExit()
+    return $Process.ExitCode
+}
+
 function Invoke-AppSmoke {
     param([Parameter(Mandatory = $true)][string]$Root)
 
@@ -64,12 +90,12 @@ function Invoke-AppSmoke {
         -WindowStyle Hidden `
         -RedirectStandardOutput $stdout `
         -RedirectStandardError $stderr `
-        -Wait `
         -PassThru
+    $exitCode = Wait-ProcessBounded -Process $process -Description "Application smoke"
     $output = if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout -Raw } else { "" }
     $errorOutput = if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr -Raw } else { "" }
-    if ($process.ExitCode -ne 0 -or $output -notmatch "workspaceHealthy=True") {
-        throw "Application smoke failed (exit $($process.ExitCode)): $output $errorOutput"
+    if ($exitCode -ne 0 -or $output -notmatch "workspaceHealthy=True") {
+        throw "Application smoke failed (exit $exitCode): $output $errorOutput"
     }
 }
 
@@ -82,10 +108,10 @@ function Invoke-Setup {
             "/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS",
             "/DIR=$installRoot", "/LOG=$logPath") `
         -WindowStyle Hidden `
-        -Wait `
         -PassThru
-    if ($process.ExitCode -ne 0) {
-        throw "Installer failed (exit $($process.ExitCode)); log: $logPath"
+    $exitCode = Wait-ProcessBounded -Process $process -Description "Installer"
+    if ($exitCode -ne 0) {
+        throw "Installer failed (exit $exitCode); log: $logPath"
     }
 }
 

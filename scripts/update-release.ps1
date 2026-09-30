@@ -16,6 +16,9 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 $script:MaximumDownloadBytes = 1GB
 
+# Runs from inside a downloaded update package after the app has been replaced,
+# so it must stay self-contained: Assert-ContainedPath / Assert-ApprovedGitHubUri
+# deliberately duplicate transfer-common.ps1 rather than dot-source it.
 function Resolve-AbsolutePath {
     param([Parameter(Mandatory = $true)][string]$PathValue)
     return [IO.Path]::GetFullPath($PathValue)
@@ -67,8 +70,15 @@ function Assert-ApprovedGitHubUri {
     if ($AllowLocalSimulation -and $UriValue.IsLoopback -and @("http", "https") -contains $UriValue.Scheme.ToLowerInvariant()) {
         return
     }
-    $allowedHosts = @("github.com", "objects.githubusercontent.com")
-    if ($UriValue.Scheme -ne "https" -or (-not ($allowedHosts -contains $UriValue.Host.ToLowerInvariant()) -and -not $UriValue.Host.EndsWith(".githubusercontent.com", [StringComparison]::OrdinalIgnoreCase))) {
+    # Explicit hosts only: a bare ".githubusercontent.com" suffix would also
+    # admit any attacker-registrable subdomain of that zone.
+    $allowedHosts = @(
+        "github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+        "github-releases.githubusercontent.com"
+    )
+    if ($UriValue.Scheme -ne "https" -or -not ($allowedHosts -contains $UriValue.Host.ToLowerInvariant())) {
         throw "Update URL must use an approved GitHub HTTPS host: $UriValue"
     }
 }
@@ -222,6 +232,21 @@ try {
     }
 
     if (Test-Path -LiteralPath $targetApp) {
+        # One sibling backup per update run would accumulate forever; keep the
+        # newest recovery point for each kind and report what was pruned.
+        foreach ($suffixPrefix in @(".backup.", ".failed.")) {
+            $pattern = "$([IO.Path]::GetFileName($targetApp))$suffixPrefix*"
+            $staleBackups = @(
+                Get-ChildItem -LiteralPath $targetParent -Force -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -like $pattern } |
+                    Sort-Object -Property LastWriteTimeUtc -Descending |
+                    Select-Object -Skip 1
+            )
+            foreach ($stale in $staleBackups) {
+                Write-Host "Removing superseded backup: $($stale.FullName)"
+                Remove-Item -LiteralPath $stale.FullName -Recurse -Force
+            }
+        }
         Move-Item -LiteralPath $targetApp -Destination $backupPath
     }
     Move-Item -LiteralPath $stagedApp -Destination $targetApp

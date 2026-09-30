@@ -24,7 +24,9 @@
 - 已真实跑通 2025 广州中考原卷到 Markdown/PDF 的完整链路。
 - 默认主链不再把单次整卷盲答直接送去排版：先以 4x 重渲染原卷，按 PDF.js 题号切成每题两个带重叠的高清视窗（续页继承题号）执行独立视觉审计，再进入可选参考答案复核。
 - 局部高清审计能降低滑轮、刻度尺和钩码计数错误，但不能保证消除所有仪表盘歧义；未经参考答案或人工复核仍不得声明答案可信。
-- 2015-2026 实跑交付位于 `正式交付/广州物理中考参考答案/`（每年 PDF + Markdown + DOCX 三格式，目录结构与 `习题/` 一致）；`习题/广州物理中考试卷/` 是明确版本化的广州真题 golden corpus。其他用户原卷仍可从任意路径输入，无需复制进仓库。
+- 2015-2026 的答案文件位于 `正式交付/广州物理中考参考答案/`（每年 PDF + Markdown + DOCX 三格式，目录结构与 `习题/` 一致）；`习题/广州物理中考试卷/` 是明确版本化的广州真题 golden corpus。其他用户原卷仍可从任意路径输入，无需复制进仓库。
+- 该目录是**版本化 golden 副本，不是交付 manifest 的载体**：它按设计只保留三格式成品，不含 `*.delivery-manifest.json`、同目录 snapshot 和 `<PDF基名>.review/`。逐字节交付证据只随 `scripts/run-live-answer-workflow.ps1` 的新实跑产生，不要用本目录反推某次交付的完整性。
+- 2026 的入库状态与回归基线是两件事：2026 的三格式成品已存在，但按 `docs/strategy/product-prd.md` 与 `execution-backlog.md` 的 `BASELINE-2026-101`，2026 仍未取得"首次真实运行授权 + 纳入长期回归"的决策，因此**不得把 2026 称为 baseline 或已完成的回归链**。
 - 新实跑输出默认经 `scripts/archive-delivery-run.ps1` 归档到仓外并不入 Git（2017-2023 历史归档见 `docs/change-evidence/20260823-archive-2017-2023-deliveries.md`）；仅当同时具备可重复回归价值、权威输入来源、完整 hash/回执与明确真值边界时，才通过显式基线切片准入。
 - 可复现的页面图、裁剪图和诊断输出只写入 ignored `tmp/`；不得把它们重新提交。长期回归仅保留 `eval/real-paper/` 的最小 hash-bound 基准。
 
@@ -89,19 +91,23 @@ dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug 
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Core -SubjectPack junior-physics-answer
 ```
 
-AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试；workflow、publish、packaging 或 Node CLI 合同再运行 `Gate=ToolchainIntegration` 的 20 项 .NET 集成测试。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
+AI gateway、renderer 和 eval 改动运行各自 package 的 focused Node 测试；workflow、publish、packaging 或 Node CLI 合同再运行 `Gate=ToolchainIntegration` 的 .NET 集成测试（该集合包含真实启动 node/pwsh 的进程生命周期用例，耗时以分钟计）。Core 只做联合资产合同与目标 subject-pack 的 profile snapshot，通常数秒完成；不再捆绑无关 gateway/renderer 测试或 PDF eval。共享 spec/schema、跨学科或 release 变化才使用 `-Mode Full`。Core/Full 已内置一次 `validate:assets`，不要在外层重复执行。
+
+`Gate!=ToolchainIntegration` 的普通集合只保留纯单元/文件系统用例，以便快速反馈；不要往其中新增需要真实外部进程的测试。
 
 Full 中共享 renderer/layout/delivery 回归只由 `junior-physics-answer` eval 承担一次；廉价 manifest 合同独立验证负向边界。Senior/Math 仍使用各自 snapshot 和独有 sentinel，不能把共享回归去重解释为跳过跨学科合同。
 
 `scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；可选 OCR 由 renderer 的 `review-source-pdf --ocr` 显式启用。
 
-## 弃用入口（2026-09-30 移除）
+## 弃用入口（2026-09-30 到期）
 
-以下手动入口无主链调用方，已进入弃用窗口；期限后再无依赖即删除，删除方案与证据另行走独立切片：
+以下手动入口无主链调用方，弃用窗口已于 2026-09-30 到期。2026-09-30 的消费者审计确认 active workflow、tests、package scripts 和 verifier 均无引用（详见下方逐项），删除前置条件已满足；删除本身仍按 `docs/strategy/final-implementation-baseline.md` 走独立切片，因为移除 `visual_audit` 整卷模式、`--image` 和 `visualSmoke` 会同时触及人类 spec、schema、compiled 生成物与多份 snapshot，需要一次性的兼容证据，不能混在普通修复里：
 
 - ai-gateway：`request:text`（text-request.mjs）、`probe:text`（validate-config `--live`）、`TEXT_PROVIDER_*` 旧环境变量前缀、answer-request 的 `--image` flag、不带 `--audit-findings-only` 的整卷 `visual_audit` 模式。
 - rule-compiler：`resolve:profile`。
 - latex-renderer：`visual:smoke`（移除时连同各 subject-pack manifest 的 `visualSmoke` 字段一起处理）。
+
+审计结论（2026-09-30）：`text-request.mjs` 与 `resolve-profile.mjs` 仅被自身 package.json 脚本引用；`visualSmoke` 只出现在 manifest 与 `.snapshot-cache/` 生成物中；主链 `scripts/run-live-answer-workflow.ps1` 始终传 `--audit-findings-only` 并使用 `--images-dir`，因此整卷 `visual_audit` 与 `--image` 无调用方。删除切片可直接按此清单执行，不需要再补一轮发现。
 
 ## 桌面发布边界
 
@@ -137,11 +143,11 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\install-release.ps1 -RunSetup -L
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1
 ```
 
-它会检查/安装必要工具、恢复锁定依赖、编译 snapshot，并运行 build、普通测试和 Core gate。私用迁移包由维护者在旧机器生成：
+它会检查/安装必要工具、恢复锁定依赖、编译 snapshot，并运行 build、普通测试和 Core gate。私用迁移包由维护者在旧机器生成（`<版本>` 必须与 `src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` 的 `<Version>` 一致，当前为 1.0.4）：
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PrivateDev -Version 1.0.3 -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
+  -Mode PrivateDev -Version <版本> -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
 ```
 
 在新机器导入时：
@@ -158,7 +164,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
 可由 AI 或自动化操作员执行不产生外部发布副作用的发布模拟验收：
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.3
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version <版本>
 ```
 
 该回放使用临时 loopback 源驱动真实安装、更新、故障回滚和 PrivateDev 迁移脚本，结果是 `simulated-acceptance`，不能替代代码签名、GitHub 发布、普通用户实机、真实 provider 或教师/课堂验收。

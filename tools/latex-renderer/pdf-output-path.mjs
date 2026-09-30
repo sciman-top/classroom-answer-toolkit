@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { renameWithRetry } from "../atomic-write.mjs";
 import { sha256Hex } from "../shared.mjs";
 
 function sanitizeToken(value) {
@@ -52,5 +53,8 @@ export function commitBrowserPdfOutput(temporaryPath, outputPath) {
     throw new Error(`Browser PDF output was not created: ${temporaryPath}`);
   }
 
-  fs.renameSync(temporaryPath, outputPath);
+  // Reuse the atomic-write retry: on Windows a reader, indexer or AV scan can
+  // hold the destination PDF for a moment, and a bare rename would fail the
+  // whole delivery where JSON/HTML outputs already tolerate the same race.
+  renameWithRetry(temporaryPath, outputPath);
 }

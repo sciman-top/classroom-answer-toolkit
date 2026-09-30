@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -87,6 +87,22 @@ test("recursive cleanup removes a nested Unicode directory tree", () => {
 
   assert.deepEqual(readdirSync(directory), []);
   rmSync(directory, { recursive: true, force: true });
+});
+
+test("atomic text writes clean up the temporary file when the replace fails", () => {
+  // The retry/rollback branch of writeTextFileAtomic had no coverage: force a
+  // rename failure by making the destination a directory.
+  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-atomic-failure-"));
+  const target = path.join(directory, "答案.md");
+  mkdirSync(target);
+
+  try {
+    assert.throws(() => writeTextFileAtomic(target, "new"));
+    assert.deepEqual(readdirSync(directory), ["答案.md"], "the temporary file must not be left behind");
+    assert.ok(statSync(target).isDirectory(), "the original target must survive a failed replace");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("PDF review rejects an unknown option instead of silently using a default", () => {

@@ -4,6 +4,9 @@
 _pdf_render_check/
 _docx_render_check/
 
+# Local assistant working memory (machine-specific, never part of the product)
+.workbuddy-ai/
+
 # Local secrets and provider overrides
 .env
 .env.*

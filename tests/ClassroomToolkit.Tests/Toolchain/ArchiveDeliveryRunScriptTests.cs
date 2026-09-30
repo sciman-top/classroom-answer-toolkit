@@ -8,12 +8,38 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class ArchiveDeliveryRunScriptTests
 {
     [Fact]
-    public void UsesTheCurrentExternalArchiveAsItsDefault()
+    public async Task RequiresAnExplicitArchiveRootInsteadOfAMachineSpecificDefault()
     {
-        var root = FindRepoRoot();
-        var script = File.ReadAllText(Path.Combine(root, "scripts", "archive-delivery-run.ps1"));
+        var (sandbox, runDirectory, scriptPath) = CreateSandbox();
+        try
+        {
+            var result = await RunScriptWithoutArchiveRootAsync(scriptPath, sandbox, runDirectory);
 
-        script.Should().Contain("D:\\Archive\\classroom-answer-toolkit-archive\\正式交付-2017-2023");
+            result.ExitCode.Should().NotBe(0);
+            result.Output.Should().Contain("ArchiveRoot");
+        }
+        finally
+        {
+            DeleteDirectory(sandbox);
+        }
+    }
+
+    [Fact]
+    public async Task RejectsAnArchiveRootThatIsADriveRoot()
+    {
+        var (sandbox, runDirectory, scriptPath) = CreateSandbox();
+        try
+        {
+            var driveRoot = Path.GetPathRoot(sandbox)!;
+            var result = await RunScriptAsync(scriptPath, sandbox, driveRoot, runDirectory);
+
+            result.ExitCode.Should().NotBe(0);
+            result.Output.Should().Contain("not a drive root");
+        }
+        finally
+        {
+            DeleteDirectory(sandbox);
+        }
     }
 
     [Fact]
@@ -158,6 +184,12 @@ public sealed class ArchiveDeliveryRunScriptTests
     }
 
     private static async Task<ProcessResult> RunScriptAsync(string scriptPath, string repositoryRoot, string archiveRoot, string runDirectory)
+        => await RunScriptCoreAsync(scriptPath, repositoryRoot, archiveRoot, runDirectory);
+
+    private static async Task<ProcessResult> RunScriptWithoutArchiveRootAsync(string scriptPath, string repositoryRoot, string runDirectory)
+        => await RunScriptCoreAsync(scriptPath, repositoryRoot, archiveRoot: null, runDirectory);
+
+    private static async Task<ProcessResult> RunScriptCoreAsync(string scriptPath, string repositoryRoot, string? archiveRoot, string runDirectory)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -169,14 +201,20 @@ public sealed class ArchiveDeliveryRunScriptTests
             CreateNoWindow = true
         };
         startInfo.ArgumentList.Add("-NoProfile");
+        // -NonInteractive: the missing-ArchiveRoot test omits a mandatory
+        // parameter, which would otherwise open a prompt and hang until timeout.
+        startInfo.ArgumentList.Add("-NonInteractive");
         startInfo.ArgumentList.Add("-ExecutionPolicy");
         startInfo.ArgumentList.Add("Bypass");
         startInfo.ArgumentList.Add("-File");
         startInfo.ArgumentList.Add(scriptPath);
         startInfo.ArgumentList.Add("-RepositoryRoot");
         startInfo.ArgumentList.Add(repositoryRoot);
-        startInfo.ArgumentList.Add("-ArchiveRoot");
-        startInfo.ArgumentList.Add(archiveRoot);
+        if (archiveRoot is not null)
+        {
+            startInfo.ArgumentList.Add("-ArchiveRoot");
+            startInfo.ArgumentList.Add(archiveRoot);
+        }
         startInfo.ArgumentList.Add("-RunDirectory");
         startInfo.ArgumentList.Add(runDirectory);
 

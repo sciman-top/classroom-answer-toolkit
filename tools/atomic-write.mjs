@@ -15,7 +15,7 @@ function writeFileSyncDurable(targetPath, content) {
   }
 }
 
-function renameWithRetry(temporaryPath, targetPath) {
+export function renameWithRetry(temporaryPath, targetPath) {
   for (let attempt = 0; ; attempt += 1) {
     try {
       fs.renameSync(temporaryPath, targetPath);
@@ -33,6 +33,27 @@ function renameWithRetry(temporaryPath, targetPath) {
   }
 }
 
+// A rename is only durable once the directory entry itself is flushed. On
+// Windows fsync on a directory handle is not supported, so this is best effort:
+// a failure here must never turn a successful replace into an error.
+function flushDirectory(directory) {
+  let handle;
+  try {
+    handle = fs.openSync(directory, "r");
+    fs.fsyncSync(handle);
+  } catch {
+    // Unsupported on this platform or filesystem; the rename already happened.
+  } finally {
+    if (handle !== undefined) {
+      try {
+        fs.closeSync(handle);
+      } catch {
+        // Ignore: the descriptor is released when the process exits.
+      }
+    }
+  }
+}
+
 export function writeTextFileAtomic(filePath, content) {
   const resolvedPath = path.resolve(filePath);
   const directory = path.dirname(resolvedPath);
@@ -46,6 +67,7 @@ export function writeTextFileAtomic(filePath, content) {
   try {
     writeFileSyncDurable(temporaryPath, content);
     renameWithRetry(temporaryPath, resolvedPath);
+    flushDirectory(directory);
   } finally {
     removePathRecursive(temporaryPath);
   }

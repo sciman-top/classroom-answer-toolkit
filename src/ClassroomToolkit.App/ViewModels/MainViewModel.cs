@@ -60,8 +60,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // The health check drives a real node process (up to the 2-minute guard);
         // it must never block UI construction, so it runs fire-and-forget and
         // updates the cards when it completes.
-        _ = RefreshHealthAsync();
-        _ = CheckForUpdatesAsync();
+        SafeFireAndForget(() => RefreshHealthAsync(), "工作区健康检查");
+        SafeFireAndForget(() => CheckForUpdatesAsync(), "更新检查");
     }
 
     public ObservableCollection<string> AvailableSubjectPacks { get; }
@@ -93,6 +93,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string updateStatus = "未检查更新";
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     private bool isUpdateBusy;
     private UpdateInfo? _availableUpdate;
 
@@ -111,13 +112,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // when the command actually runs.
     private bool CanDeliver() => !IsBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
     private bool CanRunToolchain() => !IsBusy;
-    private bool CanCancel() => IsBusy && _operationCancellation is { IsCancellationRequested: false };
+    private bool CanCancel()
+        => (_operationCancellation is { IsCancellationRequested: false })
+            || (IsUpdateBusy && InstallUpdateCommand.IsRunning);
 
     partial void OnSelectedSubjectPackChanged(string value)
     {
         if (!_suppressHealthRefresh)
         {
-            _ = RefreshHealthAsync();
+            SafeFireAndForget(() => RefreshHealthAsync(), "工作区健康检查");
         }
     }
 
@@ -222,7 +225,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand(CanExecute = nameof(CanInstallUpdate))]
-    private async Task InstallUpdateAsync()
+    private async Task InstallUpdateAsync(CancellationToken cancellationToken)
     {
         if (_updateService is null || _availableUpdate is null)
         {
@@ -232,13 +235,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
         IsUpdateBusy = true;
         try
         {
-            var result = await _updateService.InstallAsync(_availableUpdate);
+            // The update package can be a large download; honour cancellation so
+            // the Cancel button and window shutdown can stop it.
+            var result = await _updateService.InstallAsync(_availableUpdate, cancellationToken);
             UpdateStatus = result.Message;
             AppendLog(result.Message);
             if (result.Started)
             {
                 System.Windows.Application.Current?.Shutdown(0);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateStatus = "已取消更新下载";
         }
         catch (Exception ex)
         {
@@ -268,6 +277,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanCancel))]
     private void Cancel()
     {
+        if (InstallUpdateCommand.IsRunning)
+        {
+            StatusMessage = "正在取消更新下载...";
+            InstallUpdateCommand.Cancel();
+            CancelCommand.NotifyCanExecuteChanged();
+            return;
+        }
+
         if (_operationCancellation is not { IsCancellationRequested: false } cancellation)
         {
             return;
@@ -404,7 +421,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (selectionChanged)
         {
             // The suppressed selection change would have started this refresh.
-            _ = RefreshHealthAsync();
+            SafeFireAndForget(() => RefreshHealthAsync(), "工作区健康检查");
         }
     }
 
@@ -421,9 +438,31 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void AppendLog(string text)
+    // Fire-and-forget work must still surface its failures: a discarded Task
+    // hides unexpected faults until they resurface as an unobserved-exception
+    // crash. Cancellation is expected and stays silent.
+    private void SafeFireAndForget(Func<Task> operation, string description)
     {
-        if (string.IsNullOrWhiteSpace(text))
+        _ = ObserveAsync();
+
+        async Task ObserveAsync()
+        {
+            try
+            {
+                await operation();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"{description}失败：{ex.Message}");
+            }
+        }
+    }
+
+    private void AppendLog(string text)
+    {        if (string.IsNullOrWhiteSpace(text))
         {
             return;
         }

@@ -13,6 +13,7 @@ import {
   TEXT_FAILOVER_PROFILES
 } from "./profile-matrix.mjs";
 import { acquireSharedExecutionSlot } from "./gateway-runtime.mjs";
+import { readResponseTextCapped, summarizeProviderErrorBody } from "../shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(toolDir, "..", "..");
@@ -954,7 +955,7 @@ export async function callTextProvider(provider, options) {
       body: JSON.stringify(buildTextRequestBody(provider, options.prompt, options.maxOutputTokens))
     });
 
-    const bodyText = await response.text();
+    const bodyText = await readResponseTextCapped(response);
     if (!response.ok) {
       return {
         provider: provider.role,
@@ -962,7 +963,7 @@ export async function callTextProvider(provider, options) {
         retryable: isRetryableGatewayFailure(response.status),
         status: response.status,
         output: "",
-        error: summarizeResponseBody(bodyText)
+        error: summarizeProviderErrorBody(bodyText)
       };
     }
 
@@ -978,7 +979,7 @@ export async function callTextProvider(provider, options) {
         retryable: false,
         status: response.status,
         output: "",
-        error: `Provider response was not JSON: ${summarizeResponseBody(bodyText)}`
+        error: `Provider response was not JSON: ${summarizeProviderErrorBody(bodyText)}`
       };
     }
     const output = extractTextOutput(parsed);
@@ -1035,15 +1036,6 @@ function buildTextRequestBody(provider, prompt, requestedMaxOutputTokens) {
     input: prompt,
     max_output_tokens: maxOutputTokens
   };
-}
-
-function summarizeResponseBody(bodyText) {
-  try {
-    const parsed = JSON.parse(bodyText);
-    return JSON.stringify(parsed).slice(0, 240);
-  } catch {
-    return bodyText.slice(0, 240);
-  }
 }
 
 function extractTextOutput(parsed) {

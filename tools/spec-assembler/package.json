@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "assemble:all": "node assemble-human-spec.mjs",
     "test:assemble": "node --test assemble-human-spec.test.mjs"

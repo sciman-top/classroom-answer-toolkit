@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { analyzeAnalogMeterCanvas } from "./analog-meter-reading.mjs";
 import { analyzeLinearScaleCanvas } from "./linear-scale-reading.mjs";
 import { analyzeOpticalRayCanvas } from "./optical-ray-geometry.mjs";
@@ -423,7 +424,6 @@ async function main() {
       await browser.close().catch(() => {});
     }
     try {
-      rendererServer?.closeIdleConnections?.();
       if (rendererServer) {
         await rendererServer.close();
       }
@@ -447,7 +447,7 @@ async function main() {
   manifest.reviewHtmlPath = reviewHtmlPath;
 
   const manifestPath = path.join(outputDir, "manifest.json");
-  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  writeTextFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
   console.log(`Rendered ${manifest.pages.length} image(s) from ${manifest.selectedPages.length}/${manifest.pageCount} selected page(s).`);
   console.log(`Review HTML: ${reviewHtmlPath}`);

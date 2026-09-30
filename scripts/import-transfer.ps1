@@ -76,6 +76,11 @@ try {
     }
 
     if (Test-Path -LiteralPath $destinationPath) {
+        # A drive root has no sibling to back up into ("C:\.backup...").
+        if ([IO.Path]::GetPathRoot($destinationPath).TrimEnd('\', '/') -eq $destinationPath.TrimEnd('\', '/')) {
+            throw "Destination must be a directory, not a drive root: $destinationPath"
+        }
+        Remove-SupersededSiblingBackups -BasePath $destinationPath -SuffixPrefix ".backup." -Keep 1
         $backupPath = "$destinationPath.backup.$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ'))"
         Move-Item -LiteralPath $destinationPath -Destination $backupPath
     }

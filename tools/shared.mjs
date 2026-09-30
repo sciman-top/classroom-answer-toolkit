@@ -21,6 +21,95 @@ export function sha256File(filePath) {
   }
 }
 
+// An abnormal or hostile gateway can stream an unbounded body; reading it
+// whole would exhaust memory before any schema check runs.
+export const MAX_PROVIDER_RESPONSE_BYTES = 32 * 1024 * 1024;
+
+const DEFAULT_PROVIDER_ERROR_LENGTH = 300;
+
+/**
+ * A provider error body can echo the request back (prompt, inlined page
+ * images), so receipts must never embed it verbatim. Keep only short provider
+ * error text and replace anything that looks like a payload.
+ */
+export function sanitizeProviderErrorText(value, maxLength = DEFAULT_PROVIDER_ERROR_LENGTH) {
+  return String(value)
+    .replace(/data:[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/giu, "<embedded-data-url>")
+    .replace(/[A-Za-z0-9+/]{200,}={0,2}/gu, "<redacted-blob>")
+    .replace(/[\u0000-\u001f\u007f]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+/**
+ * Summarizes an error response without echoing its body: only the provider's
+ * own structured error text survives, and never more than `maxLength` chars.
+ */
+export function summarizeProviderErrorBody(bodyText, maxLength = DEFAULT_PROVIDER_ERROR_LENGTH) {
+  let parsed;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    return `Provider returned a non-JSON error body (${Buffer.byteLength(bodyText)} bytes).`;
+  }
+
+  const candidates = [
+    parsed?.error?.message,
+    parsed?.error?.code,
+    parsed?.error?.type,
+    parsed?.message
+  ].filter((value) => typeof value === "string" && value.trim().length > 0);
+
+  if (candidates.length === 0) {
+    return `Provider returned an error body without a message (${Buffer.byteLength(bodyText)} bytes).`;
+  }
+
+  return sanitizeProviderErrorText([...new Set(candidates)].join(": "), maxLength);
+}
+
+/**
+ * Reads a fetch Response body as UTF-8 text with a hard byte cap. Checks the
+ * declared Content-Length first, then enforces the limit while streaming.
+ */
+export async function readResponseTextCapped(response, maxBytes = MAX_PROVIDER_RESPONSE_BYTES) {
+  const declared = Number(response.headers?.get?.("content-length"));
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    throw new Error(`Provider response declared ${declared} bytes, above the ${maxBytes}-byte limit.`);
+  }
+
+  const body = response.body;
+  if (!body || typeof body.getReader !== "function") {
+    const text = await response.text();
+    if (Buffer.byteLength(text) > maxBytes) {
+      throw new Error(`Provider response exceeded the ${maxBytes}-byte limit.`);
+    }
+    return text;
+  }
+
+  const reader = body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => {});
+        throw new Error(`Provider response exceeded the ${maxBytes}-byte limit.`);
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock?.();
+  }
+
+  return Buffer.concat(chunks).toString("utf8");
+}
+
 const UNSAFE_MERGE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
 export function deepMerge(base, override) {
@@ -96,10 +185,13 @@ export function parseArgvFlags(argv, {
         const target = stringFlags[flagName];
         const key = target === true ? kebabToCamel(flagName) : target;
         const rawValue = hasInlineValue ? arg.slice(equalsIndex + 1) : argv[index + 1];
-        // A missing or flag-like value used to be swallowed silently, shifting
-        // every later argument one slot over.
+        // A missing, empty, or flag-like value used to be swallowed silently,
+        // shifting every later argument one slot over.
         if (!hasInlineValue && (rawValue === undefined || rawValue.startsWith("--"))) {
           throw new Error(`Missing value for flag: --${flagName}`);
+        }
+        if (hasInlineValue && rawValue === "") {
+          throw new Error(`Missing value for flag: --${flagName}=`);
         }
         options[key] = rawValue;
         index += hasInlineValue ? 0 : 1;

@@ -136,5 +136,18 @@ if (-not $SkipCore) {
         }
     }
 }
+else {
+    # bootstrap always runs with -SkipSnapshots (the Core gate normally compiles
+    # them). With -SkipCore that gate never runs, so compile them here instead of
+    # leaving the workspace on a stale or missing snapshot without any warning.
+    Write-Host "Compiling subject-pack snapshots (Core gate skipped)..."
+    . (Join-Path $repoRoot "scripts/subject-pack-tooling.ps1")
+    $primarySubjectPacks = @(Get-SubjectPackMetadata -RepositoryRoot $repoRoot) |
+        Where-Object { $_.AssetId -eq "junior-physics-answer" }
+    if ($primarySubjectPacks.Count -eq 0) {
+        throw "Primary subject pack was not found in the registry: junior-physics-answer"
+    }
+    Invoke-SubjectPackSnapshotCompile -RepositoryRoot $repoRoot -SubjectPacks $primarySubjectPacks
+}
 
 Write-Host "Development setup complete: $repoRoot"

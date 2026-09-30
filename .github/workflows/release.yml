@@ -34,6 +34,11 @@ jobs:
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1 -NoInstall -SkipHealthEval
 
+      - name: Verify shared spec, cross-subject and delivery contracts
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-toolchain.ps1 -Mode Full
+
       - name: Verify workflow and packaging contracts
         shell: pwsh
         run: |

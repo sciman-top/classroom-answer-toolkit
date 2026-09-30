@@ -6,7 +6,10 @@ param(
 
     [string]$RepositoryRoot = "",
 
-    [string]$ArchiveRoot = "D:\Archive\classroom-answer-toolkit-archive\正式交付-2017-2023"
+    # No default: a machine-specific archive path is not portable, and a wrong
+    # silent default would copy a delivery into the wrong tree.
+    [Parameter(Mandatory = $true)]
+    [string]$ArchiveRoot
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +22,13 @@ else {
     [IO.Path]::GetFullPath($RepositoryRoot)
 }
 $deliveriesRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot "正式交付"))
+
+$resolvedArchiveRoot = [IO.Path]::GetFullPath($ArchiveRoot).TrimEnd('\', '/')
+if ([string]::IsNullOrWhiteSpace($resolvedArchiveRoot) -or
+    [IO.Path]::GetPathRoot($resolvedArchiveRoot).TrimEnd('\', '/') -eq $resolvedArchiveRoot) {
+    throw "ArchiveRoot must be a directory, not a drive root: $ArchiveRoot"
+}
+$ArchiveRoot = $resolvedArchiveRoot
 
 $resolvedRunDirectory = if ([IO.Path]::IsPathFullyQualified($RunDirectory)) {
     [IO.Path]::GetFullPath($RunDirectory)

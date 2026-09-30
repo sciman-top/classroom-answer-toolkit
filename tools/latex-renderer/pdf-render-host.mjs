@@ -104,6 +104,18 @@ window.pdfReviewReady = true;
 
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const server = http.createServer((request, response) => {
+      // Bind is already loopback-only, but a DNS-rebinding page can reach it
+      // with a foreign Host header; only serve the loopback names we hand out.
+      const hostHeader = request.headers.host ?? "";
+      const hostName = hostHeader.startsWith("[")
+        ? hostHeader.slice(0, hostHeader.indexOf("]") + 1)
+        : hostHeader.split(":")[0];
+      if (!["127.0.0.1", "localhost", "[::1]"].includes(hostName.toLowerCase())) {
+        response.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+        response.end("Forbidden");
+        return;
+      }
+
       const url = new URL(request.url ?? "/", "http://127.0.0.1");
 
       if (url.pathname === "/" || url.pathname === "/index.html") {

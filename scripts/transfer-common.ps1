@@ -61,15 +61,17 @@ function Get-RelativeFileManifest {
     )
 
     $root = [IO.Path]::GetFullPath($RootPath)
-    $excluded = @{}
+    # Windows path comparison is case-insensitive; a case-sensitive hashtable
+    # would fail to exclude a manifest named Transfer-Manifest.json.
+    $excluded = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($relative in $ExcludeRelativePaths) {
-        $excluded[$relative.Replace("\", "/")] = $true
+        [void]$excluded.Add($relative.Replace("\", "/"))
     }
 
     return @(
         Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
             $relativePath = [IO.Path]::GetRelativePath($root, $_.FullName).Replace("\", "/")
-            if (-not $excluded.ContainsKey($relativePath)) {
+            if (-not $excluded.Contains($relativePath)) {
                 [ordered]@{
                     path = $relativePath
                     bytes = $_.Length
@@ -107,8 +109,44 @@ function Get-DirectoryTreeReceipt {
     }
 }
 
-function Write-JsonFileAtomic {
+# Replacing a destination repeatedly would otherwise accumulate one sibling
+# backup per run forever. Keep the newest recovery point(s) and report the rest.
+function Remove-SupersededSiblingBackups {
     param(
+        [Parameter(Mandatory = $true)][string]$BasePath,
+        [Parameter(Mandatory = $true)][string]$SuffixPrefix,
+        [int]$Keep = 1
+    )
+
+    $resolved = [IO.Path]::GetFullPath($BasePath)
+    $parent = [IO.Path]::GetDirectoryName($resolved)
+    $leaf = [IO.Path]::GetFileName($resolved)
+    if ([string]::IsNullOrWhiteSpace($parent) -or [string]::IsNullOrWhiteSpace($leaf)) {
+        return
+    }
+
+    $pattern = "$leaf$SuffixPrefix*"
+    $candidates = @(
+        Get-ChildItem -LiteralPath $parent -Force -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like $pattern } |
+            Sort-Object -Property LastWriteTimeUtc -Descending
+    )
+    if ($candidates.Count -le $Keep) {
+        return
+    }
+
+    foreach ($stale in $candidates[$Keep..($candidates.Count - 1)]) {
+        Write-Host "Removing superseded backup: $($stale.FullName)"
+        if ($stale.PSIsContainer) {
+            Remove-Item -LiteralPath $stale.FullName -Recurse -Force
+        }
+        else {
+            Remove-Item -LiteralPath $stale.FullName -Force
+        }
+    }
+}
+
+function Write-JsonFileAtomic {    param(
         [Parameter(Mandatory = $true)][string]$PathValue,
         [Parameter(Mandatory = $true)]$Value
     )

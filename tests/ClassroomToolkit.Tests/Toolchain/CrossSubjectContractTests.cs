@@ -55,6 +55,25 @@ public sealed class CrossSubjectContractTests
             .Should().BeEquivalentTo(["smoke-answer"]);
     }
 
+    [Fact]
+    public void NodeVersionContractIsDeclaredConsistentlyAcrossToolPackages()
+    {
+        var root = FindRepoRoot();
+        var declaredVersion = File.ReadAllText(Path.Combine(root, ".node-version")).Trim();
+        declaredVersion.Should().MatchRegex(@"^\d+$");
+
+        // The workflow's -UseGatewayProxy path needs Node 24+ (--use-env-proxy),
+        // so every tool package must declare the same floor as .node-version
+        // instead of relying on whatever happens to be on PATH.
+        foreach (var tool in new[] { "ai-gateway", "latex-renderer", "rule-compiler", "spec-assembler" })
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(
+                root, "tools", tool, "package.json")));
+            document.RootElement.GetProperty("engines").GetProperty("node").GetString()
+                .Should().Be($">={declaredVersion}", $"{tool} must match .node-version");
+        }
+    }
+
     private static string FindRepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);

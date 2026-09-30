@@ -238,6 +238,10 @@ public sealed class ToolchainCliBehaviorTests
 
         workflow.Should().Contain("setup-development.ps1 -NoInstall -SkipHealthEval");
         workflow.Should().NotContain("setup-development.ps1 -NoInstall -SkipCore");
+        // AGENTS.md routes release changes through -Mode Full (cross-subject,
+        // delivery contract and every subject-pack eval); a tag build must not
+        // ship with only the Core gate.
+        workflow.Should().Contain("check-toolchain.ps1 -Mode Full");
     }
 
     [Fact]
@@ -1044,6 +1048,83 @@ public sealed class ToolchainCliBehaviorTests
 
         var output = (await stdoutTask) + Environment.NewLine + (await stderrTask);
         return new ProcessResult(process.ExitCode, output);
+    }
+
+    [Fact]
+    public async Task ArtifactCleanupRefusesARootThatIsNotAnArtifactsDirectory()
+    {
+        var root = FindRepoRoot();
+        var result = await RunAsync(
+            "pwsh",
+            root,
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/clean-artifacts.ps1",
+            "-ArtifactsRoot", ".",
+            "-KeepVersion", "1.0.1");
+
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("must be a directory named 'artifacts'");
+        // The guard exists to protect tracked source: prove it survived.
+        Directory.Exists(Path.Combine(root, "tools")).Should().BeTrue();
+        Directory.Exists(Path.Combine(root, "src")).Should().BeTrue();
+        File.Exists(Path.Combine(root, "ClassroomToolkit.sln")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ArtifactCleanupRefusesADriveRoot()
+    {
+        var driveRoot = Path.GetPathRoot(FindRepoRoot())!;
+        var result = await RunAsync(
+            "pwsh",
+            FindRepoRoot(),
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/clean-artifacts.ps1",
+            "-ArtifactsRoot", driveRoot,
+            "-KeepVersion", "1.0.1");
+
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("must be a directory named 'artifacts'");
+    }
+
+    [Fact]
+    public async Task AppPublishRefusesAPublishDirectoryOutsideArtifactsWork()
+    {
+        var result = await RunAsync(
+            "pwsh",
+            FindRepoRoot(),
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/publish-app.ps1",
+            "-PublishDir", ".");
+
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("must stay under");
+    }
+
+    [Fact]
+    public async Task SnapshotCliRejectsASubjectPackThatEscapesTheRepository()
+    {
+        var result = await RunAsync(
+            "node",
+            FindRepoRoot(),
+            "tools/rule-compiler/compile-snapshot.mjs",
+            "--subject-pack", "../../../etc",
+            "--profile", "classroom");
+
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("Invalid subject pack id");
+    }
+
+    [Fact]
+    public async Task ArchiveScriptRequiresAnExplicitArchiveRoot()
+    {
+        // -NonInteractive: without it a missing mandatory parameter opens an
+        // interactive prompt and the test would hang until its timeout.
+        var result = await RunAsync(
+            "pwsh",
+            FindRepoRoot(),
+            "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+            "-File", "scripts/archive-delivery-run.ps1",
+            "-RunDirectory", "no-such-run");
+
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("ArchiveRoot");
     }
 
     private static string FindRepoRoot()

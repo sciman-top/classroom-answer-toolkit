@@ -12,6 +12,10 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 $script:MaximumDownloadBytes = 1GB
 
+# This script is downloaded and run on a machine that has no repository yet, so
+# it must stay self-contained: the helpers below intentionally duplicate
+# transfer-common.ps1 (Assert-ZipEntriesContained, Assert-ApprovedGitHubUri)
+# instead of dot-sourcing it. Do not "deduplicate" them into a shared file.
 function Assert-ApprovedGitHubUri {
     param(
         [Parameter(Mandatory = $true)][uri]$UriValue,
@@ -21,8 +25,15 @@ function Assert-ApprovedGitHubUri {
     if ($AllowLocalSimulation -and $UriValue.IsLoopback -and @("http", "https") -contains $UriValue.Scheme.ToLowerInvariant()) {
         return
     }
-    $allowedHosts = @("github.com", "objects.githubusercontent.com")
-    if ($UriValue.Scheme -ne "https" -or (-not ($allowedHosts -contains $UriValue.Host.ToLowerInvariant()) -and -not $UriValue.Host.EndsWith(".githubusercontent.com", [StringComparison]::OrdinalIgnoreCase))) {
+    # Explicit hosts only: a bare ".githubusercontent.com" suffix would also
+    # admit any attacker-registrable subdomain of that zone.
+    $allowedHosts = @(
+        "github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+        "github-releases.githubusercontent.com"
+    )
+    if ($UriValue.Scheme -ne "https" -or -not ($allowedHosts -contains $UriValue.Host.ToLowerInvariant())) {
         throw "URL must use an approved GitHub HTTPS host: $UriValue"
     }
 }
@@ -189,6 +200,86 @@ function Assert-ZipEntriesContained {
     }
 }
 
+function Invoke-ApprovedTextDownload {
+    param(
+        [Parameter(Mandatory = $true)][uri]$UriValue,
+        [Parameter(Mandatory = $true)][long]$MaximumBytes,
+        [switch]$AllowLocalSimulation
+    )
+
+    # The manifest supplies the publisher thumbprint that the stable channel
+    # trusts, so its own redirect chain must be host-validated hop by hop.
+    # Invoke-WebRequest follows redirects to any host and would bypass that.
+    $handler = [Net.Http.HttpClientHandler]::new()
+    $handler.AllowAutoRedirect = $false
+    $client = [Net.Http.HttpClient]::new($handler)
+    try {
+        $currentUri = $UriValue
+        for ($redirect = 0; $redirect -le 5; $redirect++) {
+            Assert-ApprovedGitHubUri -UriValue $currentUri -AllowLocalSimulation:$AllowLocalSimulation
+            $response = $null
+            try {
+                $response = $client.GetAsync(
+                    $currentUri,
+                    [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+                if (@(
+                        [Net.HttpStatusCode]::MovedPermanently,
+                        [Net.HttpStatusCode]::Found,
+                        [Net.HttpStatusCode]::SeeOther,
+                        [Net.HttpStatusCode]::TemporaryRedirect,
+                        [Net.HttpStatusCode]::PermanentRedirect
+                    ) -contains $response.StatusCode) {
+                    if ($redirect -ge 5 -or $null -eq $response.Headers.Location) {
+                        throw "Too many or invalid redirects while downloading the update manifest."
+                    }
+                    $currentUri = if ($response.Headers.Location.IsAbsoluteUri) {
+                        $response.Headers.Location
+                    }
+                    else {
+                        [uri]::new($currentUri, $response.Headers.Location)
+                    }
+                    continue
+                }
+
+                $response.EnsureSuccessStatusCode()
+                $declaredBytes = $response.Content.Headers.ContentLength
+                if ($declaredBytes.HasValue -and $declaredBytes.Value -gt $MaximumBytes) {
+                    throw "Update manifest exceeds the permitted size: $($declaredBytes.Value) bytes"
+                }
+
+                $source = $null
+                $memory = $null
+                try {
+                    $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+                    $memory = [IO.MemoryStream]::new()
+                    $buffer = [byte[]]::new(65536)
+                    [long]$totalBytes = 0
+                    while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                        $totalBytes += $read
+                        if ($totalBytes -gt $MaximumBytes) {
+                            throw "Update manifest exceeds the permitted size."
+                        }
+                        $memory.Write($buffer, 0, $read)
+                    }
+                    return [Text.Encoding]::UTF8.GetString($memory.ToArray())
+                }
+                finally {
+                    if ($null -ne $memory) { $memory.Dispose() }
+                    if ($null -ne $source) { $source.Dispose() }
+                }
+            }
+            finally {
+                if ($null -ne $response) { $response.Dispose() }
+            }
+        }
+        throw "Too many redirects while downloading the update manifest."
+    }
+    finally {
+        $client.Dispose()
+        $handler.Dispose()
+    }
+}
+
 function Download-VerifiedAsset {
     param(
         [Parameter(Mandatory = $true)]$Asset,
@@ -262,8 +353,9 @@ $preserveWorkRoot = $false
 
 try {
     $manifestPath = Join-Path $downloadRoot "update-manifest.json"
-    Invoke-WebRequest -Uri $manifestUri -OutFile $manifestPath -UseBasicParsing
-    $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+    $manifestJson = Invoke-ApprovedTextDownload -UriValue $manifestUri -MaximumBytes 1MB -AllowLocalSimulation:$AllowLocalSimulation
+    [IO.File]::WriteAllText($manifestPath, $manifestJson, [Text.UTF8Encoding]::new($false))
+    $manifest = $manifestJson | ConvertFrom-Json
     $schemaVersion = [string]$manifest.schemaVersion
     if (($schemaVersion -ne "1.0" -and $schemaVersion -ne "2.0") -or [string]$manifest.kind -ne "classroom-toolkit-update-manifest") {
         throw "Unsupported update manifest."

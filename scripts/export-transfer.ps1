@@ -17,7 +17,10 @@ $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
 $Version = if ([string]::IsNullOrWhiteSpace($Version)) {
     [xml]$project = Get-Content -LiteralPath (Join-Path $repoRoot "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj") -Raw -Encoding utf8
-    [string]$project.Project.PropertyGroup.Version
+    # SelectSingleNode, not a property cast: several PropertyGroup elements make
+    # $project.Project.PropertyGroup.Version an array that stringifies to "a b".
+    $versionNode = $project.SelectSingleNode("/Project/PropertyGroup/Version")
+    if ($null -eq $versionNode) { "" } else { [string]$versionNode.InnerText }
 }
 else {
     $Version
@@ -96,14 +99,26 @@ try {
         Copy-Item -LiteralPath $setupScript -Destination (Join-Path $sourceRoot "scripts/setup-development.ps1") -Force
     }
 
+    $sourceCommit = ((& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim())
+    # An unchecked git failure used to write an empty commit while
+    # write-release-metadata.ps1 demands a full 40-hex SHA, so the transfer
+    # manifest silently became untraceable.
+    if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch '^[A-Fa-f0-9]{40}$') {
+        throw "Unable to resolve the source commit for the transfer manifest: '$sourceCommit'"
+    }
+    $sourceStatus = ((& git -C $repoRoot status --porcelain 2>$null | Out-String).Trim())
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to read the working tree status for the transfer manifest."
+    }
+
     $manifest = [ordered]@{
         schemaVersion = "1.0"
         kind = "classroom-toolkit-transfer"
         mode = $Mode
         version = $Version
         generatedAt = [DateTimeOffset]::UtcNow.ToString("O")
-        sourceCommit = ((& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim())
-        sourceDirty = -not [string]::IsNullOrWhiteSpace((& git -C $repoRoot status --porcelain | Out-String).Trim())
+        sourceCommit = $sourceCommit
+        sourceDirty = -not [string]::IsNullOrWhiteSpace($sourceStatus)
         envIncluded = $IncludeEnv.IsPresent
         gitIncluded = $IncludeGit.IsPresent
         publishedAppIncluded = ($IncludePublishedApp.IsPresent -or $BuildPublishedApp.IsPresent)

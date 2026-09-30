@@ -193,7 +193,6 @@ async function main() {
   }
 
   const deliverySnapshotPath = makeDeliverySnapshotPath(outputPath);
-  writeTextFileAtomic(deliverySnapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
 
   if (!options.skipValidate) {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
@@ -258,6 +257,9 @@ async function main() {
   }
 
   const reviewManifestPath = path.join(deliveryReviewDir, "manifest.json");
+  // Written only after validate/render/review/cleanup all succeeded: an earlier
+  // write would leave an orphan delivery snapshot when a later step fails.
+  writeTextFileAtomic(deliverySnapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
   console.log(`[${packageName}] write-delivery-manifest`);
   runNodeScript("write-delivery-manifest.mjs", [
     "--input",

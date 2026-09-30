@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "cleanup": "node cleanup-answer-artifacts.mjs",
     "deliver": "node deliver-answer.mjs",

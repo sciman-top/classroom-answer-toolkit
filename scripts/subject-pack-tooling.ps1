@@ -87,3 +87,28 @@ function Get-SubjectPackSnapshotOutputPath {
     $extension = [System.IO.Path]::GetExtension($snapshotPath)
     return Join-Path $directoryPath ("{0}.{1}{2}" -f $fileNameWithoutExtension, $Profile, $extension)
 }
+
+# Compiles every profile snapshot for the given packs. setup-development.ps1
+# uses this on the -SkipCore path: without it, bootstrap's -SkipSnapshots plus a
+# skipped Core gate would leave the workspace with a stale or missing snapshot
+# and no warning at all.
+function Invoke-SubjectPackSnapshotCompile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot,
+        [Parameter(Mandatory = $true)]
+        [array]$SubjectPacks
+    )
+
+    foreach ($subjectPack in $SubjectPacks) {
+        foreach ($profile in $subjectPack.Profiles) {
+            $outputPath = Get-SubjectPackSnapshotOutputPath -SubjectPack $subjectPack -Profile $profile
+            $relativeOutputPath = Get-RelativePath -BasePath $RepositoryRoot -TargetPath $outputPath
+            Write-Host ("[snapshot] {0}/{1}" -f $subjectPack.AssetId, $profile)
+            & node (Join-Path $RepositoryRoot "tools/rule-compiler/compile-snapshot.mjs") --subject-pack $subjectPack.AssetId --profile $profile --out $relativeOutputPath
+            if ($LASTEXITCODE -ne 0) {
+                throw ("Snapshot compilation failed for {0}/{1}." -f $subjectPack.AssetId, $profile)
+            }
+        }
+    }
+}
