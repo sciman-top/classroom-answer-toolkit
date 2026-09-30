@@ -33,6 +33,18 @@ jobs:
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1 -NoInstall
 
+      # A visual-regression failure is environment-coupled (browser and CJK
+      # fonts differ per machine). Without the rendered pages the failure is an
+      # unactionable "Diff ratio exceeded" line, so keep them as evidence.
+      - name: Upload rendered pages when the workspace gate fails
+        if: failure()
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: eval-work
+          path: .eval-work/**
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Verify gateway, renderer, and workflow contracts
         shell: pwsh
         run: |

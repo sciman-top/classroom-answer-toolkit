@@ -191,6 +191,7 @@ async function main() {
   let deliveryPipelineCount = 0;
   let browserServer = null;
   removePathWithRetry(evalWorkRoot);
+  let runSucceeded = false;
   try {
     const datasetPath = options.dataset
       ? path.resolve(repoRoot, options.dataset)
@@ -357,11 +358,16 @@ async function main() {
           ]);
 
           visualOk = visualRun.status === 0;
+          // Record the measured margin even on success: without it a run that
+          // passes at 0.49% of a 0.5% budget looks identical to one at 0.00%,
+          // so cross-environment drift is invisible until it suddenly fails.
+          const diffRatioMatch = /Diff ratio:\s*([0-9.]+)/u.exec(visualRun.stdout ?? "");
           visual = {
             baseline: expectation.visualBaseline,
             actualImage: path.relative(repoRoot, actualImagePath),
             passed: visualOk,
             status: visualRun.status,
+            diffRatio: diffRatioMatch ? Number(diffRatioMatch[1]) : null,
             stdout: visualRun.stdout || undefined,
             stderr: visualRun.stderr || undefined
           };
@@ -545,7 +551,13 @@ async function main() {
       }
 
       caseResults.push(caseResult);
-      console.log(`[eval] ${caseResult.id}: ${caseResult.ok ? "passed" : "failed"}`);
+      const visualMargins = Object.values(caseResult.profiles ?? {})
+        .map((entry) => entry?.actual?.visual)
+        .filter((entry) => entry && typeof entry.diffRatio === "number");
+      const visualSummary = visualMargins.length > 0
+        ? ` (visual diff max ${Math.max(...visualMargins.map((entry) => entry.diffRatio)).toFixed(4)})`
+        : "";
+      console.log(`[eval] ${caseResult.id}: ${caseResult.ok ? "passed" : "failed"}${visualSummary}`);
     }
 
     const output = {
@@ -554,6 +566,10 @@ async function main() {
       assetVersion: dataset.assetVersion ?? manifest.version ?? "unknown",
       generatedAt: new Date().toISOString(),
       ok,
+      // Every case records `actualImage` relative to the repo root. Keep the
+      // work root visible so a failure can be reproduced and diffed instead of
+      // pointing at files that were already deleted.
+      workRoot: path.relative(repoRoot, evalWorkRoot),
       cases: caseResults
     };
 
@@ -563,6 +579,7 @@ async function main() {
       `[eval] runtime: profiles=${profileExecutions}; snapshot-compiles=${snapshotCompileCount}; browser-server-launches=${browserServerLaunchCount}; visual-pipelines=${visualPipelineCount}; delivery-pipelines=${deliveryPipelineCount}`
     );
 
+    runSucceeded = ok;
     if (!ok) {
       process.exitCode = 1;
     }
@@ -571,7 +588,14 @@ async function main() {
       await browserServer.close();
       sharedBrowserWsEndpoint = null;
     }
-    removePathWithRetry(evalWorkRoot);
+    // A failed run must keep its rendered pages: they are the only evidence for
+    // why a visual comparison failed, and deleting them turned every such
+    // failure into an unactionable "Diff ratio exceeded" line.
+    if (runSucceeded) {
+      removePathWithRetry(evalWorkRoot);
+    } else {
+      console.log(`[eval] failing run kept its work directory for diagnosis: ${path.relative(repoRoot, evalWorkRoot)}`);
+    }
   }
 }
 
