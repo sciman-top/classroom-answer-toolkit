@@ -6,6 +6,7 @@ import { chromium } from "playwright-core";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
 import { resolveProfileSnapshotRelativePath } from "../rule-compiler/subject-pack-registry.mjs";
 import { parseArgvFlags } from "../shared.mjs";
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -573,7 +574,9 @@ async function main() {
       cases: caseResults
     };
 
-    fs.writeFileSync(resultsPath, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+    // workspace-health parses this file; a crash mid-write must not leave a
+    // torn JSON that reads as a failed regression until the next eval run.
+    writeTextFileAtomic(resultsPath, `${JSON.stringify(output, null, 2)}\n`);
     console.log(`[eval] results: ${path.relative(repoRoot, resultsPath)}`);
     console.log(
       `[eval] runtime: profiles=${profileExecutions}; snapshot-compiles=${snapshotCompileCount}; browser-server-launches=${browserServerLaunchCount}; visual-pipelines=${visualPipelineCount}; delivery-pipelines=${deliveryPipelineCount}`

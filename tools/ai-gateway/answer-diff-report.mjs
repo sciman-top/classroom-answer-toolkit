@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { sha256Hex as sha256 } from "../shared.mjs";
+import { writeTextFileAtomic } from "../atomic-write.mjs";
 
 function normalize(value) {
   return String(value).replace(/\r\n?/g, "\n").trimEnd();
@@ -67,7 +68,7 @@ export function main(argv = process.argv.slice(2)) {
   }
   const [beforePath, afterPath, reportPath] = argv.map((value) => path.resolve(value));
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
-  fs.writeFileSync(reportPath, buildDiffReport(beforePath, afterPath), "utf8");
+  writeTextFileAtomic(reportPath, buildDiffReport(beforePath, afterPath));
   console.log(`Answer diff report: ${reportPath}`);
 }
 
