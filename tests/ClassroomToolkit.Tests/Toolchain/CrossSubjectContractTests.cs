@@ -6,10 +6,10 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class CrossSubjectContractTests
 {
     [Theory]
-    [InlineData("junior-physics-answer", "v8.18")]
-    [InlineData("senior-physics-answer", "v1.1")]
-    [InlineData("math-answer", "v0.2")]
-    public void SubjectPackManifestDatasetAndCompiledSpecAreAligned(string subjectPack, string expectedVersion)
+    [InlineData("junior-physics-answer")]
+    [InlineData("senior-physics-answer")]
+    [InlineData("math-answer")]
+    public void SubjectPackManifestDatasetAndCompiledSpecAreAligned(string subjectPack)
     {
         var root = FindRepoRoot();
         var packRoot = Path.Combine(root, "prompts", subjectPack);
@@ -18,14 +18,17 @@ public sealed class CrossSubjectContractTests
         var manifest = manifestDocument.RootElement;
 
         manifest.GetProperty("kind").GetString().Should().Be("subject-pack");
-        manifest.GetProperty("version").GetString().Should().Be(expectedVersion);
+        // The aligned version is whatever the manifest declares; hardcoding it
+        // here would turn every spec version bump into a test edit.
+        var manifestVersion = manifest.GetProperty("version").GetString();
+        manifestVersion.Should().NotBeNullOrWhiteSpace();
         Directory.Exists(Path.Combine(packRoot, "rules")).Should().BeTrue();
 
         var datasetPath = Path.GetFullPath(Path.Combine(
             packRoot,
             manifest.GetProperty("evaluation").GetProperty("dataset").GetString()!));
         using var datasetDocument = JsonDocument.Parse(File.ReadAllText(datasetPath));
-        datasetDocument.RootElement.GetProperty("assetVersion").GetString().Should().Be(expectedVersion);
+        datasetDocument.RootElement.GetProperty("assetVersion").GetString().Should().Be(manifestVersion);
 
         var source = manifest.GetProperty("sourceOfTruth");
         var humanSpec = Path.GetFullPath(Path.Combine(packRoot, source.GetProperty("humanSpec").GetString()!));

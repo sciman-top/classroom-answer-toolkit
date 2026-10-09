@@ -1,7 +1,7 @@
 {
   "suiteId": "junior-physics-answer",
   "version": "1.0",
-  "assetVersion": "v8.18",
+  "assetVersion": "v8.23",
   "coverageRole": "shared-renderer-and-primary-subject",
   "defaultProfiles": [
     "classroom",
