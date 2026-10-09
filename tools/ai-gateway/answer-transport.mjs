@@ -9,10 +9,10 @@ import {
   ExecutionSlotTimeoutError,
   isRetryableGatewayFailure,
   PROVIDER_LOCAL_FAILURE_STATUSES,
-  runInExecutionSlot,
-  DEFAULT_EXECUTION_SLOT_COUNT
+  runInExecutionSlot
 } from "./validate-config.mjs";
 import {
+  EXECUTION_SLOT_COUNT,
   QUALITY_PROFILES,
   QUALITY_PROFILE_NAMES,
   presetForProfile,
@@ -27,8 +27,6 @@ import {
   recordPresetFailure,
   recordPresetSuccess
 } from "./gateway-runtime.mjs";
-
-export { QUALITY_PROFILES, QUALITY_PROFILE_NAMES };
 
 const TRANSPORT_TIMEOUT_GRACE_MS = 5000;
 let activeTransportKey = null;
@@ -65,7 +63,7 @@ function configureAnswerTransport(timeoutMs) {
   return policy;
 }
 
-export const TASK_MODES = new Set([
+const TASK_MODES = new Set([
   "blind_generation",
   "semantic_review_findings",
   "semantic_review_merge",
@@ -74,9 +72,9 @@ export const TASK_MODES = new Set([
   "reference_review"
 ]);
 
-const DEFAULT_QUALITY_PROFILE_BY_MODE = Object.freeze(Object.fromEntries(
-  [...TASK_MODES].map((mode) => [mode, "sol-high"])
-));
+// Every task mode shares the same default quality profile; the per-mode map
+// was collapsed once the six entries converged to one value.
+const DEFAULT_QUALITY_PROFILE = "sol-high";
 const RETRYABLE_ATTEMPTS_PER_PROVIDER = 2;
 const nextSlotIndexByPresetProfile = new Map();
 
@@ -84,12 +82,12 @@ export function normalizeQualityProfile(value = "auto") {
   return String(value).trim().toLowerCase();
 }
 
-function resolveQualityProfile(mode, requestedQualityProfile = "auto") {
+function resolveQualityProfile(requestedQualityProfile = "auto") {
   const normalized = normalizeQualityProfile(requestedQualityProfile);
   if (!QUALITY_PROFILE_NAMES.has(normalized)) {
     throw new Error(`qualityProfile must be auto or one of ${Object.keys(QUALITY_PROFILES).join(", ")}.`);
   }
-  return normalized === "auto" ? DEFAULT_QUALITY_PROFILE_BY_MODE[mode] : normalized;
+  return normalized === "auto" ? DEFAULT_QUALITY_PROFILE : normalized;
 }
 
 function resolveExecutionSlots(provider, preset, profile, config = {}) {
@@ -207,7 +205,7 @@ export function inferAnswerMode(options = {}) {
 
 export function selectAnswerRoute(config, modeOrOptions = {}, target = "all", requestedQualityProfile = "auto", presetHealth = null) {
   const mode = typeof modeOrOptions === "string" ? modeOrOptions : inferAnswerMode(modeOrOptions);
-  const qualityProfile = resolveQualityProfile(mode, requestedQualityProfile);
+  const qualityProfile = resolveQualityProfile(requestedQualityProfile);
   const requestedPreset = presetForProfile(qualityProfile);
   const requestedTier = tierForProfile(qualityProfile);
   const presetRoutes = presetOrderForRequest(
@@ -244,7 +242,7 @@ export function selectAnswerRoute(config, modeOrOptions = {}, target = "all", re
     orderedExecutionSlots: initialRoute.orderedExecutionSlots,
     executionSlotCount: Number.isInteger(config.executionSlotCount)
       ? config.executionSlotCount
-      : DEFAULT_EXECUTION_SLOT_COUNT,
+      : EXECUTION_SLOT_COUNT,
     presetRoutes,
     providers: initialRoute.providers
   };

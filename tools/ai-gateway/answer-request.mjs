@@ -8,10 +8,8 @@ import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mj
 import {
   applyReferenceChoiceAnswers,
   applySemanticChoiceFindings,
-  buildIndexedChoiceCandidate,
   buildPrompt,
   extractTenChoiceAnswers,
-  normalizeAnswerMarkdown,
   resolveDefaultPromptPath,
   resolveImageEvidenceLabels
 } from "./answer-tasks.mjs";
@@ -20,11 +18,11 @@ import {
   inferAnswerMode,
   normalizeDetailForProvider,
   normalizeQualityProfile,
-  QUALITY_PROFILE_NAMES,
   requestAnswerWithFailover,
   resolveAnswerTransportPolicy,
   selectAnswerRoute
 } from "./answer-transport.mjs";
+import { QUALITY_PROFILE_NAMES } from "./profile-matrix.mjs";
 import { loadGatewayConfig, repoRoot, requireValue } from "./validate-config.mjs";
 
 const summarySchemaPath = path.join(
@@ -34,23 +32,6 @@ const summarySchemaPath = path.join(
   "schemas",
   "live-answer-generation-summary.schema.json"
 );
-
-// Re-exported so the test suite and sibling tools keep importing the answer
-// pipeline from the historical entry module.
-export {
-  applyReferenceChoiceAnswers,
-  applySemanticChoiceFindings,
-  buildIndexedChoiceCandidate,
-  buildPrompt,
-  buildAnswerRequestBody,
-  normalizeAnswerMarkdown,
-  requestAnswerWithFailover,
-  resolveAnswerTransportPolicy,
-  resolveDefaultPromptPath,
-  resolveImageEvidenceLabels,
-  selectAnswerRoute
-};
-export { parseSemanticChoiceFindings } from "./answer-tasks.mjs";
 
 const usage = `Usage:
   npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress --images-dir <dir> --output <answer.md>

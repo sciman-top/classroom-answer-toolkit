@@ -12,7 +12,6 @@ export const QUALITY_PROFILES = Object.freeze({
 });
 
 export const QUALITY_PROFILE_NAMES = new Set(["auto", ...Object.keys(QUALITY_PROFILES)]);
-export const QUALITY_PROFILE_ORDER = Object.freeze(Object.keys(QUALITY_PROFILES));
 export const EXECUTION_SLOT_COUNT = 5;
 
 export const MODEL_FAMILY_PREFERENCE = Object.freeze(["sol", "terra", "luna"]);
@@ -72,10 +71,3 @@ export function slotsForPresetProfile(bindings, preset, profile) {
   return (bindings?.[preset] ?? [])
     .flatMap((assignedProfile, index) => assignedProfile === profile ? [index + 1] : []);
 }
-
-// The deprecated text request path keeps its historical highest-tier-only family
-// failover contract. The full profile order is used by live probes.
-export const TEXT_FAILOVER_PROFILES = Object.freeze(
-  ["sol-high", "terra-max", "luna-max"]
-    .map((profile) => Object.freeze({ profile, ...QUALITY_PROFILES[profile] }))
-);

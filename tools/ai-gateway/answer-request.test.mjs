@@ -11,18 +11,20 @@ import { fileURLToPath } from "node:url";
 import {
   buildPrompt,
   buildIndexedChoiceCandidate,
-  buildAnswerRequestBody,
   applyReferenceChoiceAnswers,
   applySemanticChoiceFindings,
   parseSemanticChoiceFindings,
-  buildAnswerRoutingSummary,
   normalizeAnswerMarkdown,
-  resolveAnswerTransportPolicy,
   resolveDefaultPromptPath,
-  resolveImageEvidenceLabels,
+  resolveImageEvidenceLabels
+} from "./answer-tasks.mjs";
+import {
+  buildAnswerRequestBody,
+  resolveAnswerTransportPolicy,
   selectAnswerRoute,
   requestAnswerWithFailover
-} from "./answer-request.mjs";
+} from "./answer-transport.mjs";
+import { buildAnswerRoutingSummary } from "./answer-request.mjs";
 import {
   normalizeConfig,
   runInExecutionSlot,

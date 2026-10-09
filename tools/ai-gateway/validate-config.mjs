@@ -8,16 +8,21 @@ import {
   PRESET_PROFILES
 } from "./profile-matrix.mjs";
 import { readResponseTextCapped, summarizeProviderErrorBody } from "../shared.mjs";
+import {
+  DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS,
+  DEFAULT_RECOVERY_PROBE_INTERVAL_MS,
+  DEFAULT_RECOVERY_PROBE_JITTER_MS,
+  DEFAULT_RECOVERY_PROBE_SUCCESS_THRESHOLD
+} from "./gateway-runtime.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(toolDir, "..", "..");
 
-const KNOWN_PREFIXES = ["CLASSROOM_TOOLKIT_"];
+const KNOWN_ENV_PREFIX = "CLASSROOM_TOOLKIT_";
 
 const ALLOWED_AI_KINDS = new Set(["openai_compatible"]);
 const ALLOWED_TEXT_SURFACES = new Set(["responses", "chat_completions"]);
 const ALLOWED_REASONING_EFFORTS = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
-export const DEFAULT_EXECUTION_SLOT_COUNT = EXECUTION_SLOT_COUNT;
 const DEFAULT_EXECUTION_SLOT_BY_ROLE = Object.freeze({
   primary: 1,
   fallback_1: 2,
@@ -110,7 +115,7 @@ export function requireValue(argv, index, flag) {
 }
 
 function isKnownEnvKey(key) {
-  return KNOWN_PREFIXES.some((prefix) => key.startsWith(prefix));
+  return key.startsWith(KNOWN_ENV_PREFIX);
 }
 
 export function parseEnvFile(envFile) {
@@ -243,7 +248,7 @@ function defaultExecutionSlotForRole(role) {
     return DEFAULT_EXECUTION_SLOT_BY_ROLE[role];
   }
   const match = role.match(/^fallback_(\d+)$/);
-  return match ? ((Number(match[1]) - 1) % DEFAULT_EXECUTION_SLOT_COUNT) + 1 : 1;
+  return match ? ((Number(match[1]) - 1) % EXECUTION_SLOT_COUNT) + 1 : 1;
 }
 
 function discoverAiFallbackIndices(env) {
@@ -304,14 +309,14 @@ export function normalizeConfig(env) {
 
   return {
     cloudEgressEnabled: boolValue(get(env, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED")),
-    executionSlotCount: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT", DEFAULT_EXECUTION_SLOT_COUNT),
+    executionSlotCount: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT", EXECUTION_SLOT_COUNT),
     runtimeDirectory: get(env, "CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY"),
     presetCooldownMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS", 120000),
     recoveryProbeEnabled: boolValue(get(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_ENABLED")),
-    recoveryProbeIntervalMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_INTERVAL_MS", 300000),
-    recoveryProbeFailureIntervalMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_FAILURE_INTERVAL_MS", 900000),
-    recoveryProbeSuccessThreshold: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_SUCCESS_THRESHOLD", 2),
-    recoveryProbeJitterMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_JITTER_MS", 30000),
+    recoveryProbeIntervalMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_INTERVAL_MS", DEFAULT_RECOVERY_PROBE_INTERVAL_MS),
+    recoveryProbeFailureIntervalMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_FAILURE_INTERVAL_MS", DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS),
+    recoveryProbeSuccessThreshold: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_SUCCESS_THRESHOLD", DEFAULT_RECOVERY_PROBE_SUCCESS_THRESHOLD),
+    recoveryProbeJitterMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_JITTER_MS", DEFAULT_RECOVERY_PROBE_JITTER_MS),
     recoveryProbeTimeoutMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_TIMEOUT_MS", 10000),
     presetSlotBindings: presetSlotConfig.bindings,
     presetSlotsExplicit: presetSlotConfig.explicit,
@@ -330,8 +335,8 @@ export function validateConfig(config, options, parseErrors) {
 
   if (!Number.isInteger(config.executionSlotCount)
       || config.executionSlotCount < 1
-      || config.executionSlotCount > DEFAULT_EXECUTION_SLOT_COUNT) {
-    errors.push(`AI execution slot count must be an integer between 1 and ${DEFAULT_EXECUTION_SLOT_COUNT}.`);
+      || config.executionSlotCount > EXECUTION_SLOT_COUNT) {
+    errors.push(`AI execution slot count must be an integer between 1 and ${EXECUTION_SLOT_COUNT}.`);
   }
   if (!Number.isInteger(config.presetCooldownMs)
       || config.presetCooldownMs < 1000
@@ -356,13 +361,13 @@ export function validateConfig(config, options, parseErrors) {
   if (config.recoveryProbeFailureIntervalMs < config.recoveryProbeIntervalMs) {
     errors.push("AI recovery probe failure interval must be greater than or equal to the normal interval.");
   }
-  if (config.presetSlotsExplicit === true && config.executionSlotCount !== DEFAULT_EXECUTION_SLOT_COUNT) {
-    errors.push(`AI execution slot count must be ${DEFAULT_EXECUTION_SLOT_COUNT} when preset slot bindings are configured.`);
+  if (config.presetSlotsExplicit === true && config.executionSlotCount !== EXECUTION_SLOT_COUNT) {
+    errors.push(`AI execution slot count must be ${EXECUTION_SLOT_COUNT} when preset slot bindings are configured.`);
   }
   for (const preset of PRESET_NAMES) {
     const bindings = config.presetSlotBindings?.[preset] ?? [];
-    if (bindings.length !== DEFAULT_EXECUTION_SLOT_COUNT) {
-      errors.push(`${preset}: exactly ${DEFAULT_EXECUTION_SLOT_COUNT} preset slot bindings are required.`);
+    if (bindings.length !== EXECUTION_SLOT_COUNT) {
+      errors.push(`${preset}: exactly ${EXECUTION_SLOT_COUNT} preset slot bindings are required.`);
       continue;
     }
     for (const [index, profile] of bindings.entries()) {
