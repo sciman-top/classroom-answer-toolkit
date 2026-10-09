@@ -462,7 +462,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     private void AppendLog(string text)
-    {        if (string.IsNullOrWhiteSpace(text))
+    {
+        if (string.IsNullOrWhiteSpace(text))
         {
             return;
         }

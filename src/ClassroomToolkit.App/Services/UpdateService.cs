@@ -394,7 +394,11 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         return Version.TryParse(versionText, out var version) ? version : DevelopmentVersion;
     }
 
-    private static string FormatVersion(Version version) => $"{version.Major}.{version.Minor}.{version.Build}";
+    private static string FormatVersion(Version version) =>
+        // A two-part version carries Build == -1; printing it raw would render "1.2.-1".
+        version.Build < 0
+            ? $"{version.Major}.{version.Minor}"
+            : $"{version.Major}.{version.Minor}.{version.Build}";
 
     private string GetInstalledWorkspaceContract()
     {
