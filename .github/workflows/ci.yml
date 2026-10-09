@@ -28,15 +28,17 @@ jobs:
         with:
           node-version-file: ".node-version"
 
-      - name: Verify development workspace
+      - name: Bootstrap workspace and run Core gate with health eval
         shell: pwsh
         run: |
-          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1 -NoInstall
+          # -SkipTests: the contract step below runs both xUnit filters; letting
+          # setup also run them executed the ordinary suite twice per push.
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1 -NoInstall -SkipTests
 
       # A visual-regression failure is environment-coupled (browser and CJK
       # fonts differ per machine). Without the rendered pages the failure is an
       # unactionable "Diff ratio exceeded" line, so keep them as evidence.
-      - name: Upload rendered pages when the workspace gate fails
+      - name: Upload rendered pages when a gate fails
         if: failure()
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
