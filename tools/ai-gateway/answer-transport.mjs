@@ -69,7 +69,6 @@ export const TASK_MODES = new Set([
   "blind_generation",
   "semantic_review_findings",
   "semantic_review_merge",
-  "visual_audit",
   "visual_audit_findings",
   "visual_audit_merge",
   "reference_review"
@@ -177,6 +176,11 @@ export function inferAnswerMode(options = {}) {
   if (TASK_MODES.has(options.mode)) {
     return options.mode;
   }
+  if (typeof options.mode === "string" && options.mode.length > 0) {
+    // Unknown explicit modes (including the removed whole-paper visual_audit
+    // rewrite) must not fall through to blind generation.
+    throw new Error(`Unknown answer mode: ${options.mode}`);
+  }
   if (options.semanticFindingsOnly) {
     return "semantic_review_findings";
   }
@@ -190,7 +194,10 @@ export function inferAnswerMode(options = {}) {
     return "visual_audit_merge";
   }
   if (options.auditImagesDir || options.auditImagePaths?.length > 0) {
-    return "visual_audit";
+    // The whole-paper visual_audit rewrite mode was removed: audit images are
+    // only meaningful for the findings-only pass, so an orphan images dir is a
+    // caller bug and must fail closed instead of silently re-solving the paper.
+    throw new Error("audit images without auditFindingsOnly are no longer supported; pass auditFindingsOnly for visual_audit_findings.");
   }
   if (options.referenceImagesDir || options.referenceImagePaths?.length > 0) {
     return "reference_review";

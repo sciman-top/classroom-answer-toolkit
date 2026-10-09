@@ -56,7 +56,6 @@
         "blind_generation",
         "semantic_review_findings",
         "semantic_review_merge",
-        "visual_audit",
         "visual_audit_findings",
         "visual_audit_merge",
         "reference_review"
@@ -96,7 +95,6 @@
             "blind_generation",
             "semantic_review_findings",
             "semantic_review_merge",
-            "visual_audit",
             "visual_audit_findings",
             "visual_audit_merge",
             "reference_review"

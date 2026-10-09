@@ -33,7 +33,6 @@
     "validator": "../../tools/latex-renderer/validate-answer-markdown.mjs",
     "evalRunner": "../../tools/latex-renderer/eval-answer-fixtures.mjs",
     "renderer": "../../tools/latex-renderer/render-md-latex.mjs",
-    "deliver": "../../tools/latex-renderer/deliver-answer.mjs",
-    "visualSmoke": "../../tools/latex-renderer/visual-regression-smoke.mjs"
+    "deliver": "../../tools/latex-renderer/deliver-answer.mjs"
   }
 }

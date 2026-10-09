@@ -35,7 +35,7 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
 
 默认连通性路由按 preset 优先级 `Sol-only → Terra-only → Luna-only`。每次请求及每个 attempt 都只会激活一套 preset：先只在当前 preset 内使用一个固定 profile 和其匹配的槽位；Sol 故障后，才在 preset seam 处探测并切换到完整 Terra-only preset，Terra 不可用才切 Luna-only。跨 preset 时按相对档位而不是 effort 字面值映射：最高=`Sol/high → Terra/max → Luna/max`，中档=`Sol/medium → Terra/xhigh → Luna/xhigh`，最低=`Sol/low → Terra/high → Luna/high`。运行时在 `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY`（未设置时为 OS 临时目录）保存活跃 preset 和冷却状态；当 Sol 冷却、Terra 健康时后续请求优先 Terra，Terra 后续故障时仍先重新探测 Sol、再探测 Luna。`CLASSROOM_TOOLKIT_AI_PRESET_COOLDOWN_MS` 默认 120000 毫秒，范围为 1000–3600000。每个候选连接最多请求两次；超时、502、429、空输出或截断才进入下一 preset。每次 attempt 必须记录实际 preset、profile、model、reasoning effort、attempt number、耗时和请求字节数。高风险审批只是工作流的额外 policy/gate，既不增加第四档，也不改变单 preset、单模型族约束。
 
-`probe:text --provider all` 在显式 preset-slot 配置下会通过每个去重后的连接依次验证全部 9 个 profile 的 model/effort 投影，并返回各 preset 中首个匹配槽位；它是能力探测，不是答案正确性验收。`/v1/models` 只证明模型标识可见，不能替代 effort 组合的请求探测。
+连通性验证由 Sol 恢复探测器承担（见下节）：它以最小 `Return exactly OK.` 请求确认 endpoint/effort 组合真实可用。`/v1/models` 只证明模型标识可见，不能替代 effort 组合的请求探测。
 
 ## Sol 恢复探测器
 
@@ -69,7 +69,7 @@ pwsh -NoProfile -File scripts/manage-ai-gateway-recovery-reconciler.ps1 -Mode Un
 
 fallback 档位的连接继承合同：显式设置 `INHERIT_PRIMARY=true` 才完整继承 primary 的 endpoint、key、kind 与 surface；该标志与本地自定义连接字段（BASE_URL/API_KEY/KIND/surface）并存属配置错误。只配 `BASE_URL` 而无本档 `API_KEY` 会被直接拒绝（跨网关复用 primary key）；完全省略连接字段的旧配置暂可继续工作，但产生 `connectionSource=primary` 迁移告警，应迁移到显式标志。既有本机配置若曾依赖隐式继承，请在兼容窗口内迁移。HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、reasoning effort、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。
 
-`--config-env-file` 的相对路径解析基准因 CLI 而异：`validate:config` 与 `request:text` 按仓库根解析；`generate:answer` 的输入路径按 `INIT_CWD`/`process.cwd` 解析；`run-live-answer-workflow.ps1` 先按仓库根解析再以绝对路径传入。自动化示例应优先使用绝对路径。
+`--config-env-file` 的相对路径解析基准因 CLI 而异：`validate:config` 按仓库根解析；`generate:answer` 的输入路径按 `INIT_CWD`/`process.cwd` 解析；`run-live-answer-workflow.ps1` 先按仓库根解析再以绝对路径传入。自动化示例应优先使用绝对路径。
 
 升级既有 `.env` 时保留一个可复用的 `PRIMARY` 连接，并把 15 个 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<N>` 映射同步到 `.env.example`；不得为同一个 Cockpit endpoint 复制 8 份 API key。显式选择某个 profile 时，先使用所属 preset；只有该 preset 的连接不可用才切换完整备用 preset。旧的 `FALLBACK_1..8` 模型 role 配置仍可读取，作为旧式多连接兼容路径；槽位不再由旧的 `CLASSROOM_TOOLKIT_AI_PROFILE_*_SLOT` 表达。旧配置省略 `EXECUTION_SLOT` 时按 role 稳定推导，建议迁移为显式 5 槽 preset 映射。
 

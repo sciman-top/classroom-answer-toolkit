@@ -5,23 +5,14 @@ import {
   DEFAULT_PRESET_SLOT_BINDINGS,
   EXECUTION_SLOT_COUNT,
   PRESET_NAMES,
-  PRESET_PROFILES,
-  QUALITY_PROFILES,
-  QUALITY_PROFILE_ORDER,
-  presetForProfile,
-  slotsForPresetProfile,
-  TEXT_FAILOVER_PROFILES
+  PRESET_PROFILES
 } from "./profile-matrix.mjs";
-import { acquireSharedExecutionSlot } from "./gateway-runtime.mjs";
 import { readResponseTextCapped, summarizeProviderErrorBody } from "../shared.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(toolDir, "..", "..");
 
-const KNOWN_PREFIXES = [
-  "CLASSROOM_TOOLKIT_",
-  "TEXT_PROVIDER"
-];
+const KNOWN_PREFIXES = ["CLASSROOM_TOOLKIT_"];
 
 const ALLOWED_AI_KINDS = new Set(["openai_compatible"]);
 const ALLOWED_TEXT_SURFACES = new Set(["responses", "chat_completions"]);
@@ -38,12 +29,8 @@ function usage() {
   return [
     "Usage:",
     "  npm --prefix tools/ai-gateway run validate:config -- [--config-env-file .env] [--allow-missing-secrets] [--json]",
-    "  npm --prefix tools/ai-gateway run probe:text -- --allow-cloud-egress",
-    "  npm --prefix tools/ai-gateway run request:text -- --allow-cloud-egress --prompt \"Return exactly OK.\"",
     "",
-    "Live probes require both:",
-    "  CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true",
-    "  --allow-cloud-egress"
+    "Answer generation is handled by generate:answer (answer-request.mjs)."
   ].join("\n");
 }
 
@@ -52,7 +39,6 @@ export function parseArgs(argv) {
     envFile: path.join(repoRoot, ".env"),
     allowMissingSecrets: false,
     json: false,
-    live: null,
     provider: "primary",
     allowCloudEgress: false,
     timeoutMs: 30000
@@ -74,14 +60,6 @@ export function parseArgs(argv) {
     }
     if (arg === "--json") {
       options.json = true;
-      continue;
-    }
-    if (arg === "--live") {
-      options.live = requireValue(argv, ++index, arg);
-      continue;
-    }
-    if (arg.startsWith("--live=")) {
-      options.live = arg.slice("--live=".length);
       continue;
     }
     if (arg === "--provider") {
@@ -114,10 +92,6 @@ export function parseArgs(argv) {
 
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
     throw new Error("--timeout-ms must be an integer >= 1000.");
-  }
-
-  if (options.live !== null && options.live !== "text") {
-    throw new Error("Only --live text is implemented in this safety slice.");
   }
 
   if (!["primary", "fallback", "all"].includes(options.provider)) {
@@ -214,19 +188,18 @@ function numberOrDefault(env, key, fallback) {
   return value.length === 0 ? fallback : Number(value);
 }
 
-function readAiProvider(env, role, canonicalPrefix, legacyPrefix, inherited = null) {
+function readAiProvider(env, role, canonicalPrefix, inherited = null) {
   const hasCanonical = hasAny(env, `${canonicalPrefix}_`);
-  const hasLegacy = hasAny(env, `${legacyPrefix}_`);
-  if (!hasCanonical && !hasLegacy) {
+  if (!hasCanonical) {
     return null;
   }
 
-  const source = hasCanonical ? "canonical" : "legacy";
-  const prefix = hasCanonical ? canonicalPrefix : legacyPrefix;
+  const source = "canonical";
+  const prefix = canonicalPrefix;
   const inheritFlagRaw = get(env, `${prefix}_INHERIT_PRIMARY`);
   const inheritPrimaryConnection = inherited !== null && boolValue(inheritFlagRaw);
-  const model = hasCanonical ? get(env, `${prefix}_TEXT_MODEL`) : get(env, `${prefix}_MODEL`);
-  const visionModel = hasCanonical ? get(env, `${prefix}_VISION_MODEL`) || model : model;
+  const model = get(env, `${prefix}_TEXT_MODEL`);
+  const visionModel = get(env, `${prefix}_VISION_MODEL`) || model;
   const executionSlotRaw = get(env, `${prefix}_EXECUTION_SLOT`);
   const executionSlot = executionSlotRaw.length > 0
     ? Number(executionSlotRaw)
@@ -277,8 +250,7 @@ function discoverAiFallbackIndices(env) {
   const indices = new Set();
   for (const key of Object.keys(env)) {
     const canonical = key.match(/^CLASSROOM_TOOLKIT_AI_FALLBACK_(\d+)_/);
-    const legacy = key.match(/^TEXT_PROVIDER_FALLBACK_(\d+)_/);
-    const index = canonical?.[1] ?? legacy?.[1];
+    const index = canonical?.[1];
     if (index && Number(index) > 0) {
       indices.add(Number(index));
     }
@@ -317,12 +289,11 @@ function readPresetSlotBindings(env) {
 }
 
 export function normalizeConfig(env) {
-  const primaryAi = readAiProvider(env, "primary", "CLASSROOM_TOOLKIT_AI_PRIMARY", "TEXT_PROVIDER");
+  const primaryAi = readAiProvider(env, "primary", "CLASSROOM_TOOLKIT_AI_PRIMARY");
   const aiFallbacks = discoverAiFallbackIndices(env).map((index) => readAiProvider(
     env,
     `fallback_${index}`,
     `CLASSROOM_TOOLKIT_AI_FALLBACK_${index}`,
-    `TEXT_PROVIDER_FALLBACK_${index}`,
     primaryAi
   ));
   const providers = [
@@ -549,7 +520,7 @@ export function summarizeProvider(provider) {
   };
 }
 
-function printHumanSummary(options, config, validation, liveResults = []) {
+function printHumanSummary(options, config, validation) {
   console.log("AI gateway config summary");
   console.log(`- env file: ${path.relative(repoRoot, options.envFile) || "."}`);
   console.log(`- cloud egress: ${config.cloudEgressEnabled ? "enabled" : "disabled"}`);
@@ -564,13 +535,6 @@ function printHumanSummary(options, config, validation, liveResults = []) {
 
   for (const warning of validation.warnings) {
     console.warn(`warning: ${warning}`);
-  }
-  for (const result of liveResults) {
-    const profile = result.qualityProfile ? ` profile=${result.qualityProfile}` : "";
-    const model = result.model ? ` model=${result.model}` : "";
-    const effort = result.reasoningEffort ? ` reasoning=${result.reasoningEffort}` : "";
-    const slot = result.executionSlot ? ` slot=${result.executionSlot}` : "";
-    console.log(`- live ${result.provider}:${profile}${model}${effort}${slot} ${result.ok ? "ok" : "failed"}${result.status ? ` status=${result.status}` : ""}${result.output ? ` output=${result.output}` : ""}${result.error ? ` error=${result.error}` : ""}`);
   }
 
   if (validation.errors.length > 0) {
@@ -672,268 +636,6 @@ export async function runInExecutionSlot(slot, operation, options = {}) {
       finalize();
     }
   }
-}
-
-export async function runLiveTextProbes(config, options) {
-  if (!options.live) {
-    return [];
-  }
-
-  assertLiveEgressAllowed(config, options.allowCloudEgress);
-
-  if (typeof fetch !== "function") {
-    throw new Error("This Node.js runtime does not provide fetch; use a newer Node.js runtime for live probes.");
-  }
-
-  const selected = orderedTextProbeProviders(config, options.provider);
-
-  if (selected.length === 0) {
-    throw new Error(`No ${options.provider} AI provider is configured for live text probe.`);
-  }
-
-  const results = [];
-  for (const provider of selected) {
-    results.push(await probeTextProvider(config, provider, options.timeoutMs));
-  }
-  return results;
-}
-
-async function callTextProviderInSharedSlot(config, provider, options) {
-  const startedAt = Date.now();
-  const lease = await acquireSharedExecutionSlot(config, [provider.executionSlot], options.timeoutMs);
-  if (!lease) {
-    throw new ExecutionSlotTimeoutError(provider.executionSlot, options.timeoutMs);
-  }
-  provider.executionSlot = lease.slot;
-  try {
-    const remainingTimeoutMs = options.timeoutMs - (Date.now() - startedAt);
-    if (remainingTimeoutMs <= 0) {
-      throw new ExecutionSlotTimeoutError(lease.slot, options.timeoutMs);
-    }
-    return await runInExecutionSlot(lease.slot, (slotRemainingTimeoutMs) => callTextProvider(provider, {
-      ...options,
-      timeoutMs: slotRemainingTimeoutMs ?? remainingTimeoutMs
-    }), { timeoutMs: remainingTimeoutMs });
-  } finally {
-    lease.release();
-  }
-}
-
-export async function probeTextProvider(config, provider, timeoutMs) {
-  let result;
-  try {
-    result = await callTextProviderInSharedSlot(config, provider, {
-      prompt: "Return exactly OK.",
-      timeoutMs,
-      // Reasoning tokens count against this cap; 8 could never complete under a
-      // configured xhigh effort, so the probe reported healthy endpoints as down.
-      maxOutputTokens: 512
-    });
-  } catch (error) {
-    if (!(error instanceof ExecutionSlotTimeoutError)) {
-      throw error;
-    }
-    result = {
-      provider: provider.role,
-      ok: false,
-      status: null,
-      output: "",
-      error: error.message
-    };
-  }
-  return {
-    provider: provider.role,
-    qualityProfile: provider.qualityProfile ?? null,
-    model: provider.textModel,
-    reasoningEffort: provider.reasoningEffort || null,
-    executionSlot: provider.executionSlot ?? null,
-    ok: result.ok && result.output.trim().toUpperCase() === "OK",
-    status: result.status,
-    output: result.output.slice(0, 80),
-    error: result.error
-  };
-}
-
-export async function requestTextWithFailover(config, options) {
-  assertLiveEgressAllowed(config, options.allowCloudEgress);
-
-  if (typeof fetch !== "function") {
-    throw new Error("This Node.js runtime does not provide fetch; use a newer Node.js runtime for live requests.");
-  }
-
-  const providers = orderedAiProviders(config);
-  if (providers.length === 0) {
-    throw new Error("No AI providers are configured for text requests.");
-  }
-
-  const attempts = [];
-  for (const provider of providers) {
-    const forcedFailure = options.forcePrimaryFailure === true && provider === providers[0];
-    const attemptStartedAt = Date.now();
-    let attempt;
-    if (forcedFailure) {
-      attempt = forcedRetryableFailure(provider);
-    } else {
-      try {
-        attempt = await callTextProviderInSharedSlot(config, provider, {
-          prompt: options.prompt,
-          timeoutMs: options.timeoutMs,
-          maxOutputTokens: options.maxOutputTokens
-        });
-      } catch (error) {
-        if (!(error instanceof ExecutionSlotTimeoutError)) {
-          throw error;
-        }
-        attempt = {
-          provider: provider.role,
-          ok: false,
-          retryable: true,
-          status: null,
-          output: "",
-          error: error.message,
-          durationMs: Date.now() - attemptStartedAt
-        };
-      }
-    }
-
-    attempt.model ??= provider.textModel;
-    attempt.reasoningEffort ??= provider.reasoningEffort || null;
-    attempt.qualityProfile ??= provider.qualityProfile ?? null;
-    attempt.executionSlot ??= provider.executionSlot;
-
-    attempts.push(attempt);
-    if (attempt.ok) {
-      return {
-        ok: true,
-        provider: provider.role,
-        output: attempt.output,
-        attempts
-      };
-    }
-
-    if (!attempt.retryable) {
-      // Provider-local rejections must not veto the remaining roles in the chain.
-      if (!PROVIDER_LOCAL_FAILURE_STATUSES.has(attempt.status) || provider === providers.at(-1)) {
-        return {
-          ok: false,
-          provider: provider.role,
-          output: "",
-          attempts,
-          error: attempt.error
-        };
-      }
-      continue;
-    }
-  }
-
-  return {
-    ok: false,
-    provider: attempts.at(-1)?.provider ?? null,
-    output: "",
-    attempts,
-    error: "All configured AI providers failed with retryable errors."
-  };
-}
-
-function executionSlotForProfile(config, profile, provider) {
-  const preset = presetForProfile(profile);
-  return slotsForPresetProfile(config.presetSlotBindings, preset, profile)[0]
-    ?? provider.executionSlot
-    ?? 1;
-}
-
-function orderedAiProviders(config) {
-  if (config.presetSlotsExplicit === true) {
-    const candidates = config.providers
-      .filter((provider) => provider.lane === "ai")
-      .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
-    const connections = uniqueConnections(candidates);
-    return TEXT_FAILOVER_PROFILES.flatMap((profile) => connections.map((provider) => ({
-      ...provider,
-      textModel: profile.model,
-      visionModel: profile.model,
-      reasoningEffort: profile.reasoningEffort,
-      qualityProfile: profile.profile,
-      executionSlot: executionSlotForProfile(config, profile.profile, provider)
-    })));
-  }
-  return TEXT_FAILOVER_PROFILES.flatMap((profile) => config.providers
-    .filter((provider) => provider.lane === "ai")
-    .filter((provider) => provider.textModel === profile.model
-      && provider.reasoningEffort === profile.reasoningEffort)
-    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role)));
-}
-
-function orderedTextProbeProviders(config, target) {
-  const matchesTarget = (provider) => target === "all"
-    || (target === "primary" && provider.role === "primary")
-    || (target === "fallback" && provider.role.startsWith("fallback"));
-  const candidates = config.providers
-    .filter((provider) => provider.lane === "ai")
-    .filter(matchesTarget)
-    .sort((left, right) => providerOrder(left.role) - providerOrder(right.role));
-
-  if (config.presetSlotsExplicit !== true) {
-    return candidates;
-  }
-
-  const connections = uniqueConnections(candidates);
-  return QUALITY_PROFILE_ORDER.flatMap((profileName) => {
-    const profile = QUALITY_PROFILES[profileName];
-    return connections.map((provider) => ({
-      ...provider,
-      textModel: profile.model,
-      visionModel: profile.model,
-      reasoningEffort: profile.reasoningEffort,
-      qualityProfile: profileName,
-      executionSlot: executionSlotForProfile(config, profileName, provider)
-    }));
-  });
-}
-
-function connectionFingerprint(provider) {
-  return [
-    provider.kind,
-    provider.baseUrl,
-    provider.apiKey,
-    provider.textSurface,
-    provider.visionSurface
-  ].join("\u0000");
-}
-
-function uniqueConnections(providers) {
-  const seen = new Set();
-  return providers.filter((provider) => {
-    const fingerprint = connectionFingerprint(provider);
-    if (seen.has(fingerprint)) {
-      return false;
-    }
-    seen.add(fingerprint);
-    return true;
-  });
-}
-
-function providerOrder(role) {
-  if (role === "primary") {
-    return 0;
-  }
-
-  const match = role.match(/^fallback_(\d+)$/);
-  return match ? Number(match[1]) : 999;
-}
-
-function forcedRetryableFailure(provider) {
-  return {
-    provider: provider.role,
-    model: provider.textModel,
-    reasoningEffort: provider.reasoningEffort || null,
-    executionSlot: provider.executionSlot,
-    ok: false,
-    retryable: true,
-    status: null,
-    output: "",
-    error: "forced retryable primary failure"
-  };
 }
 
 export async function callTextProvider(provider, options) {
@@ -1076,17 +778,9 @@ function extractTextOutput(parsed) {
 
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
-  if (options.live) {
-    console.error("[deprecated] --live text probes (npm run probe:text) are deprecated and will be removed on 2026-09-30.");
-  }
   const { env, parseErrors } = loadEnvironment(options);
   const config = normalizeConfig(env);
-  if (config.providers.some((provider) => provider.source === "legacy")) {
-    console.error("[deprecated] TEXT_PROVIDER_* legacy env prefixes are deprecated and will be removed on 2026-09-30; migrate to CLASSROOM_TOOLKIT_AI_*.");
-  }
   const validation = validateConfig(config, options, parseErrors);
-  const liveResults = validation.errors.length === 0 ? await runLiveTextProbes(config, options) : [];
-  const liveFailed = liveResults.some((result) => !result.ok);
 
   if (options.json) {
     console.log(JSON.stringify({
@@ -1105,14 +799,13 @@ export async function main() {
       presetSlotsExplicit: config.presetSlotsExplicit,
       providers: config.providers.map(summarizeProvider),
       warnings: validation.warnings,
-      errors: validation.errors,
-      liveResults
+      errors: validation.errors
     }, null, 2));
   } else {
-    printHumanSummary(options, config, validation, liveResults);
+    printHumanSummary(options, config, validation);
   }
 
-  if (validation.errors.length > 0 || liveFailed) {
+  if (validation.errors.length > 0) {
     process.exitCode = 1;
   }
 }

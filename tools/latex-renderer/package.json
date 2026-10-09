@@ -20,7 +20,6 @@
     "review-source-pdf": "node review-source-pdf.mjs",
     "validate:answer": "node validate-answer-markdown.mjs",
     "visual:compare": "node visual-regression.mjs",
-    "visual:smoke": "node visual-regression-smoke.mjs",
     "validate:delivery-manifest": "node validate-delivery-manifest.mjs",
     "write:delivery-manifest": "node write-delivery-manifest.mjs",
     "export:docx": "node export-answer-docx.mjs",

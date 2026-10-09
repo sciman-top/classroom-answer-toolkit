@@ -26,7 +26,6 @@ import {
 import {
   normalizeConfig,
   runInExecutionSlot,
-  runLiveTextProbes,
   validateConfig
 } from "./validate-config.mjs";
 import { acquirePresetHealthLock, presetOrderForRequest } from "./gateway-runtime.mjs";
@@ -211,33 +210,6 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
   assert.ok(aiProviders.every((provider) => provider.visionModel === provider.textModel));
   assert.equal(config.executionSlotCount, 5);
   assert.deepEqual(aiProviders.map(({ executionSlot }) => executionSlot), [1, 2, 3, 1, 4, 5, 1, 4, 5]);
-});
-
-test("visual audit prompt treats audit images as source evidence rather than reference answers", () => {
-  const directory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-visual-audit-prompt-"));
-  const promptPath = path.join(directory, "spec.md");
-  try {
-    writeFileSync(promptPath, "v8.14 production specification", "utf8");
-    const prompt = buildPrompt(promptPath, {
-      mode: "visual_audit",
-      candidateMarkdown: "# 参考答案\n\n1—5：B、C、C、B、D\n\n17. ④0.16 A。",
-      sourcePageCount: 8,
-      auditImageCount: 8
-    });
-
-    assert.match(prompt, /无参考答案视觉审计任务/);
-    assert.match(prompt, /不是参考答案/);
-    assert.match(prompt, /逐项反证/);
-    assert.match(prompt, /承重绳段/);
-    assert.match(prompt, /实际连接导线的接线柱/);
-    assert.match(prompt, /量程.*分度值.*指针/);
-    assert.match(prompt, /刻度尺.*两端/);
-    assert.match(prompt, /无法可靠判读/);
-    assert.match(prompt, /0\.16 A/);
-    assert.doesNotMatch(prompt, /参考答案是答案取值的权威来源/);
-  } finally {
-    rmSync(directory, { recursive: true, force: true });
-  }
 });
 
 test("visual findings and merge prompts separate evidence extraction from Markdown rewriting", () => {
@@ -619,97 +591,6 @@ test("preset-health lock serializes independent CLI processes separately from ex
     assert.equal(maxConcurrentLeaseEvents(eventsPath), 1);
   } finally {
     rmSync(directory, { recursive: true, force: true });
-  }
-});
-
-test("live probes project one shared connection across all nine quality profiles", async () => {
-  const originalFetch = globalThis.fetch;
-  const calls = [];
-  let runtimeDirectory = null;
-  let probeOutput = "OK";
-  globalThis.fetch = async (_url, request) => {
-    calls.push(JSON.parse(request.body));
-    return new Response(JSON.stringify({ output_text: probeOutput }), { status: 200 });
-  };
-
-  try {
-    const config = normalizeConfig({
-      CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
-      CLASSROOM_TOOLKIT_AI_EXECUTION_SLOT_COUNT: "5",
-      CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
-      CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
-      CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
-      CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-5.6-sol",
-      CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "high",
-      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-high",
-      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-high",
-      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
-      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
-      CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-max",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-max",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-high",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-max",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-max",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-xhigh",
-      CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-high"
-    });
-    runtimeDirectory = mkdtempSync(path.join(os.tmpdir(), "classroom-answer-probe-runtime-"));
-    config.runtimeDirectory = runtimeDirectory;
-    const results = await runLiveTextProbes(config, {
-      live: "text",
-      allowCloudEgress: true,
-      provider: "all",
-      timeoutMs: 1000
-    });
-
-    assert.equal(results.length, 9);
-    assert.ok(results.every((result) => result.ok));
-    assert.deepEqual(results.map(({ qualityProfile, model, reasoningEffort, executionSlot }) => ({
-      qualityProfile,
-      model,
-      reasoningEffort,
-      executionSlot
-    })), [
-      { qualityProfile: "sol-high", model: "gpt-5.6-sol", reasoningEffort: "high", executionSlot: 1 },
-      { qualityProfile: "sol-medium", model: "gpt-5.6-sol", reasoningEffort: "medium", executionSlot: 3 },
-      { qualityProfile: "sol-low", model: "gpt-5.6-sol", reasoningEffort: "low", executionSlot: 5 },
-      { qualityProfile: "terra-max", model: "gpt-5.6-terra", reasoningEffort: "max", executionSlot: 1 },
-      { qualityProfile: "terra-xhigh", model: "gpt-5.6-terra", reasoningEffort: "xhigh", executionSlot: 3 },
-      { qualityProfile: "terra-high", model: "gpt-5.6-terra", reasoningEffort: "high", executionSlot: 5 },
-      { qualityProfile: "luna-max", model: "gpt-5.6-luna", reasoningEffort: "max", executionSlot: 1 },
-      { qualityProfile: "luna-xhigh", model: "gpt-5.6-luna", reasoningEffort: "xhigh", executionSlot: 3 },
-      { qualityProfile: "luna-high", model: "gpt-5.6-luna", reasoningEffort: "high", executionSlot: 5 }
-    ]);
-    assert.deepEqual(calls.map(({ model, reasoning }) => ({ model, effort: reasoning.effort })), [
-      { model: "gpt-5.6-sol", effort: "high" },
-      { model: "gpt-5.6-sol", effort: "medium" },
-      { model: "gpt-5.6-sol", effort: "low" },
-      { model: "gpt-5.6-terra", effort: "max" },
-      { model: "gpt-5.6-terra", effort: "xhigh" },
-      { model: "gpt-5.6-terra", effort: "high" },
-      { model: "gpt-5.6-luna", effort: "max" },
-      { model: "gpt-5.6-luna", effort: "xhigh" },
-      { model: "gpt-5.6-luna", effort: "high" }
-    ]);
-
-    probeOutput = "NOT OK";
-    const rejected = await runLiveTextProbes(config, {
-      live: "text",
-      allowCloudEgress: true,
-      provider: "primary",
-      timeoutMs: 1000
-    });
-    assert.equal(rejected.length, 9);
-    assert.ok(rejected.every((result) => !result.ok));
-  } finally {
-    globalThis.fetch = originalFetch;
-    if (typeof runtimeDirectory === "string") {
-      rmSync(runtimeDirectory, { recursive: true, force: true });
-    }
   }
 });
 
@@ -1637,7 +1518,7 @@ test("answer request refuses to overwrite one of its inputs", () => {
     const result = spawnSync(process.execPath, [
       fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
       "--prompt-file", promptPath,
-      "--image", imagePaths[0],
+      "--images-dir", path.dirname(imagePaths[0]),
       "--output", promptPath
     ], {
       cwd: directory,
@@ -1661,7 +1542,7 @@ test("answer request refuses a summary path that overwrites an input or output",
       const result = spawnSync(process.execPath, [
         fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
         "--prompt-file", promptPath,
-        "--image", imagePaths[0],
+        "--images-dir", path.dirname(imagePaths[0]),
         "--output", outputPath,
         "--summary-out", summaryPath
       ], {
@@ -2001,7 +1882,7 @@ test("default prompt resolves to the compiled full spec via the manifest", () =>
   assert.equal(existsSync(resolved), true);
 });
 
-test("explicit --image prints the deprecation warning", () => {
+test("removed --image flag is rejected as unknown", () => {
   const { directory, imagePaths } = createPageImages(1);
   const missingEnvFile = path.join(directory, "missing.env");
   try {
@@ -2016,13 +1897,13 @@ test("explicit --image prints the deprecation warning", () => {
     });
 
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /\[deprecated\] --image is deprecated/);
+    assert.match(result.stderr, /Unknown argument: --image/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test("directory-based image inputs print no deprecation warning", () => {
+test("directory-based image inputs pass argument validation", () => {
   const { directory } = createPageImages(1);
   const missingEnvFile = path.join(directory, "missing.env");
   const candidatePath = path.join(directory, "candidate.md");
@@ -2043,9 +1924,8 @@ test("directory-based image inputs print no deprecation warning", () => {
       });
 
       assert.notEqual(result.status, 0);
-      // 到达配置加载层才证明参数校验已通过、弃用告警逻辑已执行，断言不空真。
+      // 到达配置加载层才证明参数校验已通过，断言不空真。
       assert.match(result.stderr, /Env file not found/);
-      assert.doesNotMatch(result.stderr, /\[deprecated\]/);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });

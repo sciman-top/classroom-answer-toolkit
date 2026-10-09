@@ -99,15 +99,9 @@ Full 中共享 renderer/layout/delivery 回归只由 `junior-physics-answer` eva
 
 `scripts/bootstrap.ps1` 会安装基础依赖，只用于环境初始化，不是日常门禁；可选 OCR 由 renderer 的 `review-source-pdf --ocr` 显式启用。
 
-## 弃用入口（2026-09-30 到期）
+## 已删除的弃用入口（2026-10-09）
 
-以下手动入口无主链调用方，弃用窗口已于 2026-09-30 到期。2026-09-30 的消费者审计确认 active workflow、tests、package scripts 和 verifier 均无引用（详见下方逐项），删除前置条件已满足；删除本身仍按 `docs/strategy/final-implementation-baseline.md` 走独立切片，因为移除 `visual_audit` 整卷模式、`--image` 和 `visualSmoke` 会同时触及人类 spec、schema、compiled 生成物与多份 snapshot，需要一次性的兼容证据，不能混在普通修复里：
-
-- ai-gateway：`request:text`（text-request.mjs）、`probe:text`（validate-config `--live`）、`TEXT_PROVIDER_*` 旧环境变量前缀、answer-request 的 `--image` flag、不带 `--audit-findings-only` 的整卷 `visual_audit` 模式。
-- rule-compiler：`resolve:profile`。
-- latex-renderer：`visual:smoke`（移除时连同各 subject-pack manifest 的 `visualSmoke` 字段一起处理）。
-
-审计结论（2026-09-30）：`text-request.mjs` 与 `resolve-profile.mjs` 仅被自身 package.json 脚本引用；`visualSmoke` 只出现在 manifest 与 `.snapshot-cache/` 生成物中；主链 `scripts/run-live-answer-workflow.ps1` 始终传 `--audit-findings-only` 并使用 `--images-dir`，因此整卷 `visual_audit` 与 `--image` 无调用方。删除切片可直接按此清单执行，不需要再补一轮发现。
+2026-09-30 到期的弃用窗口已执行删除，消费者审计结论见 Git 历史：ai-gateway 的 `request:text`/`probe:text`/`TEXT_PROVIDER_*` 旧前缀/`--image` flag/整卷 `visual_audit` 模式、rule-compiler 的 `resolve:profile`、latex-renderer 的 `visual:smoke` 与各 subject-pack manifest 的 `visualSmoke` 字段均已移除。视觉审计只保留 findings/merge 两段路径；审计图输入必须搭配 `--audit-findings-only`。`交付过程归档/` 内历史 snapshot 保留 `visualSmoke` 记录属于当时事实，不改写。
 
 ## 桌面发布边界
 

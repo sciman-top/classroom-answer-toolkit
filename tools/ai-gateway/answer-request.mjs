@@ -63,12 +63,11 @@ Options:
   --candidate-file <path>   Blind answer Markdown to review against a reference answer
   --semantic-findings-only  Independently re-solve semantic questions without a reference answer
   --semantic-findings-file <path>  Merge a prior no-reference semantic findings report
-  --audit-images-dir <dir>  High-resolution source crops/pages for a no-reference visual audit; requires --candidate-file
+  --audit-images-dir <dir>  High-resolution source crops/pages for a no-reference visual audit; requires --candidate-file and --audit-findings-only
   --audit-findings-only     Emit visual findings without rewriting the candidate; requires --audit-images-dir
   --audit-findings-file <path>  Merge a prior visual findings report into the candidate without image input
   --reference-images-dir <dir>  Ordered reference-answer page images; requires --candidate-file
   --reference-text-file <path>  Optional extracted text layer from the same reference PDF
-  --image <path>            Add one page image; deprecated, use --images-dir
   --output <path>           Markdown output path
   --summary-out <path>      Optional atomic JSON receipt for this generation stage
   --provider <target>       primary, fallback, or all; default all
@@ -93,8 +92,6 @@ function parseArgs(argv) {
     referenceImagesDir: null,
     referenceTextFile: null,
     candidateFile: null,
-    imagePaths: [],
-    usedDeprecatedImageFlag: false,
     outputPath: null,
     summaryPath: null,
     provider: "all",
@@ -137,11 +134,6 @@ function parseArgs(argv) {
     }
     if (arg.startsWith("--source-text-file=")) {
       options.sourceTextFile = resolveCallerPath(arg.slice("--source-text-file=".length));
-      continue;
-    }
-    if (arg === "--image") {
-      options.imagePaths.push(resolveCallerPath(requireValue(argv, ++index, arg)));
-      options.usedDeprecatedImageFlag = true;
       continue;
     }
     if (arg === "--candidate-file") {
@@ -198,11 +190,6 @@ function parseArgs(argv) {
     }
     if (arg.startsWith("--reference-text-file=")) {
       options.referenceTextFile = resolveCallerPath(arg.slice("--reference-text-file=".length));
-      continue;
-    }
-    if (arg.startsWith("--image=")) {
-      options.imagePaths.push(resolveCallerPath(arg.slice("--image=".length)));
-      options.usedDeprecatedImageFlag = true;
       continue;
     }
     if (arg === "--output") {
@@ -274,7 +261,7 @@ function parseArgs(argv) {
 
   options.promptFile ??= resolveDefaultPromptPath();
   validateOptions(options);
-  options.sourceImagePaths = options.imagesDir || options.imagePaths.length > 0
+  options.sourceImagePaths = options.imagesDir
     ? resolveOrderedImages(options)
     : [];
   options.auditImagePaths = options.auditImagesDir
@@ -305,11 +292,8 @@ function validateOptions(options) {
   if (!options.outputPath) {
     throw new Error(`--output is required.\n\n${usage}`);
   }
-  if (options.imagesDir && options.imagePaths.length > 0) {
-    throw new Error("Use --images-dir or repeated --image values, not both.");
-  }
-  if (!options.imagesDir && options.imagePaths.length === 0 && !options.semanticFindingsFile && !options.auditImagesDir && !options.auditFindingsFile) {
-    throw new Error("--images-dir, --semantic-findings-file, --audit-images-dir, --audit-findings-file, or at least one --image is required.");
+  if (!options.imagesDir && !options.semanticFindingsFile && !options.auditImagesDir && !options.auditFindingsFile) {
+    throw new Error("--images-dir, --semantic-findings-file, --audit-images-dir, or --audit-findings-file is required.");
   }
   if (!["primary", "fallback", "all"].includes(options.provider)) {
     throw new Error("--provider must be primary, fallback, or all.");
@@ -340,11 +324,16 @@ function validateOptions(options) {
   if (options.auditFindingsOnly && !options.auditImagesDir) {
     throw new Error("--audit-findings-only requires --audit-images-dir.");
   }
-  if (options.semanticFindingsOnly && (!options.imagesDir && options.imagePaths.length === 0)) {
-    throw new Error("--semantic-findings-only requires --images-dir or at least one --image.");
+  if (options.auditImagesDir && !options.auditFindingsOnly) {
+    // The whole-paper visual_audit rewrite mode was removed; audit images are
+    // only valid for the findings-only pass.
+    throw new Error("--audit-images-dir requires --audit-findings-only.");
   }
-  if (options.semanticFindingsFile && (!options.imagesDir && options.imagePaths.length === 0)) {
-    throw new Error("Semantic merge requires --images-dir or at least one original-source --image.");
+  if (options.semanticFindingsOnly && !options.imagesDir) {
+    throw new Error("--semantic-findings-only requires --images-dir.");
+  }
+  if (options.semanticFindingsFile && !options.imagesDir) {
+    throw new Error("Semantic merge requires --images-dir.");
   }
   if (options.semanticFindingsOnly && (options.semanticFindingsFile || options.auditImagesDir
       || options.auditFindingsOnly || options.auditFindingsFile || options.referenceImagesDir)) {
@@ -394,9 +383,7 @@ function validateOutputCollision(options) {
 }
 
 function resolveOrderedImages(options) {
-  const imagePaths = options.imagesDir
-    ? resolveImagesFromDirectory(options.imagesDir)
-    : [...options.imagePaths];
+  const imagePaths = resolveImagesFromDirectory(options.imagesDir);
 
   if (imagePaths.length === 0) {
     throw new Error("No supported page images were found.");
@@ -454,12 +441,6 @@ export function buildAnswerRoutingSummary(result) {
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
   const mode = inferAnswerMode(options);
-  if (options.usedDeprecatedImageFlag) {
-    console.error("[deprecated] --image is deprecated and will be removed on 2026-09-30; use --images-dir.");
-  }
-  if (mode === "visual_audit") {
-    console.error("[deprecated] full visual_audit rewrite mode is deprecated and will be removed on 2026-09-30; pass --audit-findings-only with --audit-images-dir.");
-  }
   const loaded = loadGatewayConfig({ envFile: options.envFile, allowMissingSecrets: false });
   if (loaded.validation.errors.length > 0) {
     throw new Error(loaded.validation.errors.join("; "));

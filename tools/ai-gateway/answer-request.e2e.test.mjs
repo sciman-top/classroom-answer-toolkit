@@ -66,7 +66,7 @@ function providerEnv(baseUrl, roleSuffix, apiKey) {
 const EGRESS_ENV = { CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true" };
 
 const FAILover_OPTIONS = {
-  mode: "answer",
+  mode: "blind_generation",
   prompt: "p",
   provider: "all",
   qualityProfile: "sol-high",

@@ -163,18 +163,10 @@ cases under `eval/junior-physics-answer/`.
 
 ## Minimal visual regression
 
-The repository now includes a lightweight first-page regression for the smoke
-fixture:
-
-```powershell
-npm --prefix tools/latex-renderer run visual:smoke
-```
-
-Behavior:
-
-- first run creates baseline images for both `classroom` and `compact`;
-- later runs compare the current first-page render against those baselines;
-- failure indicates a visual change large enough to inspect manually.
+Visual regression runs via `npm --prefix tools/latex-renderer run test:visual`
+(`visual-regression.mjs`, also exposed as `visual:compare`); the former
+`visual:smoke` one-shot entry was removed with its deprecated `visualSmoke`
+manifest fields on 2026-10-09.
 
 ## Eval suite
 

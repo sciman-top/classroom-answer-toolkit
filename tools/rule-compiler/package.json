@@ -11,7 +11,6 @@
     "validate:assets": "node validate-assets.mjs",
     "validate:spec-boundary": "node validate-spec-boundary.mjs",
     "validate:cross-subject": "node validate-cross-subject.mjs",
-    "resolve:profile": "node resolve-profile.mjs",
     "validate:json": "node validate-json.mjs",
     "list:subject-packs": "node list-subject-packs.mjs",
     "health": "node workspace-health.mjs"
