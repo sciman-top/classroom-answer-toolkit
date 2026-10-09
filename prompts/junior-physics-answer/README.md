@@ -5,7 +5,7 @@ physics answer workflow.
 
 ## Current baseline
 
-- Human-readable production spec: `../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.18.md`
+- Human-readable production spec: `../specs/compiled/试卷参考答案交付规范-初中物理-完整版-v8.23.md`
 - Structured runtime config consumed by tools: `config.json`
 - Asset manifest and ownership map: `manifest.json`
 - Acceptance gates distilled from the full spec: `checklists/acceptance.md`

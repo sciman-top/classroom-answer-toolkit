@@ -34,7 +34,12 @@ public sealed class ToolchainCliBehaviorTests
             var snapshot = document.RootElement;
             snapshot.GetProperty("snapshotId").GetString().Should().StartWith("snapshot-");
             snapshot.GetProperty("subjectPack").GetProperty("assetId").GetString().Should().Be("junior-physics-answer");
-            snapshot.GetProperty("subjectPack").GetProperty("version").GetString().Should().Be("v8.18");
+            // The aligned version is whatever the subject-pack manifest declares;
+            // hardcoding it here would turn every spec version bump into a test edit.
+            var manifestVersion = JsonDocument.Parse(
+                File.ReadAllText(Path.Combine(root, "prompts", "junior-physics-answer", "manifest.json")))
+                .RootElement.GetProperty("version").GetString();
+            snapshot.GetProperty("subjectPack").GetProperty("version").GetString().Should().Be(manifestVersion);
             snapshot.GetProperty("activeProfile").GetProperty("name").GetString().Should().Be("classroom");
         }
         finally
