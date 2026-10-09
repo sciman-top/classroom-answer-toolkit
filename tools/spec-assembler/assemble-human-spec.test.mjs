@@ -29,9 +29,7 @@ function writeWorkspace() {
       { label: "平台总则", path: "../platform/platform-rules-v1.0.md" },
       { label: "学科特异", path: "../subjects/subject-source-v2.1.md" }
     ],
-    entrySource: "../subjects/subject-entry-v2.1.md",
-    fullOutput: "../compiled/test-full-v2.2.md",
-    entryOutput: "../compiled/test-entry-v2.2.md"
+    entrySource: "../subjects/subject-entry-v2.1.md"
   }, null, 2)}\n`);
   return { root, assemblyPath };
 }
@@ -69,12 +67,12 @@ test("checkAssemblyOutputs reports drift and missing outputs", () => {
   try {
     const missing = checkAssemblyOutputs(assemblyPath);
     assert.equal(missing.length, 2);
-    assert.ok(missing.every((message) => /^Missing generated file: .*(compiled[\\/])?test-(full|entry)-v2\.2\.md$/.test(message)));
+    assert.ok(missing.every((message) => /^Missing generated file: .*compiled[\\/]试卷参考答案交付规范-测试学科-(完整版|调用版)-v2\.2\.md$/.test(message)));
 
     writeAssemblyOutputs(assemblyPath);
     assert.deepEqual(checkAssemblyOutputs(assemblyPath), []);
 
-    const fullOutputPath = path.join(root, "specs/compiled/test-full-v2.2.md");
+    const fullOutputPath = path.join(root, "specs/compiled/试卷参考答案交付规范-测试学科-完整版-v2.2.md");
     fs.writeFileSync(fullOutputPath, "# tampered\n", "utf8");
     const mismatches = checkAssemblyOutputs(assemblyPath);
     assert.equal(mismatches.length, 1);

@@ -140,6 +140,17 @@ function buildEntryContent(assemblyPath, assembly, entryMarkdown, sourceLayers) 
   return `${header}${body.trim()}\n`;
 }
 
+// The compiled file names embed outputVersion; keeping the pattern in this one
+// function makes outputVersion the single version carrier a bump has to edit.
+export function deriveAssemblyOutputPaths(assembly, assemblyDir) {
+  const stem = `试卷参考答案交付规范-${assembly.subjectLabel}`;
+  const compiledDir = path.join(assemblyDir, "..", "compiled");
+  return {
+    fullOutputPath: path.join(compiledDir, `${stem}-完整版-${assembly.outputVersion}.md`),
+    entryOutputPath: path.join(compiledDir, `${stem}-调用版-${assembly.outputVersion}.md`)
+  };
+}
+
 export function generateAssemblyOutputs(assemblyFilePath) {
   const assembly = readJson(assemblyFilePath);
   const assemblyDir = path.dirname(assemblyFilePath);
@@ -161,8 +172,7 @@ export function generateAssemblyOutputs(assemblyFilePath) {
     sourceLayers
   );
 
-  const fullOutputPath = path.resolve(assemblyDir, assembly.fullOutput);
-  const entryOutputPath = path.resolve(assemblyDir, assembly.entryOutput);
+  const { fullOutputPath, entryOutputPath } = deriveAssemblyOutputPaths(assembly, assemblyDir);
 
   return {
     assembly,

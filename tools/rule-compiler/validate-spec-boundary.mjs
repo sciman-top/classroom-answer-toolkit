@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { readJsonFile, resolveRepoPath } from "./shared.mjs";
+import { deriveAssemblyOutputPaths } from "../spec-assembler/assemble-human-spec.mjs";
 
 export const forbiddenSpecTerms = [
   "ProblemEvidenceBundle",
@@ -63,7 +64,7 @@ export function collectSpecBoundaryErrors() {
     const configPath = resolveRepoPath(`prompts/${assembly.subjectPack}/config.json`);
     const manifest = readJsonFile(manifestPath);
     const config = readJsonFile(configPath);
-    const fullOutputPath = path.resolve(assemblyDir, assembly.fullOutput);
+    const { fullOutputPath } = deriveAssemblyOutputPaths(assembly, assemblyDir);
     const manifestHumanSpecPath = path.resolve(path.dirname(manifestPath), manifest.sourceOfTruth.humanSpec);
     const configHumanSpecPath = path.resolve(path.dirname(configPath), config.sourceOfTruth.humanSpec);
 
