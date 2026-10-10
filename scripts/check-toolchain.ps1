@@ -35,7 +35,10 @@ function Invoke-GateStep {
 Write-Host ("Toolchain gate mode={0}; requestedSubjectPack={1}" -f $Mode, $SubjectPack)
 
 Invoke-GateStep "assets" {
-    npm --prefix tools/rule-compiler run validate:assets
+    # Direct node call, same rationale as the snapshot steps below: an npm
+    # --prefix cold start costs 1-2s per gate run and the tool resolves its
+    # repo root from its own location, so the npm layer buys nothing.
+    & node (Join-Path $repoRoot "tools/rule-compiler/validate-assets.mjs")
 } "Asset validation failed."
 
 $subjectPacks = @(Get-SubjectPackMetadata -RepositoryRoot $repoRoot)
@@ -76,10 +79,10 @@ foreach ($selectedSubjectPack in $selectedSubjectPacks) {
 
 if ($Mode -eq "Full") {
     Invoke-GateStep "cross-subject" {
-        npm --prefix tools/rule-compiler run validate:cross-subject
+        & node (Join-Path $repoRoot "tools/rule-compiler/validate-cross-subject.mjs")
     } "Cross-subject validation failed."
     Invoke-GateStep "delivery-contract" {
-        npm --prefix tools/latex-renderer run test:delivery-contract
+        & node --test (Join-Path $repoRoot "tools/latex-renderer/validate-delivery-manifest.test.mjs") (Join-Path $repoRoot "tools/latex-renderer/delivery-portability.test.mjs")
     } "Delivery manifest contract tests failed."
 
     foreach ($selectedSubjectPack in $selectedSubjectPacks) {
