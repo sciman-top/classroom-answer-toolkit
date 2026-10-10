@@ -11,7 +11,7 @@ public sealed class CrossSubjectContractTests
     [InlineData("math-answer")]
     public void SubjectPackManifestDatasetAndCompiledSpecAreAligned(string subjectPack)
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var packRoot = Path.Combine(root, "prompts", subjectPack);
         var manifestPath = Path.Combine(packRoot, "manifest.json");
         using var manifestDocument = JsonDocument.Parse(File.ReadAllText(manifestPath));
@@ -39,7 +39,7 @@ public sealed class CrossSubjectContractTests
     [Fact]
     public void PhysicsEvalSuitesDeclareOneSharedRendererOwnerAndBoundedSeniorSentinels()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         using var juniorDocument = JsonDocument.Parse(File.ReadAllText(Path.Combine(
             root, "eval", "junior-physics-answer", "dataset.json")));
         using var seniorDocument = JsonDocument.Parse(File.ReadAllText(Path.Combine(
@@ -61,7 +61,7 @@ public sealed class CrossSubjectContractTests
     [Fact]
     public void NodeVersionContractIsDeclaredConsistentlyAcrossToolPackages()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var declaredVersion = File.ReadAllText(Path.Combine(root, ".node-version")).Trim();
         declaredVersion.Should().MatchRegex(@"^\d+$");
 
@@ -75,17 +75,5 @@ public sealed class CrossSubjectContractTests
             document.RootElement.GetProperty("engines").GetProperty("node").GetString()
                 .Should().Be($">={declaredVersion}", $"{tool} must match .node-version");
         }
-    }
-
-    private static string FindRepoRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null)
-        {
-            if (File.Exists(Path.Combine(current.FullName, "ClassroomToolkit.sln"))) return current.FullName;
-            current = current.Parent;
-        }
-
-        throw new InvalidOperationException("Repository root not found.");
     }
 }

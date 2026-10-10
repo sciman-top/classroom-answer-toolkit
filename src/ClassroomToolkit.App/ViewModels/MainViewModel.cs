@@ -207,6 +207,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             UpdateStatus = "正在检查更新...";
+            // CheckAsync's contract is to translate expected failures into an
+            // Unavailable result and never throw unless cancellation was asked
+            // for; this catch is a last-resort guard for contract violations
+            // only, so the UI can never crash from a failed update check.
             var result = await _updateService.CheckAsync();
             _availableUpdate = result.Update;
             UpdateAvailable = result.UpdateAvailable;
@@ -249,6 +253,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             UpdateStatus = "已取消更新下载";
         }
+        // InstallAsync catches its own expected failures into the result; this
+        // guard only keeps unexpected contract violations from crashing the app.
         catch (Exception ex)
         {
             UpdateStatus = $"启动更新失败：{ex.Message}";

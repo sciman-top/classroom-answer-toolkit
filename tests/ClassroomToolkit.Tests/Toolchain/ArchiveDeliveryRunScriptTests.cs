@@ -169,7 +169,7 @@ public sealed class ArchiveDeliveryRunScriptTests
 
     private static (string Sandbox, string RunDirectory, string ScriptPath) CreateSandbox()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var sandbox = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-ArchiveScript", Guid.NewGuid().ToString("N"));
         var runDirectory = Path.Combine(sandbox, "正式交付", "run-a");
         Directory.CreateDirectory(Path.Combine(runDirectory, "sub"));
@@ -183,13 +183,13 @@ public sealed class ArchiveDeliveryRunScriptTests
         return (sandbox, runDirectory, Path.Combine(root, "scripts", "archive-delivery-run.ps1"));
     }
 
-    private static async Task<ProcessResult> RunScriptAsync(string scriptPath, string repositoryRoot, string archiveRoot, string runDirectory)
+    private static async Task<ToolchainTestHost.ProcessResult> RunScriptAsync(string scriptPath, string repositoryRoot, string archiveRoot, string runDirectory)
         => await RunScriptCoreAsync(scriptPath, repositoryRoot, archiveRoot, runDirectory);
 
-    private static async Task<ProcessResult> RunScriptWithoutArchiveRootAsync(string scriptPath, string repositoryRoot, string runDirectory)
+    private static async Task<ToolchainTestHost.ProcessResult> RunScriptWithoutArchiveRootAsync(string scriptPath, string repositoryRoot, string runDirectory)
         => await RunScriptCoreAsync(scriptPath, repositoryRoot, archiveRoot: null, runDirectory);
 
-    private static async Task<ProcessResult> RunScriptCoreAsync(string scriptPath, string repositoryRoot, string? archiveRoot, string runDirectory)
+    private static async Task<ToolchainTestHost.ProcessResult> RunScriptCoreAsync(string scriptPath, string repositoryRoot, string? archiveRoot, string runDirectory)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -232,7 +232,7 @@ public sealed class ArchiveDeliveryRunScriptTests
             throw new TimeoutException("pwsh did not exit within two minutes.");
         }
 
-        return new ProcessResult(process.ExitCode, (await stdoutTask) + Environment.NewLine + (await stderrTask));
+        return new ToolchainTestHost.ProcessResult(process.ExitCode, (await stdoutTask) + Environment.NewLine + (await stderrTask));
     }
 
     private static void DeleteDirectory(string directory)
@@ -246,24 +246,5 @@ public sealed class ArchiveDeliveryRunScriptTests
             File.SetAttributes(file, FileAttributes.Normal);
         }
         Directory.Delete(directory, recursive: true);
-    }
-
-    private static string FindRepoRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null)
-        {
-            if (File.Exists(Path.Combine(current.FullName, "ClassroomToolkit.sln"))) return current.FullName;
-            current = current.Parent!;
-        }
-
-        throw new InvalidOperationException("Repository root not found.");
-    }
-
-    private sealed record ProcessResult(int ExitCode, string Output)
-    {
-        // See ToolchainProcessOutput: ANSI escapes, the error-frame gutter and
-        // path-length-dependent wrapping all break naive message assertions.
-        public string NormalizedOutput => ToolchainProcessOutput.Normalize(Output);
     }
 }

@@ -13,7 +13,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task SnapshotCliProducesManifestAlignedArtifact()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var outputDirectory = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-CliTests", Guid.NewGuid().ToString("N"));
         var outputPath = Path.Combine(outputDirectory, "snapshot.json");
         Directory.CreateDirectory(outputDirectory);
@@ -53,7 +53,7 @@ public sealed class ToolchainCliBehaviorTests
     {
         var result = await RunAsync(
             "node",
-            FindRepoRoot(),
+            ToolchainTestHost.FindRepoRoot(),
             "tools/rule-compiler/compile-snapshot.mjs",
             "--subject-pack", "missing-subject-pack",
             "--profile", "classroom");
@@ -68,7 +68,7 @@ public sealed class ToolchainCliBehaviorTests
         var missingPublishDirectory = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-MissingPublish", Guid.NewGuid().ToString("N"));
         var result = await RunAsync(
             "pwsh",
-            FindRepoRoot(),
+            ToolchainTestHost.FindRepoRoot(),
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-File", "scripts/smoke-installed-app.ps1",
@@ -81,7 +81,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task MsixPackRejectsSmokeReceiptThatDoesNotBindCurrentExecutable()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-StalePublishReceipt", Guid.NewGuid().ToString("N"));
         var publishDirectory = Path.Combine(testRoot, "publish");
         var exePath = Path.Combine(publishDirectory, "ClassroomToolkit.App.exe");
@@ -131,7 +131,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task InstallReleaseValidatesMissingEmptyAndNonEmptyDestinations()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-InstallDestination", Guid.NewGuid().ToString("N"));
         var destination = Path.Combine(testRoot, "install");
 
@@ -173,7 +173,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task InstallReleaseAllowsLoopbackOnlyWithExplicitSimulationSwitch()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-LoopbackInstall", Guid.NewGuid().ToString("N"));
         var destination = Path.Combine(testRoot, "install");
         var manifestUrl = "http://127.0.0.1:43210/update-manifest.json";
@@ -212,7 +212,7 @@ public sealed class ToolchainCliBehaviorTests
     {
         var result = await RunAsync(
             "pwsh",
-            FindRepoRoot(),
+            ToolchainTestHost.FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
             "-Version", "9.9.9",
             "-SkipPublish");
@@ -226,7 +226,7 @@ public sealed class ToolchainCliBehaviorTests
     {
         var result = await RunAsync(
             "pwsh",
-            FindRepoRoot(),
+            ToolchainTestHost.FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
             "-Version", "1.0.4",
             "-Audience", "ordinary-users",
@@ -239,7 +239,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public void ReleaseWorkflowSkipsMachineSpecificHealthEvalButKeepsCoreGate()
     {
-        var workflow = File.ReadAllText(Path.Combine(FindRepoRoot(), ".github", "workflows", "release.yml"));
+        var workflow = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), ".github", "workflows", "release.yml"));
 
         workflow.Should().Contain("setup-development.ps1 -NoInstall -SkipHealthEval");
         workflow.Should().NotContain("setup-development.ps1 -NoInstall -SkipCore");
@@ -252,7 +252,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task ArtifactCleanupKeepsCurrentDeliveryAndHistoryButRemovesWorkAndOldVersions()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-ArtifactLayout", Guid.NewGuid().ToString("N"));
         var artifactsRoot = Path.Combine(testRoot, "artifacts");
         var currentDelivery = Path.Combine(artifactsRoot, "deliveries", "1.0.1");
@@ -295,7 +295,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task UpdateReleaseRejectsRestartExecutableOutsideTargetApp()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-UpdateContainment", Guid.NewGuid().ToString("N"));
         var targetApp = Path.Combine(testRoot, "app");
         Directory.CreateDirectory(targetApp);
@@ -326,7 +326,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task ImportTransferPreservesExistingEnvWhenPackageDoesNotContainOne()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-PreserveEnv", Guid.NewGuid().ToString("N"));
         var packagePath = Path.Combine(testRoot, "transfer.zip");
         var destination = Path.Combine(testRoot, "destination");
@@ -361,7 +361,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task ImportTransferRestoresExistingDestinationWhenSetupFails()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-Rollback", Guid.NewGuid().ToString("N"));
         var packagePath = Path.Combine(testRoot, "transfer.zip");
         var destination = Path.Combine(testRoot, "destination");
@@ -403,7 +403,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task ImportTransferRejectsFilesNotDeclaredByManifest()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-ExtraFile", Guid.NewGuid().ToString("N"));
         var packagePath = Path.Combine(testRoot, "transfer.zip");
         var destination = Path.Combine(testRoot, "destination");
@@ -439,7 +439,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task LiveWorkflowRejectsReferencePdfOutputCollisionBeforeRunningTools()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowCollision", Guid.NewGuid().ToString("N"));
         var outputDirectory = Path.Combine(testRoot, "delivery");
         var sourcePath = Path.Combine(testRoot, "exam.pdf");
@@ -479,7 +479,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task LiveWorkflowRejectsWorkflowReceiptCollisionBeforeRunningTools()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowReceiptCollision", Guid.NewGuid().ToString("N"));
         var outputDirectory = Path.Combine(testRoot, "delivery");
         var sourcePath = Path.Combine(testRoot, "exam.pdf");
@@ -520,7 +520,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task LiveWorkflowWritesFailureReceiptWithBoundInputs()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowFailure", Guid.NewGuid().ToString("N"));
         var outputDirectory = Path.Combine(testRoot, "delivery");
         var sourcePath = Path.Combine(testRoot, "broken.pdf");
@@ -570,7 +570,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task LiveWorkflowFailureReceiptPreservesNodeDiagnostics()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowNodeFailure", Guid.NewGuid().ToString("N"));
         var fakeNodeDirectory = Path.Combine(testRoot, "fake-node");
         var outputDirectory = Path.Combine(testRoot, "delivery");
@@ -664,7 +664,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task LiveWorkflowResumesHashBoundBlindCandidateWithoutRepeatingGeneration()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowResume", Guid.NewGuid().ToString("N"));
         var fakeNodeDirectory = Path.Combine(testRoot, "fake-node");
         var failedDirectory = Path.Combine(testRoot, "failed");
@@ -837,7 +837,7 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task LiveWorkflowWritesSuccessReceiptAndBlocksPromptDrift()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-WorkflowSuccess", Guid.NewGuid().ToString("N"));
         var fakeNodeDirectory = Path.Combine(testRoot, "fake-node");
         var outputDirectory = Path.Combine(testRoot, "delivery");
@@ -968,7 +968,7 @@ public sealed class ToolchainCliBehaviorTests
         }
     }
 
-    private static async Task<ProcessResult> RunAsync(string fileName, string workingDirectory, params string[] arguments)
+    private static async Task<ToolchainTestHost.ProcessResult> RunAsync(string fileName, string workingDirectory, params string[] arguments)
     {
         return await RunAsyncWithEnvironment(fileName, workingDirectory, environment: null, arguments);
     }
@@ -1016,7 +1016,7 @@ public sealed class ToolchainCliBehaviorTests
         stream.Write(content);
     }
 
-    private static async Task<ProcessResult> RunAsyncWithEnvironment(
+    private static async Task<ToolchainTestHost.ProcessResult> RunAsyncWithEnvironment(
         string fileName,
         string workingDirectory,
         IReadOnlyDictionary<string, string?>? environment,
@@ -1052,13 +1052,13 @@ public sealed class ToolchainCliBehaviorTests
         }
 
         var output = (await stdoutTask) + Environment.NewLine + (await stderrTask);
-        return new ProcessResult(process.ExitCode, output);
+        return new ToolchainTestHost.ProcessResult(process.ExitCode, output);
     }
 
     [Fact]
     public async Task ArtifactCleanupRefusesARootThatIsNotAnArtifactsDirectory()
     {
-        var root = FindRepoRoot();
+        var root = ToolchainTestHost.FindRepoRoot();
         var result = await RunAsync(
             "pwsh",
             root,
@@ -1077,10 +1077,10 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task ArtifactCleanupRefusesADriveRoot()
     {
-        var driveRoot = Path.GetPathRoot(FindRepoRoot())!;
+        var driveRoot = Path.GetPathRoot(ToolchainTestHost.FindRepoRoot())!;
         var result = await RunAsync(
             "pwsh",
-            FindRepoRoot(),
+            ToolchainTestHost.FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/clean-artifacts.ps1",
             "-ArtifactsRoot", driveRoot,
             "-KeepVersion", "1.0.1");
@@ -1094,7 +1094,7 @@ public sealed class ToolchainCliBehaviorTests
     {
         var result = await RunAsync(
             "pwsh",
-            FindRepoRoot(),
+            ToolchainTestHost.FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/publish-app.ps1",
             "-PublishDir", ".");
 
@@ -1107,31 +1107,12 @@ public sealed class ToolchainCliBehaviorTests
     {
         var result = await RunAsync(
             "node",
-            FindRepoRoot(),
+            ToolchainTestHost.FindRepoRoot(),
             "tools/rule-compiler/compile-snapshot.mjs",
             "--subject-pack", "../../../etc",
             "--profile", "classroom");
 
         result.ExitCode.Should().NotBe(0);
         result.NormalizedOutput.Should().Contain("Invalid subject pack id");
-    }
-
-    private static string FindRepoRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null)
-        {
-            if (File.Exists(Path.Combine(current.FullName, "ClassroomToolkit.sln"))) return current.FullName;
-            current = current.Parent;
-        }
-
-        throw new InvalidOperationException("Repository root not found.");
-    }
-
-    private sealed record ProcessResult(int ExitCode, string Output)
-    {
-        // See ToolchainProcessOutput: ANSI escapes, the error-frame gutter and
-        // path-length-dependent wrapping all break naive message assertions.
-        public string NormalizedOutput => ToolchainProcessOutput.Normalize(Output);
     }
 }
