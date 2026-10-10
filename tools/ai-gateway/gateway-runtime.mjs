@@ -11,6 +11,12 @@ const HEALTH_FILE_NAME = "preset-health.json";
 const HEALTH_LOCK_FILE_NAME = "preset-health.lock.json";
 const SLOT_DIRECTORY_NAME = "execution-slots";
 const LEASE_GRACE_MS = 10_000;
+// A finite but absurd expiresAt (corrupt write, forward-skewed clock) must not
+// freeze the resource until that wall-clock time. Legitimate leases never
+// outlive their file by more than the attempt timeout plus grace (minutes
+// scale; health locks 10s), so expiresAt is trusted only up to the file's own
+// age plus this tenure cap.
+const LEASE_MAX_TENURE_MS = 2 * 60 * 60_000;
 // Waiting callers poll the lease directory; the exponential cap keeps the
 // worst-case slot pickup latency bounded without 40 metadata operations per
 // second per waiter over a default 600s timeout.
@@ -156,10 +162,7 @@ function tryAcquirePresetHealthLock(config) {
   }
   return {
     release() {
-      const lease = readLease(filePath);
-      if (lease?.token === token) {
-        releaseLeaseFile(filePath);
-      }
+      releaseLeaseIfOwner(filePath, token, healthClaimDirectoryPath(config));
     }
   };
 }
@@ -337,14 +340,18 @@ function readLease(filePath) {
 // live creator may still be filling it, so the grace window is measured from
 // the file's mtime rather than a payload field.
 function leaseExpired(lease, filePath, now) {
-  if (Number.isFinite(lease.expiresAt)) {
-    return lease.expiresAt <= now;
-  }
+  let mtimeMs;
   try {
-    return now - fs.statSync(filePath).mtimeMs >= LEASE_GRACE_MS;
+    mtimeMs = fs.statSync(filePath).mtimeMs;
   } catch {
+    // The file vanished between the read and this stat; judge nothing and let
+    // the next acquisition round re-read reality.
     return false;
   }
+  if (Number.isFinite(lease.expiresAt)) {
+    return Math.min(lease.expiresAt, mtimeMs + LEASE_MAX_TENURE_MS) <= now;
+  }
+  return now - mtimeMs >= LEASE_GRACE_MS;
 }
 
 // Cross-process mutex for lease reclamation, built on atomic directory
@@ -488,19 +495,45 @@ function tryAcquireLease(config, slot, timeoutMs) {
   })) {
     return null;
   }
-  return leaseHandle(filePath, token, slot);
+  return leaseHandle(filePath, token, slot, slotClaimDirectoryPath(config, slot));
 }
 
-function leaseHandle(filePath, token, slot) {
+function leaseHandle(filePath, token, slot, claimDirectory) {
   return {
     slot,
     release() {
-      const lease = readLease(filePath);
-      if (lease?.token === token) {
-        releaseLeaseFile(filePath);
-      }
+      releaseLeaseIfOwner(filePath, token, claimDirectory);
     }
   };
+}
+
+// Release-time TOCTOU closure: the token check and the destroy must be
+// linearized against the reclaimers' check-expiry → unlink → re-create
+// section, otherwise a holder frozen past expiry can read its own token and
+// then unlink a lease a successor legitimately created in between. A busy
+// claim section is held for milliseconds; a short bounded wait keeps the
+// ordinary release lock-step with acquirers, and giving up on it only defers
+// the release to natural expiry (the same degradation as a defeated unlink).
+const RELEASE_CLAIM_WAIT_MS = 250;
+const RELEASE_CLAIM_WAIT_SIGNAL = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
+
+function releaseLeaseIfOwner(filePath, token, claimDirectory) {
+  const deadline = Date.now() + RELEASE_CLAIM_WAIT_MS;
+  while (!tryEnterReclaimSection(claimDirectory, Date.now())) {
+    if (Date.now() >= deadline) {
+      return;
+    }
+    Atomics.wait(RELEASE_CLAIM_WAIT_SIGNAL, 0, 0, 5);
+  }
+  try {
+    const lease = readLease(filePath);
+    if (lease?.token !== token) {
+      return;
+    }
+    releaseLeaseFile(filePath);
+  } finally {
+    exitReclaimSection(claimDirectory);
+  }
 }
 
 // Limits every local CLI process that shares the runtime directory.  Slots are

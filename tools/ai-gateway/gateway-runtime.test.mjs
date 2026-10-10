@@ -197,6 +197,78 @@ test("a malformed lease is honored for the grace window, then reclaimable", asyn
   }
 });
 
+test("an absurd expiresAt cannot hold the slot past the lease file's tenure", async () => {
+  const { acquireSharedExecutionSlot } = await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
+  const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-lease-tenure-"));
+  try {
+    // A corrupt write or forward-skewed clock can stamp expiresAt arbitrarily
+    // far out; the resource must freeze for the file's tenure cap, not for
+    // that wall-clock time.
+    const leaseFilePath = plantLease(runtimeDirectory, 1, {
+      token: "skewed-clock-lease",
+      pid: -1,
+      slot: 1,
+      expiresAt: Date.now() + 365 * 24 * 60 * 60_000
+    });
+    const young = new Date(Date.now() - 60_000);
+    fs.utimesSync(leaseFilePath, young, young);
+    const blocked = await acquireSharedExecutionSlot(runtimeConfig(runtimeDirectory), [1], 300);
+    assert.equal(blocked, null, "a young lease must hold the slot even with an absurd expiresAt");
+
+    const pastCap = new Date(Date.now() - 3 * 60 * 60_000);
+    fs.utimesSync(leaseFilePath, pastCap, pastCap);
+    const lease = await acquireSharedExecutionSlot(runtimeConfig(runtimeDirectory), [1], 3_000);
+    assert.ok(lease, "an absurd expiresAt must not freeze the slot beyond the tenure cap");
+    lease.release();
+  } finally {
+    fs.rmSync(runtimeDirectory, { recursive: true, force: true });
+  }
+});
+
+test("release is serialized with reclaim and never destroys a successor's lease", async () => {
+  const { acquireSharedExecutionSlot } = await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
+  const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-release-toc-"));
+  try {
+    const config = runtimeConfig(runtimeDirectory);
+    const holder = await acquireSharedExecutionSlot(config, [1], 1_000);
+    assert.ok(holder);
+    const leaseFilePath = path.join(runtimeDirectory, "execution-slots", "slot-1.lease.json");
+
+    // Scenario 1: the holder was frozen past expiry and a successor reclaimed
+    // the slot while it slept. The thawed release must leave the successor's
+    // lease untouched.
+    const successorLease = { token: "successor-token", pid: -1, slot: 1, expiresAt: Date.now() + 60_000 };
+    fs.writeFileSync(leaseFilePath, JSON.stringify(successorLease));
+    holder.release();
+    assert.deepEqual(JSON.parse(fs.readFileSync(leaseFilePath, "utf8")), successorLease,
+      "a thawed holder must not destroy the successor's lease");
+
+    // Scenario 2: release while an acquirer is inside the reclaim section.
+    // The claim serializes check-expiry → unlink → re-create against release,
+    // closing the read-token → unlink window; a busy section only defers the
+    // release instead of racing it.
+    fs.writeFileSync(leaseFilePath, JSON.stringify({
+      token: "expired-predecessor",
+      pid: -1,
+      slot: 1,
+      expiresAt: Date.now() - 60_000
+    }));
+    const claimDirectory = path.join(runtimeDirectory, "execution-slots", "slot-1.claim");
+    const releaser = await acquireSharedExecutionSlot(config, [1], 1_000);
+    assert.ok(releaser, "an expired predecessor lease must be reclaimable");
+    fs.mkdirSync(claimDirectory);
+    releaser.release();
+    assert.equal(fs.existsSync(leaseFilePath), true,
+      "release must not race a claim section that a concurrent acquirer holds");
+    fs.rmSync(claimDirectory, { recursive: true, force: true });
+    releaser.release();
+    assert.equal(fs.existsSync(leaseFilePath), false,
+      "release must remove its own lease once the claim section is free");
+  } finally {
+    fs.rmSync(runtimeDirectory, { recursive: true, force: true });
+  }
+});
+
 test("preset health lock is exclusive and honors expiry", async () => {
   const { acquirePresetHealthLock } = await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
   const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-health-lock-"));
