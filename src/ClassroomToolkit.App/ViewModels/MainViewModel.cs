@@ -179,15 +179,30 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanRunToolchain))]
     private async Task BootstrapAsync()
     {
-        await RunToolchainAsync("正在安装或修复工具链...", _toolchainOrchestrator.RunBootstrapAsync);
+        await RunToolchainAsync("正在安装或修复工具链...", (cancellationToken, progress) =>
+            _toolchainOrchestrator.RunBootstrapAsync(cancellationToken, progress));
     }
 
     [RelayCommand(CanExecute = nameof(CanRunToolchain))]
     private async Task CheckAsync()
     {
-        await RunToolchainAsync(
-            "正在执行主链体检...",
-            (cancellationToken, progress) => _toolchainOrchestrator.RunCheckAsync(SelectedSubjectPack, cancellationToken, progress));
+        await RunAsync("正在执行主链体检...", async (cancellationToken, progress) =>
+        {
+            var (result, healthReport) = await _toolchainOrchestrator
+                .RunCheckAsync(SelectedSubjectPack, cancellationToken, progress);
+            ApplyExecution(result);
+            StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
+            if (healthReport is not null)
+            {
+                // A packaged runtime's check IS the health probe; reusing its
+                // report spares a second Node cold start on every check.
+                ApplyHealthReport(healthReport);
+            }
+            else
+            {
+                await RefreshHealthAsync(cancellationToken);
+            }
+        });
     }
 
     [RelayCommand] private void OpenLastOutputPdf() => OpenPath(LastOutputPdfPath);
@@ -284,9 +299,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
             await RefreshHealthAsync(cancellationToken);
         });
-    }
-
-    [RelayCommand(CanExecute = nameof(CanCancel))]
+    }    [RelayCommand(CanExecute = nameof(CanCancel))]
     private void Cancel()
     {
         if (InstallUpdateCommand.IsRunning)
@@ -349,6 +362,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // LATEST workspace health; the most recent operation result lives in
     // LastResultSummary and the activity log, so a successful health refresh
     // overwriting a toolchain verdict is intentional.
+    private void ApplyHealthReport(WorkspaceHealthReport health)
+    {
+        StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
+        StatusCards.Clear();
+        StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现"));
+        StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath));
+        StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases"));
+        StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现"));
+        SyncSubjectPacks(health.SubjectPacks);
+    }
+
     private async Task RefreshHealthAsync(CancellationToken cancellationToken = default)
     {
         // A health probe starts a real Node process.  Versioning protects the UI
@@ -367,13 +391,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 return;
             }
 
-            StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
-            StatusCards.Clear();
-            StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现"));
-            StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath));
-            StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases"));
-            StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现"));
-            SyncSubjectPacks(health.SubjectPacks);
+            ApplyHealthReport(health);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

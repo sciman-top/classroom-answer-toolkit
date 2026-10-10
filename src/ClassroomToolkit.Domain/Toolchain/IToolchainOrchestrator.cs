@@ -17,7 +17,10 @@ public interface IToolchainOrchestrator
         CancellationToken cancellationToken = default,
         Action<string>? progress = null);
 
-    Task<ToolchainExecutionResult> RunCheckAsync(
+    // The health report is only populated by packaged runtimes, whose check IS
+    // a health probe; returning it lets the UI refresh its cards without a
+    // second Node cold start. Source check runs a real script and returns null.
+    Task<(ToolchainExecutionResult Execution, WorkspaceHealthReport? HealthReport)> RunCheckAsync(
         string? subjectPack = null,
         CancellationToken cancellationToken = default,
         Action<string>? progress = null);

@@ -81,6 +81,26 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task CheckAppliesReturnedHealthReportWithoutASecondProbe()
+    {
+        // Packaged runtimes return the probe result from the check itself;
+        // running another probe would double the Node cold start on every check.
+        // The report keeps the selected pack so SyncSubjectPacks does not
+        // legitimately trigger its own refresh and skew the probe count.
+        var orchestrator = new FakeOrchestrator(checkHealthReport: new WorkspaceHealthReport(
+            "junior-physics-answer", ["junior-physics-answer", "math-answer"], "v9.99", "v9.99",
+            true, @"D:\repo\.snapshot-cache\resolved-snapshot.json",
+            true, 12, "主链就绪", []));
+        using var viewModel = new MainViewModel(orchestrator, new FakePathOpener());
+        var initialProbeCount = orchestrator.HealthProbeCount;
+
+        await viewModel.CheckCommand.ExecuteAsync(null);
+
+        orchestrator.HealthProbeCount.Should().Be(initialProbeCount);
+        viewModel.StatusCards[3].Detail.Should().Be("v9.99");
+    }
+
+    [Fact]
     public async Task CancelStopsTheCurrentToolchainOperation()
     {
         var orchestrator = new FakeOrchestrator(blockCheck: true);
@@ -134,21 +154,25 @@ public sealed class MainViewModelTests
         private readonly string _checkOutput;
         private readonly bool _throwOnWorkspaceInfo;
         private readonly bool _blockInitialHealth;
+        private readonly WorkspaceHealthReport? _checkHealthReport;
 
         public FakeOrchestrator(
             bool blockCheck = false,
             string checkOutput = "ok",
             bool throwOnWorkspaceInfo = false,
-            bool blockInitialHealth = false)
+            bool blockInitialHealth = false,
+            WorkspaceHealthReport? checkHealthReport = null)
         {
             _blockCheck = blockCheck;
             _checkOutput = checkOutput;
             _throwOnWorkspaceInfo = throwOnWorkspaceInfo;
             _blockInitialHealth = blockInitialHealth;
+            _checkHealthReport = checkHealthReport;
         }
 
         public AnswerDeliveryRequest? LastDeliveryRequest { get; private set; }
         public string? LastHealthSubjectPack { get; private set; }
+        public int HealthProbeCount { get; private set; }
         public TaskCompletionSource CheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource InitialHealthStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource InitialHealthCanceled { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -175,6 +199,7 @@ public sealed class MainViewModelTests
                 throw new IOException("prompts 目录被占用");
             }
 
+            HealthProbeCount += 1;
             LastHealthSubjectPack = subjectPack;
             var selected = subjectPack ?? "junior-physics-answer";
             if (_blockInitialHealth && string.Equals(selected, "junior-physics-answer", StringComparison.Ordinal))
@@ -203,7 +228,7 @@ public sealed class MainViewModelTests
             Action<string>? progress = null) =>
             Task.FromResult(Success(ToolchainScriptKind.Bootstrap));
 
-        public async Task<ToolchainExecutionResult> RunCheckAsync(
+        public async Task<(ToolchainExecutionResult, WorkspaceHealthReport?)> RunCheckAsync(
             string? subjectPack = null,
             CancellationToken cancellationToken = default,
             Action<string>? progress = null)
@@ -214,12 +239,12 @@ public sealed class MainViewModelTests
                 await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             }
 
-            return ToolchainExecutionResult.Success(
+            return (ToolchainExecutionResult.Success(
                 ToolchainScriptKind.Check,
                 "tool",
                 DateTimeOffset.Now,
                 DateTimeOffset.Now,
-                _checkOutput);
+                _checkOutput), _checkHealthReport);
         }
 
         public Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(

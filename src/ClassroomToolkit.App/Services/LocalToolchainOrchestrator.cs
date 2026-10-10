@@ -179,7 +179,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             progress: progress);
     }
 
-    public async Task<ToolchainExecutionResult> RunCheckAsync(
+    public async Task<(ToolchainExecutionResult Execution, WorkspaceHealthReport? HealthReport)> RunCheckAsync(
         string? subjectPack = null,
         CancellationToken cancellationToken = default,
         Action<string>? progress = null)
@@ -190,7 +190,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             var startedAt = DateTimeOffset.Now;
             var report = await GetWorkspaceHealthReportAsync(subjectPack, cancellationToken).ConfigureAwait(false);
             var finishedAt = DateTimeOffset.Now;
-            return report.IsHealthy
+            var execution = report.IsHealthy
                 ? ToolchainExecutionResult.Success(
                     ToolchainScriptKind.Check,
                     Path.Combine(workspace.RepositoryRoot, "runtime-manifest.json"),
@@ -204,9 +204,10 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                     startedAt,
                     finishedAt,
                     report.Summary);
+            return (execution, report);
         }
 
-        return await RunScriptAsync(
+        var result = await RunScriptAsync(
             ToolchainScriptKind.Check,
             workspace.CheckScriptPath,
             workspace.RepositoryRoot,
@@ -215,6 +216,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 ? []
                 : ["-Mode", "Core", "-SubjectPack", subjectPack],
             progress: progress).ConfigureAwait(false);
+        return (result, null);
     }
 
     public async Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
