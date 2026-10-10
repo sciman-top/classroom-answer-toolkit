@@ -720,7 +720,7 @@ export async function callTextProvider(provider, options) {
     const output = extractTextOutput(parsed);
     return {
       provider: provider.role,
-      ok: output.length > 0,
+      ok: output.trim().length > 0,
       retryable: false,
       status: response.status,
       output
@@ -773,37 +773,35 @@ function buildTextRequestBody(provider, prompt, requestedMaxOutputTokens) {
   };
 }
 
-function extractTextOutput(parsed) {
+// Shared with answer-transport: returns the raw concatenated text across both
+// response surfaces (and chat_completions choices).  Callers decide on their
+// own blankness policy; the probe trims before its emptiness check.
+export function extractTextOutput(parsed) {
   if (typeof parsed.output_text === "string") {
-    return parsed.output_text.trim();
+    return parsed.output_text;
   }
 
   const responseOutput = parsed.output;
   if (Array.isArray(responseOutput)) {
-    const textParts = [];
+    const parts = [];
     for (const item of responseOutput) {
-      const content = item?.content;
-      if (!Array.isArray(content)) {
-        continue;
-      }
-      for (const part of content) {
+      for (const part of Array.isArray(item?.content) ? item.content : []) {
         if (typeof part?.text === "string") {
-          textParts.push(part.text);
+          parts.push(part.text);
         }
       }
     }
-    if (textParts.length > 0) {
-      return textParts.join(" ").trim();
+    if (parts.length > 0) {
+      return parts.join("");
     }
   }
 
-  const choice = Array.isArray(parsed.choices) ? parsed.choices[0] : null;
-  const messageContent = choice?.message?.content;
-  if (typeof messageContent === "string") {
-    return messageContent.trim();
+  const content = Array.isArray(parsed.choices) ? parsed.choices[0]?.message?.content : null;
+  if (typeof content === "string") {
+    return content;
   }
-  if (Array.isArray(messageContent)) {
-    return messageContent.map((part) => part?.text ?? "").join(" ").trim();
+  if (Array.isArray(content)) {
+    return content.map((part) => part?.text ?? "").join("");
   }
 
   return "";

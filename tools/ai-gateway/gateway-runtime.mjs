@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
+import { sleep } from "../shared.mjs";
 import { EXECUTION_SLOT_COUNT, MODEL_FAMILY_PREFERENCE } from "./profile-matrix.mjs";
 
 const HEALTH_FILE_NAME = "preset-health.json";
@@ -435,10 +436,6 @@ function reclaimExpiredLeaseInSection(filePath, now) {
   } catch {
     // Gone already; the create attempt below decides ownership.
   }
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function leasePath(config, slot) {

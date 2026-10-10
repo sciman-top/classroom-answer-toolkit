@@ -57,6 +57,15 @@ export function presetForProfile(profile) {
   return String(profile).split("-", 1)[0];
 }
 
+// Failover order: primary first, then fallback_N by ascending N.
+export function providerOrder(role) {
+  if (role === "primary") {
+    return 0;
+  }
+  const match = String(role).match(/^fallback_(\d+)$/);
+  return match ? Number(match[1]) : 999;
+}
+
 export function tierForProfile(profile) {
   return PROFILE_TIERS[profile] ?? null;
 }

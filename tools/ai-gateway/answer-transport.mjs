@@ -3,10 +3,11 @@ import path from "node:path";
 import { Agent, EnvHttpProxyAgent, setGlobalDispatcher } from "undici";
 
 import { normalizeAnswerMarkdown } from "./answer-tasks.mjs";
-import { readResponseTextCapped, summarizeProviderErrorBody } from "../shared.mjs";
+import { readResponseTextCapped, sleep, summarizeProviderErrorBody } from "../shared.mjs";
 import {
   assertLiveEgressAllowed,
   ExecutionSlotTimeoutError,
+  extractTextOutput,
   isRetryableGatewayFailure,
   PROVIDER_LOCAL_FAILURE_STATUSES,
   runInExecutionSlot
@@ -17,6 +18,7 @@ import {
   QUALITY_PROFILE_NAMES,
   presetForProfile,
   profileForPresetTier,
+  providerOrder,
   tierForProfile,
   slotsForPresetProfile
 } from "./profile-matrix.mjs";
@@ -306,41 +308,6 @@ async function callProviderInSharedSlot(config, provider, requestOptions, attemp
   } finally {
     lease.release();
   }
-}
-
-function providerOrder(role) {
-  if (role === "primary") {
-    return 0;
-  }
-  const match = role.match(/^fallback_(\d+)$/);
-  return match ? Number(match[1]) : 999;
-}
-
-function extractTextOutput(parsed) {
-  if (typeof parsed.output_text === "string") {
-    return parsed.output_text;
-  }
-  if (Array.isArray(parsed.output)) {
-    const parts = [];
-    for (const item of parsed.output) {
-      for (const part of Array.isArray(item?.content) ? item.content : []) {
-        if (typeof part?.text === "string") {
-          parts.push(part.text);
-        }
-      }
-    }
-    if (parts.length > 0) {
-      return parts.join("");
-    }
-  }
-  const content = Array.isArray(parsed.choices) ? parsed.choices[0]?.message?.content : null;
-  if (typeof content === "string") {
-    return content;
-  }
-  if (Array.isArray(content)) {
-    return content.map((part) => part?.text ?? "").join("");
-  }
-  return "";
 }
 
 function summarizeRequestError(error) {
@@ -665,7 +632,7 @@ export async function requestAnswerWithFailover(config, options) {
               ? defaultRateLimitBackoffMs
               : 0;
           if (backoffMs > 0) {
-            await new Promise((resolve) => setTimeout(resolve, backoffMs));
+            await sleep(backoffMs);
           }
         }
       }

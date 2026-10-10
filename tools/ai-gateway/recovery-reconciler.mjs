@@ -11,7 +11,8 @@ import {
   recordRecoveryProbeResult,
   recoveryProbeEligibility
 } from "./gateway-runtime.mjs";
-import { isDirectInvocation, parseArgvFlags } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags, sleep } from "../shared.mjs";
+import { providerOrder } from "./profile-matrix.mjs";
 
 // The probe verifies Sol connectivity, not business-answer quality. Reasoning
 // effort stays low and the token budget must leave room for it: reasoning
@@ -75,14 +76,6 @@ export function parseArgs(argv) {
     }
   }
   return options;
-}
-
-function providerOrder(role) {
-  if (role === "primary") {
-    return 0;
-  }
-  const match = String(role).match(/^fallback_(\d+)$/);
-  return match ? Number(match[1]) : 999;
 }
 
 function uniqueProbeConnections(providers) {
@@ -196,10 +189,6 @@ export async function runSolRecoveryProbeOnce(config, options = {}) {
     consecutiveProbeSuccesses: after.presets.sol.recovery.consecutiveProbeSuccesses,
     attempts
   };
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function nextWatchDelayMs(config, result) {

@@ -174,6 +174,10 @@ export function fail(message, code = 2) {
   process.exit(code);
 }
 
+export function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function deepMerge(base, override) {
   if (!override || typeof override !== "object" || Array.isArray(override)) {
     return base;
