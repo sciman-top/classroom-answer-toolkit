@@ -13,6 +13,7 @@
     "validate:cross-subject": "node validate-cross-subject.mjs",
     "validate:json": "node validate-json.mjs",
     "list:subject-packs": "node list-subject-packs.mjs",
-    "health": "node workspace-health.mjs"
+    "health": "node workspace-health.mjs",
+    "test:rules": "node --test merge-rules.test.mjs schema-validator.test.mjs subject-pack-registry.test.mjs validate-json.test.mjs workspace-health.test.mjs validate-spec-boundary.test.mjs"
   }
 }

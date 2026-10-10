@@ -35,9 +35,25 @@ jobs:
           # setup also run them executed the ordinary suite twice per push.
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1 -NoInstall -SkipTests
 
-      # A visual-regression failure is environment-coupled (browser and CJK
-      # fonts differ per machine). Without the rendered pages the failure is an
-      # unactionable "Diff ratio exceeded" line, so keep them as evidence.
+      - name: Verify gateway, renderer, and workflow contracts
+        shell: pwsh
+        run: |
+          npm --prefix tools/ai-gateway run test:answer
+          npm --prefix tools/latex-renderer run test:render
+          npm --prefix tools/latex-renderer run test:output-path
+          npm --prefix tools/latex-renderer run test:eval-runtime
+          npm --prefix tools/latex-renderer run test:visual
+          npm --prefix tools/rule-compiler run test:rules
+          npm --prefix tools/spec-assembler run test:assemble
+          npm --prefix eval/real-paper test
+          dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate!=ToolchainIntegration"
+          dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate=ToolchainIntegration"
+
+      # Evidence collection must sit after the steps that produce it: a failure()
+      # step never fires retroactively for a later failure, so the upload used
+      # to be skipped for exactly the verification failures it exists to
+      # diagnose (eval writes .eval-work; test:visual is the environment-coupled
+      # browser/CJK-font case).
       - name: Upload rendered pages when a gate fails
         if: failure()
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
@@ -49,12 +65,3 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
-
-      - name: Verify gateway, renderer, and workflow contracts
-        shell: pwsh
-        run: |
-          npm --prefix tools/ai-gateway run test:answer
-          npm --prefix tools/latex-renderer run test:render
-          npm --prefix tools/latex-renderer run test:visual
-          dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate!=ToolchainIntegration"
-          dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate=ToolchainIntegration"
