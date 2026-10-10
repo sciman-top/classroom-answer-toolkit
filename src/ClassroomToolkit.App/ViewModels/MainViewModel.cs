@@ -299,7 +299,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
             await RefreshHealthAsync(cancellationToken);
         });
-    }    [RelayCommand(CanExecute = nameof(CanCancel))]
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCancel))]
     private void Cancel()
     {
         if (InstallUpdateCommand.IsRunning)

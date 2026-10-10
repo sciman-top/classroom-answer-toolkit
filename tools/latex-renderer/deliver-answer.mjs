@@ -16,7 +16,7 @@ import { validateDeliveryManifest } from "./validate-delivery-manifest.mjs";
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = path.join(toolDir, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-const packageName = packageJson.name ?? "junior-physics-answer-latex-renderer";
+const packageName = packageJson.name ?? "classroom-toolkit-latex-renderer";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--review-scale 2] [--skip-validate]
