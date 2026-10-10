@@ -555,34 +555,17 @@ public sealed class ToolchainCliBehaviorTests
         File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.delivery-manifest.json"), "{\"kind\":\"delivery-manifest\"}");
         File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.snapshot.json"), "{\"snapshotId\":\"stale\"}");
         File.WriteAllText(Path.Combine(outputDirectory, "exam参考答案.review", "page-001.png"), "stale review");
-        File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
-            "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
-        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"),
-            """
-            $ErrorActionPreference = "Stop"
-            $tool = [IO.Path]::GetFileName($args[0])
-            $toolArgs = @($args | Select-Object -Skip 1)
-            function Get-Option([string]$Name) {
-                for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
-                    if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
-                }
-                return $null
-            }
-            switch ($tool) {
+        WriteFakeNodeTool(fakeNodeDirectory, """
                 "review-source-pdf.mjs" {
                     $out = Get-Option "--out"
-                    [IO.Directory]::CreateDirectory($out) | Out-Null
-                    [IO.File]::WriteAllText((Join-Path $out "exam.page-1.png"), "png")
-                    [IO.File]::WriteAllText((Join-Path $out "manifest.json"), '{"pages":[{}]}')
+                    Write-Text (Join-Path $out "exam.page-1.png") "png"
+                    Write-Text (Join-Path $out "manifest.json") '{"pages":[{}]}'
                 }
                 "answer-request.mjs" {
                     [Console]::Error.WriteLine("provider diagnostics: status=503; attemptedRoles=primary,fallback_1")
                     exit 1
                 }
-                "validate-json.mjs" { exit 0 }
-                default { throw "Unexpected fake node tool: $tool" }
-            }
-            """);
+                """);
 
         try
         {
@@ -707,24 +690,7 @@ public sealed class ToolchainCliBehaviorTests
             }
         };
         File.WriteAllText(failedReceiptPath, JsonSerializer.Serialize(priorReceipt));
-        File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
-            "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
-        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"),
-            """
-            $ErrorActionPreference = "Stop"
-            $tool = [IO.Path]::GetFileName($args[0])
-            $toolArgs = @($args | Select-Object -Skip 1)
-            function Get-Option([string]$Name) {
-                for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
-                    if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
-                }
-                return $null
-            }
-            function Write-Text([string]$PathValue, [string]$Value) {
-                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PathValue))) | Out-Null
-                [IO.File]::WriteAllText([IO.Path]::GetFullPath($PathValue), $Value, [Text.UTF8Encoding]::new($false))
-            }
-            switch ($tool) {
+        WriteFakeNodeTool(fakeNodeDirectory, """
                 "review-source-pdf.mjs" {
                     $out = Get-Option "--out"
                     Write-Text (Join-Path $out "source.page-1.png") "png"
@@ -744,10 +710,7 @@ public sealed class ToolchainCliBehaviorTests
                     Write-Text ($base + ".snapshot.json") '{"snapshotId":"test"}'
                     Write-Text ($base + ".delivery-manifest.json") '{"kind":"delivery-manifest"}'
                 }
-                "validate-json.mjs" { exit 0 }
-                default { throw "Unexpected fake node tool: $tool" }
-            }
-            """);
+                """);
 
         try
         {
@@ -816,27 +779,9 @@ public sealed class ToolchainCliBehaviorTests
         File.WriteAllText(sourcePath, "%PDF-source");
         File.WriteAllText(promptPath, "# prompt");
         File.WriteAllText(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false");
-        File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
-            "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
-        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"),
-            """
-            $ErrorActionPreference = "Stop"
-            $tool = [IO.Path]::GetFileName($args[0])
-            $toolArgs = @($args | Select-Object -Skip 1)
-            function Get-Option([string]$Name) {
-                for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
-                    if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
-                }
-                return $null
-            }
-            function Write-Text([string]$PathValue, [string]$Value) {
-                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PathValue))) | Out-Null
-                [IO.File]::WriteAllText([IO.Path]::GetFullPath($PathValue), $Value, [Text.UTF8Encoding]::new($false))
-            }
-            switch ($tool) {
+        WriteFakeNodeTool(fakeNodeDirectory, """
                 "review-source-pdf.mjs" {
                     $out = Get-Option "--out"
-                    [IO.Directory]::CreateDirectory($out) | Out-Null
                     Write-Text (Join-Path $out "source.page-1.png") "png"
                     Write-Text (Join-Path $out "manifest.json") '{"pages":[{}]}'
                     if ($env:CLASSROOM_TOOLKIT_TEST_MUTATE_PROMPT -eq "true") {
@@ -857,14 +802,7 @@ public sealed class ToolchainCliBehaviorTests
                     Write-Text ($base + ".snapshot.json") '{"snapshotId":"test"}'
                     Write-Text ($base + ".delivery-manifest.json") '{"kind":"delivery-manifest"}'
                 }
-                "validate-json.mjs" {
-                    # Receipt schema fidelity is asserted by the rule-compiler
-                    # receipt fixture tests; the fake only proves the call path.
-                    exit 0
-                }
-                default { throw "Unexpected fake node tool: $tool" }
-            }
-            """);
+                """);
 
         try
         {
@@ -937,6 +875,37 @@ public sealed class ToolchainCliBehaviorTests
     private static async Task<ToolchainTestHost.ProcessResult> RunAsync(string fileName, string workingDirectory, params string[] arguments)
     {
         return await RunAsyncWithEnvironment(fileName, workingDirectory, environment: null, arguments);
+    }
+
+    // Shared node.cmd + fake-node.ps1 scaffold: the fake dispatches on the
+    // invoked tool file name; toolBody supplies the per-test switch branches
+    // on top of Get-Option/Write-Text helpers, and the trailer keeps
+    // validate-json succeeding while unknown tools fail loudly.
+    private static void WriteFakeNodeTool(string fakeNodeDirectory, string toolBody)
+    {
+        Directory.CreateDirectory(fakeNodeDirectory);
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
+            "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"), $$"""
+            $ErrorActionPreference = "Stop"
+            $tool = [IO.Path]::GetFileName($args[0])
+            $toolArgs = @($args | Select-Object -Skip 1)
+            function Get-Option([string]$Name) {
+                for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
+                    if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
+                }
+                return $null
+            }
+            function Write-Text([string]$PathValue, [string]$Value) {
+                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PathValue))) | Out-Null
+                [IO.File]::WriteAllText([IO.Path]::GetFullPath($PathValue), $Value, [Text.UTF8Encoding]::new($false))
+            }
+            switch ($tool) {
+            {{toolBody}}
+                "validate-json.mjs" { exit 0 }
+                default { throw "Unexpected fake node tool: $tool" }
+            }
+            """);
     }
 
     private static void CreateTransferPackage(
