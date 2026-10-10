@@ -250,22 +250,38 @@ test("lease release tolerates transient Windows file locks instead of discarding
   // A vanished lease is the historical contract: release is a no-op.
   releaseLeaseFile(path.join(os.tmpdir(), `gateway-gone-${process.pid}-${Date.now()}.json`));
 
-  // On Windows, unlinking a non-empty directory raises EPERM — the same error
-  // class an AV scan produces on a fresh lease file. Release must swallow it;
-  // a throw here would replace the already-successful provider result in the
-  // caller's finally. (CI runs windows-latest; elsewhere the EPERM branch of
-  // the predicate above is the portable proof.)
+  // On Windows a read-only file defeats unlink with EPERM — the same error
+  // class an AV scan produces on a fresh lease file — while rename still
+  // succeeds. Release must not throw (a throw would replace the
+  // already-successful provider result in the caller's finally), and its
+  // swap-out must free the primary path immediately instead of freezing the
+  // resource until the lease expires.
   if (process.platform === "win32") {
-    const lockedPath = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-locked-"));
+    const lockedPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "gateway-locked-")), "lease.json");
     try {
-      fs.writeFileSync(path.join(lockedPath, "content.txt"), "av holds the lease like this");
-      releaseLeaseFile(lockedPath);
+      fs.writeFileSync(lockedPath, JSON.stringify({
+        token: "held",
+        pid: -1,
+        slot: 1,
+        expiresAt: Date.now() + 60_000
+      }));
+      fs.chmodSync(lockedPath, 0o444);
+      assert.doesNotThrow(() => releaseLeaseFile(lockedPath));
+      assert.equal(fs.existsSync(lockedPath), false, "the swap-out must free the primary path");
     } finally {
-      fs.rmSync(lockedPath, { recursive: true, force: true });
+      try {
+        fs.chmodSync(lockedPath, 0o666);
+      } catch {
+        // Already swapped away; nothing to restore.
+      }
+      fs.rmSync(`${lockedPath}.stale`, { recursive: true, force: true });
+      fs.rmSync(path.dirname(lockedPath), { recursive: true, force: true });
     }
   }
 
-  // End-to-end: acquire a real lease, break the unlink, release without throw.
+  // End-to-end: a lease whose unlink is defeated must still release without
+  // throwing, and a waiter must be able to acquire immediately afterwards —
+  // the resource must not stay frozen until the lease expires.
   const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-release-lock-"));
   try {
     const config = runtimeConfig(runtimeDirectory);
@@ -274,14 +290,20 @@ test("lease release tolerates transient Windows file locks instead of discarding
     const leaseFilePath = path.join(runtimeDirectory, "execution-slots", "slot-1.lease.json");
     assert.equal(fs.existsSync(leaseFilePath), true);
     if (process.platform === "win32") {
-      fs.unlinkSync(leaseFilePath);
-      fs.mkdirSync(leaseFilePath);
-      fs.writeFileSync(path.join(leaseFilePath, "held.txt"), "locked");
-      assert.doesNotThrow(() => lease.release());
-    } else {
-      lease.release();
+      fs.chmodSync(leaseFilePath, 0o444);
     }
+    assert.doesNotThrow(() => lease.release());
+    const successor = await acquireSharedExecutionSlot(config, [1], 1_000);
+    assert.ok(successor, "the slot must be immediately acquirable after a degraded release");
+    successor.release();
   } finally {
+    const leaseFilePath = path.join(runtimeDirectory, "execution-slots", "slot-1.lease.json");
+    try {
+      fs.chmodSync(leaseFilePath, 0o666);
+    } catch {
+      // Swapped away or already gone.
+    }
+    fs.rmSync(`${leaseFilePath}.stale`, { force: true });
     fs.rmSync(runtimeDirectory, { recursive: true, force: true });
   }
 });
