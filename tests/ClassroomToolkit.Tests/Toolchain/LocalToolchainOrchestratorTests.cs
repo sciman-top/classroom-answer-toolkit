@@ -1,8 +1,7 @@
 using System.Text.Json;
-using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.Delivery;
-using ClassroomToolkit.Infra.Abstractions;
-using ClassroomToolkit.Infra.Workspace;
+using ClassroomToolkit.App.Services;
+using ClassroomToolkit.App.Workspace;
 using FluentAssertions;
 
 namespace ClassroomToolkit.Tests.Toolchain;

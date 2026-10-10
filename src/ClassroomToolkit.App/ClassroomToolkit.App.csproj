@@ -10,8 +10,4 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\ClassroomToolkit.Infra\ClassroomToolkit.Infra.csproj" />
-  </ItemGroup>
 </Project>

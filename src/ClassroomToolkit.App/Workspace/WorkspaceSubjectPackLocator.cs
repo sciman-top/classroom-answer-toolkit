@@ -1,6 +1,7 @@
+using System.IO;
 using System.Text.Json;
 
-namespace ClassroomToolkit.Infra.Workspace;
+namespace ClassroomToolkit.App.Workspace;
 
 public sealed record WorkspaceSubjectPackPaths(
     string AssetId,

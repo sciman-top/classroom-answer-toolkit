@@ -3,9 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using ClassroomToolkit.Infra.Abstractions;
 
-namespace ClassroomToolkit.Infra.Process;
+namespace ClassroomToolkit.App.Services;
 
 public sealed class PowerShellProcessRunner : IProcessRunner
 {

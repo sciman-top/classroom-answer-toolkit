@@ -2,8 +2,8 @@ using System.Text.Json;
 using System.IO;
 using ClassroomToolkit.App.Delivery;
 using ClassroomToolkit.App.Toolchain;
-using ClassroomToolkit.Infra.Abstractions;
-using ClassroomToolkit.Infra.Workspace;
+using ClassroomToolkit.App.Services;
+using ClassroomToolkit.App.Workspace;
 
 namespace ClassroomToolkit.App.Services;
 

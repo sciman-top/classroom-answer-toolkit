@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Threading;
-using ClassroomToolkit.Infra.Process;
+using ClassroomToolkit.App.Services;
 using FluentAssertions;
 
 namespace ClassroomToolkit.Tests.Infra;

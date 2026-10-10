@@ -1,4 +1,5 @@
-namespace ClassroomToolkit.Infra.Workspace;
+using System.IO;
+namespace ClassroomToolkit.App.Workspace;
 
 public static class AnswerArtifactPathResolver
 {

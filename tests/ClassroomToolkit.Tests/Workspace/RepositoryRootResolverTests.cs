@@ -1,4 +1,4 @@
-using ClassroomToolkit.Infra.Workspace;
+using ClassroomToolkit.App.Workspace;
 using FluentAssertions;
 
 namespace ClassroomToolkit.Tests.Workspace;

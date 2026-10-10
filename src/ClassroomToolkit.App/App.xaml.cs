@@ -4,9 +4,7 @@ using System.Text;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
 using ClassroomToolkit.App.Toolchain;
-using ClassroomToolkit.Infra.Abstractions;
-using ClassroomToolkit.Infra.Process;
-using ClassroomToolkit.Infra.Workspace;
+using ClassroomToolkit.App.Workspace;
 
 namespace ClassroomToolkit.App;
 

@@ -1,4 +1,4 @@
-namespace ClassroomToolkit.Infra.Abstractions;
+namespace ClassroomToolkit.App.Services;
 
 public interface IProcessRunner
 {
