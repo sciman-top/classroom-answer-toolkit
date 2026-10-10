@@ -34,7 +34,15 @@ function parseArgs(argv) {
     stringFlags: {
       "out": "out",
       "pages": "pages",
-      "focus-regions-file": "focusRegionsFile"
+      "focus-regions-file": "focusRegionsFile",
+      // Numeric flags arrive as strings and are normalized by the Number()
+      // mapping below; without these entries unknownFlag:"error" rejects the
+      // documented --scale/--vertical-tiles/--horizontal-tiles/--tile-overlap
+      // forms (2026-10-10 eval regression).
+      "scale": true,
+      "vertical-tiles": true,
+      "horizontal-tiles": true,
+      "tile-overlap": true
     },
     optionalValueFlags: {
       "ocr": { target: "ocr", fallback: "chi_sim" }
