@@ -1751,6 +1751,27 @@ test("semantic findings deterministically apply only explicit confirmed choice c
   assert.match(result.markdown, /1—5：D、C、D、D、A/);
   assert.match(result.markdown, /6—10：D、A、B、A、C/);
   assert.match(result.markdown, /11—12：C、C/);
+  // The merge model's own letters (A/A/A…, B/B/B…, D/D) differ from the
+  // deterministic rebuild on every range; the override count keeps that
+  // replacement observable instead of silently reverting model output.
+  assert.equal(result.overriddenModelLetters, 3);
+});
+
+test("semantic choice parser accepts half-width colons from drifted model output", () => {
+  const findings = [
+    "### 第6题",
+    "【语义确认修正】",
+    "独立结论: A",
+    "候选结论: D",
+    "建议修正: 改为 A"
+  ].join("\n");
+  const corrections = parseSemanticChoiceFindings(findings);
+  assert.deepEqual([...corrections.entries()], [[6, { candidate: "D", answer: "A" }]]);
+
+  const result = applySemanticChoiceFindings("# 参考答案\n\n6—10：D、A、D、B、C", findings);
+  assert.equal(result.applied, true);
+  assert.deepEqual(result.questions, [6]);
+  assert.match(result.markdown, /6—10：A、A、D、B、C/);
 });
 
 test("semantic findings ignore incomplete or unconfirmed corrections", () => {

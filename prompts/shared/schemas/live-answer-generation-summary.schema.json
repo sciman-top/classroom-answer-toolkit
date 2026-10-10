@@ -187,7 +187,8 @@
       "additionalProperties": false,
       "properties": {
         "applied": { "type": "boolean" },
-        "questions": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+        "questions": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "overriddenModelLetters": { "type": "integer", "minimum": 0 }
       }
     },
     "attempts": {

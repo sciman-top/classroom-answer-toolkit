@@ -316,11 +316,15 @@ export function parseSemanticChoiceFindings(findings) {
     if (/最终建议|应标.*语义一致|需以原图.*确认|题干.*(?:显示|辨识).*应改/us.test(body)) {
       continue;
     }
-    const independentMatches = [...body.matchAll(/^\s*独立结论\s*：\s*([A-D])\s*[。.]?\s*$/imgu)];
-    const candidateMatches = [...body.matchAll(/^\s*候选结论\s*：\s*([A-D])\s*[。.]?\s*$/imgu)];
+    // The prompt contract mandates full-width colons, but a findings model
+    // that drifts to half-width must not silently drop an otherwise complete,
+    // evidenced correction — accepting both only widens recall; every
+    // confirmation check below still has to pass.
+    const independentMatches = [...body.matchAll(/^\s*独立结论\s*[:：]\s*([A-D])\s*[。.]?\s*$/imgu)];
+    const candidateMatches = [...body.matchAll(/^\s*候选结论\s*[:：]\s*([A-D])\s*[。.]?\s*$/imgu)];
     const independent = independentMatches.length === 1 ? independentMatches[0][1].toUpperCase() : null;
     const candidate = candidateMatches.length === 1 ? candidateMatches[0][1].toUpperCase() : null;
-    const suggestedAnswer = body.match(/建议修正\s*：[^\n]*?(?:改为\s*)?([A-D])(?:\s|[。.]|$)/iu)?.[1]?.toUpperCase() ?? null;
+    const suggestedAnswer = body.match(/建议修正\s*[:：][^\n]*?(?:改为\s*)?([A-D])(?:\s|[。.]|$)/iu)?.[1]?.toUpperCase() ?? null;
     if (independent && candidate && independent !== candidate && suggestedAnswer === independent) {
       corrections.set(Number(block[1]), { candidate, answer: independent });
     }
@@ -331,11 +335,12 @@ export function parseSemanticChoiceFindings(findings) {
 export function applySemanticChoiceFindings(markdown, findings, baselineMarkdown = markdown) {
   const corrections = parseSemanticChoiceFindings(findings);
   if (corrections.size === 0) {
-    return { markdown, applied: false, questions: [] };
+    return { markdown, applied: false, questions: [], overriddenModelLetters: 0 };
   }
   const lines = String(markdown).split("\n");
   const baselineLines = String(baselineMarkdown).split("\n");
   const applied = [];
+  let overriddenModelLetters = 0;
   for (const range of CHOICE_RANGES) {
     const lineIndex = lines.findIndex((line) => range.pattern.test(line));
     const baselineLineIndex = baselineLines.findIndex((line) => range.pattern.test(line));
@@ -354,7 +359,21 @@ export function applySemanticChoiceFindings(markdown, findings, baselineMarkdown
         applied.push(question);
       }
     }
+    // The merged model's own choice-line letters are never authoritative — the
+    // frozen baseline plus parsed confirmed corrections decide. Count how often
+    // the deterministic rebuild actually overrides model output so a model edit
+    // the findings parser did not recognize stays visible instead of reverting
+    // silently.
+    const modelLetters = [...(lines[lineIndex].match(/[A-D](?=[、，,\s]|$)/gu) ?? [])].join("");
+    if (modelLetters !== "" && modelLetters !== current.join("")) {
+      overriddenModelLetters += 1;
+    }
     lines[lineIndex] = `${range.start}—${range.end}：${current.join("、")}`;
   }
-  return { markdown: lines.join("\n"), applied: applied.length > 0, questions: applied };
+  return {
+    markdown: lines.join("\n"),
+    applied: applied.length > 0,
+    questions: applied,
+    overriddenModelLetters
+  };
 }

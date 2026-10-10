@@ -63,3 +63,32 @@ test("explicit own BASE_URL plus own API_KEY needs no flag and raises no warning
   assert.deepEqual(errors, []);
   assert.ok(!warnings.some((warning) => warning.includes("ai.fallback_1")));
 });
+
+test("a provider whose reasoning effort matches no quality profile fails validation", () => {
+  // Runtime routing filters by exact model+effort equality; an empty effort
+  // used to pass validation while every quality-profile request died with
+  // "No AI provider is configured".
+  const config = normalizeConfig({ ...PRIMARY, ...fallbackEnv() });
+  config.providers = config.providers.map((provider) => ({ ...provider, reasoningEffort: "" }));
+  const { errors } = validateConfig(config, { allowMissingSecrets: true }, []);
+  assert.ok(
+    errors.some((error) => error.includes("ai.primary") && error.includes("REASONING_EFFORT")),
+    errors.join("\n"));
+});
+
+test("a provider outside the closed quality-profile model families fails validation", () => {
+  const config = normalizeConfig({ ...PRIMARY, ...fallbackEnv() });
+  config.providers = config.providers.map((provider) => ({ ...provider, visionModel: "my-custom-model" }));
+  const { errors } = validateConfig(config, { allowMissingSecrets: true }, []);
+  assert.ok(
+    errors.some((error) => error.includes("ai.primary") && error.includes("my-custom-model")),
+    errors.join("\n"));
+});
+
+test("explicit preset slot bindings skip the routability check", () => {
+  const config = normalizeConfig({ ...PRIMARY, ...fallbackEnv() });
+  config.presetSlotsExplicit = true;
+  config.providers = config.providers.map((provider) => ({ ...provider, reasoningEffort: "" }));
+  const { errors } = validateConfig(config, { allowMissingSecrets: true }, []);
+  assert.deepEqual(errors, []);
+});

@@ -5,7 +5,8 @@ import {
   DEFAULT_PRESET_SLOT_BINDINGS,
   EXECUTION_SLOT_COUNT,
   PRESET_NAMES,
-  PRESET_PROFILES
+  PRESET_PROFILES,
+  QUALITY_PROFILES
 } from "./profile-matrix.mjs";
 import { parseArgvFlags, readResponseTextCapped, repositoryRoot as repoRoot, summarizeProviderErrorBody } from "../shared.mjs";
 import {
@@ -356,6 +357,7 @@ export function validateConfig(config, options, parseErrors) {
   for (const provider of config.providers) {
     validateProvider(provider, config.executionSlotCount, options, errors, warnings);
   }
+  validateProviderRoutability(config, errors);
   validateFallbackConnectionProvenance(config.providers, errors, warnings);
 
   const primaryAi = config.providers.find((provider) => provider.lane === "ai" && provider.role === "primary");
@@ -364,6 +366,48 @@ export function validateConfig(config, options, parseErrors) {
   }
 
   return { errors, warnings };
+}
+
+// In the implicit routing mode (no explicit preset slot bindings) the runtime
+// selects providers by exact equality with a quality profile's model AND
+// reasoning effort. A provider outside the closed model families, or whose
+// effort no profile of its family uses, can never match any profile — every
+// request would die with "No AI provider is configured" despite a green
+// validation. Mirror the runtime filter here so the gap surfaces at validate
+// time (2026-10 audit).
+function validateProviderRoutability(config, errors) {
+  if (config.presetSlotsExplicit === true) {
+    return;
+  }
+
+  const effortsByModel = new Map();
+  for (const profile of Object.values(QUALITY_PROFILES)) {
+    if (!effortsByModel.has(profile.model)) {
+      effortsByModel.set(profile.model, new Set());
+    }
+    effortsByModel.get(profile.model).add(profile.reasoningEffort);
+  }
+
+  for (const provider of config.providers) {
+    if (provider.lane !== "ai") {
+      continue;
+    }
+    const label = `${provider.lane}.${provider.role}`;
+    const efforts = effortsByModel.get(provider.visionModel);
+    if (!efforts) {
+      errors.push(
+        `${label}: vision model '${provider.visionModel}' is not one of the quality-profile models `
+        + `(${[...effortsByModel.keys()].join(", ")}); requests route by exact model match, `
+        + "so this provider can never serve any quality profile.");
+      continue;
+    }
+    if (!efforts.has(provider.reasoningEffort)) {
+      errors.push(
+        `${label}: REASONING_EFFORT '${provider.reasoningEffort || "(empty)"}' matches no quality profile of `
+        + `${provider.visionModel} (expected one of ${[...efforts].join(", ")}); `
+        + "requests route by exact effort match, so this provider can never serve any quality profile.");
+    }
+  }
 }
 
 function validateFallbackConnectionProvenance(providers, errors, warnings) {

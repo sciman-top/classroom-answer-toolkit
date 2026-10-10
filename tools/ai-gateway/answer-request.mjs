@@ -361,13 +361,22 @@ export async function main() {
         fs.readFileSync(options.semanticFindingsFile, "utf8"),
         options.candidateFile ? fs.readFileSync(options.candidateFile, "utf8") : result.answerMarkdown
       )
-    : { markdown: result.answerMarkdown, applied: false, questions: [] };
+    : { markdown: result.answerMarkdown, applied: false, questions: [], overriddenModelLetters: 0 };
   if (options.semanticFindingsFile && !semanticChoiceOverride.applied) {
     // Confirmed corrections that match no choice line must be visible; silently
     // dropping them is indistinguishable from "the report had no corrections".
     console.error(
       "[gateway] Semantic findings file was supplied but no confirmed correction "
       + `matched a choice line (${options.semanticFindingsFile}); overrides skipped.`);
+  }
+  if (semanticChoiceOverride.overriddenModelLetters > 0) {
+    // The merge model's own choice-line edits are never authoritative, but a
+    // deterministic rebuild replacing them (e.g. a model-applied fix the
+    // findings parser did not recognize) must stay visible to the operator.
+    console.error(
+      "[gateway] Deterministic choice rebuild replaced the merged model's letters on "
+      + `${semanticChoiceOverride.overriddenModelLetters} answer line(s); `
+      + "frozen baseline + confirmed corrections are authoritative.");
   }
   // Reference Review is authoritative when a reference text is present; otherwise
   // only explicitly confirmed semantic choice corrections may be applied.
@@ -418,7 +427,8 @@ export async function main() {
       : { applied: false },
     semanticChoiceOverride: {
       applied: semanticChoiceOverride.applied,
-      questions: semanticChoiceOverride.questions
+      questions: semanticChoiceOverride.questions,
+      overriddenModelLetters: semanticChoiceOverride.overriddenModelLetters ?? 0
     },
     attempts: result.attempts.map(redactAttempt)
   };
