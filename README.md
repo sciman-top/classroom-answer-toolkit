@@ -107,7 +107,7 @@ Full 中共享 renderer/layout/delivery 回归只由 `junior-physics-answer` eva
 
 WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓库以及其中的 Node/npm、PowerShell、prompt、snapshot 和 eval 状态。`scripts/publish-app.ps1` 会清空准确的 publish 目录，以 Release 生成应用，并在仓库外复制发布树执行隔离启动 smoke；该 smoke 只验收“应用可启动且缺少仓库时正确 fail closed”，回执绑定 source commit、EXE SHA-256 和 publish-tree SHA-256。
 
-`scripts/pack-msix.ps1` 在可写、版本化 runtime bundle 及安装/升级合同落地前始终阻断 MSIX 创建。不得把当前 publish/smoke 结果描述为自包含安装包验收。
+当前不采用 MSIX（决策见 [`docs/strategy/final-implementation-baseline.md`](docs/strategy/final-implementation-baseline.md)，2026-10-10 移除始终阻断的 `pack-msix` 墓碑脚本）。不得把当前 publish/smoke 结果描述为自包含安装包验收。
 
 ## 获取与迁移
 

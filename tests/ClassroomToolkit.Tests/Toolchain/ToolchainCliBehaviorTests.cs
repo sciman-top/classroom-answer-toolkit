@@ -79,22 +79,6 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public async Task MsixPackRemainsBlockedUntilRuntimeBundleContractExists()
-    {
-        var root = ToolchainTestHost.FindRepoRoot();
-
-        var result = await RunAsync(
-            "pwsh",
-            root,
-            "-NoProfile",
-            "-ExecutionPolicy", "Bypass",
-            "-File", "scripts/pack-msix.ps1");
-
-        result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("MSIX packaging is blocked");
-    }
-
-    [Fact]
     public async Task InstallReleaseRejectsLoopbackManifestWithoutSimulationSwitch()
     {
         var root = ToolchainTestHost.FindRepoRoot();
