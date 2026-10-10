@@ -3,7 +3,7 @@ import path from "node:path";
 import {
   DEFAULT_PRESET_SLOT_BINDINGS,
   EXECUTION_SLOT_COUNT,
-  PRESET_NAMES,
+  MODEL_FAMILY_PREFERENCE,
   PRESET_PROFILES,
   QUALITY_PROFILES
 } from "./profile-matrix.mjs";
@@ -260,7 +260,7 @@ function readPresetSlotBindings(env) {
   const bindings = {};
   let explicit = false;
   const errors = [];
-  for (const preset of PRESET_NAMES) {
+  for (const preset of MODEL_FAMILY_PREFERENCE) {
     const configured = [];
     const values = DEFAULT_PRESET_SLOT_BINDINGS[preset].map((defaultProfile, index) => {
       const raw = get(env, presetSlotEnvKey(preset, index + 1));
@@ -349,7 +349,7 @@ export function validateConfig(config, options, parseErrors) {
   if (config.presetSlotsExplicit === true && config.executionSlotCount !== EXECUTION_SLOT_COUNT) {
     errors.push(`AI execution slot count must be ${EXECUTION_SLOT_COUNT} when preset slot bindings are configured.`);
   }
-  for (const preset of PRESET_NAMES) {
+  for (const preset of MODEL_FAMILY_PREFERENCE) {
     const bindings = config.presetSlotBindings?.[preset] ?? [];
     if (bindings.length !== EXECUTION_SLOT_COUNT) {
       errors.push(`${preset}: exactly ${EXECUTION_SLOT_COUNT} preset slot bindings are required.`);

@@ -16,8 +16,6 @@ export const EXECUTION_SLOT_COUNT = 5;
 
 export const MODEL_FAMILY_PREFERENCE = Object.freeze(["sol", "terra", "luna"]);
 
-export const PRESET_NAMES = MODEL_FAMILY_PREFERENCE;
-
 // A preset is a closed model family.  Its slots may repeat a profile for
 // parallel capacity, but can never project a model from another preset.
 export const PRESET_PROFILES = Object.freeze({
@@ -40,8 +38,8 @@ const PROFILE_TIERS = Object.freeze({
   "luna-high": "low"
 });
 
-export const PRESET_TIER_PROFILES = Object.freeze(Object.fromEntries(
-  PRESET_NAMES.map((preset) => [preset, Object.freeze(Object.fromEntries(
+const PRESET_TIER_PROFILES = Object.freeze(Object.fromEntries(
+  MODEL_FAMILY_PREFERENCE.map((preset) => [preset, Object.freeze(Object.fromEntries(
     PRESET_PROFILES[preset].map((profile) => [PROFILE_TIERS[profile], profile])
   ))])
 ));

@@ -13,13 +13,10 @@ import {
   resolveImageEvidenceLabels
 } from "./answer-tasks.mjs";
 import {
-  buildAnswerRequestBody,
   inferAnswerMode,
   normalizeDetailForProvider,
   normalizeQualityProfile,
-  requestAnswerWithFailover,
-  resolveAnswerTransportPolicy,
-  selectAnswerRoute
+  requestAnswerWithFailover
 } from "./answer-transport.mjs";
 import { QUALITY_PROFILE_NAMES } from "./profile-matrix.mjs";
 import { loadGatewayConfig, repoRoot } from "./validate-config.mjs";

@@ -109,7 +109,9 @@ export function analyzeAnalogMeterCanvas(config) {
   const value = config.rangeMin
     + (config.rangeMax - config.rangeMin) * nearestDivision / config.divisions;
   const status = best.coverage >= 0.55
-    && best.coverage - runnerUp.coverage >= (config.competitionGap ?? 0.08)
+    // Unlike linear-scale readings, the analog-meter spec allowlist has no
+    // competitionGap field, so this threshold is fixed rather than configurable.
+    && best.coverage - runnerUp.coverage >= 0.08
     && divisionResidual <= 0.35
     ? "measured"
     : "uncertain";
