@@ -27,28 +27,6 @@
         "path": "./rules/math.json",
         "layer": "subject-pack"
       }
-    },
-    {
-      "id": "junior-physics-answer.math.direct-equivalent-path",
-      "version": "1.0.0",
-      "enabled": true,
-      "severity": "soft",
-      "priority": 85,
-      "engine": "validate",
-      "appliesTo": [
-        "answer-md",
-        "computation"
-      ],
-      "params": {
-        "preferMoreDirectEquivalentPath": true,
-        "allowNecessaryDerivationForDifficultSubQuestion": true,
-        "dropUnusedOriginalFormulaHintLine": true,
-        "preferMovePrimaryUnknownBeforeWrap": true
-      },
-      "source": {
-        "path": "./rules/math.json",
-        "layer": "subject-pack"
-      }
     }
   ]
 }
