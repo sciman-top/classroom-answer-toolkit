@@ -79,53 +79,19 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public async Task MsixPackRejectsSmokeReceiptThatDoesNotBindCurrentExecutable()
+    public async Task MsixPackRemainsBlockedUntilRuntimeBundleContractExists()
     {
         var root = ToolchainTestHost.FindRepoRoot();
-        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-StalePublishReceipt", Guid.NewGuid().ToString("N"));
-        var publishDirectory = Path.Combine(testRoot, "publish");
-        var exePath = Path.Combine(publishDirectory, "ClassroomToolkit.App.exe");
-        var reportPath = Path.Combine(testRoot, "smoke-report.json");
-        Directory.CreateDirectory(publishDirectory);
-        File.WriteAllText(exePath, "current-executable");
-        var commit = (await RunAsync("git", root, "rev-parse", "HEAD")).Output.Trim();
-        File.WriteAllText(reportPath, JsonSerializer.Serialize(new
-        {
-            schemaVersion = "1.1",
-            kind = "published-app-smoke-report",
-            status = "passed",
-            generatedAt = DateTimeOffset.UtcNow,
-            source = new { commit, dirty = false },
-            publishDirectoryPath = publishDirectory,
-            executable = new { path = exePath, bytes = new FileInfo(exePath).Length, sha256 = new string('0', 64) },
-            publishTree = new
-            {
-                sha256 = new string('0', 64),
-                fileCount = 1,
-                bytes = new FileInfo(exePath).Length,
-                latestWriteAt = DateTimeOffset.UtcNow.AddSeconds(-1)
-            },
-            smoke = new { isolationMode = "published-tree-only", repositoryCoupled = true }
-        }));
 
-        try
-        {
-            var result = await RunAsync(
-                "pwsh",
-                root,
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-File", "scripts/pack-msix.ps1",
-                "-PublishDir", publishDirectory,
-                "-SmokeReportPath", reportPath);
+        var result = await RunAsync(
+            "pwsh",
+            root,
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", "scripts/pack-msix.ps1");
 
-            result.ExitCode.Should().NotBe(0);
-            result.Output.Should().Contain("executable SHA-256");
-        }
-        finally
-        {
-            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
-        }
+        result.ExitCode.Should().NotBe(0);
+        result.Output.Should().Contain("MSIX packaging is blocked");
     }
 
     [Fact]
