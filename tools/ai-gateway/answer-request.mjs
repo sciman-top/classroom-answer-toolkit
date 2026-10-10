@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { sha256File } from "../shared.mjs";
+import { sha256File, parseArgvFlags } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 
 import {
@@ -23,7 +23,7 @@ import {
   selectAnswerRoute
 } from "./answer-transport.mjs";
 import { QUALITY_PROFILE_NAMES } from "./profile-matrix.mjs";
-import { loadGatewayConfig, repoRoot, requireValue } from "./validate-config.mjs";
+import { loadGatewayConfig, repoRoot } from "./validate-config.mjs";
 
 const summarySchemaPath = path.join(
   repoRoot,
@@ -59,186 +59,88 @@ Options:
   --allow-cloud-egress      Required for live requests
 `;
 
-function parseArgs(argv) {
-  const options = {
-    envFile: path.join(repoRoot, ".env"),
-    promptFile: null,
-    imagesDir: null,
-    sourceTextFile: null,
-    semanticFindingsOnly: false,
-    semanticFindingsFile: null,
-    auditImagesDir: null,
-    auditFindingsOnly: false,
-    auditFindingsFile: null,
-    referenceImagesDir: null,
-    referenceTextFile: null,
-    candidateFile: null,
-    outputPath: null,
-    summaryPath: null,
-    provider: "all",
-    qualityProfile: "auto",
-    visualDetailMode: "original",
-    maxOutputTokens: 24000,
-    timeoutMs: 600000,
-    allowCloudEgress: false
-  };
+// Paths resolve against the caller's working directory (INIT_CWD), matching
+// the npm-script invocation contract; plain values (provider, quality-profile)
+// stay strings for validateOptions to police.
+const CALLER_PATH_KEYS = [
+  "envFile",
+  "promptFile",
+  "imagesDir",
+  "sourceTextFile",
+  "candidateFile",
+  "semanticFindingsFile",
+  "auditImagesDir",
+  "auditFindingsFile",
+  "referenceImagesDir",
+  "referenceTextFile",
+  "outputPath",
+  "summaryPath"
+];
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--config-env-file") {
-      options.envFile = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--config-env-file=")) {
-      options.envFile = resolveCallerPath(arg.slice("--config-env-file=".length));
-      continue;
-    }
-    if (arg === "--prompt-file") {
-      options.promptFile = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--prompt-file=")) {
-      options.promptFile = resolveCallerPath(arg.slice("--prompt-file=".length));
-      continue;
-    }
-    if (arg === "--images-dir") {
-      options.imagesDir = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--images-dir=")) {
-      options.imagesDir = resolveCallerPath(arg.slice("--images-dir=".length));
-      continue;
-    }
-    if (arg === "--source-text-file") {
-      options.sourceTextFile = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--source-text-file=")) {
-      options.sourceTextFile = resolveCallerPath(arg.slice("--source-text-file=".length));
-      continue;
-    }
-    if (arg === "--candidate-file") {
-      options.candidateFile = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg === "--semantic-findings-only") {
-      options.semanticFindingsOnly = true;
-      continue;
-    }
-    if (arg === "--semantic-findings-file") {
-      options.semanticFindingsFile = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--semantic-findings-file=")) {
-      options.semanticFindingsFile = resolveCallerPath(arg.slice("--semantic-findings-file=".length));
-      continue;
-    }
-    if (arg === "--audit-images-dir") {
-      options.auditImagesDir = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--audit-images-dir=")) {
-      options.auditImagesDir = resolveCallerPath(arg.slice("--audit-images-dir=".length));
-      continue;
-    }
-    if (arg === "--audit-findings-only") {
-      options.auditFindingsOnly = true;
-      continue;
-    }
-    if (arg === "--audit-findings-file") {
-      options.auditFindingsFile = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--audit-findings-file=")) {
-      options.auditFindingsFile = resolveCallerPath(arg.slice("--audit-findings-file=".length));
-      continue;
-    }
-    if (arg.startsWith("--candidate-file=")) {
-      options.candidateFile = resolveCallerPath(arg.slice("--candidate-file=".length));
-      continue;
-    }
-    if (arg === "--reference-images-dir") {
-      options.referenceImagesDir = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--reference-images-dir=")) {
-      options.referenceImagesDir = resolveCallerPath(arg.slice("--reference-images-dir=".length));
-      continue;
-    }
-    if (arg === "--reference-text-file") {
-      options.referenceTextFile = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--reference-text-file=")) {
-      options.referenceTextFile = resolveCallerPath(arg.slice("--reference-text-file=".length));
-      continue;
-    }
-    if (arg === "--output") {
-      options.outputPath = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--output=")) {
-      options.outputPath = resolveCallerPath(arg.slice("--output=".length));
-      continue;
-    }
-    if (arg === "--summary-out") {
-      options.summaryPath = resolveCallerPath(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--summary-out=")) {
-      options.summaryPath = resolveCallerPath(arg.slice("--summary-out=".length));
-      continue;
-    }
-    if (arg === "--provider") {
-      options.provider = requireValue(argv, ++index, arg);
-      continue;
-    }
-    if (arg.startsWith("--provider=")) {
-      options.provider = arg.slice("--provider=".length);
-      continue;
-    }
-    if (arg === "--quality-profile") {
-      options.qualityProfile = requireValue(argv, ++index, arg);
-      continue;
-    }
-    if (arg.startsWith("--quality-profile=")) {
-      options.qualityProfile = arg.slice("--quality-profile=".length);
-      continue;
-    }
-    if (arg === "--visual-detail") {
-      options.visualDetailMode = requireValue(argv, ++index, arg);
-      continue;
-    }
-    if (arg.startsWith("--visual-detail=")) {
-      options.visualDetailMode = arg.slice("--visual-detail=".length);
-      continue;
-    }
-    if (arg === "--max-output-tokens") {
-      options.maxOutputTokens = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--max-output-tokens=")) {
-      options.maxOutputTokens = Number(arg.slice("--max-output-tokens=".length));
-      continue;
-    }
-    if (arg === "--timeout-ms") {
-      options.timeoutMs = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--timeout-ms=")) {
-      options.timeoutMs = Number(arg.slice("--timeout-ms=".length));
-      continue;
-    }
-    if (arg === "--allow-cloud-egress") {
-      options.allowCloudEgress = true;
-      continue;
-    }
-    if (arg === "--help" || arg === "-h") {
-      console.log(usage);
-      process.exit(0);
-    }
-    throw new Error(`Unknown argument: ${arg}\n\n${usage}`);
+function parseArgs(argv) {
+  const options = parseArgvFlags(argv, {
+    stringFlags: {
+      "config-env-file": "envFile",
+      "prompt-file": "promptFile",
+      "images-dir": "imagesDir",
+      "source-text-file": "sourceTextFile",
+      "candidate-file": "candidateFile",
+      "semantic-findings-file": "semanticFindingsFile",
+      "audit-images-dir": "auditImagesDir",
+      "audit-findings-file": "auditFindingsFile",
+      "reference-images-dir": "referenceImagesDir",
+      "reference-text-file": "referenceTextFile",
+      output: "outputPath",
+      "summary-out": "summaryPath",
+      provider: true,
+      "quality-profile": "qualityProfile",
+      "visual-detail": "visualDetailMode",
+      "max-output-tokens": "maxOutputTokens",
+      "timeout-ms": "timeoutMs"
+    },
+    booleanFlags: {
+      "semantic-findings-only": "semanticFindingsOnly",
+      "audit-findings-only": "auditFindingsOnly",
+      "allow-cloud-egress": "allowCloudEgress"
+    },
+    defaults: {
+      envFile: path.join(repoRoot, ".env"),
+      promptFile: null,
+      imagesDir: null,
+      sourceTextFile: null,
+      semanticFindingsOnly: false,
+      semanticFindingsFile: null,
+      auditImagesDir: null,
+      auditFindingsOnly: false,
+      auditFindingsFile: null,
+      referenceImagesDir: null,
+      referenceTextFile: null,
+      candidateFile: null,
+      outputPath: null,
+      summaryPath: null,
+      provider: "all",
+      qualityProfile: "auto",
+      visualDetailMode: "original",
+      maxOutputTokens: 24000,
+      timeoutMs: 600000,
+      allowCloudEgress: false
+    },
+    help: true,
+    unknownFlag: "error"
+  });
+
+  if (options.help) {
+    console.log(usage);
+    process.exit(0);
   }
+
+  for (const key of CALLER_PATH_KEYS) {
+    if (options[key] !== null) {
+      options[key] = resolveCallerPath(options[key]);
+    }
+  }
+  options.maxOutputTokens = Number(options.maxOutputTokens);
+  options.timeoutMs = Number(options.timeoutMs);
 
   options.promptFile ??= resolveDefaultPromptPath();
   validateOptions(options);

@@ -5,14 +5,14 @@ import {
   assertLiveEgressAllowed,
   callTextProvider,
   loadGatewayConfig,
-  repoRoot,
-  requireValue
+  repoRoot
 } from "./validate-config.mjs";
 import {
   readPresetHealth,
   recordRecoveryProbeResult,
   recoveryProbeEligibility
 } from "./gateway-runtime.mjs";
+import { parseArgvFlags } from "../shared.mjs";
 
 // The probe verifies Sol connectivity, not business-answer quality. Reasoning
 // effort stays low and the token budget must leave room for it: reasoning
@@ -36,57 +36,42 @@ function usage() {
 }
 
 export function parseArgs(argv) {
-  const options = {
-    envFile: path.join(repoRoot, ".env"),
-    allowCloudEgress: false,
-    once: true,
-    timeoutMs: null,
-    json: false
-  };
+  const options = parseArgvFlags(argv, {
+    stringFlags: {
+      "config-env-file": "envFile",
+      "timeout-ms": "timeoutMs"
+    },
+    booleanFlags: {
+      "allow-cloud-egress": "allowCloudEgress",
+      watch: true,
+      once: true,
+      json: true
+    },
+    defaults: {
+      envFile: path.join(repoRoot, ".env"),
+      allowCloudEgress: false,
+      once: true,
+      timeoutMs: null,
+      json: false
+    },
+    help: true,
+    unknownFlag: "error"
+  });
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--config-env-file") {
-      options.envFile = path.resolve(repoRoot, requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--config-env-file=")) {
-      options.envFile = path.resolve(repoRoot, arg.slice("--config-env-file=".length));
-      continue;
-    }
-    if (arg === "--allow-cloud-egress") {
-      options.allowCloudEgress = true;
-      continue;
-    }
-    if (arg === "--watch") {
-      options.once = false;
-      continue;
-    }
-    if (arg === "--once") {
-      options.once = true;
-      continue;
-    }
-    if (arg === "--timeout-ms") {
-      options.timeoutMs = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--timeout-ms=")) {
-      options.timeoutMs = Number(arg.slice("--timeout-ms=".length));
-      continue;
-    }
-    if (arg === "--json") {
-      options.json = true;
-      continue;
-    }
-    if (arg === "--help" || arg === "-h") {
-      console.log(usage());
-      process.exit(0);
-    }
-    throw new Error(`Unknown argument: ${arg}\n\n${usage()}`);
+  if (options.help) {
+    console.log(usage());
+    process.exit(0);
   }
 
-  if (options.timeoutMs !== null && (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000)) {
-    throw new Error("--timeout-ms must be an integer >= 1000.");
+  options.envFile = path.resolve(repoRoot, options.envFile);
+  if (options.watch) {
+    options.once = false;
+  }
+  if (options.timeoutMs !== null) {
+    options.timeoutMs = Number(options.timeoutMs);
+    if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
+      throw new Error("--timeout-ms must be an integer >= 1000.");
+    }
   }
   return options;
 }

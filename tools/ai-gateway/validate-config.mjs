@@ -7,7 +7,7 @@ import {
   PRESET_NAMES,
   PRESET_PROFILES
 } from "./profile-matrix.mjs";
-import { readResponseTextCapped, repositoryRoot as repoRoot, summarizeProviderErrorBody } from "../shared.mjs";
+import { parseArgvFlags, readResponseTextCapped, repositoryRoot as repoRoot, summarizeProviderErrorBody } from "../shared.mjs";
 import {
   DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS,
   DEFAULT_RECOVERY_PROBE_INTERVAL_MS,
@@ -39,60 +39,36 @@ function usage() {
 }
 
 export function parseArgs(argv) {
-  const options = {
-    envFile: path.join(repoRoot, ".env"),
-    allowMissingSecrets: false,
-    json: false,
-    provider: "primary",
-    allowCloudEgress: false,
-    timeoutMs: 30000
-  };
+  const options = parseArgvFlags(argv, {
+    stringFlags: {
+      "config-env-file": "envFile",
+      provider: true,
+      "timeout-ms": "timeoutMs"
+    },
+    booleanFlags: {
+      "allow-missing-secrets": "allowMissingSecrets",
+      json: true,
+      "allow-cloud-egress": "allowCloudEgress"
+    },
+    defaults: {
+      envFile: path.join(repoRoot, ".env"),
+      allowMissingSecrets: false,
+      json: false,
+      provider: "primary",
+      allowCloudEgress: false,
+      timeoutMs: 30000
+    },
+    help: true,
+    unknownFlag: "error"
+  });
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--config-env-file") {
-      options.envFile = path.resolve(repoRoot, requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--config-env-file=")) {
-      options.envFile = path.resolve(repoRoot, arg.slice("--config-env-file=".length));
-      continue;
-    }
-    if (arg === "--allow-missing-secrets") {
-      options.allowMissingSecrets = true;
-      continue;
-    }
-    if (arg === "--json") {
-      options.json = true;
-      continue;
-    }
-    if (arg === "--provider") {
-      options.provider = requireValue(argv, ++index, arg);
-      continue;
-    }
-    if (arg.startsWith("--provider=")) {
-      options.provider = arg.slice("--provider=".length);
-      continue;
-    }
-    if (arg === "--allow-cloud-egress") {
-      options.allowCloudEgress = true;
-      continue;
-    }
-    if (arg === "--timeout-ms") {
-      options.timeoutMs = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-    if (arg.startsWith("--timeout-ms=")) {
-      options.timeoutMs = Number(arg.slice("--timeout-ms=".length));
-      continue;
-    }
-    if (arg === "--help" || arg === "-h") {
-      console.log(usage());
-      process.exit(0);
-    }
-
-    throw new Error(`Unknown argument: ${arg}\n\n${usage()}`);
+  if (options.help) {
+    console.log(usage());
+    process.exit(0);
   }
+
+  options.envFile = path.resolve(repoRoot, options.envFile);
+  options.timeoutMs = Number(options.timeoutMs);
 
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
     throw new Error("--timeout-ms must be an integer >= 1000.");
@@ -103,14 +79,6 @@ export function parseArgs(argv) {
   }
 
   return options;
-}
-
-export function requireValue(argv, index, flag) {
-  const value = argv[index];
-  if (typeof value !== "string" || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-  return value;
 }
 
 function isKnownEnvKey(key) {
