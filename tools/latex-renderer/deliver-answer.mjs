@@ -1,11 +1,13 @@
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { chromium } from "playwright-core";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
 import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
+import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
 import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 import { runCleanup } from "./cleanup-answer-artifacts.mjs";
@@ -65,36 +67,71 @@ function parseArgs(argv) {
 
 const childStepTimeoutMs = 10 * 60 * 1000;
 
-function runNodeScript(scriptFileName, scriptArgs) {
+// Thrown when a child step exits non-zero so the shared browser (if any) can
+// be closed by main's finally before the process exits with the same code the
+// direct process.exit used to produce.
+class DeliveryStepError extends Error {
+  constructor(scriptFileName, status, signal) {
+    const timedOut = signal === "SIGTERM" && status === null;
+    super(
+      `${scriptFileName} terminated by signal ${signal}`
+      + `${timedOut ? ` (step exceeded ${childStepTimeoutMs / 60000} minutes)` : ""}.`
+      + (status !== null ? ` (exit ${status})` : ""));
+    this.name = "DeliveryStepError";
+    this.stepExitCode = typeof status === "number" ? status : 2;
+  }
+}
+
+// Asynchronous on purpose: the shared browser server lives in this process,
+// and a synchronous spawn would freeze this event loop so connected steps
+// could never finish their WebSocket handshake. The promise resolves with the
+// same {status, signal} shape spawnSync produced so error reporting is
+// unchanged; each caller awaits.
+function runNodeScript(scriptFileName, scriptArgs, extraEnv = null) {
   const filteredArgs = scriptArgs.filter((value) => value !== undefined && value !== null && value !== "");
-  const result = spawnSync(
-    process.execPath,
-    [resolveToolScript(scriptFileName), ...filteredArgs],
-    {
-      cwd: toolDir,
-      stdio: "inherit",
-      timeout: childStepTimeoutMs,
-      env: {
-        ...process.env,
-        INIT_CWD: repoRoot
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      process.execPath,
+      [resolveToolScript(scriptFileName), ...filteredArgs],
+      {
+        cwd: toolDir,
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          INIT_CWD: repoRoot,
+          ...extraEnv
+        }
       }
-    }
-  );
+    );
 
-  if (result.error) {
-    throw result.error;
-  }
+    let settled = false;
+    const timeout = setTimeout(() => {
+      settled = true;
+      child.kill("SIGTERM");
+      reject(new DeliveryStepError(scriptFileName, null, "SIGTERM"));
+    }, childStepTimeoutMs);
 
-  if (result.status !== 0) {
-    if (result.signal) {
-      const timedOut = result.signal === "SIGTERM" && result.status === null;
-      console.error(
-        `${scriptFileName} terminated by signal ${result.signal}`
-        + `${timedOut ? ` (step exceeded ${childStepTimeoutMs / 60000} minutes)` : ""}.`
-      );
+    child.on("error", (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on("exit", (code, signal) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeout);
+      resolve({ status: code, signal });
+    });
+  }).then((result) => {
+    if (result.status !== 0 || result.signal) {
+      throw new DeliveryStepError(scriptFileName, result.status, result.signal);
     }
-    process.exit(typeof result.status === "number" ? result.status : 2);
-  }
+  });
 }
 
 function makeDeliveryManifestPath(pdfPath) {
@@ -164,7 +201,7 @@ async function main() {
 
   if (!options.snapshotPath) {
     console.log(`[${packageName}] compile-snapshot`);
-    runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
+    await runNodeScript(path.join("..", "rule-compiler", "compile-snapshot.mjs"), [
       "--subject-pack",
       options.subjectPack,
       "--profile",
@@ -192,7 +229,7 @@ async function main() {
 
   if (!options.skipValidate) {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
-    runNodeScript("validate-answer-markdown.mjs", [
+    await runNodeScript("validate-answer-markdown.mjs", [
       path.relative(repoRoot, inputPath),
       "--subject-pack",
       snapshotSubjectPack,
@@ -203,27 +240,56 @@ async function main() {
     ]);
   }
 
-  console.log(`[${packageName}] render: ${path.relative(repoRoot, inputPath)}`);
-  runNodeScript("render-md-latex.mjs", [
-    path.relative(repoRoot, inputPath),
-    path.relative(repoRoot, outputPath),
-    "--subject-pack",
-    snapshotSubjectPack,
-    "--profile",
-    profileName,
-    "--snapshot",
-    path.relative(repoRoot, snapshotPath)
-  ]);
+  // One browser cold start serves both render and review: the endpoint is
+  // passed through the env hook both steps already consume, and the host owns
+  // the browser lifetime (connected steps close only their own pages). An
+  // externally provided endpoint is honored instead of launching a second one.
+  const externalBrowserEndpoint = process.env.CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT?.trim() || null;
+  let sharedBrowserServer = null;
+  let browserEnv;
+  if (externalBrowserEndpoint) {
+    browserEnv = {};
+  } else {
+    const browserPath = resolveLocalBrowserPath();
+    if (!browserPath) {
+      fail("No local Chromium, Chrome, or Edge executable found for PDF rendering.", 3);
+    }
+    // launchServer (not launch): connectable steps need a ws endpoint, and the
+    // eval pipeline already shares its browser this way.
+    sharedBrowserServer = await chromium.launchServer({
+      executablePath: browserPath,
+      headless: true
+    });
+    browserEnv = { CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT: sharedBrowserServer.wsEndpoint() };
+  }
 
-  console.log(`[${packageName}] review: ${path.relative(repoRoot, outputPath)}`);
-  removePathRecursive(reviewOutputDir);
-  runNodeScript("review-source-pdf.mjs", [
-    path.relative(repoRoot, outputPath),
-    "--out",
-    path.relative(repoRoot, reviewOutputDir),
-    "--scale",
-    options.reviewScale
-  ]);
+  try {
+    console.log(`[${packageName}] render: ${path.relative(repoRoot, inputPath)}`);
+    await runNodeScript("render-md-latex.mjs", [
+      path.relative(repoRoot, inputPath),
+      path.relative(repoRoot, outputPath),
+      "--subject-pack",
+      snapshotSubjectPack,
+      "--profile",
+      profileName,
+      "--snapshot",
+      path.relative(repoRoot, snapshotPath)
+    ], browserEnv);
+
+    console.log(`[${packageName}] review: ${path.relative(repoRoot, outputPath)}`);
+    removePathRecursive(reviewOutputDir);
+    await runNodeScript("review-source-pdf.mjs", [
+      path.relative(repoRoot, outputPath),
+      "--out",
+      path.relative(repoRoot, reviewOutputDir),
+      "--scale",
+      options.reviewScale
+    ], browserEnv);
+  } finally {
+    if (sharedBrowserServer) {
+      await sharedBrowserServer.close().catch(() => {});
+    }
+  }
 
   // The repository-local review directory is a transient debugging surface.
   // Keep a delivery-owned copy beside the PDF so archives remain self-contained.
@@ -259,7 +325,7 @@ async function main() {
   // write would leave an orphan delivery snapshot when a later step fails.
   writeTextFileAtomic(deliverySnapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
   console.log(`[${packageName}] write-delivery-manifest`);
-  runNodeScript("write-delivery-manifest.mjs", [
+  await runNodeScript("write-delivery-manifest.mjs", [
     "--input",
     path.relative(repoRoot, inputPath),
     "--output",
@@ -294,5 +360,7 @@ try {
   await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
-  process.exit(2);
+  // A failed child step keeps its original exit code; anything else is a
+  // generic deliver failure.
+  process.exit(typeof error?.stepExitCode === "number" ? error.stepExitCode : 2);
 }

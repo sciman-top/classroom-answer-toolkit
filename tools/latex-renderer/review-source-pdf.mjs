@@ -415,7 +415,9 @@ async function main() {
   } finally {
     // Close the browser first: Chromium pages hold idle keep-alive sockets, so
     // closing the HTTP server first would stall its callback until the browser's
-    // own idle timeout elapses.
+    // own idle timeout elapses. browser.close() disconnects (not kills) when
+    // this client reached a shared host browser via connect(), and without it
+    // this process would hang on the open WebSocket.
     if (browser) {
       await browser.close().catch(() => {});
     }
@@ -454,6 +456,12 @@ async function main() {
     console.log("OCR: failed; page images were still generated.");
   } else {
     console.log("OCR: not requested.");
+  }
+
+  // Same reason as render-md-latex: under a shared host browser this client's
+  // transport can keep the event loop alive after close(), so exit explicitly.
+  if (sharedBrowserWsEndpoint) {
+    process.exit(0);
   }
 }
 

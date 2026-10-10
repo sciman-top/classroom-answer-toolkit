@@ -617,6 +617,10 @@ try {
     throw new Error(`Could not replace the target PDF: ${commitError.message}.${preservedHint}`);
   }
 } finally {
+  // browser.close() is correct in both modes: a self-launched browser is
+  // killed, while a browser reached via connect() only disconnects this
+  // client (clearing our contexts) — without it this process would hang on
+  // the open WebSocket and the deliver host would wait forever.
   if (browser) {
     await browser.close().catch(() => {});
   }
@@ -629,3 +633,9 @@ try {
 }
 
 console.log(outputPath);
+// After close() a connect()'s WebSocket transport can keep this event loop
+// alive; a shared-host step must exit explicitly or the deliver host would
+// wait on it forever. Self-launched browsers exit the normal way.
+if (sharedBrowserWsEndpoint) {
+  process.exit(0);
+}
