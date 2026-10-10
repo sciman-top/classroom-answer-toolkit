@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
-import { normalizeConfig, validateConfig } from "./validate-config.mjs";
+import { normalizeConfig, parseEnvFile, validateConfig } from "./validate-config.mjs";
 
 const PRIMARY = {
   CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
@@ -91,4 +94,23 @@ test("explicit preset slot bindings skip the routability check", () => {
   config.providers = config.providers.map((provider) => ({ ...provider, reasoningEffort: "" }));
   const { errors } = validateConfig(config, { allowMissingSecrets: true }, []);
   assert.deepEqual(errors, []);
+});
+
+test("env parser strips inline comments from unquoted values only", () => {
+  const envDir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-env-parse-"));
+  const envPath = path.join(envDir, "inline-comment.env");
+  fs.writeFileSync(envPath, [
+    "CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY=sk-plain # production key",
+    "CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL=\"gpt-5.6-sol\" # quoted keeps its own text",
+    "CLASSROOM_TOOLKIT_AI_FALLBACK_1_VISION_MODEL=gpt-5.6-sol"
+  ].join("\n"), "utf8");
+
+  try {
+    const { values, errors } = parseEnvFile(envPath);
+    assert.deepEqual(errors, []);
+    assert.equal(values.CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY, "sk-plain");
+    assert.equal(values.CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL, "gpt-5.6-sol");
+  } finally {
+    fs.rmSync(envDir, { recursive: true, force: true });
+  }
 });

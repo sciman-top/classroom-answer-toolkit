@@ -62,7 +62,9 @@ export function parseArgs(argv) {
     process.exit(0);
   }
 
-  options.envFile = path.resolve(repoRoot, options.envFile);
+  // Same convention as answer-request and validate-config: caller CWD
+  // (INIT_CWD under npm) for explicit relative values, repo root for default.
+  options.envFile = path.resolve(process.env.INIT_CWD || process.cwd(), options.envFile);
   if (options.watch) {
     options.once = false;
   }

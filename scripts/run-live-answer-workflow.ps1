@@ -281,9 +281,15 @@ function Invoke-NodeTool {
         [string[]]$Arguments
     )
 
-    $toolOutput = @(& node $ScriptPath @Arguments 2>&1)
+    # Stream lines as they arrive so a multi-minute AI stage no longer reads as
+    # a hung shell; the same transcript still feeds the failure diagnostics.
+    $toolOutput = [Collections.Generic.List[string]]::new()
+    & node $ScriptPath @Arguments 2>&1 | ForEach-Object {
+        $line = $_.ToString()
+        $toolOutput.Add($line)
+        Write-Output $line
+    }
     $toolExitCode = $LASTEXITCODE
-    $toolOutput | ForEach-Object { Write-Output $_ }
     if ($toolExitCode -ne 0) {
         $diagnostics = (($toolOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine).Trim()
         if ([string]::IsNullOrWhiteSpace($diagnostics)) {

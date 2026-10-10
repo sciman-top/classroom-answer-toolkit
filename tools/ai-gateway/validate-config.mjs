@@ -67,7 +67,12 @@ export function parseArgs(argv) {
     process.exit(0);
   }
 
-  options.envFile = path.resolve(repoRoot, options.envFile);
+  // Relative --config-env-file values follow the caller's CWD (INIT_CWD under
+  // npm) exactly like answer-request resolves them; only the no-flag default
+  // stays anchored to the repository root. The two conventions used to split
+  // within one module: validate read the repo .env while answer-request read
+  // the caller's.
+  options.envFile = path.resolve(process.env.INIT_CWD || process.cwd(), options.envFile);
   options.timeoutMs = Number(options.timeoutMs);
 
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
@@ -114,10 +119,23 @@ export function parseEnvFile(envFile) {
       return;
     }
 
-    values[key] = stripOptionalQuotes(rawValue);
+    values[key] = stripOptionalQuotes(stripUnquotedInlineComment(rawValue));
   });
 
   return { values, errors };
+}
+
+// dotenv convention: a quoted value ends at its matching close quote (anything
+// after it is a comment), an unquoted value ends at whitespace followed by '#'.
+// A trailing comment used to become part of the secret and surface as a bare
+// 401 with no hint at the cause.
+function stripUnquotedInlineComment(value) {
+  const quote = value[0];
+  if (quote === "\"" || quote === "'") {
+    const closingIndex = value.indexOf(quote, 1);
+    return closingIndex === -1 ? value : value.slice(0, closingIndex + 1);
+  }
+  return value.replace(/\s+#.*$/u, "").trim();
 }
 
 function stripOptionalQuotes(value) {
