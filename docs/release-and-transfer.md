@@ -44,6 +44,21 @@ HTTPS. It verifies byte count and SHA-256 before launching the signed setup for
 an in-place upgrade. Portable copies do not self-replace while running; users
 download and extract the newer portable ZIP.
 
+Developer/operator preview installation, after downloading `install-release.ps1`
+from a GitHub Release:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\install-release.ps1 -RunSetup -Launch
+```
+
+The installer only accepts GitHub HTTPS manifests and assets and rejects
+zip-slip entries. A preview manifest (schema 1.0) expands the verified
+`app`/`source` assets into a public workspace; a stable manifest (schema 2.0)
+verifies the signed installer asset and launches Inno Setup (no
+`-Destination`; `-RunSetup` auto-starts). First install creates `.env` from
+`.env.example`, with cloud egress still disabled until the operator fills in
+provider settings.
+
 ## Automated Simulation Acceptance
 
 Repeatable operator work can be exercised without a second machine or a

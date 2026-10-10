@@ -111,65 +111,13 @@ WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓�
 
 ## 获取与迁移
 
-项目提供五种互不覆盖的分发方式。它们都不把真实 API key 放入 GitHub Release 或公开源码包。
+项目提供五种互不覆盖的分发方式：ordinary-user 标准安装版、ordinary-user 绿色便携版、联网 developer/operator 预览版、公开源码开发包和私用开发迁移包。它们都不把真实 API key 放入 GitHub Release 或公开源码包。标准安装版与绿色版共享版本化 runtime bundle；只有完成代码签名和代表性非开发者验收后，才可标记为 stable 对外发布，不会用 preview ZIP 代替发布。
 
-| 方式 | 面向对象 | 内容 | 更新边界 |
-| --- | --- | --- | --- |
-| ordinary-user 标准安装版 | 教师及其他普通 Windows 用户 | 签名 setup、内置 runtime、开始菜单、修复/升级/卸载 | 通过 setup 覆盖安装；只有签名和普通用户验收齐备后才标记 stable |
-| ordinary-user 绿色便携版 | 不希望安装的教师及其他普通 Windows 用户 | 自包含 runtime，解压即用，不写注册表 | 下载并解压新 ZIP；运行中不自替换 |
-| 联网 developer/operator 预览版 | 熟悉仓库与本机工具链的维护者 | Release 中独立校验的 `app` 包和匹配公开工作区 | 初始安装下载两个公开资产；仅在 `workspaceContract` 一致时自动替换 `app`，保留 `.env`、源码和用户文件 |
-| 公开源码开发包 | 开发者与开源协作者 | `source` 包、测试、脚本、prompt、锁文件和 `.env.example` | 使用 Git 或下载新的 source 包；自动初始化不覆盖已有 `.env` |
-| 私用开发迁移包 | 同一维护者换电脑 | 当前源码快照，可显式包含 `.env`、`.git` 和已发布应用 | 导入时先校验 manifest，已有目标会备份；不静默覆盖开发修改 |
+## 交付物目录与发布状态
 
-从 GitHub Release 下载 `install-release.ps1` 后，developer/operator 预览版可执行：
+本机可重建产物统一写入 Git 忽略的 `artifacts/`，`deliveries/`、`history/`、`work/` 三层不混放；目录约定与清理命令见 [`artifacts/README.md`](artifacts/README.md)，正式公开下载以 GitHub Release 资产为准。GitHub 上的 `v1.0.1` 是遗留 tag/release 资产，后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布；不要把本机 `artifacts/deliveries/<version>/` 候选包当作线上下载地址，发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
 
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\install-release.ps1 -RunSetup -Launch
-```
-
-该脚本只接受 GitHub HTTPS 清单和资产，拒绝越界 ZIP 条目。对 preview 清单（schema 1.0），它校验 app/source 两个资产的 SHA-256 与字节数后展开公开工作区；对 stable 清单（schema 2.0），它校验签名 installer 资产后启动 Inno 安装程序，安装位置由安装程序自行管理（不支持 `-Destination`，`-RunSetup` 表示自动启动）。预览版会将匹配的公开源码工作区安装在本机，但源码仍是独立 Release 资产，不嵌入 app ZIP。setup 会执行 build、普通测试、Core 和主 subject-pack 健康 eval；首次安装会从 `.env.example` 创建本机 `.env`，但云出网仍为关闭状态，必须由使用者自行填写 provider 配置后才能请求 live AI。
-
-每个 Release 都声明 `workspaceContract`。合同相同的版本可自动更新应用；合同提升时客户端会拒绝只替换 app，避免应用、脚本和 prompt 静默错配。此时应保留现有工作区与 `.env`，再使用新 Release 的预览安装器部署到新的空目录。ordinary-user 标准安装版和绿色便携版已经实现并由同一版本化 runtime bundle 构建；本机可用 `-AllowUnsignedCandidate` 验证安装、修复、卸载和便携启动，但没有签名或代表性普通用户验收时不得标记为 stable。完整离线 AI 能力仍未提供：provider 请求仍需使用者自行配置并联网。
-
-公开源码包或 Git clone 在新机器执行：
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/setup-development.ps1
-```
-
-它会检查/安装必要工具、恢复锁定依赖、编译 snapshot，并运行 build、普通测试和 Core gate。私用迁移包由维护者在旧机器生成（`<版本>` 必须与 `src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` 的 `<Version>` 一致，当前为 1.0.4）：
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/export-transfer.ps1 `
-  -Mode PrivateDev -Version <版本> -IncludeEnv -Output "D:\Transfer\ClassroomToolkit-private.zip"
-```
-
-在新机器导入时：
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/import-transfer.ps1 `
-  -Package "D:\Transfer\ClassroomToolkit-private.zip" `
-  -Destination "D:\CODE\classroom-answer-toolkit" `
-  -RunSetup
-```
-
-默认公开包禁止 `.env` 与 `.git`；私用包只有显式 `-IncludeEnv` 才携带密钥。不要上传私用包，也不要把它作为 GitHub Release 资产。更完整的操作、回滚和发布流程见 [release-and-transfer.md](docs/release-and-transfer.md)。
-
-可由 AI 或自动化操作员执行不产生外部发布副作用的发布模拟验收：
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version <版本>
-```
-
-该回放使用临时 loopback 源驱动真实安装、更新、故障回滚和 PrivateDev 迁移脚本，结果是 `simulated-acceptance`，不能替代代码签名、GitHub 发布、普通用户实机、真实 provider 或教师/课堂验收。
-
-## 交付物目录
-
-本机可重建产物统一写入 `artifacts/`；除提交的目录说明外，其内容均被 Git 忽略。每个版本的普通用户安装版、绿色便携版、developer/operator 安装预览、公开源码和私用迁移包分别放在 `artifacts/deliveries/<version>/installer/stable/`、`portable/`、`installer/preview/`、`source/` 和 `private-transfer/`，版本清单、SBOM 与 provenance 放在 `_release-metadata/`；历史证据放在 `artifacts/history/<kind>/<date-or-id>/`，构建/审计中间物放在 `artifacts/work/<kind>/`，三者不在同一层混放。目录约定和清理命令见 [`artifacts/README.md`](artifacts/README.md)。正式公开下载以 GitHub Release 资产为准，仓库不提交大体积 ZIP、EXE 或本机诊断数据。
-
-当前交付合同包含 ordinary-user 标准安装版、ordinary-user 绿色便携版、`developer/operator preview`、公开源码包和 PrivateDev 迁移包五类；标准安装版与绿色版共享版本化 runtime bundle，前者负责安装/更新/卸载，后者解压即用且不写注册表。只有完成代码签名和代表性非开发者验收后，才可标记为 stable 对外发布；不会用 preview ZIP 代替发布。
-
-当前发布状态：GitHub 上的 `v1.0.1` 是已存在的 tag/release 资产；后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布。不要把本机 `artifacts/deliveries/<version>/` 候选包当作线上下载地址；发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
+五种分发方式的对照表、安装/导出/导入/发布模拟命令、`workspaceContract` 升级边界、签名与回滚流程，统一维护在 [docs/release-and-transfer.md](docs/release-and-transfer.md)；该文档与 `src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` 的 `<Version>` 是这些事实的单点真源，README 不重复维护命令与表格。
 
 ## 可信边界
 
