@@ -147,6 +147,64 @@ test("a fresh lease is never stolen by a waiting acquirer", async () => {
   }
 });
 
+test("a malformed lease is honored for the grace window, then reclaimable", async () => {
+  const { acquireSharedExecutionSlot } = await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
+  const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-lease-malformed-"));
+  try {
+    // A crash between create and write leaves an empty or partial file. A live
+    // creator may still be filling it, so the grace window must protect it.
+    const leaseFilePath = plantLease(runtimeDirectory, 1, {});
+    const firstAttempt = await acquireSharedExecutionSlot(runtimeConfig(runtimeDirectory), [1], 300);
+    assert.equal(firstAttempt, null, "a just-created malformed lease must not be reclaimed inside the grace window");
+
+    const stale = new Date(Date.now() - 60_000);
+    fs.utimesSync(leaseFilePath, stale, stale);
+    const lease = await acquireSharedExecutionSlot(runtimeConfig(runtimeDirectory), [1], 1_000);
+    assert.ok(lease, "an old malformed lease must be reclaimable");
+    lease.release();
+  } finally {
+    fs.rmSync(runtimeDirectory, { recursive: true, force: true });
+  }
+});
+
+test("preset health lock is exclusive and honors expiry", async () => {
+  const { acquirePresetHealthLock } = await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
+  const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-health-lock-"));
+  try {
+    const config = runtimeConfig(runtimeDirectory);
+    const holder = acquirePresetHealthLock(config, 2_000);
+    assert.ok(holder, "first acquirer must take the lock");
+
+    // A second acquirer in the same or another process must not slip in while
+    // the lock is live; it waits out its (short) timeout instead.
+    const startedAt = Date.now();
+    const contender = acquirePresetHealthLock(config, 300);
+    assert.equal(contender, null, "a live health lock must not be double-acquired");
+    assert.ok(Date.now() - startedAt >= 250, "the contender must actually wait");
+
+    // A crashed holder's expired lock file is reclaimable, and the recovered
+    // lock still excludes later acquirers until released.
+    const lockFilePath = path.join(runtimeDirectory, "preset-health.lock.json");
+    const stale = new Date(Date.now() - 60_000);
+    fs.utimesSync(lockFilePath, stale, stale);
+    fs.writeFileSync(
+      lockFilePath,
+      JSON.stringify({ token: "stale-health-lock", pid: -1, expiresAt: Date.now() - 60_000 }),
+      "utf8");
+    const recovered = acquirePresetHealthLock(config, 2_000);
+    assert.ok(recovered, "an expired health lock must be reclaimable");
+    const latecomer = acquirePresetHealthLock(config, 200);
+    assert.equal(latecomer, null, "the recovered lock must exclude later acquirers");
+
+    recovered.release();
+    const successor = acquirePresetHealthLock(config, 2_000);
+    assert.ok(successor, "the lock must be acquirable after release");
+    successor.release();
+  } finally {
+    fs.rmSync(runtimeDirectory, { recursive: true, force: true });
+  }
+});
+
 test("lease release tolerates transient Windows file locks instead of discarding the paid result", async () => {
   const { acquireSharedExecutionSlot, releaseLeaseFile, isTransientFileLockError } =
     await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
