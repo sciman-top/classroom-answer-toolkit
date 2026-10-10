@@ -83,16 +83,14 @@ export function collectSpecBoundaryErrors() {
       }
     }
 
-    for (const outputPath of [fullOutputPath]) {
-      if (!fs.existsSync(outputPath)) {
-        errors.push(`${assembly.subjectPack}: missing generated spec ${relative(outputPath)}`);
-        continue;
-      }
-      const text = fs.readFileSync(outputPath, "utf8");
-      errors.push(...validateSpecText(relative(outputPath), text));
-      if (!text.includes(markdownOnlyMarker)) {
-        errors.push(`${relative(outputPath)}: missing Markdown-only output contract`);
-      }
+    if (!fs.existsSync(fullOutputPath)) {
+      errors.push(`${assembly.subjectPack}: missing generated spec ${relative(fullOutputPath)}`);
+      continue;
+    }
+    const text = fs.readFileSync(fullOutputPath, "utf8");
+    errors.push(...validateSpecText(relative(fullOutputPath), text));
+    if (!text.includes(markdownOnlyMarker)) {
+      errors.push(`${relative(fullOutputPath)}: missing Markdown-only output contract`);
     }
   }
 
