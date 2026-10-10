@@ -4,7 +4,6 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
-import { resolveProfileSnapshotRelativePath } from "../rule-compiler/subject-pack-registry.mjs";
 import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
@@ -367,13 +366,6 @@ async function main() {
                 path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
                 "--skip-validate"
               ];
-          console.error("[probe-args] snapshotMode:", snapshotMode, "snapshotRelativePath:", snapshotRelativePath, "args:", JSON.stringify([
-            path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
-            path.relative(repoRoot, deliverPdfPath),
-            "--profile", profile,
-            "--subject-pack", options.subjectPack,
-            ...snapshotArgs
-          ]));
           const deliverRun = await runNodeTool("deliver-answer.mjs", [
             path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
             path.relative(repoRoot, deliverPdfPath),
@@ -451,20 +443,6 @@ async function main() {
             const ocrMatch = Object.entries(expectedOcr)
               .every(([key, value]) => actualOcr[key] === value);
 
-            if (!snapshotMatch) {
-              console.error("[probe] snapshotMatch false:", JSON.stringify({
-                idOk: deliveryManifest.snapshotId === compiledSnapshot.snapshotId,
-                innerIdOk: deliveryManifest.snapshot?.id === compiledSnapshot.snapshotId,
-                verOk: deliveryManifest.snapshot?.version === compiledSnapshot.subjectPack?.version,
-                profOk: deliveryManifest.snapshot?.profile === profile,
-                pathOk: deliverySnapshotPath === expectedDeliverySnapshotPath,
-                contentOk: deliverySnapshotMatches(compiledSnapshot, deliverySnapshot, snapshotMode),
-                manifestVer: deliveryManifest.snapshot?.version,
-                compiledVer: compiledSnapshot.subjectPack?.version,
-                compiledGeneratedAt: compiledSnapshot.generatedAt,
-                deliveryGeneratedAt: deliverySnapshot?.generatedAt
-              }));
-            }
             deliveryOk = snapshotMatch && reviewPackageMatch && graphicsMatch && statusMatch && ocrMatch;
             delivery = {
               manifestPath: path.relative(repoRoot, deliveryManifestPath),
