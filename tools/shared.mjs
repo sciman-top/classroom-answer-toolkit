@@ -1,10 +1,26 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 // This module lives directly under tools/, one level below the repository root.
 export const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+/**
+ * True when the script is the process's direct entry point. Windows callers
+ * may pass a drive letter in any case (`node D:\...` vs the URL's `d:`), so
+ * win32 compares case-insensitively; a plain equality made such direct
+ * invocations silently do nothing.
+ */
+export function isDirectInvocation(importMetaUrl, argv1Path = process.argv[1]) {
+  if (!argv1Path) {
+    return false;
+  }
+  const entryUrl = pathToFileURL(path.resolve(argv1Path)).href;
+  return process.platform === "win32"
+    ? importMetaUrl.toLowerCase() === entryUrl.toLowerCase()
+    : importMetaUrl === entryUrl;
+}
 
 export function sha256Hex(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -80,14 +96,14 @@ export function summarizeProviderErrorBody(bodyText, maxLength = DEFAULT_PROVIDE
 export async function readResponseTextCapped(response, maxBytes = MAX_PROVIDER_RESPONSE_BYTES) {
   const declared = Number(response.headers?.get?.("content-length"));
   if (Number.isFinite(declared) && declared > maxBytes) {
-    throw new Error(`Provider response declared ${declared} bytes, above the ${maxBytes}-byte limit.`);
+    throw responseSizeLimitError(`Provider response declared ${declared} bytes, above the ${maxBytes}-byte limit.`);
   }
 
   const body = response.body;
   if (!body || typeof body.getReader !== "function") {
     const text = await response.text();
     if (Buffer.byteLength(text) > maxBytes) {
-      throw new Error(`Provider response exceeded the ${maxBytes}-byte limit.`);
+      throw responseSizeLimitError(`Provider response exceeded the ${maxBytes}-byte limit.`);
     }
     return text;
   }
@@ -104,7 +120,7 @@ export async function readResponseTextCapped(response, maxBytes = MAX_PROVIDER_R
       total += value.byteLength;
       if (total > maxBytes) {
         await reader.cancel().catch(() => {});
-        throw new Error(`Provider response exceeded the ${maxBytes}-byte limit.`);
+        throw responseSizeLimitError(`Provider response exceeded the ${maxBytes}-byte limit.`);
       }
       chunks.push(Buffer.from(value));
     }
@@ -116,6 +132,15 @@ export async function readResponseTextCapped(response, maxBytes = MAX_PROVIDER_R
 }
 
 const UNSAFE_MERGE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+// Consumed by the gateway's failover classifier: an oversized response is a
+// deterministic endpoint property, so re-downloading 32MB from the same
+// provider or on a retry attempt is pure waste.
+function responseSizeLimitError(message) {
+  const error = new Error(message);
+  error.providerResponseOverSizeLimit = true;
+  return error;
+}
 
 /**
  * Reads and parses a JSON file, tolerating a UTF-8 BOM (e.g. an editor or

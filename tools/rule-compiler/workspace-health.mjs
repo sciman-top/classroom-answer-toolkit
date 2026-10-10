@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { listSubjectPacks, primarySubjectPackAssetId } from "./subject-pack-registry.mjs";
-import { parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 
 const SPEC_VERSION_PATTERN = /(?:^|[-_])v(\d+\.\d+)(?:[-_]|\.md$)/;
 
@@ -177,6 +176,6 @@ function main() {
   console.log(JSON.stringify(buildWorkspaceHealthReport({ subjectPack: options.subjectPack }), null, 2));
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isDirectInvocation(import.meta.url)) {
   main();
 }

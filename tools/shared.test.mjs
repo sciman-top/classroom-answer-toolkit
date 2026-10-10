@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { deepMerge, parseArgvFlags, sha256File, sha256Hex } from "./shared.mjs";
+import { deepMerge, isDirectInvocation, parseArgvFlags, sha256File, sha256Hex } from "./shared.mjs";
 
 test("sha256Hex matches known digest for text", () => {
   assert.equal(sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
@@ -105,4 +105,16 @@ test("deepMerge skips prototype-dangerous keys", () => {
   assert.equal(merged.b, 2);
   assert.equal(merged.polluted, undefined);
   assert.equal(Object.prototype.polluted, undefined);
+});
+
+test("isDirectInvocation tolerates Windows drive-letter case", () => {
+  if (process.platform !== "win32") {
+    return;
+  }
+  const scriptUrl = "file:///D:/Repo/tools/cli.mjs";
+  // `node d:\repo\tools\cli.mjs` must still be recognized as the entry point.
+  assert.equal(isDirectInvocation(scriptUrl, "d:\\repo\\tools\\cli.mjs"), true);
+  assert.equal(isDirectInvocation(scriptUrl, "D:\\Repo\\tools\\cli.mjs"), true);
+  assert.equal(isDirectInvocation(scriptUrl, "D:\\Repo\\tools\\other.mjs"), false);
+  assert.equal(isDirectInvocation(scriptUrl, undefined), false);
 });

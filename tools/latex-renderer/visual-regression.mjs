@@ -1,8 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { fail, parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
+import { fail, isDirectInvocation, parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run visual:compare -- <actual.png> <baseline.png> [--max-diff-ratio 0.005] [--channel-tolerance 32]
@@ -150,7 +149,7 @@ async function main() {
   console.log("Visual regression passed.");
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isDirectInvocation(import.meta.url)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.stack : error);
     process.exit(2);

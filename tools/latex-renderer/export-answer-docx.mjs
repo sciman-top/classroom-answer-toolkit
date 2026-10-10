@@ -1,10 +1,10 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL, fileURLToPath } from "node:url";
+import { fileURLToPath } from "node:url";
 import { unzipSync } from "fflate";
 import { mapInlineMath, maskLatexCodeSegments } from "./lib/inline-math.mjs";
-import { parseArgvFlags } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags } from "../shared.mjs";
 
 // Exports an answer Markdown file to DOCX with native Word (OMML) equations via
 // pandoc. The PDF renderer keeps LaTeX math through KaTeX; pandoc converts the
@@ -147,6 +147,6 @@ function main() {
   console.log(`Exported ${result.outputPath} with ${result.pandocVersion}.${mathSummary}`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   main();
 }

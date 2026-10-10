@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import {
   DEFAULT_PRESET_SLOT_BINDINGS,
   EXECUTION_SLOT_COUNT,
@@ -8,7 +7,7 @@ import {
   PRESET_PROFILES,
   QUALITY_PROFILES
 } from "./profile-matrix.mjs";
-import { parseArgvFlags, readResponseTextCapped, repositoryRoot as repoRoot, summarizeProviderErrorBody } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags, readResponseTextCapped, repositoryRoot as repoRoot, summarizeProviderErrorBody } from "../shared.mjs";
 import {
   DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS,
   DEFAULT_RECOVERY_PROBE_INTERVAL_MS,
@@ -826,7 +825,7 @@ export async function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

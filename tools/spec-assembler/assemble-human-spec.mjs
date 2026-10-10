@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
 
 const assembliesRoot = path.join(repoRoot, "prompts", "specs", "assemblies");
 
@@ -249,7 +248,7 @@ function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isDirectInvocation(import.meta.url)) {
   try {
     main();
   } catch (error) {

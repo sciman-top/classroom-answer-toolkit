@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import katex from "katex";
 import {
   createInlineMathScanner,
@@ -9,7 +8,7 @@ import {
   normalizeLatexParenDelimiters,
   repairSplitMathSpans
 } from "./lib/inline-math.mjs";
-import { fail, parseArgvFlags } from "../shared.mjs";
+import { fail, isDirectInvocation, parseArgvFlags } from "../shared.mjs";
 import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./lib/runtime-config.mjs";
 
 const usage = `Usage:
@@ -411,6 +410,6 @@ function main() {
   console.log(`Validation passed for ${path.basename(inputPath)} with profile "${profile.name}".`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   main();
 }

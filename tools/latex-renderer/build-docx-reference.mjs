@@ -1,8 +1,9 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { unzipSync, zipSync } from "fflate";
+import { isDirectInvocation } from "../shared.mjs";
 
 // Builds the DOCX reference template used by export-answer-docx.mjs so exported
 // DOCX files match the classroom PDF profile: A4, 16/17mm margins, Microsoft
@@ -111,6 +112,6 @@ function assertPatchApplied(label, condition) {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   main();
 }

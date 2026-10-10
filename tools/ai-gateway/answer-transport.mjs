@@ -574,7 +574,10 @@ async function callProvider(provider, options) {
     });
   } catch (error) {
     return attemptResult(provider, options, startedAt, requestBody, {
-      error: summarizeRequestError(error)
+      error: summarizeRequestError(error),
+      // An oversized response is deterministic for this endpoint; failing over
+      // without re-downloading is the point of the cap.
+      retryable: error?.providerResponseOverSizeLimit !== true
     });
   } finally {
     clearTimeout(timeout);

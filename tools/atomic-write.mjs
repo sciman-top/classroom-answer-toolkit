@@ -64,11 +64,25 @@ export function writeTextFileAtomic(filePath, content) {
     `.${path.basename(resolvedPath)}.${process.pid}.${crypto.randomUUID()}.tmp`
   );
 
+  let replaceError = null;
   try {
     writeFileSyncDurable(temporaryPath, content);
     renameWithRetry(temporaryPath, resolvedPath);
     flushDirectory(directory);
+  } catch (error) {
+    // Surface the replace failure, not the cleanup failure: the same AV lock
+    // that broke the rename usually holds the temp file too, and a throw from
+    // finally would mask the actionable cause.
+    replaceError = error;
   } finally {
-    removePathRecursive(temporaryPath);
+    try {
+      removePathRecursive(temporaryPath);
+    } catch {
+      // The temp file carries a unique name and no consumer reads it; leaving
+      // it behind is inert.
+    }
+  }
+  if (replaceError !== null) {
+    throw replaceError;
   }
 }

@@ -1,5 +1,4 @@
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 
 import {
   assertLiveEgressAllowed,
@@ -12,7 +11,7 @@ import {
   recordRecoveryProbeResult,
   recoveryProbeEligibility
 } from "./gateway-runtime.mjs";
-import { parseArgvFlags } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags } from "../shared.mjs";
 
 // The probe verifies Sol connectivity, not business-answer quality. Reasoning
 // effort stays low and the token budget must leave room for it: reasoning
@@ -236,7 +235,7 @@ export async function main() {
   } while (true);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.stack : String(error));
     process.exitCode = 1;

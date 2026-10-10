@@ -1,8 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { sha256File, parseArgvFlags } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags, sha256File } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 
 import {
@@ -445,7 +444,7 @@ export async function main() {
   console.log(summaryJson.trimEnd());
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

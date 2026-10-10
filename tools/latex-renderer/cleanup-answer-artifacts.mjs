@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { removePathRecursive } from "../safe-remove.mjs";
-import { parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run cleanup -- [--dry-run] [--keep-review] [--keep-ocr] [extra-path...]
@@ -151,7 +150,7 @@ function main() {
 
 // CLI-only guard: deliver imports runCleanup in-process, and an unguarded
 // top-level main() would consume deliver's argv and exit its process.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   try {
     main();
   } catch (error) {

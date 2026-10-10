@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
-import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
+import { fail, isDirectInvocation, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { loadRequiredResolvedSnapshot } from "./lib/runtime-config.mjs";
 
@@ -444,6 +443,6 @@ function main() {
   console.log(`Validated delivery manifest: ${manifestPath}`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isDirectInvocation(import.meta.url)) {
   main();
 }

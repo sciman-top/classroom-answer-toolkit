@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { readJsonFile, resolveRepoPath } from "./shared.mjs";
 import { deriveAssemblyOutputPaths } from "../spec-assembler/assemble-human-spec.mjs";
+import { isDirectInvocation } from "../shared.mjs";
 
 export const forbiddenSpecTerms = [
   "ProblemEvidenceBundle",
@@ -113,7 +113,7 @@ function main() {
   console.log(`Validated spec boundary for ${result.assemblyCount} assemblies; ${result.forbiddenTermCount} frozen terms are excluded.`);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isDirectInvocation(import.meta.url)) {
   try {
     main();
   } catch (error) {
