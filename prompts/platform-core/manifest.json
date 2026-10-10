@@ -12,7 +12,6 @@
   "entry": {
     "rulesDir": "./rules",
     "profilesDir": "./profiles",
-    "migrationsDir": "./migrations",
     "renderBaseProfile": "./profiles/render-base.json"
   }
 }

@@ -11,7 +11,6 @@
     "deliver": "node deliver-answer.mjs",
     "eval:answer": "node eval-answer-fixtures.mjs",
     "eval:math": "node eval-answer-fixtures.mjs --subject-pack math-answer",
-    "test:delivery-contract": "node --test validate-delivery-manifest.test.mjs delivery-portability.test.mjs",
     "test:eval-runtime": "node --test eval-answer-fixtures.test.mjs",
     "render": "node render-md-latex.mjs",
     "test:output-path": "node --test ../shared.test.mjs ../safe-remove.test.mjs ../atomic-write.test.mjs lib/pdf-output-path.test.mjs lib/focus-region-spec.test.mjs lib/analog-meter-reading.test.mjs lib/linear-scale-reading.test.mjs lib/optical-ray-geometry.test.mjs lib/review-page-selection.test.mjs lib/review-html.test.mjs",

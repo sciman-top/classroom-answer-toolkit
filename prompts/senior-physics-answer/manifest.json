@@ -18,8 +18,6 @@
   "entry": {
     "rulesDir": "./rules",
     "profilesDir": "./profiles",
-    "overridesDir": "./overrides",
-    "migrationsDir": "./migrations",
     "snapshotCache": "../../.snapshot-cache/resolved-snapshot.senior-physics.json"
   },
   "evaluation": {

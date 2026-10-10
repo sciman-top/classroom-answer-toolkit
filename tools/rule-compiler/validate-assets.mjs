@@ -55,9 +55,6 @@ function validateSubjectPack(subjectPack) {
   for (const filePath of listJsonFiles(path.join(root, "profiles"))) {
     assertValid(filePath, "profile.schema.json");
   }
-  for (const filePath of listJsonFiles(path.join(root, "overrides"))) {
-    assertValid(filePath, "override.schema.json");
-  }
 
   const snapshot = compileResolvedSnapshot({ subjectPack, profileName: "classroom" });
   const snapshotErrors = validateValueAgainstSchema(
