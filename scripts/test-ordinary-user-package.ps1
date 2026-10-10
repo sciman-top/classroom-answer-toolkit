@@ -157,11 +157,14 @@ try {
     Invoke-Scenario -Name "installer-uninstall" -Summary "The registered uninstaller removes the application executable." -Action {
         $uninstaller = Join-Path $installRoot "unins000.exe"
         if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw "Uninstaller is missing." }
+        # Bounded wait like every other scenario: a hung uninstaller (e.g. a
+        # suppressed CloseApplications dialog that still blocks) must fail the
+        # run, not block it forever.
         $process = Start-Process -FilePath $uninstaller `
             -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") `
             -WindowStyle Hidden `
-            -Wait `
             -PassThru
+        Wait-ProcessBounded -Process $process -Description "uninstaller"
         if ($process.ExitCode -ne 0) { throw "Uninstaller failed (exit $($process.ExitCode))." }
         if (Test-Path -LiteralPath (Join-Path $installRoot "ClassroomToolkit.App.exe") -PathType Leaf) { throw "Application executable remains after uninstall." }
     }

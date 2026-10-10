@@ -1,7 +1,7 @@
 #requires -Version 7
 [CmdletBinding()]
 param(
-    [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = "1.0.3",
+    [string]$Version = "",
     [string]$DeliveryRoot = "",
     [string]$ReceiptPath = "artifacts\work\verification\release-simulation\release-simulation-receipt.json"
 )
@@ -12,6 +12,18 @@ Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
+# An empty -Version resolves from the application project so the default
+# simulation target cannot silently drift from the app version on each release.
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    [xml]$project = Get-Content -LiteralPath (Join-Path $repoRoot "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj") -Raw -Encoding utf8
+    # SelectSingleNode, not a property cast: several PropertyGroup elements make
+    # $project.Project.PropertyGroup.Version an array that stringifies to "a b".
+    $versionNode = $project.SelectSingleNode("/Project/PropertyGroup/Version")
+    $Version = if ($null -eq $versionNode) { "" } else { [string]$versionNode.InnerText }
+}
+if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+    throw "Version '$Version' is not a three-part release version (or the application project version is unreadable)."
+}
 $deliveryPath = if ([string]::IsNullOrWhiteSpace($DeliveryRoot)) {
     Join-Path $repoRoot "artifacts\deliveries\$Version"
 }

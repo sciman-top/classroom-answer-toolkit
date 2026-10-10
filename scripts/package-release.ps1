@@ -44,48 +44,6 @@ $appZipName = "ClassroomToolkit-$Version-win-x64.zip"
 $sourceZipName = "ClassroomToolkit-$Version-source.zip"
 $currentCommit = ((& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim())
 
-function Assert-PublishReceipt {
-    param(
-        [Parameter(Mandatory = $true)][string]$PublishDirectory,
-        [Parameter(Mandatory = $true)][string]$ReportPath,
-        [Parameter(Mandatory = $true)][string]$ExpectedCommit
-    )
-
-    if (-not (Test-Path -LiteralPath $ReportPath -PathType Leaf)) {
-        throw "Published application smoke report was not found: $ReportPath"
-    }
-    $report = Get-Content -LiteralPath $ReportPath -Raw -Encoding utf8 | ConvertFrom-Json
-    if ([string]$report.schemaVersion -ne "1.1" -or [string]$report.kind -ne "published-app-smoke-report" -or [string]$report.status -ne "passed") {
-        throw "Published application smoke report is unsupported or not passed."
-    }
-    if ([bool]$report.source.dirty -or [string]$report.source.commit -ne $ExpectedCommit) {
-        throw "Published application smoke report does not bind the current clean source commit."
-    }
-    $reportedDirectory = [IO.Path]::GetFullPath([string]$report.publishDirectoryPath).TrimEnd([IO.Path]::DirectorySeparatorChar)
-    $expectedDirectory = [IO.Path]::GetFullPath($PublishDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar)
-    if (-not [string]::Equals($reportedDirectory, $expectedDirectory, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Published application smoke report binds another publish directory."
-    }
-
-    $exePath = Join-Path $PublishDirectory "ClassroomToolkit.App.exe"
-    if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
-        throw "Published application executable was not found: $exePath"
-    }
-    $exeItem = Get-Item -LiteralPath $exePath
-    $exeHash = Get-FileSha256 -PathValue $exePath
-    if ([long]$report.executable.bytes -ne $exeItem.Length -or [string]$report.executable.sha256 -ne $exeHash) {
-        throw "Published application smoke report executable integrity mismatch."
-    }
-
-    $actualTree = Get-DirectoryTreeReceipt -DirectoryPath $PublishDirectory
-    if ([string]$report.publishTree.sha256 -ne $actualTree.sha256 -or
-        [long]$report.publishTree.fileCount -ne $actualTree.fileCount -or
-        [long]$report.publishTree.bytes -ne $actualTree.bytes) {
-        throw "Published application smoke report tree integrity mismatch."
-    }
-}
-
-
 $projectPath = Join-Path $repoRoot "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj"
 [xml]$project = Get-Content -LiteralPath $projectPath -Raw -Encoding utf8
 $projectVersionNode = $project.SelectSingleNode("/Project/PropertyGroup/Version")

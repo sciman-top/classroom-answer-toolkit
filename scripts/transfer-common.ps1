@@ -69,7 +69,10 @@ function Get-RelativeFileManifest {
     }
 
     return @(
-        Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
+        # -Force: the manifest must cover hidden entries too — a Windows .git
+        # directory carries the Hidden attribute, and -IncludeGit transfers
+        # would otherwise ship its contents outside every integrity check.
+        Get-ChildItem -LiteralPath $root -Recurse -File -Force | ForEach-Object {
             $relativePath = [IO.Path]::GetRelativePath($root, $_.FullName).Replace("\", "/")
             if (-not $excluded.Contains($relativePath)) {
                 [ordered]@{
@@ -113,6 +116,52 @@ function Get-DirectoryTreeReceipt {
         fileCount = $entries.Count
         bytes = [long]$totalBytes
         latestWriteAt = $latestWriteAt
+    }
+}
+
+# Shared by package-release and export-transfer: a published application tree
+# may only be packaged when its smoke report binds the current clean commit,
+# the exact publish directory, the executable bytes, and the tree bytes —
+# otherwise a stale artifacts/work/publish tree would be shipped under a
+# sourceCommit it was never built from.
+function Assert-PublishReceipt {
+    param(
+        [Parameter(Mandatory = $true)][string]$PublishDirectory,
+        [Parameter(Mandatory = $true)][string]$ReportPath,
+        [Parameter(Mandatory = $true)][string]$ExpectedCommit
+    )
+
+    if (-not (Test-Path -LiteralPath $ReportPath -PathType Leaf)) {
+        throw "Published application smoke report was not found: $ReportPath"
+    }
+    $report = Get-Content -LiteralPath $ReportPath -Raw -Encoding utf8 | ConvertFrom-Json
+    if ([string]$report.schemaVersion -ne "1.1" -or [string]$report.kind -ne "published-app-smoke-report" -or [string]$report.status -ne "passed") {
+        throw "Published application smoke report is unsupported or not passed."
+    }
+    if ([bool]$report.source.dirty -or [string]$report.source.commit -ne $ExpectedCommit) {
+        throw "Published application smoke report does not bind the current clean source commit."
+    }
+    $reportedDirectory = [IO.Path]::GetFullPath([string]$report.publishDirectoryPath).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    $expectedDirectory = [IO.Path]::GetFullPath($PublishDirectory).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    if (-not [string]::Equals($reportedDirectory, $expectedDirectory, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Published application smoke report binds another publish directory."
+    }
+
+    $exePath = Join-Path $PublishDirectory "ClassroomToolkit.App.exe"
+    if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
+        throw "Published application executable was not found: $exePath"
+    }
+    $exeItem = Get-Item -LiteralPath $exePath
+    $exeHash = Get-FileSha256 -PathValue $exePath
+    if ([long]$report.executable.bytes -ne $exeItem.Length -or [string]$report.executable.sha256 -ne $exeHash) {
+        throw "Published application smoke report executable integrity mismatch."
+    }
+
+    $actualTree = Get-DirectoryTreeReceipt -DirectoryPath $PublishDirectory
+    if ([string]$report.publishTree.sha256 -ne $actualTree.sha256 -or
+        [long]$report.publishTree.fileCount -ne $actualTree.fileCount -or
+        [long]$report.publishTree.bytes -ne $actualTree.bytes) {
+        throw "Published application smoke report tree integrity mismatch."
     }
 }
 
@@ -173,10 +222,10 @@ function Write-JsonFileAtomic {    param(
     }
 }
 
-# Copies license/notices into a package. Developer-operator preview packages
-# additionally ship the .NET/desktop/MVVM runtime licenses resolved from the
-# publish dependency manifest; ordinary-user packages only need the two
-# repository-level files.
+# Copies license/notices into a package. Every package that ships the
+# self-contained .NET/desktop runtime (preview and ordinary-user alike) must
+# pass -IncludeRuntimeLicenses: the packed THIRD_PARTY_NOTICES.md promises the
+# runtime license and notice files, and redistribution requires them.
 function Copy-PublishNotices {
     param(
         [Parameter(Mandatory = $true)][string]$DestinationDirectory,

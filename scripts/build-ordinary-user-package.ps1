@@ -176,7 +176,10 @@ try {
     }
 
     Copy-Item -Path (Join-Path $publishRoot "*") -Destination $stageRoot -Recurse -Force
-    Copy-PublishNotices -DestinationDirectory $stageRoot
+    # Self-contained redistribution ships the .NET/desktop runtime, so the
+    # runtime license files must travel with it — THIRD_PARTY_NOTICES.md in the
+    # same package promises exactly that (review 2026-10).
+    Copy-PublishNotices -DestinationDirectory $stageRoot -IncludeRuntimeLicenses
     Copy-Item -LiteralPath (Join-Path $repoRoot "prompts") -Destination (Join-Path $stageRoot "prompts") -Recurse -Force
     if (Test-Path -LiteralPath (Join-Path $repoRoot ".snapshot-cache") -PathType Container) {
         Copy-Item -LiteralPath (Join-Path $repoRoot ".snapshot-cache") -Destination (Join-Path $stageRoot ".snapshot-cache") -Recurse -Force

@@ -89,6 +89,12 @@ try {
         if (-not (Test-Path -LiteralPath $publishRoot -PathType Container)) {
             throw "Published application was requested but not found: $publishRoot"
         }
+        # A reused tree must bind the current clean commit exactly like
+        # package-release requires; otherwise the transfer manifest below would
+        # name a sourceCommit the binaries were never built from.
+        Assert-PublishReceipt -PublishDirectory $publishRoot `
+            -ReportPath (Join-Path $repoRoot "artifacts/work/publish/verification/ClassroomToolkit.App.smoke-report.json") `
+            -ExpectedCommit ((& git -C $repoRoot rev-parse HEAD 2>$null | Out-String).Trim())
         $appDestination = Join-Path $sourceRoot "app"
         [IO.Directory]::CreateDirectory($appDestination) | Out-Null
         Copy-Item -Path (Join-Path $publishRoot "*") -Destination $appDestination -Recurse -Force
