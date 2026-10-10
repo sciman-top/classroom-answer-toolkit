@@ -577,6 +577,7 @@ public sealed class ReleaseUpdateServiceTests
     public async Task CheckAsync_SkipsSourceWorkspaceWithoutInstalledApplication()
     {
         var repositoryRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-update-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(repositoryRoot);
         try
         {
             using var service = new ReleaseUpdateService(repositoryRoot, repositoryRoot, currentVersion: new Version(1, 0, 0));

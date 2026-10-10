@@ -127,13 +127,12 @@ public sealed class ToolchainCliBehaviorTests
     [Fact]
     public async Task PackageReleaseRequiresSigningForOrdinaryUserInstaller()
     {
-        var result = await RunAsync(
-            "pwsh",
-            ToolchainTestHost.FindRepoRoot(),
-            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
-            "-Version", "1.0.4",
-            "-Audience", "ordinary-users",
-            "-SkipPublish");
+            var result = await RunAsync(
+                "pwsh",
+                ToolchainTestHost.FindRepoRoot(),
+                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
+                "-Version", "1.0.4",
+                "-SkipPublish");
 
         result.ExitCode.Should().NotBe(0);
         result.Output.Should().Contain("code-signing certificate");
