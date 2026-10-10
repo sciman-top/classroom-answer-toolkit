@@ -45,6 +45,12 @@ export function resolveAnswerTransportPolicy(timeoutMs, nodeOptions = process.en
 }
 
 function configureAnswerTransport(timeoutMs) {
+  // setGlobalDispatcher is required, not a per-request `dispatcher` option:
+  // answer calls go through Node's built-in fetch, whose internal undici
+  // rejects dispatchers from npm undici 8 ("invalid onRequestStart method"),
+  // and switching to undici's own fetch would bypass the globalThis.fetch
+  // test seam. The npm package reaches the built-in fetch via the shared
+  // Symbol.for global-dispatcher registry.
   const policy = resolveAnswerTransportPolicy(timeoutMs);
   const transportKey = JSON.stringify(policy);
   if (transportKey !== activeTransportKey) {
