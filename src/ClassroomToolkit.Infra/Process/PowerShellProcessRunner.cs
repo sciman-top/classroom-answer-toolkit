@@ -51,7 +51,7 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             // bare Win32 error into an actionable diagnostic instead of a crash.
             throw new InvalidOperationException(
                 $"未找到可执行文件 {fileName}（Win32 错误 {ex.NativeErrorCode}）。"
-                + "请先安装它并确认已加入 PATH（pwsh 需要 PowerShell 7+，node 需要 Node.js 18+）。",
+                + "请先安装它并确认已加入 PATH（pwsh 需要 PowerShell 7+，node 需要 Node.js 24+，与仓库 .node-version 一致）。",
                 ex);
         }
 
