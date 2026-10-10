@@ -128,3 +128,17 @@ test("reports a non-object value against an object schema", () => {
     assert.ok(errorsOf("not-an-object", schemaPath).some((error) => error.includes("$ should be object")));
   });
 });
+
+test("maxLength constrains string length", () => {
+  withSchema({
+    type: "object",
+    properties: {
+      name: { type: "string", maxLength: 4 }
+    }
+  }, (schemaPath) => {
+    assert.deepEqual(errorsOf({ name: "abcd" }, schemaPath), []);
+    assert.ok(errorsOf({ name: "abcde" }, schemaPath).some((error) => error.includes("name should have length <= 4")));
+    // maxLength must not leak onto non-string values.
+    assert.deepEqual(errorsOf({ name: 12 }, schemaPath).length, 1);
+  });
+});

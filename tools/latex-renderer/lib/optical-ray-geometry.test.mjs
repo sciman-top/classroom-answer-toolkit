@@ -68,3 +68,27 @@ test("optical ray geometry fails closed when a competing parallel line is presen
     assert.equal(result.relation, null);
   } finally { delete globalThis.window; }
 });
+
+test("optical ray geometry fails closed on near-horizontal segments", () => {
+  // dx=0.5, dy=0.001 passes the focus-spec minimum segment length but makes
+  // the x(y) extrapolation numerically meaningless; the reading must stay
+  // uncertain instead of reporting a measured relation from garbage points.
+  const width = 500;
+  const height = 500;
+  const flatRays = {
+    beforeLeft: { x1: 0.2, y1: 0.2, x2: 0.7, y2: 0.201 },
+    beforeRight: { x1: 0.8, y1: 0.2, x2: 0.3, y2: 0.201 },
+    afterLeft: { x1: 0.43, y1: 0.55, x2: 0.48, y2: 0.75 },
+    afterRight: { x1: 0.57, y1: 0.55, x2: 0.52, y2: 0.75 }
+  };
+  const data = new Uint8ClampedArray(width * height * 4).fill(255);
+  Object.values(flatRays).forEach((segment) => drawLine(data, width, height, segment));
+  globalThis.window = { pdfReview: { focusCanvases: { rays: {
+    width, height, getContext: () => ({ getImageData: () => ({ data }) })
+  } } } };
+  try {
+    const result = analyzeOpticalRayCanvas({ regionId: "rays", lensY: 0.5, ...flatRays, lineHalfWidth: 0.01, darkThreshold: 90 });
+    assert.equal(result.status, "uncertain");
+    assert.equal(result.relation, null);
+  } finally { delete globalThis.window; }
+});

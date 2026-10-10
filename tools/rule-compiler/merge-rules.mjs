@@ -22,7 +22,9 @@ export function mergeRulePacks(packs) {
     }
   }
 
-  rules.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || String(a.id).localeCompare(String(b.id)));
+  // "en" pins the collation: rule ids feed snapshotId, so a host-locale
+  // dependent default could reorder equal-priority rules across machines.
+  rules.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || String(a.id).localeCompare(String(b.id), "en"));
   return rules;
 }
 

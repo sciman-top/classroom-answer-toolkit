@@ -43,6 +43,10 @@ function isAllowedExtraPath(candidatePath) {
   return (
     normalized.includes(`${path.sep}.pdf-review${path.sep}`) ||
     normalized.endsWith(`${path.sep}.pdf-review`) ||
+    // Eval runs leave pid-suffixed work roots behind when the process is
+    // killed; without this entry no cleanup path could ever remove them.
+    normalized.includes(`${path.sep}.eval-work${path.sep}`) ||
+    normalized.endsWith(`${path.sep}.eval-work`) ||
     normalized.includes(`${path.sep}_ocr_work${path.sep}`) ||
     normalized.endsWith(`${path.sep}_ocr_work`) ||
     baseName.startsWith("_tmp_") ||

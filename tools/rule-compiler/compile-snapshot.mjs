@@ -32,6 +32,9 @@ export function parseArgs(argv) {
   return parseArgvFlags(argv, {
     stringFlags: { profile: true, "subject-pack": true, out: true },
     defaults: { profile: null, subjectPack: defaultSubjectPack, out: null, help: false },
+    // A typo like --subjectpack must fail loudly, not silently flip to the
+    // default subject pack and overwrite its snapshot (matches validate-json).
+    unknownFlag: "error",
     help: true
   });
 }

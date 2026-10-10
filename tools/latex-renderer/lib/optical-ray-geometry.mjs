@@ -76,8 +76,19 @@ export function analyzeOpticalRayCanvas(config) {
   const maximumCompetingCoverage = Math.max(...Object.values(competingCoverages));
   const beforeIntersectionY = findIntersectionY(config.beforeLeft, config.beforeRight);
   const afterIntersectionY = findIntersectionY(config.afterLeft, config.afterRight);
-  const validIntersections = beforeIntersectionY !== null && afterIntersectionY !== null
-    && beforeIntersectionY > config.lensY && afterIntersectionY > config.lensY;
+  // The intersection extrapolates x(y) far beyond the drawn segments: a
+  // near-horizontal segment (tiny dy) makes the slope explode and the
+  // "intersection" a numerically meaningless point far off-canvas, which the
+  // old lensY-only check still accepted as measured. Require a meaningful
+  // vertical span on every segment and keep both intersections on the canvas.
+  const minimumVerticalSpan = 0.01;
+  const segmentsUsable = [config.beforeLeft, config.beforeRight, config.afterLeft, config.afterRight]
+    .every((segment) => Math.abs(segment.y2 - segment.y1) >= minimumVerticalSpan);
+  const withinCanvas = (y) => Number.isFinite(y) && y >= 0 && y <= 1;
+  const validIntersections = segmentsUsable
+    && beforeIntersectionY !== null && afterIntersectionY !== null
+    && beforeIntersectionY > config.lensY && afterIntersectionY > config.lensY
+    && withinCanvas(beforeIntersectionY) && withinCanvas(afterIntersectionY);
   if (minimumCoverage < 0.7 || maximumCompetingCoverage >= 0.7 || !validIntersections) {
     return {
       schemaVersion: "1.0", kind: "optical-ray-geometry", status: "uncertain",

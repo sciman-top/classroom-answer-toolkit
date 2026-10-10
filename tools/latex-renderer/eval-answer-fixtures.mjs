@@ -222,10 +222,10 @@ async function main() {
 
         let snapshotEntry = compiledSnapshots.get(profile);
         if (!snapshotEntry) {
-          const snapshotFileName = options.subjectPack === "junior-physics-answer"
-            ? `resolved-snapshot.${profile}.json`
-            : `resolved-snapshot.${options.subjectPack}.${profile}.json`;
-          const snapshotRelativePath = path.join(".snapshot-cache", snapshotFileName);
+          // Gates, bootstrap, and eval must land on the same snapshot file the
+          // delivery consumes (subject-pack-registry is the single source for
+          // that name); a locally invented pattern drifts onto duplicate files.
+          const snapshotRelativePath = resolveProfileSnapshotRelativePath(options.subjectPack, profile, repoRoot);
           const snapshotCompile = await runNodeTool(
             path.resolve(toolDir, "..", "rule-compiler", "compile-snapshot.mjs"),
             [

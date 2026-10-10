@@ -115,8 +115,11 @@ async function main() {
     fail(`--channel-tolerance must be an integer between 0 and 255, got ${JSON.stringify(options.channelTolerance)}.\n${usage}`);
   }
 
-  const actualPath = path.resolve(repoRoot, positional[0]);
-  const baselinePath = path.resolve(repoRoot, positional[1]);
+  // Positionals follow the render/validate CLIs: resolved against the caller's
+  // CWD (INIT_CWD under npm), not the tool's repo.
+  const callerCwd = process.env.INIT_CWD || process.cwd();
+  const actualPath = path.resolve(callerCwd, positional[0]);
+  const baselinePath = path.resolve(callerCwd, positional[1]);
 
   if (!fs.existsSync(actualPath)) {
     fail(`Actual image not found: ${actualPath}`);

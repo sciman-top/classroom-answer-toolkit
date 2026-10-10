@@ -383,7 +383,7 @@ export function validateDeliveryManifest(
           errors.push(`graphics.items[${index}].previewPath must match placement.previewPath.`);
         } else {
           const previewPath = resolveManifestRelativePath(item.previewPath, manifestDir);
-          if (path.resolve(previewPath) !== expectedPreviewPath) {
+          if (normalizePathForComparison(previewPath) !== normalizePathForComparison(expectedPreviewPath)) {
             errors.push(`graphics.items[${index}].previewPath must match placement.previewPath.`);
           }
 

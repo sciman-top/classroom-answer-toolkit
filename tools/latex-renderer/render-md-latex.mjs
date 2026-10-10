@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
+import { removePathRecursive } from "../safe-remove.mjs";
 import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
 import {
   commitBrowserPdfOutput,
@@ -601,6 +602,16 @@ try {
         );
       })
     ]);
+  } catch (renderError) {
+    // A timed-out page.pdf may have streamed a partial temp PDF into the
+    // output directory. The retrying remover also beats the still-open writer
+    // handle in the common case; failure here is non-fatal because the path
+    // carries a hidden, uniquely-suffixed name no consumer reads.
+    try {
+      removePathRecursive(browserPdfOutputPath);
+    } catch {
+    }
+    throw renderError;
   } finally {
     clearTimeout(pdfTimeoutGuard);
   }

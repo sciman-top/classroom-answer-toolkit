@@ -125,6 +125,10 @@ function validatePrimitive(value, schema, currentPath, state) {
     state.errors.push(`${formatPath(currentPath)} should have length >= ${schema.minLength}.`);
   }
 
+  if (actualType === "string" && Number.isInteger(schema.maxLength) && value.length > schema.maxLength) {
+    state.errors.push(`${formatPath(currentPath)} should have length <= ${schema.maxLength}.`);
+  }
+
   if (actualType === "string" && typeof schema.pattern === "string" && !new RegExp(schema.pattern).test(value)) {
     state.errors.push(`${formatPath(currentPath)} should match pattern ${schema.pattern}.`);
   }

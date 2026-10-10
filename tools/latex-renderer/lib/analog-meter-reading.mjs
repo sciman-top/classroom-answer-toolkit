@@ -90,7 +90,11 @@ export function analyzeAnalogMeterCanvas(config) {
   const bestWeight = bestGroup.reduce((sum, candidate) => sum + candidate.coverage, 0);
   const best = {
     angle: bestGroup.reduce((sum, candidate) => sum + candidate.angle * candidate.coverage, 0) / bestWeight,
-    coverage: maximumCoverage
+    // The chosen group's own strongest line, not the scan's global maximum:
+    // the two can live in different peak groups, and attributing a foreign
+    // maximum inflated the reported coverage and froze the best-vs-runnerUp
+    // gap at zero for otherwise clean readings.
+    coverage: bestGroup.reduce((max, candidate) => Math.max(max, candidate.coverage), 0)
   };
   const runnerUp = scores
     .filter((candidate) => Math.abs(candidate.angle - best.angle) >= 2.5)
