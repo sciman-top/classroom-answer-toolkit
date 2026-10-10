@@ -7,6 +7,7 @@ import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-com
 import { resolveProfileSnapshotRelativePath } from "../rule-compiler/subject-pack-registry.mjs";
 import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
+import { removePathRecursive } from "../safe-remove.mjs";
 import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
@@ -136,31 +137,6 @@ function resolveManifestRelativePath(manifestPath, relativePath) {
   return path.resolve(path.dirname(manifestPath), relativePath);
 }
 
-function removePathWithRetry(targetPath, attempts = 5) {
-  let lastError = null;
-
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      fs.rmSync(targetPath, {
-        recursive: true,
-        force: true,
-        maxRetries: 5,
-        retryDelay: 100
-      });
-      return;
-    } catch (error) {
-      lastError = error;
-      if (!error || !["ENOTEMPTY", "EBUSY", "EPERM"].includes(error.code) || attempt === attempts - 1) {
-        break;
-      }
-    }
-  }
-
-  if (lastError) {
-    throw lastError;
-  }
-}
-
 function makeCaseWorkDir(evalWorkRoot, subjectPack, caseId, profile) {
   return path.join(evalWorkRoot, subjectPack, caseId, profile);
 }
@@ -177,7 +153,7 @@ async function main() {
   let visualPipelineCount = 0;
   let deliveryPipelineCount = 0;
   let browserServer = null;
-  removePathWithRetry(evalWorkRoot);
+  removePathRecursive(evalWorkRoot);
   let runSucceeded = false;
   try {
     const datasetPath = options.dataset
@@ -217,15 +193,22 @@ async function main() {
       for (const profile of profiles) {
         profileExecutions += 1;
         const workDir = makeCaseWorkDir(evalWorkRoot, options.subjectPack, caseEntry.id, profile);
-        removePathWithRetry(workDir);
+        removePathRecursive(workDir);
         fs.mkdirSync(workDir, { recursive: true });
 
         let snapshotEntry = compiledSnapshots.get(profile);
         if (!snapshotEntry) {
-          // Gates, bootstrap, and eval must land on the same snapshot file the
-          // delivery consumes (subject-pack-registry is the single source for
-          // that name); a locally invented pattern drifts onto duplicate files.
-          const snapshotRelativePath = resolveProfileSnapshotRelativePath(options.subjectPack, profile, repoRoot);
+          // Deliberately NOT resolveProfileSnapshotRelativePath: eval needs
+          // eval-owned snapshot files. "default"-snapshotMode deliveries
+          // recompile the pack's canonical path mid-run, which would clobber a
+          // shared classroom snapshot and break the compiled-mode comparison
+          // against this in-memory copy (2026-10-10 eval regression). The
+          // per-pack/profile names keep the eval scratch isolated from
+          // gates/bootstrap/delivery outputs.
+          const snapshotFileName = options.subjectPack === "junior-physics-answer"
+            ? `resolved-snapshot.${profile}.json`
+            : `resolved-snapshot.${options.subjectPack}.${profile}.json`;
+          const snapshotRelativePath = path.join(".snapshot-cache", snapshotFileName);
           const snapshotCompile = await runNodeTool(
             path.resolve(toolDir, "..", "rule-compiler", "compile-snapshot.mjs"),
             [
@@ -384,6 +367,13 @@ async function main() {
                 path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
                 "--skip-validate"
               ];
+          console.error("[probe-args] snapshotMode:", snapshotMode, "snapshotRelativePath:", snapshotRelativePath, "args:", JSON.stringify([
+            path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
+            path.relative(repoRoot, deliverPdfPath),
+            "--profile", profile,
+            "--subject-pack", options.subjectPack,
+            ...snapshotArgs
+          ]));
           const deliverRun = await runNodeTool("deliver-answer.mjs", [
             path.relative(repoRoot, path.resolve(datasetDir, caseEntry.input)),
             path.relative(repoRoot, deliverPdfPath),
@@ -461,6 +451,20 @@ async function main() {
             const ocrMatch = Object.entries(expectedOcr)
               .every(([key, value]) => actualOcr[key] === value);
 
+            if (!snapshotMatch) {
+              console.error("[probe] snapshotMatch false:", JSON.stringify({
+                idOk: deliveryManifest.snapshotId === compiledSnapshot.snapshotId,
+                innerIdOk: deliveryManifest.snapshot?.id === compiledSnapshot.snapshotId,
+                verOk: deliveryManifest.snapshot?.version === compiledSnapshot.subjectPack?.version,
+                profOk: deliveryManifest.snapshot?.profile === profile,
+                pathOk: deliverySnapshotPath === expectedDeliverySnapshotPath,
+                contentOk: deliverySnapshotMatches(compiledSnapshot, deliverySnapshot, snapshotMode),
+                manifestVer: deliveryManifest.snapshot?.version,
+                compiledVer: compiledSnapshot.subjectPack?.version,
+                compiledGeneratedAt: compiledSnapshot.generatedAt,
+                deliveryGeneratedAt: deliverySnapshot?.generatedAt
+              }));
+            }
             deliveryOk = snapshotMatch && reviewPackageMatch && graphicsMatch && statusMatch && ocrMatch;
             delivery = {
               manifestPath: path.relative(repoRoot, deliveryManifestPath),
@@ -581,7 +585,7 @@ async function main() {
     // why a visual comparison failed, and deleting them turned every such
     // failure into an unactionable "Diff ratio exceeded" line.
     if (runSucceeded) {
-      removePathWithRetry(evalWorkRoot);
+      removePathRecursive(evalWorkRoot);
     } else {
       console.log(`[eval] failing run kept its work directory for diagnosis: ${path.relative(repoRoot, evalWorkRoot)}`);
     }
