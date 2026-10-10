@@ -69,6 +69,21 @@ test("paren-delimited inline math is normalized before strict KaTeX and leak che
   assert.equal(findStrictKatexErrors(broken).length, 1);
 });
 
+test("strict check closes inline spans at the first dollar like the renderer scanner", () => {
+  // The shared scanner closes a span at the first `$`, so `\$` inside a span
+  // leaves a dangling `\` that strict KaTeX rejects; the previous dedicated
+  // regex accepted this shape while the renderer crashed on it.
+  const findings = findStrictKatexErrors(String.raw`$a \$ b$$c$`);
+  assert.equal(findings.length, 2);
+  assert.equal(findings[0].lineNumber, 1);
+
+  // A genuine escaped dollar after a consumed span stays literal text.
+  assert.deepEqual(
+    findStrictKatexErrors(String.raw`速度为 $v=2\,\mathrm{m/s}$，记作 \$5。`),
+    []
+  );
+});
+
 test("split-frac across adjacent math spans is repaired before checks", () => {
   // 2026 run3/run5/run7 defect: numerator span, denominator span.
   const split = [

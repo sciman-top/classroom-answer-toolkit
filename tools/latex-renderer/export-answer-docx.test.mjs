@@ -34,6 +34,20 @@ test("countMathRegions covers all four delimiter styles", () => {
   assert.equal(countMathRegions("无公式段落。"), 0);
 });
 
+test("countMathRegions ignores dollar signs inside code fences and inline code", () => {
+  // The validator exempts code spans and pandoc renders them verbatim, so the
+  // expected region count must come from the code-masked text; counting the
+  // raw Markdown made every document with code-span dollars fail the export.
+  const markdown = [
+    "```",
+    "$x$",
+    "```",
+    "",
+    "行内代码 `$y$` 与正文 $v=2\\,\\mathrm{m/s}$。"
+  ].join("\n");
+  assert.equal(countMathRegions(markdown), 1);
+});
+
 test("exportAnswerDocx produces OMML equations matching the Markdown math regions", { skip: hasPandoc() ? false : "pandoc not on PATH" }, () => {
   fs.mkdirSync(tempRoot, { recursive: true });
   const markdownPath = path.join(tempRoot, "测试参考答案.md");

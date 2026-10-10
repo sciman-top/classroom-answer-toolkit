@@ -241,32 +241,42 @@ function lineNumberAt(source, offset) {
 export function findStrictKatexErrors(source) {
   const findings = [];
   const normalizedSource = normalizeLatexParenDelimiters(repairSplitMathSpans(maskLatexCodeSegments(source).text));
-  const patterns = [
-    { regex: /\$\$([\s\S]+?)\$\$/g, displayMode: true },
-    { regex: /\\\[([\s\S]+?)\\\]/g, displayMode: true },
-    { regex: /(?<![\\$])\$((?:\\.|[^$])*?)(?<!\\)\$(?!\$)/g, displayMode: false }
-  ];
-  for (const { regex, displayMode } of patterns) {
-    for (const match of normalizedSource.matchAll(regex)) {
-      if (match.index === undefined) {
-        continue;
-      }
-      try {
-        katex.renderToString(match[1].trim(), {
-          displayMode,
-          throwOnError: true,
-          strict: "error",
-          fleqn: true,
-          trust: false,
-          output: "htmlAndMathml"
-        });
-      } catch (error) {
-        findings.push({
-          lineNumber: lineNumberAt(normalizedSource, match.index),
-          message: error instanceof Error ? error.message : String(error)
-        });
-      }
+  const renderStrictly = (tex, displayMode, offset, text) => {
+    try {
+      katex.renderToString(tex.trim(), {
+        displayMode,
+        throwOnError: true,
+        strict: "error",
+        fleqn: true,
+        trust: false,
+        output: "htmlAndMathml"
+      });
+    } catch (error) {
+      findings.push({
+        lineNumber: lineNumberAt(text, offset),
+        message: error instanceof Error ? error.message : String(error)
+      });
     }
+  };
+
+  // Must mirror replaceMath in render-md-latex.mjs exactly: display math
+  // first, then the shared inline scanner on the substituted text. Any other
+  // inline extraction validates documents the renderer crashes on — the
+  // scanner closes a span at the first `$`, so `$a \$ b$` leaves a dangling
+  // `\` that strict KaTeX rejects.
+  const displayFree = normalizedSource
+    .replace(/\$\$([\s\S]+?)\$\$/g, (matched, tex, offset) => {
+      renderStrictly(tex, true, offset, normalizedSource);
+      return displayMathToken(matched);
+    })
+    .replace(/\\\[([\s\S]+?)\\\]/g, (matched, tex, offset) => {
+      renderStrictly(tex, true, offset, normalizedSource);
+      return displayMathToken(matched);
+    });
+  const scanner = createInlineMathScanner(displayFree);
+  let match;
+  while ((match = scanner.next()) !== null) {
+    renderStrictly(match[2], false, match.index + match[1].length, displayFree);
   }
   return findings;
 }

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { unzipSync } from "fflate";
-import { mapInlineMath } from "./lib/inline-math.mjs";
+import { mapInlineMath, maskLatexCodeSegments } from "./lib/inline-math.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 
 // Exports an answer Markdown file to DOCX with native Word (OMML) equations via
@@ -13,16 +13,19 @@ import { parseArgvFlags } from "../shared.mjs";
 
 const PANDOC_MIN_MAJOR = 3;
 const DEFAULT_REFERENCE = path.join(path.dirname(fileURLToPath(import.meta.url)), "assets", "docx-reference-classroom.docx");
-// Mirrors replaceMath in render-md-latex.mjs: display math is masked first, the
-// `\(...\)` inline form is masked the same way its normalization would consume
-// it, then the shared inline scanner counts the remaining `$...$` regions.
+// Mirrors replaceMath in render-md-latex.mjs: code fences and inline code are
+// masked first (pandoc renders them verbatim, never as math), display math is
+// masked next, the `\(...\)` inline form is masked the same way its
+// normalization would consume it, then the shared inline scanner counts the
+// remaining `$...$` regions.
 export function countMathRegions(markdown) {
   let regions = 0;
   const mask = () => {
     regions += 1;
     return " ";
   };
-  let text = markdown.replace(/\$\$([\s\S]+?)\$\$/g, mask);
+  let text = maskLatexCodeSegments(markdown).text;
+  text = text.replace(/\$\$([\s\S]+?)\$\$/g, mask);
   text = text.replace(/\\\[([\s\S]+?)\\\]/g, mask);
   text = text.replace(/\\\([\s\S]+?\\\)/g, mask);
   mapInlineMath(text, () => {
