@@ -14,6 +14,10 @@ Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
 
+# Runs in-repo (never packaged); receipt helpers come from the shared library
+# so the publish-tree contract cannot drift between smoke and packaging.
+. (Join-Path $PSScriptRoot "transfer-common.ps1")
+
 function Resolve-RepoPath {
     param([Parameter(Mandatory = $true)][string]$PathValue)
 
@@ -22,30 +26,6 @@ function Resolve-RepoPath {
     }
 
     return [IO.Path]::GetFullPath((Join-Path $repoRoot $PathValue))
-}
-
-function Get-PublishTreeReceipt {
-    param([Parameter(Mandatory = $true)][string]$DirectoryPath)
-
-    $entries = @(Get-ChildItem -LiteralPath $DirectoryPath -Recurse -File | ForEach-Object {
-        [ordered]@{
-            relativePath = [IO.Path]::GetRelativePath($DirectoryPath, $_.FullName).Replace("\", "/")
-            bytes = $_.Length
-            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-        }
-    } | Sort-Object { $_["relativePath"] })
-    $canonical = ($entries | ForEach-Object { "{0}|{1}|{2}" -f $_["relativePath"], $_["bytes"], $_["sha256"] }) -join "`n"
-    $treeHashBytes = [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($canonical))
-    $totalBytes = ($entries | ForEach-Object { [long]$_["bytes"] } | Measure-Object -Sum).Sum
-    if ($null -eq $totalBytes) {
-        $totalBytes = 0
-    }
-
-    return [ordered]@{
-        sha256 = [Convert]::ToHexString($treeHashBytes).ToLowerInvariant()
-        fileCount = $entries.Count
-        bytes = [long]$totalBytes
-    }
 }
 
 $publishDir = Resolve-RepoPath $PublishDir
@@ -104,7 +84,7 @@ if ([long]$smokeReport.executable.bytes -ne $exeItem.Length -or
     throw "Published smoke report executable SHA-256 or byte length does not match the current executable."
 }
 
-$currentTree = Get-PublishTreeReceipt -DirectoryPath $publishDir
+$currentTree = Get-DirectoryTreeReceipt -DirectoryPath $publishDir
 if ([string]$smokeReport.publishTree.sha256 -ne $currentTree.sha256 -or
     [int]$smokeReport.publishTree.fileCount -ne $currentTree.fileCount -or
     [long]$smokeReport.publishTree.bytes -ne $currentTree.bytes) {

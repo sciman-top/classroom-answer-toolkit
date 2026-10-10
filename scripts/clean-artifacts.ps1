@@ -74,7 +74,7 @@ function Assert-ChildOfArtifactsRoot {
 }
 
 $removed = [Collections.Generic.List[string]]::new()
-foreach ($name in @("work", "diagnostics", "publish", "review-queue-observation", "tools")) {
+foreach ($name in @("work", "diagnostics", "publish", "tools")) {
     $candidate = Assert-ChildOfArtifactsRoot -PathValue (Join-Path $root $name) -RootPrefix $rootPrefix
     if (Test-Path -LiteralPath $candidate) {
         if ($name -eq "work" -and (Test-Path -LiteralPath (Join-Path $candidate "README.md") -PathType Leaf)) {

@@ -141,21 +141,7 @@ function Compile-RuleSnapshots {
         throw "No subject pack manifests were found under prompts/."
     }
 
-    Write-Host "Compiling discovered subject-pack snapshots..."
-    foreach ($subjectPack in $subjectPacks) {
-        foreach ($profile in $subjectPack.Profiles) {
-            $outputPath = Get-SubjectPackSnapshotOutputPath -SubjectPack $subjectPack -Profile $profile
-            $relativeOutputPath = Get-RelativePath -BasePath $repoRoot -TargetPath $outputPath
-
-            Write-Host ("- {0}/{1} -> {2}" -f $subjectPack.AssetId, $profile, $relativeOutputPath)
-            # Direct node call: the snapshot writer resolves --out against the
-            # repo root, so the per-invocation npm layer buys nothing.
-            & node (Join-Path $repoRoot "tools/rule-compiler/compile-snapshot.mjs") --subject-pack $subjectPack.AssetId --profile $profile --out $relativeOutputPath
-            if ($LASTEXITCODE -ne 0) {
-                throw ("Failed to compile snapshot for {0}/{1}." -f $subjectPack.AssetId, $profile)
-            }
-        }
-    }
+    Invoke-SubjectPackSnapshotCompile -RepositoryRoot $repoRoot -SubjectPacks $subjectPacks
 }
 
 Assert-DotNetSdk

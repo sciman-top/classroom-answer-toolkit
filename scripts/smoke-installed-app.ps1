@@ -10,6 +10,10 @@ Set-StrictMode -Version Latest
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 Set-Location $repoRoot
 
+# Runs in-repo (never packaged), so the receipt/atomic-write helpers come from
+# the shared transfer library instead of a private copy.
+. (Join-Path $PSScriptRoot "transfer-common.ps1")
+
 function Resolve-RepoPath {
     param([Parameter(Mandatory = $true)][string]$PathValue)
 
@@ -18,61 +22,6 @@ function Resolve-RepoPath {
     }
 
     return [IO.Path]::GetFullPath((Join-Path $repoRoot $PathValue))
-}
-
-function Get-PublishTreeReceipt {
-    param([Parameter(Mandatory = $true)][string]$DirectoryPath)
-
-    $entries = @(Get-ChildItem -LiteralPath $DirectoryPath -Recurse -File | ForEach-Object {
-        [ordered]@{
-            relativePath = [IO.Path]::GetRelativePath($DirectoryPath, $_.FullName).Replace("\", "/")
-            bytes = $_.Length
-            sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-            lastWriteAt = $_.LastWriteTimeUtc.ToString("O")
-        }
-    } | Sort-Object { $_["relativePath"] })
-    $canonical = ($entries | ForEach-Object { "{0}|{1}|{2}" -f $_["relativePath"], $_["bytes"], $_["sha256"] }) -join "`n"
-    $treeHashBytes = [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($canonical))
-    $treeHash = [Convert]::ToHexString($treeHashBytes).ToLowerInvariant()
-    $totalBytes = ($entries | ForEach-Object { [long]$_["bytes"] } | Measure-Object -Sum).Sum
-    if ($null -eq $totalBytes) {
-        $totalBytes = 0
-    }
-    $latestWriteAt = if ($entries.Count -gt 0) {
-        ($entries | Sort-Object { $_["lastWriteAt"] } -Descending | Select-Object -First 1)["lastWriteAt"]
-    }
-    else {
-        $null
-    }
-
-    return [ordered]@{
-        algorithm = "sha256"
-        sha256 = $treeHash
-        fileCount = $entries.Count
-        bytes = [long]$totalBytes
-        latestWriteAt = $latestWriteAt
-    }
-}
-
-function Write-JsonFileAtomic {
-    param(
-        [Parameter(Mandatory = $true)][string]$PathValue,
-        [Parameter(Mandatory = $true)]$Value
-    )
-
-    $directory = [IO.Path]::GetDirectoryName($PathValue)
-    [IO.Directory]::CreateDirectory($directory) | Out-Null
-    $temporaryPath = Join-Path $directory (".{0}.{1}.tmp" -f [IO.Path]::GetFileName($PathValue), [Guid]::NewGuid().ToString("N"))
-    try {
-        [IO.File]::WriteAllText(
-            $temporaryPath,
-            (($Value | ConvertTo-Json -Depth 20) + [Environment]::NewLine),
-            [Text.UTF8Encoding]::new($false))
-        [IO.File]::Move($temporaryPath, $PathValue, $true)
-    }
-    finally {
-        [IO.File]::Delete($temporaryPath)
-    }
 }
 
 $publishDir = Resolve-RepoPath $PublishDir
@@ -148,7 +97,7 @@ try {
     }
     $sourceDirty = -not [string]::IsNullOrWhiteSpace((& git -C $repoRoot status --porcelain --untracked-files=no | Out-String).Trim())
     $exeItem = Get-Item -LiteralPath $exePath
-    $publishTree = Get-PublishTreeReceipt -DirectoryPath $publishDir
+    $publishTree = Get-DirectoryTreeReceipt -DirectoryPath $publishDir
     $report = [ordered]@{
         schemaVersion = "1.1"
         kind = "published-app-smoke-report"

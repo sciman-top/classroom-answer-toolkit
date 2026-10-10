@@ -100,12 +100,19 @@ function Get-DirectoryTreeReceipt {
     if ($null -eq $totalBytes) {
         $totalBytes = 0
     }
+    $latestWriteAt = if ($entries.Count -gt 0) {
+        ($entries | Sort-Object { $_["lastWriteAt"] } -Descending | Select-Object -First 1)["lastWriteAt"]
+    }
+    else {
+        $null
+    }
 
     return [ordered]@{
         algorithm = "sha256"
         sha256 = $treeHash
         fileCount = $entries.Count
         bytes = [long]$totalBytes
+        latestWriteAt = $latestWriteAt
     }
 }
 
