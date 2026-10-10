@@ -85,48 +85,6 @@ function Assert-PublishReceipt {
     }
 }
 
-function Copy-PublishNotices {
-    param([Parameter(Mandatory = $true)][string]$DestinationDirectory)
-
-    Copy-Item -LiteralPath (Join-Path $repoRoot "LICENSE") -Destination (Join-Path $DestinationDirectory "LICENSE.txt") -Force
-    Copy-Item -LiteralPath (Join-Path $repoRoot "THIRD_PARTY_NOTICES.md") -Destination (Join-Path $DestinationDirectory "THIRD_PARTY_NOTICES.md") -Force
-
-    $depsPath = Join-Path $repoRoot "src/ClassroomToolkit.App/obj/Release/net10.0-windows/win-x64/ClassroomToolkit.App.deps.json"
-    if (-not (Test-Path -LiteralPath $depsPath -PathType Leaf)) {
-        throw "Published application dependency manifest was not found: $depsPath"
-    }
-    $deps = Get-Content -LiteralPath $depsPath -Raw -Encoding utf8 | ConvertFrom-Json
-    $libraryNames = @($deps.libraries.PSObject.Properties.Name)
-    $runtimeLibrary = @($libraryNames | Where-Object { $_ -like "runtimepack.Microsoft.NETCore.App.Runtime.win-x64/*" }) | Select-Object -First 1
-    $desktopLibrary = @($libraryNames | Where-Object { $_ -like "runtimepack.Microsoft.WindowsDesktop.App.Runtime.win-x64/*" }) | Select-Object -First 1
-    $toolkitLibrary = @($libraryNames | Where-Object { $_ -like "CommunityToolkit.Mvvm/*" }) | Select-Object -First 1
-    if (-not $runtimeLibrary -or -not $desktopLibrary -or -not $toolkitLibrary) {
-        throw "Unable to resolve runtime notice package versions from the publish dependency manifest."
-    }
-
-    $nugetRoot = if ([string]::IsNullOrWhiteSpace($env:NUGET_PACKAGES)) {
-        Join-Path $env:USERPROFILE ".nuget/packages"
-    }
-    else {
-        [IO.Path]::GetFullPath($env:NUGET_PACKAGES)
-    }
-    $runtimeVersion = ($runtimeLibrary -split "/")[-1]
-    $desktopVersion = ($desktopLibrary -split "/")[-1]
-    $toolkitVersion = ($toolkitLibrary -split "/")[-1]
-    $noticeFiles = [ordered]@{
-        (Join-Path $nugetRoot "microsoft.netcore.app.runtime.win-x64/$runtimeVersion/LICENSE.TXT") = "DOTNET-LICENSE.txt"
-        (Join-Path $nugetRoot "microsoft.netcore.app.runtime.win-x64/$runtimeVersion/THIRD-PARTY-NOTICES.TXT") = "DOTNET-THIRD-PARTY-NOTICES.txt"
-        (Join-Path $nugetRoot "microsoft.windowsdesktop.app.runtime.win-x64/$desktopVersion/LICENSE") = "WINDOWS-DESKTOP-RUNTIME-LICENSE.txt"
-        (Join-Path $nugetRoot "communitytoolkit.mvvm/$toolkitVersion/License.md") = "COMMUNITYTOOLKIT-MVVM-LICENSE.md"
-        (Join-Path $nugetRoot "communitytoolkit.mvvm/$toolkitVersion/ThirdPartyNotices.txt") = "COMMUNITYTOOLKIT-MVVM-NOTICES.txt"
-    }
-    foreach ($entry in $noticeFiles.GetEnumerator()) {
-        if (-not (Test-Path -LiteralPath $entry.Key -PathType Leaf)) {
-            throw "Required runtime notice file was not found: $($entry.Key)"
-        }
-        Copy-Item -LiteralPath $entry.Key -Destination (Join-Path $DestinationDirectory $entry.Value) -Force
-    }
-}
 
 $projectPath = Join-Path $repoRoot "src/ClassroomToolkit.App/ClassroomToolkit.App.csproj"
 [xml]$project = Get-Content -LiteralPath $projectPath -Raw -Encoding utf8
@@ -170,7 +128,7 @@ try {
     Invoke-CheckedNative -FileName "git" -Arguments @("-C", $repoRoot, "archive", "--format=zip", "--output=$sourceArchive", "HEAD") -WorkingDirectory $repoRoot -FailureMessage "Unable to create the source archive."
 
     Copy-Item -Path (Join-Path $publishRoot "*") -Destination $appStageRoot -Recurse -Force
-    Copy-PublishNotices -DestinationDirectory $appStageRoot
+    Copy-PublishNotices -DestinationDirectory $appStageRoot -IncludeRuntimeLicenses
 
     $appUrl = "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v$Version/$appZipName"
     $manifest = [ordered]@{

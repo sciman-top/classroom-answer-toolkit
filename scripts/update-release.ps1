@@ -19,6 +19,8 @@ $script:MaximumDownloadBytes = 1GB
 # Runs from inside a downloaded update package after the app has been replaced,
 # so it must stay self-contained: Assert-ContainedPath / Assert-ApprovedGitHubUri
 # deliberately duplicate transfer-common.ps1 rather than dot-source it.
+# The same download/verification logic also lives in scripts/install-release.ps1:
+# change all three copies together or the two release surfaces drift.
 function Resolve-AbsolutePath {
     param([Parameter(Mandatory = $true)][string]$PathValue)
     return [IO.Path]::GetFullPath($PathValue)

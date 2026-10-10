@@ -57,13 +57,6 @@ function Resolve-IsccPath {
     return [IO.Path]::GetFullPath($match)
 }
 
-function Copy-PublishNotices {
-    param([Parameter(Mandatory = $true)][string]$DestinationDirectory)
-
-    Copy-Item -LiteralPath (Join-Path $repoRoot "LICENSE") -Destination (Join-Path $DestinationDirectory "LICENSE.txt") -Force
-    Copy-Item -LiteralPath (Join-Path $repoRoot "THIRD_PARTY_NOTICES.md") -Destination (Join-Path $DestinationDirectory "THIRD_PARTY_NOTICES.md") -Force
-}
-
 function Write-RuntimeManifest {
     param(
         [Parameter(Mandatory = $true)][ValidateSet("installer", "portable")][string]$DistributionMode,

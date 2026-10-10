@@ -16,6 +16,8 @@ $script:MaximumDownloadBytes = 1GB
 # it must stay self-contained: the helpers below intentionally duplicate
 # transfer-common.ps1 (Assert-ZipEntriesContained, Assert-ApprovedGitHubUri)
 # instead of dot-sourcing it. Do not "deduplicate" them into a shared file.
+# The same download/verification logic also lives in scripts/update-release.ps1:
+# change all three copies together or the two release surfaces drift.
 function Assert-ApprovedGitHubUri {
     param(
         [Parameter(Mandatory = $true)][uri]$UriValue,
