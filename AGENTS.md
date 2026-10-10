@@ -1,7 +1,7 @@
 # AGENTS.md - classroom-answer-toolkit
 **项目契约**: 2.0
-**全局规则复核**: 9.85
-**最后更新**: 2026-10-09
+**全局规则复核**: 9.86
+**最后更新**: 2026-10-10
 
 ## 1. 当前落点与目标归宿
 - 当前落点：本仓实现课堂参考答案生成、渲染、验证与交付工具链。
@@ -11,7 +11,7 @@
 ## A. 仓库事实与模块边界
 - `docs/strategy/` 是规划真源；先读 `README.md`、`product-prd.md` 与 `final-implementation-baseline.md`。
 - `prompts/specs/` 是人类规范真源，只手改 `platform/`、`commons/`、`subjects/`；`prompts/specs/compiled/` 和 `snapshot` 是生成或运行真相，禁止手改。
-- `ClassroomToolkit.sln`、`src/`、`tests/` 承载 App/Domain/Infra 三项目 WPF、编排与 xUnit 合同；无独立发布或变化率证据不得恢复 Application/Services 空壳程序集。
+- `ClassroomToolkit.sln`、`src/`、`tests/` 承载 App 单项目 WPF、编排与 xUnit 合同（Domain/Infra 已并入，仅数据形状或单一消费者的仪式性程序集不再保留）；无独立发布或变化率证据不得恢复 Application/Services 空壳程序集。
 - retained `tools/` 为 spec-assembler、rule-compiler、ai-gateway、latex-renderer 与按需 OCR；visual-evidence、sample-flywheel、review-queue、synthetic visual 和 answer-graphics 已从 active tree 删除。`tmp/`、`.answer-graphics/` 与旧根提示词只由 Git 历史追溯，不得重新提交。
 - 交付相关顶层目录角色固定：`习题/` 只放版本化真题 golden corpus（`广州物理中考试卷/`）；`正式交付/` 是唯一面向使用者的交付入口（`广州物理中考参考答案/` 每年 PDF+md+docx，结构与 `习题/` 镜像）；`交付过程归档/` 只存过程追溯材料；`样例交付/` 是回归/演示/工具链示例合成样例区（角色定义见 `prompts/specs/platform/` 平台总则 §2）。四目录职责不得混用，真实新 run 默认经 `scripts/archive-delivery-run.ps1` 归档仓外。
 - 真实主链是“人类 spec -> compile/snapshot -> 答案生成 -> renderer -> 资产合同 -> 教师复核交付”；先跑通一个 subject-pack 的最薄闭环，再扩学科或恢复实验工具。
