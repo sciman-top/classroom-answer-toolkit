@@ -146,3 +146,54 @@ test("a fresh lease is never stolen by a waiting acquirer", async () => {
     fs.rmSync(runtimeDirectory, { recursive: true, force: true });
   }
 });
+
+test("lease release tolerates transient Windows file locks instead of discarding the paid result", async () => {
+  const { acquireSharedExecutionSlot, releaseLeaseFile, isTransientFileLockError } =
+    await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
+
+  assert.equal(isTransientFileLockError(null), false);
+  assert.equal(isTransientFileLockError("EPERM"), false);
+  assert.equal(isTransientFileLockError({ code: "ENOENT" }), true);
+  assert.equal(isTransientFileLockError({ code: "EPERM" }), true);
+  assert.equal(isTransientFileLockError({ code: "EACCES" }), true);
+  assert.equal(isTransientFileLockError({ code: "EBUSY" }), true);
+  assert.equal(isTransientFileLockError({ code: "ENOSPC" }), false);
+
+  // A vanished lease is the historical contract: release is a no-op.
+  releaseLeaseFile(path.join(os.tmpdir(), `gateway-gone-${process.pid}-${Date.now()}.json`));
+
+  // On Windows, unlinking a non-empty directory raises EPERM — the same error
+  // class an AV scan produces on a fresh lease file. Release must swallow it;
+  // a throw here would replace the already-successful provider result in the
+  // caller's finally. (CI runs windows-latest; elsewhere the EPERM branch of
+  // the predicate above is the portable proof.)
+  if (process.platform === "win32") {
+    const lockedPath = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-locked-"));
+    try {
+      fs.writeFileSync(path.join(lockedPath, "content.txt"), "av holds the lease like this");
+      releaseLeaseFile(lockedPath);
+    } finally {
+      fs.rmSync(lockedPath, { recursive: true, force: true });
+    }
+  }
+
+  // End-to-end: acquire a real lease, break the unlink, release without throw.
+  const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-release-lock-"));
+  try {
+    const config = runtimeConfig(runtimeDirectory);
+    const lease = await acquireSharedExecutionSlot(config, [1], 1_000);
+    assert.ok(lease);
+    const leaseFilePath = path.join(runtimeDirectory, "execution-slots", "slot-1.lease.json");
+    assert.equal(fs.existsSync(leaseFilePath), true);
+    if (process.platform === "win32") {
+      fs.unlinkSync(leaseFilePath);
+      fs.mkdirSync(leaseFilePath);
+      fs.writeFileSync(path.join(leaseFilePath, "held.txt"), "locked");
+      assert.doesNotThrow(() => lease.release());
+    } else {
+      lease.release();
+    }
+  } finally {
+    fs.rmSync(runtimeDirectory, { recursive: true, force: true });
+  }
+});

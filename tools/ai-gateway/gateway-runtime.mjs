@@ -187,13 +187,7 @@ function tryAcquirePresetHealthLock(config) {
     release() {
       const lease = readLease(filePath);
       if (lease?.token === token) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (error) {
-          if (!error || typeof error !== "object" || error.code !== "ENOENT") {
-            throw error;
-          }
-        }
+        releaseLeaseFile(filePath);
       }
     }
   };
@@ -390,7 +384,10 @@ function exitReclaimSection(claimDirectory) {
   try {
     fs.rmdirSync(claimDirectory);
   } catch (error) {
-    if (!error || typeof error !== "object" || error.code !== "ENOENT") {
+    // A leftover claim directory self-heals via the stale-reclaim window, so a
+    // Windows short-lived file lock must not fail the acquire that just
+    // finished (the same finally-contract as releaseLeaseFile).
+    if (!isTransientFileLockError(error)) {
       throw error;
     }
   }
@@ -456,6 +453,27 @@ function readLease(filePath) {
   }
 }
 
+// Windows AV/indexer/preview handlers hold freshly written files for short
+// moments (EPERM/EACCES/EBUSY). Lease releases run in finally blocks after the
+// provider call has already been paid for — a throw there replaces a
+// successful result — so delete failures degrade to leaving the file behind:
+// leases carry their own expiry and claim directories self-heal after the
+// stale window.
+export function isTransientFileLockError(error) {
+  return Boolean(error) && typeof error === "object"
+    && (error.code === "ENOENT" || error.code === "EPERM" || error.code === "EACCES" || error.code === "EBUSY");
+}
+
+export function releaseLeaseFile(filePath) {
+  try {
+    fs.unlinkSync(filePath);
+  } catch (error) {
+    if (!isTransientFileLockError(error)) {
+      throw error;
+    }
+  }
+}
+
 function removeExpiredLease(filePath, now) {
   const lease = readLease(filePath);
   if (lease && Number.isFinite(lease.expiresAt)) {
@@ -514,13 +532,7 @@ function leaseHandle(filePath, token, slot) {
     release() {
       const lease = readLease(filePath);
       if (lease?.token === token) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (error) {
-          if (!error || typeof error !== "object" || error.code !== "ENOENT") {
-            throw error;
-          }
-        }
+        releaseLeaseFile(filePath);
       }
     }
   };
@@ -541,7 +553,10 @@ function tryAcquireLease(config, slot, timeoutMs) {
     try {
       writeLeaseFile(filePath, token, slot, timeoutMs);
     } catch (error) {
-      if (!error || typeof error !== "object" || error.code !== "EEXIST") {
+      // EBUSY is a Windows short-lived lock on a just-recreated lease file;
+      // treating the slot as busy fails over instead of aborting a request.
+      if (!error || typeof error !== "object"
+        || !(error.code === "EEXIST" || error.code === "EBUSY")) {
         throw error;
       }
       return null;
