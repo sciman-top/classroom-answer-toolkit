@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { removePathRecursive } from "../safe-remove.mjs";
 import { parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
@@ -111,19 +112,14 @@ function removePath(targetPath, dryRun) {
   return { removed: true, kind };
 }
 
-function main() {
-  const options = parseArgs(process.argv.slice(2));
-
-  if (options.help) {
-    console.log(usage);
-    process.exit(0);
-  }
-
+// Core cleanup shared by the CLI and deliver's in-process call. Throws on
+// refusal-worthy paths; callers decide how to surface the failure.
+export function runCleanup(options) {
   const candidates = collectCandidates(options);
 
   if (candidates.length === 0) {
     console.log("No transient artifacts found.");
-    process.exit(0);
+    return;
   }
 
   let removedFiles = 0;
@@ -142,9 +138,24 @@ function main() {
   console.log(`${action} ${removedDirs} director${removedDirs === 1 ? "y" : "ies"} and ${removedFiles} file${removedFiles === 1 ? "" : "s"}.`);
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(2);
+function main() {
+  const options = parseArgs(process.argv.slice(2));
+
+  if (options.help) {
+    console.log(usage);
+    process.exit(0);
+  }
+
+  runCleanup(options);
+}
+
+// CLI-only guard: deliver imports runCleanup in-process, and an unguarded
+// top-level main() would consume deliver's argv and exit its process.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(2);
+  }
 }

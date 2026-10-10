@@ -5,9 +5,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
-import { fail, parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
+import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
 import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
 import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { runCleanup } from "./cleanup-answer-artifacts.mjs";
+import { validateDeliveryManifest } from "./validate-delivery-manifest.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = path.join(toolDir, "package.json");
@@ -232,14 +234,16 @@ async function main() {
   // names. The asynchronous implementation copies the same tree safely.
   await fsp.cp(reviewOutputDir, deliveryReviewDir, { recursive: true });
 
-  const cleanupArgs = ["--keep-review"];
-  if (!options.keepReview) {
-    cleanupArgs.push(path.relative(repoRoot, reviewOutputDir));
-  }
-
   console.log(`[${packageName}] cleanup`);
   if (snapshot.delivery?.rules?.cleanupAfterSuccessfulDeliver !== false) {
-    runNodeScript("cleanup-answer-artifacts.mjs", cleanupArgs);
+    // In-process: the CLI wrapper only adds argv parsing around runCleanup,
+    // and each avoided child spawn saves a Node cold start per delivery.
+    runCleanup({
+      dryRun: false,
+      keepReview: true,
+      keepOcr: false,
+      extraPaths: options.keepReview ? [] : [path.relative(repoRoot, reviewOutputDir)]
+    });
     if (!options.keepReview) {
       const reviewRoot = path.join(repoRoot, ".pdf-review");
       if (fs.existsSync(reviewRoot) && fs.readdirSync(reviewRoot).length === 0) {
@@ -271,10 +275,17 @@ async function main() {
   ]);
 
   console.log(`[${packageName}] validate-delivery-manifest`);
-  runNodeScript("validate-delivery-manifest.mjs", [
-    "--manifest",
-    path.relative(repoRoot, makeDeliveryManifestPath(outputPath))
-  ]);
+  // In-process reuse of the exported pure validator: identical checks and
+  // failure text as the CLI wrapper, minus one Node cold start per delivery.
+  const deliveryManifestPath = makeDeliveryManifestPath(outputPath);
+  const manifestErrors = validateDeliveryManifest(
+    readJsonFile(deliveryManifestPath),
+    deliveryManifestPath
+  );
+  if (manifestErrors.length > 0) {
+    fail(`Delivery manifest validation failed for ${deliveryManifestPath}:\n${manifestErrors.map((error) => `- ${error}`).join("\n")}`, 1);
+  }
+  console.log(`Validated delivery manifest: ${deliveryManifestPath}`);
 
   console.log(`[${packageName}] deliver complete: ${path.relative(repoRoot, outputPath)}`);
 }
