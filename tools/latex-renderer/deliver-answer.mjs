@@ -5,12 +5,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
-import { parseArgvFlags } from "../shared.mjs";
+import { fail, parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
-import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 const packageJsonPath = path.join(toolDir, "package.json");
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const packageName = packageJson.name ?? "junior-physics-answer-latex-renderer";
@@ -29,11 +28,6 @@ Behavior:
   4. If both steps succeed, automatically clean transient artifacts unless you keep them.
   5. If any step fails, keep all temporary artifacts for debugging.
 `;
-
-function fail(message, code = 2) {
-  console.error(message);
-  process.exit(code);
-}
 
 function resolveToolScript(scriptFileName) {
   return path.isAbsolute(scriptFileName)
@@ -59,7 +53,7 @@ function parseArgs(argv) {
       keepReview: false,
       reviewScale: "2",
       skipValidate: false,
-      subjectPack: getDefaultSubjectPack()
+      subjectPack: getDefaultSubjectPackName()
     },
     help: true,
     unknownFlag: "positional",

@@ -1,12 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { parseArgvFlags } from "../shared.mjs";
+import { parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 import { validateJsonFileAgainstSchema } from "./schema-validator.mjs";
-
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 
 const usage = `Usage:
   node tools/rule-compiler/validate-json.mjs --schema <schema.json> --value <instance.json>

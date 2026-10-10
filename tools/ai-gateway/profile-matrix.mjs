@@ -28,7 +28,7 @@ export const PRESET_PROFILES = Object.freeze({
 
 // Preset-local reasoning efforts differ, but the gateway always fails over by
 // the same relative three-level contract rather than by effort-name equality.
-export const PROFILE_TIERS = Object.freeze({
+const PROFILE_TIERS = Object.freeze({
   "sol-high": "high",
   "sol-medium": "standard",
   "sol-low": "low",

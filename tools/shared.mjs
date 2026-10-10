@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// This module lives directly under tools/, one level below the repository root.
+export const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export function sha256Hex(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -23,7 +28,7 @@ export function sha256File(filePath) {
 
 // An abnormal or hostile gateway can stream an unbounded body; reading it
 // whole would exhaust memory before any schema check runs.
-export const MAX_PROVIDER_RESPONSE_BYTES = 32 * 1024 * 1024;
+const MAX_PROVIDER_RESPONSE_BYTES = 32 * 1024 * 1024;
 
 const DEFAULT_PROVIDER_ERROR_LENGTH = 300;
 
@@ -32,7 +37,7 @@ const DEFAULT_PROVIDER_ERROR_LENGTH = 300;
  * images), so receipts must never embed it verbatim. Keep only short provider
  * error text and replace anything that looks like a payload.
  */
-export function sanitizeProviderErrorText(value, maxLength = DEFAULT_PROVIDER_ERROR_LENGTH) {
+function sanitizeProviderErrorText(value, maxLength = DEFAULT_PROVIDER_ERROR_LENGTH) {
   return String(value)
     .replace(/data:[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/giu, "<embedded-data-url>")
     .replace(/[A-Za-z0-9+/]{200,}={0,2}/gu, "<redacted-blob>")
@@ -111,6 +116,38 @@ export async function readResponseTextCapped(response, maxBytes = MAX_PROVIDER_R
 }
 
 const UNSAFE_MERGE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+/**
+ * Reads and parses a JSON file, tolerating a UTF-8 BOM (e.g. an editor or
+ * Windows PowerShell 5.1 rewrite): JSON.parse rejects it with a misleading
+ * "Unexpected token" error.
+ */
+export function readJsonFile(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/u, ""));
+}
+
+export function readJsonFileIfExists(filePath) {
+  return fs.existsSync(filePath) ? readJsonFile(filePath) : null;
+}
+
+/**
+ * Escapes text for safe interpolation into HTML element content and
+ * double-quoted attribute values.
+ */
+export function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Prints a CLI error to stderr and exits with a non-zero status. */
+export function fail(message, code = 2) {
+  console.error(message);
+  process.exit(code);
+}
 
 export function deepMerge(base, override) {
   if (!override || typeof override !== "object" || Array.isArray(override)) {

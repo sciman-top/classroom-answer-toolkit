@@ -1,21 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
+import { repositoryRoot as repoRoot } from "../shared.mjs";
 import {
   listSubjectPacks,
   resolveProfileSnapshotRelativePath
 } from "../rule-compiler/subject-pack-registry.mjs";
 
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
+export { getDefaultSubjectPackName };
 
-export function getDefaultSubjectPack() {
-  return getDefaultSubjectPackName();
-}
-
-export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack(), profile = null) {
-  const canonicalSubjectPack = normalizeSubjectPackName(subjectPack, getDefaultSubjectPack());
+export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPackName(), profile = null) {
+  const canonicalSubjectPack = normalizeSubjectPackName(subjectPack, getDefaultSubjectPackName());
   const pack = listSubjectPacks({ repositoryRoot: repoRoot })
     .find((candidate) => candidate.assetId === canonicalSubjectPack);
   const resolvedProfile = profile ?? pack?.defaultProfile ?? "classroom";
@@ -27,7 +22,7 @@ export function getDefaultSnapshotPath(subjectPack = getDefaultSubjectPack(), pr
 }
 
 export function resolveSnapshotPath(snapshotPath, options = {}) {
-  const subjectPack = normalizeSubjectPackName(options.subjectPack, getDefaultSubjectPack());
+  const subjectPack = normalizeSubjectPackName(options.subjectPack, getDefaultSubjectPackName());
   const callerCwd = options.callerCwd ?? process.cwd();
 
   if (typeof snapshotPath === "string" && snapshotPath.trim().length > 0) {
@@ -37,20 +32,12 @@ export function resolveSnapshotPath(snapshotPath, options = {}) {
   return getDefaultSnapshotPath(subjectPack, options.profile ?? null);
 }
 
-function loadResolvedSnapshot(snapshotPath = getDefaultSnapshotPath(), options = {}) {
+export function loadRequiredResolvedSnapshot(snapshotPath = getDefaultSnapshotPath()) {
   if (!fs.existsSync(snapshotPath)) {
-    if (options.required) {
-      throw new Error(`Resolved snapshot not found: ${snapshotPath}`);
-    }
-
-    return null;
+    throw new Error(`Resolved snapshot not found: ${snapshotPath}`);
   }
 
-  return JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
-}
-
-export function loadRequiredResolvedSnapshot(snapshotPath, options = {}) {
-  const snapshot = loadResolvedSnapshot(snapshotPath, { ...options, required: true });
+  const snapshot = JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
     throw new Error(`Resolved snapshot is not a JSON object: ${snapshotPath}`);
   }

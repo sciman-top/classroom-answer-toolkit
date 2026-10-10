@@ -3,10 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { parseArgvFlags } from "../shared.mjs";
+import { parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
 
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 const assembliesRoot = path.join(repoRoot, "prompts", "specs", "assemblies");
 
 function parseArgs(argv) {
@@ -23,10 +21,6 @@ function normalizeNewlines(text) {
   // Strip a UTF-8 BOM too: it would otherwise glue onto the first heading and
   // fail the title match with a misleading error.
   return String(text).replace(/^\uFEFF/, "").replace(/\r\n/g, "\n");
-}
-
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
 }
 
 function listAssemblyFiles() {
@@ -52,7 +46,7 @@ function resolveAssemblyFile(assemblyRef) {
   }
 
   return listAssemblyFiles().find((filePath) => {
-    const assembly = readJson(filePath);
+    const assembly = readJsonFile(filePath);
     return assembly.assemblyId === assemblyRef;
   }) ?? null;
 }
@@ -152,7 +146,7 @@ export function deriveAssemblyOutputPaths(assembly, assemblyDir) {
 }
 
 export function generateAssemblyOutputs(assemblyFilePath) {
-  const assembly = readJson(assemblyFilePath);
+  const assembly = readJsonFile(assemblyFilePath);
   const assemblyDir = path.dirname(assemblyFilePath);
   const sourceLayers = (assembly.sourceLayers ?? []).map((layer) => {
     const absolutePath = path.resolve(assemblyDir, layer.path);

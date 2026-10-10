@@ -7,9 +7,9 @@ import test from "node:test";
 import {
   loadFocusRegionSpec,
   parseFocusRegionSpec,
-  resolveFocusRegionPixels,
-  sha256File
+  resolveFocusRegionPixels
 } from "./focus-region-spec.mjs";
+import { sha256File } from "../shared.mjs";
 
 const validSpec = {
   schemaVersion: "1.0",

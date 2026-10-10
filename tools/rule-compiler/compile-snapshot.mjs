@@ -3,10 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { compileResolvedSnapshot, writeResolvedSnapshot } from "./merge-rules.mjs";
 import { getDefaultSubjectPackName, normalizeSubjectPackName, readJsonFile, resolveRepoPath } from "./shared.mjs";
-import { parseArgvFlags } from "../shared.mjs";
+import { parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 const defaultSubjectPack = getDefaultSubjectPackName();
 const defaultOutputRelativePath = ".snapshot-cache/resolved-snapshot.json";
 

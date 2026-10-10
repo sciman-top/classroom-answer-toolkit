@@ -1,12 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { removePathRecursive } from "../safe-remove.mjs";
-import { parseArgvFlags } from "../shared.mjs";
-
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
+import { parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run cleanup -- [--dry-run] [--keep-review] [--keep-ocr] [extra-path...]

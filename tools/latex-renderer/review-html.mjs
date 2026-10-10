@@ -1,13 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { escapeHtml } from "../shared.mjs";
 
 export function writeReviewHtml({ outputDir, inputPath, manifest }) {
   fs.mkdirSync(outputDir, { recursive: true });

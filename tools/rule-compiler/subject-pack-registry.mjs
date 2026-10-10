@@ -1,12 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { resolveDefaultOutputRelativePath } from "./compile-snapshot.mjs";
 import { readJsonFile } from "./shared.mjs";
-
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
+import { repositoryRoot as repoRoot } from "../shared.mjs";
 
 // The platform's primary subject pack: sorts first and is the default
 // selection for gates and the desktop shell. This is the single place that

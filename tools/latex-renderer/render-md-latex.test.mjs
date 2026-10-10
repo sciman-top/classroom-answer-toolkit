@@ -7,7 +7,6 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const toolDirectory = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDirectory, "..", "..");
 
 test("renderer keeps Markdown tables as bordered, non-splitting layout blocks", () => {
   const rendererSource = fs.readFileSync(path.join(toolDirectory, "render-md-latex.mjs"), "utf8");

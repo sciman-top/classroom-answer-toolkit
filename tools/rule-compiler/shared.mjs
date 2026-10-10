@@ -1,12 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { sha256Hex } from "../shared.mjs";
+import { repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
 
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 const subjectPackAliases = new Map([
   ["physics-answer", "junior-physics-answer"]
 ]);
@@ -40,11 +37,7 @@ export function resolveRepoPath(relativePath) {
   return path.resolve(repoRoot, relativePath);
 }
 
-export function readJsonFile(filePath) {
-  // Tolerate a UTF-8 BOM (e.g. an editor or Windows PowerShell 5.1 rewrite):
-  // JSON.parse rejects it with a misleading "Unexpected token" error.
-  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, ""));
-}
+export { readJsonFile } from "../shared.mjs";
 
 export function writeJsonFile(filePath, value) {
   writeTextFileAtomic(filePath, `${JSON.stringify(value, null, 2)}\n`);

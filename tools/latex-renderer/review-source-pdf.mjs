@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
+import { fail } from "../shared.mjs";
 import { analyzeAnalogMeterCanvas } from "./analog-meter-reading.mjs";
 import { analyzeLinearScaleCanvas } from "./linear-scale-reading.mjs";
 import { analyzeOpticalRayCanvas } from "./optical-ray-geometry.mjs";
@@ -159,11 +160,6 @@ function parseArgs(argv) {
   }
 
   return { help: false, positional, options };
-}
-
-function fail(message, code = 2) {
-  console.error(message);
-  process.exit(code);
 }
 
 function makeDefaultOutputDir(inputPath) {

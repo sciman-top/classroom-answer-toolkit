@@ -3,8 +3,6 @@ import path from "node:path";
 
 import { sha256File } from "../shared.mjs";
 
-export { sha256File };
-
 const ROOT_FIELDS = new Set(["schemaVersion", "sourcePdfSha256", "regions"]);
 const REGION_FIELDS = new Set([
   "id",

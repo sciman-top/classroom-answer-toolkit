@@ -20,13 +20,13 @@ import {
   repairSplitMathSpans,
   restoreLatexCodeSegments
 } from "./inline-math.mjs";
-import { parseArgvFlags } from "../shared.mjs";
-import { getDefaultSubjectPack, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { escapeHtml, parseArgvFlags } from "../shared.mjs";
+import { getDefaultSubjectPackName, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 function parseArgs(argv) {
   return parseArgvFlags(argv, {
     stringFlags: { profile: true, snapshot: true, "subject-pack": true },
-    defaults: { profile: null, snapshot: null, subjectPack: getDefaultSubjectPack() },
+    defaults: { profile: null, snapshot: null, subjectPack: getDefaultSubjectPackName() },
     help: true,
     unknownFlag: "positional",
     positional: true
@@ -294,15 +294,6 @@ function wrapQuestionBlocks(html) {
     output += "</div>\n";
   }
   return output;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 function sanitizePlacementMode(placementMode) {

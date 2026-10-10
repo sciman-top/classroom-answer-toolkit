@@ -9,8 +9,8 @@ import {
   normalizeLatexParenDelimiters,
   repairSplitMathSpans
 } from "./inline-math.mjs";
-import { parseArgvFlags } from "../shared.mjs";
-import { getDefaultSubjectPack, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { fail, parseArgvFlags } from "../shared.mjs";
+import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact] [--snapshot <snapshot.json>]
@@ -28,15 +28,10 @@ Checks:
   - overly long plain-text lines (warning)
 `;
 
-function fail(message, code = 2) {
-  console.error(message);
-  process.exit(code);
-}
-
 function parseArgs(argv) {
   return parseArgvFlags(argv, {
     stringFlags: { profile: true, snapshot: true, "subject-pack": true },
-    defaults: { profile: null, snapshot: null, subjectPack: getDefaultSubjectPack() },
+    defaults: { profile: null, snapshot: null, subjectPack: getDefaultSubjectPackName() },
     help: true,
     unknownFlag: "positional",
     positional: true

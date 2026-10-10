@@ -1,13 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { parseArgvFlags, sha256Hex } from "../shared.mjs";
+import { fail, parseArgvFlags, readJsonFileIfExists, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 const deliveryManifestSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
 
 function parseArgs(argv) {
@@ -33,19 +30,6 @@ function parseArgs(argv) {
   });
 }
 
-function fail(message, code = 2) {
-  console.error(message);
-  process.exit(code);
-}
-
-function readJsonIfExists(filePath) {
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
-
-  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/u, ""));
-}
-
 function collectAnswerGraphicReferences(inputPath) {
   const source = fs.readFileSync(inputPath, "utf8");
   const inputDir = path.dirname(inputPath);
@@ -62,7 +46,7 @@ function collectAnswerGraphicReferences(inputPath) {
 
     seen.add(markerPath);
     const placementPath = path.resolve(inputDir, markerPath);
-    const placement = readJsonIfExists(placementPath);
+    const placement = readJsonFileIfExists(placementPath);
     const previewPath = typeof placement?.previewPath === "string"
       ? path.resolve(path.dirname(placementPath), placement.previewPath)
       : null;
@@ -84,7 +68,7 @@ function collectAnswerGraphicReferences(inputPath) {
 }
 
 function collectOcrMetadata(reviewManifestPath) {
-  const reviewManifest = reviewManifestPath ? readJsonIfExists(reviewManifestPath) : null;
+  const reviewManifest = reviewManifestPath ? readJsonFileIfExists(reviewManifestPath) : null;
   const status = typeof reviewManifest?.ocrStatus === "string"
     ? reviewManifest.ocrStatus
     : "not-requested";
@@ -169,7 +153,7 @@ function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDi
     const packagedPlacementPath = path.resolve(packagedInputDir, markerPath);
     copyPackageFile(sourcePlacementPath, packagedPlacementPath, manifestDirectory);
 
-    const placement = readJsonIfExists(sourcePlacementPath);
+    const placement = readJsonFileIfExists(sourcePlacementPath);
     if (typeof placement?.previewPath !== "string" || placement.previewPath.trim().length === 0) {
       continue;
     }

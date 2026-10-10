@@ -1,19 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { parseArgvFlags, sha256Hex } from "../shared.mjs";
+import { pathToFileURL } from "node:url";
+import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
 
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 const defaultSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
 const placedAnswerGraphicSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "placed-answer-graphic.schema.json");
-
-function fail(message, code = 2) {
-  console.error(message);
-  process.exit(code);
-}
 
 function parseArgs(argv) {
   return parseArgvFlags(argv, {
@@ -25,10 +18,6 @@ function parseArgs(argv) {
 
 function resolveManifestRelativePath(filePath, manifestDir) {
   return path.isAbsolute(filePath) ? filePath : path.resolve(manifestDir, filePath);
-}
-
-function readJsonWithBom(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/u, ""));
 }
 
 function isFile(filePath) {
@@ -373,7 +362,7 @@ export function validateDeliveryManifest(
 
       let placement;
       try {
-        placement = readJsonWithBom(placementPath);
+        placement = readJsonFile(placementPath);
       } catch {
         errors.push(`graphics.items[${index}].placementPath is not valid JSON: ${item.placementPath}`);
         continue;
@@ -446,7 +435,7 @@ function main() {
     fail(`Delivery manifest not found: ${manifestPath}`);
   }
 
-  const manifest = readJsonWithBom(manifestPath);
+  const manifest = readJsonFile(manifestPath);
   const errors = validateDeliveryManifest(manifest, manifestPath, schemaPath);
   if (errors.length > 0) {
     fail(`Delivery manifest validation failed for ${manifestPath}:\n${errors.map((error) => `- ${error}`).join("\n")}`, 1);

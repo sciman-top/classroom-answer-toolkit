@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import {
   DEFAULT_PRESET_SLOT_BINDINGS,
   EXECUTION_SLOT_COUNT,
   PRESET_NAMES,
   PRESET_PROFILES
 } from "./profile-matrix.mjs";
-import { readResponseTextCapped, summarizeProviderErrorBody } from "../shared.mjs";
+import { readResponseTextCapped, repositoryRoot as repoRoot, summarizeProviderErrorBody } from "../shared.mjs";
 import {
   DEFAULT_RECOVERY_PROBE_FAILURE_INTERVAL_MS,
   DEFAULT_RECOVERY_PROBE_INTERVAL_MS,
@@ -15,10 +15,9 @@ import {
   DEFAULT_RECOVERY_PROBE_SUCCESS_THRESHOLD
 } from "./gateway-runtime.mjs";
 
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-export const repoRoot = path.resolve(toolDir, "..", "..");
-
 const KNOWN_ENV_PREFIX = "CLASSROOM_TOOLKIT_";
+
+export { repoRoot };
 
 const ALLOWED_AI_KINDS = new Set(["openai_compatible"]);
 const ALLOWED_TEXT_SURFACES = new Set(["responses", "chat_completions"]);

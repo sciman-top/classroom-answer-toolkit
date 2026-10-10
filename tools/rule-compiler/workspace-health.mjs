@@ -3,10 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { listSubjectPacks, primarySubjectPackAssetId } from "./subject-pack-registry.mjs";
-import { parseArgvFlags } from "../shared.mjs";
-
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
+import { parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 
 const SPEC_VERSION_PATTERN = /(?:^|[-_])v(\d+\.\d+)(?:[-_]|\.md$)/;
 

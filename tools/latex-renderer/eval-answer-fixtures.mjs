@@ -5,21 +5,15 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
 import { resolveProfileSnapshotRelativePath } from "../rule-compiler/subject-pack-registry.mjs";
-import { parseArgvFlags } from "../shared.mjs";
+import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
 // Generous per-tool ceiling: visual pipelines run a full browser render, but a
 // wedged tool must not stall the eval suite indefinitely.
 const TOOL_TIMEOUT_MS = 5 * 60_000;
 let sharedBrowserWsEndpoint = null;
-
-function fail(message, code = 2) {
-  console.error(message);
-  process.exit(code);
-}
 
 function parseArgs(argv) {
   return parseArgvFlags(argv, {
@@ -89,10 +83,6 @@ function runNodeTool(scriptFileName, args, options = {}) {
   });
 }
 
-function resolveBrowserPath() {
-  return resolveLocalBrowserPath();
-}
-
 function sameStringSet(expectedValues, actualValues) {
   if (expectedValues.length !== actualValues.length) {
     return false;
@@ -116,10 +106,6 @@ function firstPageImagePath(reviewDir) {
   return path.join(reviewDir, candidates[0]);
 }
 
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
-}
-
 function deliverySnapshotMatches(compiledSnapshot, deliverySnapshot, snapshotMode) {
   if (!deliverySnapshot) {
     return false;
@@ -141,7 +127,7 @@ function loadSubjectPackManifest(subjectPack) {
   }
 
   return {
-    manifest: readJson(manifestPath),
+    manifest: readJsonFile(manifestPath),
     manifestPath
   };
 }
@@ -261,7 +247,7 @@ async function main() {
           snapshotEntry = {
             snapshotRelativePath,
             compiledSnapshotPath,
-            compiledSnapshot: readJson(compiledSnapshotPath)
+            compiledSnapshot: readJsonFile(compiledSnapshotPath)
           };
           compiledSnapshots.set(profile, snapshotEntry);
           snapshotCompileCount += 1;
@@ -308,7 +294,7 @@ async function main() {
         let visualOk = true;
 
         if ((expectation.visualBaseline || expectation.delivery) && !browserServer) {
-          const browserPath = resolveBrowserPath();
+          const browserPath = resolveLocalBrowserPath();
           if (!browserPath) {
             throw new Error("No local Chromium, Chrome, or Edge executable found for answer eval.");
           }
@@ -420,7 +406,7 @@ async function main() {
               throw new Error(`Delivery manifest not found: ${deliveryManifestPath}`);
             }
 
-            const deliveryManifest = readJson(deliveryManifestPath);
+            const deliveryManifest = readJsonFile(deliveryManifestPath);
             // Manifest paths may be relative to the manifest itself (2026-08-27
             // portability contract); resolve against the manifest directory.
             const deliverySnapshotPath = typeof deliveryManifest.snapshotPath === "string"
@@ -447,7 +433,7 @@ async function main() {
               && Array.isArray(deliveryManifest.integrity?.reviewFiles)
               && deliveryManifest.integrity.reviewFiles.length > 0;
             const deliverySnapshot = deliverySnapshotPath && fs.existsSync(deliverySnapshotPath)
-              ? readJson(deliverySnapshotPath)
+              ? readJsonFile(deliverySnapshotPath)
               : null;
             const snapshotMatch = deliveryManifest.snapshotId === compiledSnapshot.snapshotId
               && deliveryManifest.snapshot?.id === compiledSnapshot.snapshotId

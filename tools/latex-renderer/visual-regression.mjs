@@ -2,10 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { parseArgvFlags } from "../shared.mjs";
-
-const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(toolDir, "..", "..");
+import { fail, parseArgvFlags, repositoryRoot as repoRoot } from "../shared.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run visual:compare -- <actual.png> <baseline.png> [--max-diff-ratio 0.005] [--channel-tolerance 32]
@@ -15,11 +12,6 @@ Options:
   --channel-tolerance   Per-channel byte delta ignored as rasterization noise
                         (default 32; pass 0 for an exact-equality comparison).
 `;
-
-function fail(message, code = 2) {
-  console.error(message);
-  process.exit(code);
-}
 
 export function parseArgs(argv) {
   const { options, positional } = parseArgvFlags(argv, {
