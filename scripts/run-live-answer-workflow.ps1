@@ -273,6 +273,64 @@ function Copy-ResumePhaseArtifacts {
     return $true
 }
 
+function Invoke-NodeTool {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptPath,
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    $toolOutput = @(& node $ScriptPath @Arguments 2>&1)
+    $toolExitCode = $LASTEXITCODE
+    $toolOutput | ForEach-Object { Write-Output $_ }
+    if ($toolExitCode -ne 0) {
+        $diagnostics = (($toolOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine).Trim()
+        if ([string]::IsNullOrWhiteSpace($diagnostics)) {
+            $diagnostics = "<node tool produced no diagnostic output>"
+        }
+        if ($diagnostics.Length -gt 12000) {
+            $diagnostics = "[node tool output truncated; showing the final 12000 characters]`n" +
+                $diagnostics.Substring($diagnostics.Length - 12000)
+        }
+        throw "Node tool failed with exit code $toolExitCode`: $ScriptPath`n$diagnostics"
+    }
+}
+
+# Single seam for running one tracked workflow phase: input-drift assertion,
+# hash-bound resume, execution, and the in_progress/completed state machine.
+# A failed Execute propagates so the top-level catch marks the phase failed;
+# phases without -SummaryPath (delivery) are never resume candidates.
+# $currentPhase is script-scoped so a mid-phase failure is visible to the catch.
+function Invoke-WorkflowPhase {
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$ExecuteMessage,
+        [Parameter(Mandatory = $true)][scriptblock]$Execute,
+        [string]$ResumeMessage,
+        [string]$SummaryPath,
+        [Parameter(Mandatory = $true)][string]$ArtifactPath
+    )
+
+    $script:currentPhase = $Name
+    $phaseStates[$Name].status = "in_progress"
+    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
+    $resumed = $false
+    if ($resumeProvenance -and $SummaryPath) {
+        $resumed = Copy-ResumePhaseArtifacts -ResumeProvenance $resumeProvenance -PhaseName $Name `
+            -DestinationSummaryPath $SummaryPath -DestinationArtifactPath $ArtifactPath
+    }
+    if ($resumed) {
+        Write-Host $ResumeMessage
+    }
+    else {
+        Write-Host $ExecuteMessage
+        & $Execute
+    }
+    $phaseStates[$Name].status = "completed"
+    $script:currentPhase = $null
+}
+
 function Write-JsonFileAtomic {
     param(
         [Parameter(Mandatory = $true)][string]$PathValue,
@@ -574,6 +632,14 @@ function Write-WorkflowReceipt {
         }
     }
 
+    # The receipt mirrors $workflowOptions field-for-field; deriving it here
+    # keeps a new workflow option a single-place edit instead of two.
+    $receiptOptions = [ordered]@{}
+    foreach ($optionName in $workflowOptions.Keys) {
+        $receiptOptions[$optionName] = $workflowOptions[$optionName]
+    }
+    $receiptOptions.optionsFingerprint = $workflowOptionsFingerprint
+
     $receipt = [ordered]@{
         schemaVersion = "1.0"
         kind = "live-answer-workflow-run"
@@ -589,27 +655,7 @@ function Write-WorkflowReceipt {
             visualAuditFocusRegions = $workflowInputReceipts.VisualAuditFocusRegionsFile
             configEnv = $workflowInputReceipts.ConfigEnvFile
         }
-        options = [ordered]@{
-            provider = $workflowOptions.provider
-            subjectPack = $workflowOptions.subjectPack
-            profile = $workflowOptions.profile
-            blindQualityProfile = $workflowOptions.blindQualityProfile
-            semanticQualityProfile = $workflowOptions.semanticQualityProfile
-            visualQualityProfile = $workflowOptions.visualQualityProfile
-            referenceQualityProfile = $workflowOptions.referenceQualityProfile
-            visualDetail = $workflowOptions.visualDetail
-            maxOutputTokens = $workflowOptions.maxOutputTokens
-            timeoutMs = $workflowOptions.timeoutMs
-            reviewScale = $workflowOptions.reviewScale
-            visualAuditScale = $workflowOptions.visualAuditScale
-            blindFocusRegionsFile = $workflowOptions.blindFocusRegionsFile
-            visualAuditFocusRegionsFile = $workflowOptions.visualAuditFocusRegionsFile
-            skipVisualAudit = $workflowOptions.skipVisualAudit
-            keepReview = $workflowOptions.keepReview
-            useGatewayProxy = $workflowOptions.useGatewayProxy
-            configEnvFile = $workflowOptions.configEnvFile
-            optionsFingerprint = $workflowOptionsFingerprint
-        }
+        options = $receiptOptions
         phases = $phaseReceipts
         artifacts = $artifacts
         resume = $(if ($resumeProvenance) {
@@ -666,30 +712,6 @@ if ($UseGatewayProxy) {
             $_ -and -not $gatewayHostnames.Contains($_.TrimStart('.'))
         }) -join ','
     Write-Host "[live-answer-workflow] environment proxy enabled for configured AI gateway hosts"
-}
-
-function Invoke-NodeTool {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$ScriptPath,
-        [Parameter(Mandatory = $true)]
-        [string[]]$Arguments
-    )
-
-    $toolOutput = @(& node $ScriptPath @Arguments 2>&1)
-    $toolExitCode = $LASTEXITCODE
-    $toolOutput | ForEach-Object { Write-Output $_ }
-    if ($toolExitCode -ne 0) {
-        $diagnostics = (($toolOutput | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine).Trim()
-        if ([string]::IsNullOrWhiteSpace($diagnostics)) {
-            $diagnostics = "<node tool produced no diagnostic output>"
-        }
-        if ($diagnostics.Length -gt 12000) {
-            $diagnostics = "[node tool output truncated; showing the final 12000 characters]`n" +
-                $diagnostics.Substring($diagnostics.Length - 12000)
-        }
-        throw "Node tool failed with exit code $toolExitCode`: $ScriptPath`n$diagnostics"
-    }
 }
 
 # Common answer-request arguments for the six AI stages. Stage deltas only:
@@ -798,74 +820,56 @@ try {
         Set-Content -LiteralPath $sourceTextPath -Value $sourceText -Encoding utf8 -NoNewline
     }
 
-    if ($resumeProvenance) {
-        Write-Host "[live-answer-workflow] resume hash-bound blind candidate without repeating generation"
-        $currentPhase = "blindGeneration"
-        $phaseStates[$currentPhase].status = "in_progress"
-        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        [void](Copy-ResumePhaseArtifacts -ResumeProvenance $resumeProvenance -PhaseName $currentPhase -DestinationSummaryPath $blindSummaryPath -DestinationArtifactPath $generationOutputPath)
-        $phaseStates[$currentPhase].status = "completed"
-        $currentPhase = $null
-    }
-    else {
-        Write-Host "[live-answer-workflow] generate answer Markdown from $($pageImages.Count) page(s)"
-        $currentPhase = "blindGeneration"
-        $phaseStates[$currentPhase].status = "in_progress"
-        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        $blindArguments = New-AnswerRequestArguments `
-            -OutputPath $generationOutputPath `
-            -SummaryPath $blindSummaryPath `
-            -QualityProfile $BlindQualityProfile `
-            -ImagesDir $pageDirectory `
-            -IncludeVisualDetail `
-            -IncludeSourceText
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $blindArguments
-        $phaseStates[$currentPhase].status = "completed"
-        $currentPhase = $null
-    }
+    Invoke-WorkflowPhase -Name "blindGeneration" `
+        -ExecuteMessage "[live-answer-workflow] generate answer Markdown from $($pageImages.Count) page(s)" `
+        -ResumeMessage "[live-answer-workflow] resume hash-bound blind candidate without repeating generation" `
+        -SummaryPath $blindSummaryPath `
+        -ArtifactPath $generationOutputPath `
+        -Execute {
+            $blindArguments = New-AnswerRequestArguments `
+                -OutputPath $generationOutputPath `
+                -SummaryPath $blindSummaryPath `
+                -QualityProfile $BlindQualityProfile `
+                -ImagesDir $pageDirectory `
+                -IncludeVisualDetail `
+                -IncludeSourceText
+            Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $blindArguments
+        }
 
-    $currentPhase = "semanticFindings"
-    $phaseStates[$currentPhase].status = "in_progress"
-    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-    if ($resumeProvenance -and (Copy-ResumePhaseArtifacts -ResumeProvenance $resumeProvenance -PhaseName $currentPhase -DestinationSummaryPath $semanticFindingsSummaryPath -DestinationArtifactPath $semanticFindingsPath)) {
-        Write-Host "[live-answer-workflow] resume hash-bound semantic findings without repeating review"
-    }
-    else {
-        Write-Host "[live-answer-workflow] independently re-solve semantic questions without the reference answer"
-        $semanticFindingsArguments = New-AnswerRequestArguments `
-            -OutputPath $semanticFindingsPath `
-            -SummaryPath $semanticFindingsSummaryPath `
-            -QualityProfile $SemanticQualityProfile `
-            -ImagesDir $pageDirectory `
-            -CandidateFile $blindMarkdownPath `
-            -SemanticFindingsOnly `
-            -IncludeVisualDetail `
-            -IncludeSourceText
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticFindingsArguments
-    }
-    $phaseStates[$currentPhase].status = "completed"
-    $currentPhase = $null
+    Invoke-WorkflowPhase -Name "semanticFindings" `
+        -ExecuteMessage "[live-answer-workflow] independently re-solve semantic questions without the reference answer" `
+        -ResumeMessage "[live-answer-workflow] resume hash-bound semantic findings without repeating review" `
+        -SummaryPath $semanticFindingsSummaryPath `
+        -ArtifactPath $semanticFindingsPath `
+        -Execute {
+            $semanticFindingsArguments = New-AnswerRequestArguments `
+                -OutputPath $semanticFindingsPath `
+                -SummaryPath $semanticFindingsSummaryPath `
+                -QualityProfile $SemanticQualityProfile `
+                -ImagesDir $pageDirectory `
+                -CandidateFile $blindMarkdownPath `
+                -SemanticFindingsOnly `
+                -IncludeVisualDetail `
+                -IncludeSourceText
+            Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticFindingsArguments
+        }
 
-    $currentPhase = "semanticMerge"
-    $phaseStates[$currentPhase].status = "in_progress"
-    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-    if ($resumeProvenance -and (Copy-ResumePhaseArtifacts -ResumeProvenance $resumeProvenance -PhaseName $currentPhase -DestinationSummaryPath $semanticMergeSummaryPath -DestinationArtifactPath $semanticReviewMarkdownPath)) {
-        Write-Host "[live-answer-workflow] resume hash-bound semantic merge without repeating review"
-    }
-    else {
-        Write-Host "[live-answer-workflow] merge only independently confirmed semantic findings"
-        $semanticMergeArguments = New-AnswerRequestArguments `
-            -OutputPath $semanticReviewMarkdownPath `
-            -SummaryPath $semanticMergeSummaryPath `
-            -QualityProfile $SemanticQualityProfile `
-            -ImagesDir $pageDirectory `
-            -CandidateFile $blindMarkdownPath `
-            -SemanticFindingsFile $semanticFindingsPath `
-            -IncludeSourceText
-        Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticMergeArguments
-    }
-    $phaseStates[$currentPhase].status = "completed"
-    $currentPhase = $null
+    Invoke-WorkflowPhase -Name "semanticMerge" `
+        -ExecuteMessage "[live-answer-workflow] merge only independently confirmed semantic findings" `
+        -ResumeMessage "[live-answer-workflow] resume hash-bound semantic merge without repeating review" `
+        -SummaryPath $semanticMergeSummaryPath `
+        -ArtifactPath $semanticReviewMarkdownPath `
+        -Execute {
+            $semanticMergeArguments = New-AnswerRequestArguments `
+                -OutputPath $semanticReviewMarkdownPath `
+                -SummaryPath $semanticMergeSummaryPath `
+                -QualityProfile $SemanticQualityProfile `
+                -ImagesDir $pageDirectory `
+                -CandidateFile $blindMarkdownPath `
+                -SemanticFindingsFile $semanticFindingsPath `
+                -IncludeSourceText
+            Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $semanticMergeArguments
+        }
     Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
         $blindMarkdownPath,
         $semanticReviewMarkdownPath,
@@ -891,44 +895,36 @@ try {
         }
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/review-source-pdf.mjs") -Arguments $visualAuditRenderArguments
 
-        $currentPhase = "visualFindings"
-        $phaseStates[$currentPhase].status = "in_progress"
-        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        if ($resumeProvenance -and (Copy-ResumePhaseArtifacts -ResumeProvenance $resumeProvenance -PhaseName $currentPhase -DestinationSummaryPath $visualFindingsSummaryPath -DestinationArtifactPath $visualAuditFindingsPath)) {
-            Write-Host "[live-answer-workflow] resume hash-bound visual findings without repeating audit"
-        }
-        else {
-            Write-Host "[live-answer-workflow] extract visual findings without rewriting the blind candidate"
-            $visualFindingsArguments = New-AnswerRequestArguments `
-                -OutputPath $visualAuditFindingsPath `
-                -SummaryPath $visualFindingsSummaryPath `
-                -QualityProfile $VisualQualityProfile `
-                -CandidateFile $candidateForVisual `
-                -AuditImagesDir $visualAuditPageDirectory `
-                -AuditFindingsOnly `
-                -IncludeVisualDetail
-            Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $visualFindingsArguments
-        }
-        $phaseStates[$currentPhase].status = "completed"
-        $currentPhase = $null
-        $currentPhase = "visualMerge"
-        $phaseStates[$currentPhase].status = "in_progress"
-        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        if ($resumeProvenance -and (Copy-ResumePhaseArtifacts -ResumeProvenance $resumeProvenance -PhaseName $currentPhase -DestinationSummaryPath $visualMergeSummaryPath -DestinationArtifactPath $visualAuditMarkdownPath)) {
-            Write-Host "[live-answer-workflow] resume hash-bound visual merge without repeating audit"
-        }
-        else {
-            Write-Host "[live-answer-workflow] merge visual findings into the complete answer Markdown"
-            $visualMergeArguments = New-AnswerRequestArguments `
-                -OutputPath $visualAuditMarkdownPath `
-                -SummaryPath $visualMergeSummaryPath `
-                -QualityProfile $VisualQualityProfile `
-                -CandidateFile $candidateForVisual `
-                -AuditFindingsFile $visualAuditFindingsPath
-            Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $visualMergeArguments
-        }
-        $phaseStates[$currentPhase].status = "completed"
-        $currentPhase = $null
+        Invoke-WorkflowPhase -Name "visualFindings" `
+            -ExecuteMessage "[live-answer-workflow] extract visual findings without rewriting the blind candidate" `
+            -ResumeMessage "[live-answer-workflow] resume hash-bound visual findings without repeating audit" `
+            -SummaryPath $visualFindingsSummaryPath `
+            -ArtifactPath $visualAuditFindingsPath `
+            -Execute {
+                $visualFindingsArguments = New-AnswerRequestArguments `
+                    -OutputPath $visualAuditFindingsPath `
+                    -SummaryPath $visualFindingsSummaryPath `
+                    -QualityProfile $VisualQualityProfile `
+                    -CandidateFile $candidateForVisual `
+                    -AuditImagesDir $visualAuditPageDirectory `
+                    -AuditFindingsOnly `
+                    -IncludeVisualDetail
+                Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $visualFindingsArguments
+            }
+        Invoke-WorkflowPhase -Name "visualMerge" `
+            -ExecuteMessage "[live-answer-workflow] merge visual findings into the complete answer Markdown" `
+            -ResumeMessage "[live-answer-workflow] resume hash-bound visual merge without repeating audit" `
+            -SummaryPath $visualMergeSummaryPath `
+            -ArtifactPath $visualAuditMarkdownPath `
+            -Execute {
+                $visualMergeArguments = New-AnswerRequestArguments `
+                    -OutputPath $visualAuditMarkdownPath `
+                    -SummaryPath $visualMergeSummaryPath `
+                    -QualityProfile $VisualQualityProfile `
+                    -CandidateFile $candidateForVisual `
+                    -AuditFindingsFile $visualAuditFindingsPath
+                Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $visualMergeArguments
+            }
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
             $candidateForVisual,
             $visualAuditMarkdownPath,
@@ -958,28 +954,24 @@ try {
             Set-Content -LiteralPath $referenceTextPath -Value $referenceText -Encoding utf8 -NoNewline
         }
 
-        $currentPhase = "referenceReview"
-        $phaseStates[$currentPhase].status = "in_progress"
-        Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-        if ($resumeProvenance -and (Copy-ResumePhaseArtifacts -ResumeProvenance $resumeProvenance -PhaseName $currentPhase -DestinationSummaryPath $referenceReviewSummaryPath -DestinationArtifactPath $answerMarkdownPath)) {
-            Write-Host "[live-answer-workflow] resume hash-bound reference review without repeating comparison"
-        }
-        else {
-            Write-Host "[live-answer-workflow] review blind candidate against authoritative reference"
-            $reviewArguments = New-AnswerRequestArguments `
-                -OutputPath $answerMarkdownPath `
-                -SummaryPath $referenceReviewSummaryPath `
-                -QualityProfile $ReferenceQualityProfile `
-                -ImagesDir $pageDirectory `
-                -CandidateFile $candidateForReference `
-                -ReferenceImagesDir $referencePageDirectory `
-                -ReferenceTextFile $referenceTextPath `
-                -IncludeVisualDetail `
-                -IncludeSourceText
-            Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $reviewArguments
-        }
-        $phaseStates[$currentPhase].status = "completed"
-        $currentPhase = $null
+        Invoke-WorkflowPhase -Name "referenceReview" `
+            -ExecuteMessage "[live-answer-workflow] review blind candidate against authoritative reference" `
+            -ResumeMessage "[live-answer-workflow] resume hash-bound reference review without repeating comparison" `
+            -SummaryPath $referenceReviewSummaryPath `
+            -ArtifactPath $answerMarkdownPath `
+            -Execute {
+                $reviewArguments = New-AnswerRequestArguments `
+                    -OutputPath $answerMarkdownPath `
+                    -SummaryPath $referenceReviewSummaryPath `
+                    -QualityProfile $ReferenceQualityProfile `
+                    -ImagesDir $pageDirectory `
+                    -CandidateFile $candidateForReference `
+                    -ReferenceImagesDir $referencePageDirectory `
+                    -ReferenceTextFile $referenceTextPath `
+                    -IncludeVisualDetail `
+                    -IncludeSourceText
+                Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-request.mjs") -Arguments $reviewArguments
+            }
         Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/ai-gateway/answer-diff-report.mjs") -Arguments @(
             $candidateForReference,
             $answerMarkdownPath,
@@ -987,23 +979,22 @@ try {
         )
     }
 
-    Write-Host "[live-answer-workflow] validate and render answer delivery"
-    $currentPhase = "delivery"
-    $phaseStates[$currentPhase].status = "in_progress"
-    Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
-    $deliveryArguments = @(
-        $answerMarkdownPath,
-        $answerPdfPath,
-        "--subject-pack", $SubjectPack,
-        "--profile", $Profile,
-        "--review-scale", $ReviewScale.ToString([Globalization.CultureInfo]::InvariantCulture)
-    )
-    if ($KeepReview) {
-        $deliveryArguments += "--keep-review"
-    }
-    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/deliver-answer.mjs") -Arguments $deliveryArguments
-    $phaseStates[$currentPhase].status = "completed"
-    $currentPhase = $null
+    Invoke-WorkflowPhase -Name "delivery" `
+        -ExecuteMessage "[live-answer-workflow] validate and render answer delivery" `
+        -ArtifactPath $answerPdfPath `
+        -Execute {
+            $deliveryArguments = @(
+                $answerMarkdownPath,
+                $answerPdfPath,
+                "--subject-pack", $SubjectPack,
+                "--profile", $Profile,
+                "--review-scale", $ReviewScale.ToString([Globalization.CultureInfo]::InvariantCulture)
+            )
+            if ($KeepReview) {
+                $deliveryArguments += "--keep-review"
+            }
+            Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/latex-renderer/deliver-answer.mjs") -Arguments $deliveryArguments
+        }
 
     if ($SkipVisualAudit) {
         foreach ($stalePath in @($visualAuditMarkdownPath, $visualAuditFindingsPath, $visualAuditReportPath)) {
