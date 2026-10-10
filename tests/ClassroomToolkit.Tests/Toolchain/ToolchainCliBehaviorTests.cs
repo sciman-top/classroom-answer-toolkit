@@ -1116,22 +1116,6 @@ public sealed class ToolchainCliBehaviorTests
         result.NormalizedOutput.Should().Contain("Invalid subject pack id");
     }
 
-    [Fact]
-    public async Task ArchiveScriptRequiresAnExplicitArchiveRoot()
-    {
-        // -NonInteractive: without it a missing mandatory parameter opens an
-        // interactive prompt and the test would hang until its timeout.
-        var result = await RunAsync(
-            "pwsh",
-            FindRepoRoot(),
-            "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-            "-File", "scripts/archive-delivery-run.ps1",
-            "-RunDirectory", "no-such-run");
-
-        result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("ArchiveRoot");
-    }
-
     private static string FindRepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);

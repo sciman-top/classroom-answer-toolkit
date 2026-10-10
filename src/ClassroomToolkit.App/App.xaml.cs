@@ -92,7 +92,6 @@ public partial class App : System.Windows.Application
             .GetWorkspaceHealthReportAsync(workspace.PrimarySubjectPack)
             .GetAwaiter().GetResult();
         Console.WriteLine($"repositoryRoot={workspace.RepositoryRoot}");
-        Console.WriteLine($"workspaceSummary={workspace.Summary}");
         Console.WriteLine($"workspaceHealthy={health.IsHealthy}");
         Console.WriteLine($"healthSummary={health.Summary}");
         Console.WriteLine($"primarySubjectPack={health.PrimarySubjectPack}");

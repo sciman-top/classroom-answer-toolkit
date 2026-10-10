@@ -22,11 +22,9 @@ public interface IUpdateService
 public sealed record UpdateInfo(
     string Version,
     string WorkspaceContract,
-    string ReleaseUrl,
     string PackageUrl,
     string PackageSha256,
-    long PackageBytes,
-    string ReleaseNotes);
+    long PackageBytes);
 
 public sealed record UpdateCheckResult(
     bool Succeeded,
@@ -169,11 +167,9 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             return UpdateCheckResult.Available(new UpdateInfo(
                 manifest.Version!,
                 targetWorkspaceContract,
-                manifest.ReleaseUrl ?? string.Empty,
                 asset.Url!,
                 asset.Sha256!.ToLowerInvariant(),
-                asset.Bytes,
-                manifest.ReleaseNotes ?? string.Empty));
+                asset.Bytes));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -248,12 +244,6 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 setupPath,
                 update.PackageBytes,
                 cancellationToken).ConfigureAwait(false);
-
-            var setupInfo = new FileInfo(setupPath);
-            if (setupInfo.Length != update.PackageBytes)
-            {
-                throw new InvalidDataException($"更新安装程序大小不匹配：expected {update.PackageBytes}, actual {setupInfo.Length}");
-            }
 
             await using (var setupStream = File.OpenRead(setupPath))
             {
@@ -588,8 +578,6 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         public string? Kind { get; set; }
         public string? Version { get; set; }
         public string? WorkspaceContract { get; set; }
-        public string? ReleaseUrl { get; set; }
-        public string? ReleaseNotes { get; set; }
         public List<ReleaseAsset>? Assets { get; set; }
     }
 

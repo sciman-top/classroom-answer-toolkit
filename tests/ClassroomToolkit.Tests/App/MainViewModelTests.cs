@@ -141,7 +141,7 @@ public sealed class MainViewModelTests
 
             return new(
                 @"D:\repo", @"D:\repo\scripts\bootstrap.ps1", @"D:\repo\scripts\check-toolchain.ps1",
-                true, true, "junior-physics-answer", ["junior-physics-answer", "math-answer"]);
+                "junior-physics-answer", ["junior-physics-answer", "math-answer"]);
         }
 
         public async Task<WorkspaceHealthReport> GetWorkspaceHealthReportAsync(

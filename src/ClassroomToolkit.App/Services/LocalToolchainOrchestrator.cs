@@ -31,7 +31,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     {
         var repositoryRoot = _repositoryRootResolver.ResolveRepositoryRoot();
         var scriptsDirectory = Path.Combine(repositoryRoot, "scripts");
-        var packagedRuntime = IsPackagedRuntime(repositoryRoot);
         // Broken/locked pack manifests would otherwise vanish from the picker with
         // no trace; surface the locator issues on stderr (visible in smoke/console).
         var scanIssues = new List<string>();
@@ -45,8 +44,6 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             repositoryRoot,
             Path.Combine(scriptsDirectory, "bootstrap.ps1"),
             Path.Combine(scriptsDirectory, "check-toolchain.ps1"),
-            packagedRuntime || File.Exists(Path.Combine(scriptsDirectory, "bootstrap.ps1")),
-            packagedRuntime || File.Exists(Path.Combine(scriptsDirectory, "check-toolchain.ps1")),
             subjectPacks.FirstOrDefault(pack => pack.AssetId == "junior-physics-answer")?.AssetId
                 ?? subjectPacks.FirstOrDefault()?.AssetId,
             subjectPacks.Select(pack => pack.AssetId).ToArray());

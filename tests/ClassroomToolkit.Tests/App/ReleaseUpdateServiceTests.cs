@@ -196,11 +196,9 @@ public sealed class ReleaseUpdateServiceTests
         var result = await service.InstallAsync(new UpdateInfo(
             "1.0.1",
             "1",
-            string.Empty,
             "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
             "not-a-sha256",
-            123,
-            string.Empty));
+            123));
 
         result.Started.Should().BeFalse();
         result.Message.Should().Contain("SHA-256");
@@ -327,11 +325,9 @@ public sealed class ReleaseUpdateServiceTests
     private static UpdateInfo ValidUpdateInfo(string sha256, long bytes) => new(
         "9.9.9",
         "1",
-        string.Empty,
         "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v9.9.9/ClassroomToolkit-9.9.9-setup.exe",
         sha256,
-        bytes,
-        string.Empty);
+        bytes);
 
     private static string[] SnapshotStagedInstallers() =>
         Directory.GetFiles(Path.GetTempPath(), "ClassroomToolkit-9.9.9-*-setup.exe");
