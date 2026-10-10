@@ -433,10 +433,14 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 ? value
                 : null;
 
+    // Explicit hosts only, mirroring install-release.ps1: a bare
+    // ".githubusercontent.com" suffix would also admit any attacker-registrable
+    // subdomain of that zone.
     private static bool IsAllowedDownloadHost(string host) =>
         host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
         || host.Equals("objects.githubusercontent.com", StringComparison.OrdinalIgnoreCase)
-        || host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase);
+        || host.Equals("release-assets.githubusercontent.com", StringComparison.OrdinalIgnoreCase)
+        || host.Equals("github-releases.githubusercontent.com", StringComparison.OrdinalIgnoreCase);
 
     private static string? ValidateUpdatePackage(string? packageUrl, string? sha256, long bytes)
     {

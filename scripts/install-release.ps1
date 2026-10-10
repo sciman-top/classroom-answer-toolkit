@@ -56,16 +56,26 @@ function Assert-SafeAssetName {
     }
 }
 
+# One host-validated, size-bounded download core for both release surfaces:
+# with -TargetPath it streams an asset that must total exactly -ExactBytes
+# (still capped at -MaximumBytes); without it the body returns as UTF-8 text
+# capped at -MaximumBytes (the update manifest). HttpClient with redirects
+# disabled is used either way because per-hop host validation must not be
+# bypassable by following a redirect to an unapproved host.
 function Invoke-ApprovedDownload {
     param(
         [Parameter(Mandatory = $true)][uri]$UriValue,
-        [Parameter(Mandatory = $true)][string]$TargetPath,
-        [Parameter(Mandatory = $true)][long]$ExpectedBytes,
+        [long]$MaximumBytes = $script:MaximumDownloadBytes,
+        [string]$TargetPath = "",
+        [long]$ExactBytes = 0,
         [switch]$AllowLocalSimulation
     )
 
-    if ($ExpectedBytes -le 0 -or $ExpectedBytes -gt $script:MaximumDownloadBytes) {
-        throw "Downloaded asset exceeds the permitted size: $ExpectedBytes bytes"
+    if ($TargetPath -and $ExactBytes -le 0) {
+        throw "File download requires a positive ExactBytes size: $ExactBytes"
+    }
+    if (-not $TargetPath -and $ExactBytes -ne 0) {
+        throw "Text download does not take ExactBytes."
     }
 
     $handler = [Net.Http.HttpClientHandler]::new()
@@ -88,7 +98,7 @@ function Invoke-ApprovedDownload {
                         [Net.HttpStatusCode]::PermanentRedirect
                     ) -contains $response.StatusCode) {
                     if ($redirect -ge 5 -or $null -eq $response.Headers.Location) {
-                        throw "Too many or invalid redirects while downloading asset."
+                        throw "Too many or invalid redirects while downloading from $currentUri."
                     }
                     $currentUri = if ($response.Headers.Location.IsAbsoluteUri) {
                         $response.Headers.Location
@@ -101,34 +111,54 @@ function Invoke-ApprovedDownload {
 
                 $response.EnsureSuccessStatusCode()
                 $declaredBytes = $response.Content.Headers.ContentLength
-                if ($declaredBytes.HasValue -and $declaredBytes.Value -ne $ExpectedBytes) {
-                    throw "Downloaded asset byte length mismatch. expected=$ExpectedBytes actual=$($declaredBytes.Value)"
+                if ($declaredBytes.HasValue) {
+                    if ($TargetPath -and $declaredBytes.Value -ne $ExactBytes) {
+                        throw "Downloaded asset byte length mismatch. expected=$ExactBytes actual=$($declaredBytes.Value)"
+                    }
+                    if (-not $TargetPath -and $declaredBytes.Value -gt $MaximumBytes) {
+                        throw "Downloaded text exceeds the permitted size: $($declaredBytes.Value) bytes"
+                    }
                 }
 
                 $source = $null
                 $destination = $null
+                $memory = $null
                 try {
                     $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
-                    $destination = [IO.File]::Open(
-                        $TargetPath,
-                        [IO.FileMode]::CreateNew,
-                        [IO.FileAccess]::Write,
-                        [IO.FileShare]::None)
                     $buffer = [byte[]]::new(131072)
                     [long]$totalBytes = 0
-                    while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                        $totalBytes += $read
-                        if ($totalBytes -gt $ExpectedBytes -or $totalBytes -gt $script:MaximumDownloadBytes) {
-                            throw "Downloaded asset exceeds the permitted size."
+                    if ($TargetPath) {
+                        $destination = [IO.File]::Open(
+                            $TargetPath,
+                            [IO.FileMode]::CreateNew,
+                            [IO.FileAccess]::Write,
+                            [IO.FileShare]::None)
+                        while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                            $totalBytes += $read
+                            if ($totalBytes -gt $ExactBytes -or $totalBytes -gt $MaximumBytes) {
+                                throw "Downloaded asset exceeds the permitted size."
+                            }
+                            $destination.Write($buffer, 0, $read)
                         }
-                        $destination.Write($buffer, 0, $read)
+                        if ($totalBytes -ne $ExactBytes) {
+                            throw "Downloaded asset byte length mismatch. expected=$ExactBytes actual=$totalBytes"
+                        }
                     }
-                    if ($totalBytes -ne $ExpectedBytes) {
-                        throw "Downloaded asset byte length mismatch. expected=$ExpectedBytes actual=$totalBytes"
+                    else {
+                        $memory = [IO.MemoryStream]::new()
+                        while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                            $totalBytes += $read
+                            if ($totalBytes -gt $MaximumBytes) {
+                                throw "Downloaded text exceeds the permitted size."
+                            }
+                            $memory.Write($buffer, 0, $read)
+                        }
+                        return [Text.Encoding]::UTF8.GetString($memory.ToArray())
                     }
                 }
                 finally {
                     if ($null -ne $destination) { $destination.Dispose() }
+                    if ($null -ne $memory) { $memory.Dispose() }
                     if ($null -ne $source) { $source.Dispose() }
                 }
                 return
@@ -137,10 +167,10 @@ function Invoke-ApprovedDownload {
                 if ($null -ne $response) { $response.Dispose() }
             }
         }
-        throw "Too many redirects while downloading asset."
+        throw "Too many redirects while downloading from $UriValue."
     }
     catch {
-        if (Test-Path -LiteralPath $TargetPath -PathType Leaf) {
+        if ($TargetPath -and (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
             Remove-Item -LiteralPath $TargetPath -Force -ErrorAction SilentlyContinue
         }
         throw
@@ -199,86 +229,6 @@ function Assert-ZipEntriesContained {
     }
     finally {
         $archive.Dispose()
-    }
-}
-
-function Invoke-ApprovedTextDownload {
-    param(
-        [Parameter(Mandatory = $true)][uri]$UriValue,
-        [Parameter(Mandatory = $true)][long]$MaximumBytes,
-        [switch]$AllowLocalSimulation
-    )
-
-    # The manifest supplies the publisher thumbprint that the stable channel
-    # trusts, so its own redirect chain must be host-validated hop by hop.
-    # Invoke-WebRequest follows redirects to any host and would bypass that.
-    $handler = [Net.Http.HttpClientHandler]::new()
-    $handler.AllowAutoRedirect = $false
-    $client = [Net.Http.HttpClient]::new($handler)
-    try {
-        $currentUri = $UriValue
-        for ($redirect = 0; $redirect -le 5; $redirect++) {
-            Assert-ApprovedGitHubUri -UriValue $currentUri -AllowLocalSimulation:$AllowLocalSimulation
-            $response = $null
-            try {
-                $response = $client.GetAsync(
-                    $currentUri,
-                    [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
-                if (@(
-                        [Net.HttpStatusCode]::MovedPermanently,
-                        [Net.HttpStatusCode]::Found,
-                        [Net.HttpStatusCode]::SeeOther,
-                        [Net.HttpStatusCode]::TemporaryRedirect,
-                        [Net.HttpStatusCode]::PermanentRedirect
-                    ) -contains $response.StatusCode) {
-                    if ($redirect -ge 5 -or $null -eq $response.Headers.Location) {
-                        throw "Too many or invalid redirects while downloading the update manifest."
-                    }
-                    $currentUri = if ($response.Headers.Location.IsAbsoluteUri) {
-                        $response.Headers.Location
-                    }
-                    else {
-                        [uri]::new($currentUri, $response.Headers.Location)
-                    }
-                    continue
-                }
-
-                $response.EnsureSuccessStatusCode()
-                $declaredBytes = $response.Content.Headers.ContentLength
-                if ($declaredBytes.HasValue -and $declaredBytes.Value -gt $MaximumBytes) {
-                    throw "Update manifest exceeds the permitted size: $($declaredBytes.Value) bytes"
-                }
-
-                $source = $null
-                $memory = $null
-                try {
-                    $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
-                    $memory = [IO.MemoryStream]::new()
-                    $buffer = [byte[]]::new(65536)
-                    [long]$totalBytes = 0
-                    while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                        $totalBytes += $read
-                        if ($totalBytes -gt $MaximumBytes) {
-                            throw "Update manifest exceeds the permitted size."
-                        }
-                        $memory.Write($buffer, 0, $read)
-                    }
-                    return [Text.Encoding]::UTF8.GetString($memory.ToArray())
-                }
-                finally {
-                    if ($null -ne $memory) { $memory.Dispose() }
-                    if ($null -ne $source) { $source.Dispose() }
-                }
-            }
-            finally {
-                if ($null -ne $response) { $response.Dispose() }
-            }
-        }
-        throw "Too many redirects while downloading the update manifest."
-    }
-    finally {
-        $client.Dispose()
-        $handler.Dispose()
     }
 }
 
@@ -355,7 +305,10 @@ $preserveWorkRoot = $false
 
 try {
     $manifestPath = Join-Path $downloadRoot "update-manifest.json"
-    $manifestJson = Invoke-ApprovedTextDownload -UriValue $manifestUri -MaximumBytes 1MB -AllowLocalSimulation:$AllowLocalSimulation
+    # The manifest supplies the publisher thumbprint that the stable channel
+    # trusts, so its own redirect chain is host-validated hop by hop and the
+    # body is capped before it is trusted.
+    $manifestJson = Invoke-ApprovedDownload -UriValue $manifestUri -MaximumBytes 1MB -AllowLocalSimulation:$AllowLocalSimulation
     [IO.File]::WriteAllText($manifestPath, $manifestJson, [Text.UTF8Encoding]::new($false))
     $manifest = $manifestJson | ConvertFrom-Json
     $schemaVersion = [string]$manifest.schemaVersion
