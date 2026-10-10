@@ -74,13 +74,6 @@ function healthLockPath(config) {
   return path.join(ensureRuntimeDirectory(resolveGatewayRuntimeDirectory(config)), HEALTH_LOCK_FILE_NAME);
 }
 
-function healthClaimDirectoryPath(config) {
-  return path.join(
-    ensureRuntimeDirectory(resolveGatewayRuntimeDirectory(config)),
-    `${HEALTH_LOCK_FILE_NAME}${RECLAIM_CLAIM_DIRECTORY_SUFFIX}`
-  );
-}
-
 function defaultHealthState() {
   return {
     version: 2,
@@ -154,36 +147,13 @@ function writePresetHealth(config, value) {
 function tryAcquirePresetHealthLock(config) {
   const filePath = healthLockPath(config);
   const token = crypto.randomUUID();
-  const now = Date.now();
-  try {
-    const descriptor = fs.openSync(filePath, "wx");
-    try {
-      fs.writeFileSync(descriptor, JSON.stringify({
-        token,
-        pid: process.pid,
-        expiresAt: now + HEALTH_LOCK_LEASE_MS
-      }), "utf8");
-    } finally {
-      fs.closeSync(descriptor);
-    }
-  } catch (error) {
-    if (!error || typeof error !== "object" || error.code !== "EEXIST") {
-      throw error;
-    }
-    // Reclaiming the stale lock must be serialized like the slot leases:
-    // two waiters unlinks-and-recreates could otherwise both believe they
-    // hold the health lock and lose a read-modify-write.
-    if (!tryEnterReclaimSection(healthClaimDirectoryPath(config), now)) {
-      return null;
-    }
-    try {
-      removeExpiredLease(filePath, now);
-    } finally {
-      exitReclaimSection(healthClaimDirectoryPath(config));
-    }
+  if (!acquireLeaseFile(filePath, healthClaimDirectoryPath(config), {
+    token,
+    pid: process.pid,
+    expiresAt: Date.now() + HEALTH_LOCK_LEASE_MS
+  })) {
     return null;
   }
-
   return {
     release() {
       const lease = readLease(filePath);
@@ -351,12 +321,42 @@ function slotDirectory(config) {
   ));
 }
 
+function leasePath(config, slot) {
+  return path.join(slotDirectory(config), `slot-${slot}.lease.json`);
+}
+
+function readLease(filePath) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+// A crash between lease create and write leaves an empty/malformed file; a
+// live creator may still be filling it, so the grace window is measured from
+// the file's mtime rather than a payload field.
+function leaseExpired(lease, filePath, now) {
+  if (Number.isFinite(lease.expiresAt)) {
+    return lease.expiresAt <= now;
+  }
+  try {
+    return now - fs.statSync(filePath).mtimeMs >= LEASE_GRACE_MS;
+  } catch {
+    return false;
+  }
+}
+
 // Cross-process mutex for lease reclamation, built on atomic directory
-// creation: for a given lock file, exactly one waiter at a time may run
+// creation: for a given lock file, exactly one acquirer at a time may run
 // check-expiry → unlink → re-create. A claimant that dies leaves the directory
-// behind; later waiters reap it once it is older than RECLAIM_CLAIM_STALE_MS
+// behind; later acquirers reap it once it is older than RECLAIM_CLAIM_STALE_MS
 // (a live claimant holds it for milliseconds). Shared by execution-slot
-// leases and the preset-health lock.
+// leases and the preset-health lock. A rename-based swap-out was tried here
+// and rejected by the multi-process test: rename does not verify that the
+// file it moves is still the expired lease the mover read, and between that
+// read and the rename another reclaimer can legitimately create a fresh
+// lease — which the stale snapshot then destroys.
 const RECLAIM_CLAIM_DIRECTORY_SUFFIX = ".claim";
 const RECLAIM_CLAIM_STALE_MS = 5_000;
 
@@ -398,64 +398,60 @@ function slotClaimDirectoryPath(config, slot) {
   return path.join(slotDirectory(config), `slot-${slot}${RECLAIM_CLAIM_DIRECTORY_SUFFIX}`);
 }
 
-function tryEnterSlotReclaimSection(config, slot, now) {
-  return tryEnterReclaimSection(slotClaimDirectoryPath(config, slot), now);
+function healthClaimDirectoryPath(config) {
+  return path.join(
+    ensureRuntimeDirectory(resolveGatewayRuntimeDirectory(config)),
+    `${HEALTH_LOCK_FILE_NAME}${RECLAIM_CLAIM_DIRECTORY_SUFFIX}`
+  );
 }
 
-function exitSlotReclaimSection(config, slot) {
-  exitReclaimSection(slotClaimDirectoryPath(config, slot));
-}
-
-// Caller must hold the slot's reclaim section, which makes the
-// read-expiry → unlink pair atomic with respect to every other reclaimer: a
-// fresh lease is never unlinked (its holder is alive), and two waiters can
-// never both dispose of the same stale lease and each create their own — the
-// pre-fix race that silently broke the slot's concurrency limit.
-function reclaimExpiredLeaseInSection(filePath, now) {
-  const lease = readLease(filePath);
-  if (lease === null) {
-    return;
-  }
-  if (Number.isFinite(lease.expiresAt)) {
-    if (lease.expiresAt > now) {
-      return;
-    }
-  } else {
-    try {
-      // A crash between create and write leaves an empty/malformed file; a
-      // live creator may still be filling it, so honor the grace window.
-      if (now - fs.statSync(filePath).mtimeMs < LEASE_GRACE_MS) {
-        return;
-      }
-    } catch {
-      return;
-    }
-  }
-  try {
-    fs.unlinkSync(filePath);
-  } catch {
-    // Gone already; the create attempt below decides ownership.
-  }
-}
-
-function leasePath(config, slot) {
-  return path.join(slotDirectory(config), `slot-${slot}.lease.json`);
-}
-
-function readLease(filePath) {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, "utf8"));
-  } catch {
+// Single-file lease acquisition shared by the execution-slot leases and the
+// preset-health lock. Creation is O_EXCL; a live lease is never stolen. The
+// claim directory serializes every read-expiry → unlink → re-create sequence
+// per lock file, so a plain unlink (verified against just one read) cannot
+// destroy a lease a concurrent acquirer created after that read.
+function acquireLeaseFile(filePath, claimDirectory, payload) {
+  if (!tryEnterReclaimSection(claimDirectory, Date.now())) {
     return null;
+  }
+  try {
+    const existing = readLease(filePath);
+    if (existing !== null && !leaseExpired(existing, filePath, Date.now())) {
+      return null;
+    }
+    if (existing !== null) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch {
+        // Gone already; the create attempt below decides ownership.
+      }
+    }
+    try {
+      const descriptor = fs.openSync(filePath, "wx");
+      try {
+        fs.writeFileSync(descriptor, JSON.stringify(payload), "utf8");
+      } finally {
+        fs.closeSync(descriptor);
+      }
+    } catch (error) {
+      // EEXIST is a concurrent acquirer winning the create; EBUSY is a
+      // Windows short-lived lock on a just-recreated lease file. Both fail
+      // this attempt instead of the whole request.
+      if (error && typeof error === "object" && (error.code === "EEXIST" || error.code === "EBUSY")) {
+        return null;
+      }
+      throw error;
+    }
+    return true;
+  } finally {
+    exitReclaimSection(claimDirectory);
   }
 }
 
 // Windows AV/indexer/preview handlers hold freshly written files for short
 // moments (EPERM/EACCES/EBUSY). Lease releases run in finally blocks after the
 // provider call has already been paid for — a throw there replaces a
-// successful result — so delete failures degrade to leaving the file behind:
-// leases carry their own expiry and claim directories self-heal after the
-// stale window.
+// successful result — so delete failures must degrade quietly.
 export function isTransientFileLockError(error) {
   return Boolean(error) && typeof error === "object"
     && (error.code === "ENOENT" || error.code === "EPERM" || error.code === "EACCES" || error.code === "EBUSY");
@@ -468,59 +464,31 @@ export function releaseLeaseFile(filePath) {
     if (!isTransientFileLockError(error)) {
       throw error;
     }
-  }
-}
-
-function removeExpiredLease(filePath, now) {
-  const lease = readLease(filePath);
-  if (lease && Number.isFinite(lease.expiresAt)) {
-    if (lease.expiresAt > now) {
-      return false;
-    }
-    // Re-read immediately before unlinking: a concurrent waiter may have
-    // already replaced the stale lease with its own fresh one, and deleting
-    // that would silently break the slot's concurrency limit.
-    const recheck = readLease(filePath);
-    if (!recheck || !(recheck.token === lease.token && recheck.expiresAt === lease.expiresAt)) {
-      // The stale lease vanished (its holder released it) or was replaced
-      // while we were deciding. Unlinking now could destroy a waiter's fresh
-      // lock created in that gap, so there is nothing left to reclaim.
-      return false;
-    }
-  } else {
-    // Malformed or unreadable (e.g. a crash left a partial file): reclaim only
-    // after a full grace period so an in-flight renewal is never unlinked.
+    // A reader holding the file defeats unlink, but simply leaving the lease
+    // behind would freeze the resource until its expiry passes: the lease
+    // still looks live to every acquirer. Swap it out with one atomic rename
+    // instead — acquirers then see no lease and create their own, and the
+    // fixed stale name is overwritten by the next swap-out that needs it.
     try {
-      const stats = fs.statSync(filePath);
-      if (Date.now() - stats.mtimeMs < LEASE_GRACE_MS) {
-        return false;
-      }
+      fs.renameSync(filePath, `${filePath}.stale`);
     } catch {
-      return false;
+      // Leave the lease to expire naturally.
     }
   }
-  try {
-    fs.unlinkSync(filePath);
-  } catch (error) {
-    if (!error || typeof error !== "object" || error.code !== "ENOENT") {
-      return false;
-    }
-  }
-  return true;
 }
 
-function writeLeaseFile(filePath, token, slot, timeoutMs) {
-  const descriptor = fs.openSync(filePath, "wx");
-  try {
-    fs.writeFileSync(descriptor, JSON.stringify({
-      token,
-      pid: process.pid,
-      slot,
-      expiresAt: Date.now() + timeoutMs + LEASE_GRACE_MS
-    }), "utf8");
-  } finally {
-    fs.closeSync(descriptor);
+function tryAcquireLease(config, slot, timeoutMs) {
+  const filePath = leasePath(config, slot);
+  const token = crypto.randomUUID();
+  if (!acquireLeaseFile(filePath, slotClaimDirectoryPath(config, slot), {
+    token,
+    pid: process.pid,
+    slot,
+    expiresAt: Date.now() + timeoutMs + LEASE_GRACE_MS
+  })) {
+    return null;
   }
+  return leaseHandle(filePath, token, slot);
 }
 
 function leaseHandle(filePath, token, slot) {
@@ -533,35 +501,6 @@ function leaseHandle(filePath, token, slot) {
       }
     }
   };
-}
-
-function tryAcquireLease(config, slot, timeoutMs) {
-  const filePath = leasePath(config, slot);
-  const token = crypto.randomUUID();
-  // Creation must use the same per-slot claim as expiry reclamation. A
-  // fast-path write outside this section could create a fresh lease after a
-  // reclaimer read the stale one but before it unlinked it; the reclaimer
-  // would then delete the fresh lease and two workers could run together.
-  if (!tryEnterSlotReclaimSection(config, slot, Date.now())) {
-    return null;
-  }
-  try {
-    reclaimExpiredLeaseInSection(filePath, Date.now());
-    try {
-      writeLeaseFile(filePath, token, slot, timeoutMs);
-    } catch (error) {
-      // EBUSY is a Windows short-lived lock on a just-recreated lease file;
-      // treating the slot as busy fails over instead of aborting a request.
-      if (!error || typeof error !== "object"
-        || !(error.code === "EEXIST" || error.code === "EBUSY")) {
-        throw error;
-      }
-      return null;
-    }
-    return leaseHandle(filePath, token, slot);
-  } finally {
-    exitSlotReclaimSection(config, slot);
-  }
 }
 
 // Limits every local CLI process that shares the runtime directory.  Slots are

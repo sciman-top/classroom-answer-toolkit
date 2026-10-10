@@ -125,6 +125,36 @@ test("a crashed claimant's stale reclaim section is reaped", async () => {
   }
 });
 
+test("a leftover stale-swap file never blocks acquisition", async () => {
+  const { acquireSharedExecutionSlot } = await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
+  const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-claim-stale-"));
+  try {
+    plantLease(runtimeDirectory, 1, {
+      token: "stale-lease",
+      pid: -1,
+      slot: 1,
+      expiresAt: Date.now() - 60_000
+    });
+    // A previous reclaimer may have crashed between the atomic swap-out and
+    // its unlink, leaving the fixed stale name behind.
+    fs.writeFileSync(
+      path.join(runtimeDirectory, "execution-slots", "slot-1.lease.json.stale"),
+      "orphaned swap target",
+      "utf8");
+
+    const config = runtimeConfig(runtimeDirectory);
+    const lease = await acquireSharedExecutionSlot(config, [1], 3_000);
+    assert.ok(lease, "acquire must succeed past an orphaned stale-swap file");
+    lease.release();
+    assert.equal(
+      fs.existsSync(path.join(runtimeDirectory, "execution-slots", "slot-1.lease.json")),
+      false,
+      "release must remove the live lease file");
+  } finally {
+    fs.rmSync(runtimeDirectory, { recursive: true, force: true });
+  }
+});
+
 test("a fresh lease is never stolen by a waiting acquirer", async () => {
   const { acquireSharedExecutionSlot } = await import(pathToFileURL(path.join(toolDir, "gateway-runtime.mjs")).href);
   const runtimeDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-lease-fresh-"));
