@@ -140,6 +140,22 @@ public sealed class LocalToolchainOrchestratorTests
     }
 
     [Fact]
+    public async Task DeliverForwardsProgressSinkToTheProcessRunner()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var runner = new DeliveryRunner(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
+        var progressLines = new List<string>();
+
+        await orchestrator.RunDeliverAsync(
+            new AnswerDeliveryRequest(workspace.MarkdownPath, workspace.PdfPath, "classroom", false),
+            default,
+            progressLines.Add);
+
+        runner.LastOutputLineSink.Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task DeliverRejectsMissingMarkdownBeforeProcessStart()
     {
         using var workspace = new TemporaryWorkspace();
@@ -279,12 +295,14 @@ public sealed class LocalToolchainOrchestratorTests
         public IReadOnlyList<string> Arguments { get; private set; } = [];
         public string FileName { get; private set; } = string.Empty;
         public int CallCount { get; private set; }
+        public Action<string>? LastOutputLineSink { get; private set; }
 
-        public Task<ProcessRunResult> RunAsync(string fileName, IReadOnlyList<string> arguments, string workingDirectory, CancellationToken cancellationToken = default, TimeSpan? timeout = null)
+        public Task<ProcessRunResult> RunAsync(string fileName, IReadOnlyList<string> arguments, string workingDirectory, CancellationToken cancellationToken = default, TimeSpan? timeout = null, Action<string>? onOutputLine = null)
         {
             CallCount += 1;
             FileName = fileName;
             Arguments = arguments;
+            LastOutputLineSink = onOutputLine;
             if (arguments.Count > 0 && arguments[0].EndsWith("workspace-health.mjs", StringComparison.OrdinalIgnoreCase))
             {
                 return Task.FromResult(new ProcessRunResult(
@@ -338,7 +356,8 @@ public sealed class LocalToolchainOrchestratorTests
             IReadOnlyList<string> arguments,
             string workingDirectory,
             CancellationToken cancellationToken = default,
-            TimeSpan? timeout = null) => Task.FromCanceled<ProcessRunResult>(cancellationToken);
+            TimeSpan? timeout = null,
+            Action<string>? onOutputLine = null) => Task.FromCanceled<ProcessRunResult>(cancellationToken);
     }
 
     private sealed class TemporaryWorkspace : IDisposable

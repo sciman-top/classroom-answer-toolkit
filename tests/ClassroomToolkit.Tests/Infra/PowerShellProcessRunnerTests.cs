@@ -240,6 +240,47 @@ public sealed class PowerShellProcessRunnerTests
         }
     }
 
+    [Fact]
+    public async Task RunAsync_ForwardsOutputLinesWhileTheChildIsStillRunning()
+    {
+        // The WPF deliver surface depends on live per-line progress: a line that
+        // only appears after WaitForExit would leave the user staring at a
+        // status bar for the whole multi-minute render.
+        var runner = new PowerShellProcessRunner();
+        var lines = new List<string>();
+        var firstLineSeen = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var runTask = runner.RunAsync(
+            "node",
+            ["-e", "console.log('one'); setTimeout(() => console.log('two'), 400)"],
+            Path.GetTempPath(),
+            onOutputLine: line =>
+            {
+                lock (lines)
+                {
+                    lines.Add(line);
+                }
+
+                if (line == "one")
+                {
+                    firstLineSeen.TrySetResult();
+                }
+            });
+
+        await firstLineSeen.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        // The child sleeps 400ms before its last line, so a completed runTask
+        // here would mean the sink only fired after exit.
+        runTask.IsCompleted.Should().BeFalse();
+
+        var result = await runTask;
+        lock (lines)
+        {
+            lines.Should().Equal("one", "two");
+        }
+
+        result.StandardOutput.Should().Contain("one").And.Contain("two");
+    }
+
     // A cold pwsh start (AV scan, first-run JIT) can lag the 500ms timeout by a
     // lot before the script writes its pid, so poll instead of reading once.
     private static async Task<int> WaitForPidFileAsync(string path, TimeSpan timeout)

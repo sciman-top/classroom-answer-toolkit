@@ -106,6 +106,28 @@ public sealed class MainViewModelTests
         viewModel.ActivityLog.Length.Should().BeLessThanOrEqualTo(64 * 1024);
     }
 
+    [Fact]
+    public async Task DeliverStreamsProgressLinesIntoActivityLog()
+    {
+        var markdownPath = Path.GetTempFileName();
+        try
+        {
+            var orchestrator = new FakeOrchestrator();
+            var viewModel = new MainViewModel(orchestrator, new FakePathOpener())
+            {
+                SelectedAnswerMarkdownPath = markdownPath
+            };
+
+            await viewModel.DeliverCommand.ExecuteAsync(null);
+
+            viewModel.ActivityLog.Should().Contain("[renderer] step: junior-physics-answer");
+        }
+        finally
+        {
+            File.Delete(markdownPath);
+        }
+    }
+
     private sealed class FakeOrchestrator : IToolchainOrchestrator
     {
         private readonly bool _blockCheck;
@@ -176,12 +198,15 @@ public sealed class MainViewModelTests
                 true, 12, $"{selected} 主链就绪", []);
         }
 
-        public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default) =>
+        public Task<ToolchainExecutionResult> RunBootstrapAsync(
+            CancellationToken cancellationToken = default,
+            Action<string>? progress = null) =>
             Task.FromResult(Success(ToolchainScriptKind.Bootstrap));
 
         public async Task<ToolchainExecutionResult> RunCheckAsync(
             string? subjectPack = null,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            Action<string>? progress = null)
         {
             CheckStarted.TrySetResult();
             if (_blockCheck)
@@ -199,9 +224,11 @@ public sealed class MainViewModelTests
 
         public Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
             AnswerDeliveryRequest request,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            Action<string>? progress = null)
         {
             LastDeliveryRequest = request;
+            progress?.Invoke($"[renderer] step: {request.SubjectPack}");
             var delivery = new AnswerDeliveryResult(
                 @"D:\out\answer.pdf", @"D:\out\answer.delivery-manifest.json",
                 @"D:\repo\.pdf-review\answer", "snapshot-test", "junior-physics-answer");

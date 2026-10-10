@@ -155,7 +155,9 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 .ToArray()
             : [];
 
-    public Task<ToolchainExecutionResult> RunBootstrapAsync(CancellationToken cancellationToken = default)
+    public Task<ToolchainExecutionResult> RunBootstrapAsync(
+        CancellationToken cancellationToken = default,
+        Action<string>? progress = null)
     {
         var workspace = GetWorkspaceInfo();
         if (IsPackagedRuntime(workspace.RepositoryRoot))
@@ -173,12 +175,14 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             ToolchainScriptKind.Bootstrap,
             workspace.BootstrapScriptPath,
             workspace.RepositoryRoot,
-            cancellationToken);
+            cancellationToken,
+            progress: progress);
     }
 
     public async Task<ToolchainExecutionResult> RunCheckAsync(
         string? subjectPack = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Action<string>? progress = null)
     {
         var workspace = GetWorkspaceInfo();
         if (IsPackagedRuntime(workspace.RepositoryRoot))
@@ -207,14 +211,16 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             workspace.CheckScriptPath,
             workspace.RepositoryRoot,
             cancellationToken,
-            string.IsNullOrWhiteSpace(subjectPack)
+            scriptArguments: string.IsNullOrWhiteSpace(subjectPack)
                 ? []
-                : ["-Mode", "Core", "-SubjectPack", subjectPack]).ConfigureAwait(false);
+                : ["-Mode", "Core", "-SubjectPack", subjectPack],
+            progress: progress).ConfigureAwait(false);
     }
 
     public async Task<(ToolchainExecutionResult Execution, AnswerDeliveryResult? Delivery)> RunDeliverAsync(
         AnswerDeliveryRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Action<string>? progress = null)
     {
         var workspace = GetWorkspaceInfo();
         // Relative user input resolves against the workspace root, not the
@@ -269,7 +275,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             arguments,
             workspace.RepositoryRoot,
             cancellationToken,
-            DeliverTimeout).ConfigureAwait(false);
+            DeliverTimeout,
+            progress).ConfigureAwait(false);
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(process.StandardOutput, process.StandardError);
         var execution = process.ExitCode == 0
@@ -392,7 +399,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         string scriptPath,
         string repositoryRoot,
         CancellationToken cancellationToken,
-        IReadOnlyList<string>? scriptArguments = null)
+        IReadOnlyList<string>? scriptArguments = null,
+        Action<string>? progress = null)
     {
         var startedAt = DateTimeOffset.Now;
         if (!File.Exists(scriptPath))
@@ -420,7 +428,8 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 ToolchainScriptKind.Bootstrap => BootstrapTimeout,
                 ToolchainScriptKind.Check => CheckTimeout,
                 _ => DeliverTimeout
-            }).ConfigureAwait(false);
+            },
+            progress).ConfigureAwait(false);
         var finishedAt = DateTimeOffset.Now;
         var output = BuildOutput(process.StandardOutput, process.StandardError);
         return process.ExitCode == 0

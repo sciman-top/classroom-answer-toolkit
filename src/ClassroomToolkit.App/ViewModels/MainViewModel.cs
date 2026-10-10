@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
+using System.Threading;
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.Domain.Delivery;
 using ClassroomToolkit.Domain.Toolchain;
@@ -18,6 +19,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly IPathOpener _pathOpener;
     private readonly IUpdateService? _updateService;
     private readonly StringBuilder _activityLog = new();
+    // Captured on the constructing (UI) thread: toolchain progress lines arrive
+    // on thread-pool threads and must be marshaled before touching bound state.
+    private readonly SynchronizationContext? _creationContext;
     private CancellationTokenSource? _operationCancellation;
     private CancellationTokenSource? _healthRefreshCancellation;
     private bool _suppressHealthRefresh;
@@ -32,6 +36,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _toolchainOrchestrator = toolchainOrchestrator;
         _pathOpener = pathOpener;
         _updateService = updateService;
+        _creationContext = SynchronizationContext.Current;
         AvailableSubjectPacks = new ObservableCollection<string>();
         StatusCards = new ObservableCollection<StatusCardViewModel>();
 
@@ -145,7 +150,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanDeliver))]
     private async Task DeliverAsync()
     {
-        await RunAsync("正在生成排版答案 PDF...", async cancellationToken =>
+        await RunAsync("正在生成排版答案 PDF...", async (cancellationToken, progress) =>
         {
             var (execution, delivery) = await _toolchainOrchestrator.RunDeliverAsync(
                 new AnswerDeliveryRequest(
@@ -154,7 +159,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     SelectedProfile,
                     KeepReviewArtifacts,
                     SelectedSubjectPack),
-                cancellationToken);
+                cancellationToken,
+                progress);
             ApplyExecution(execution);
             if (!execution.Succeeded || delivery is null)
             {
@@ -181,7 +187,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         await RunToolchainAsync(
             "正在执行主链体检...",
-            cancellationToken => _toolchainOrchestrator.RunCheckAsync(SelectedSubjectPack, cancellationToken));
+            (cancellationToken, progress) => _toolchainOrchestrator.RunCheckAsync(SelectedSubjectPack, cancellationToken, progress));
     }
 
     [RelayCommand] private void OpenLastOutputPdf() => OpenPath(LastOutputPdfPath);
@@ -269,11 +275,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private async Task RunToolchainAsync(
         string message,
-        Func<CancellationToken, Task<ToolchainExecutionResult>> action)
+        Func<CancellationToken, Action<string>, Task<ToolchainExecutionResult>> action)
     {
-        await RunAsync(message, async cancellationToken =>
+        await RunAsync(message, async (cancellationToken, progress) =>
         {
-            var result = await action(cancellationToken);
+            var result = await action(cancellationToken, progress);
             ApplyExecution(result);
             StatusMessage = result.Succeeded ? "工具链检查完成" : "工具链检查失败";
             await RefreshHealthAsync(cancellationToken);
@@ -301,7 +307,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         CancelCommand.NotifyCanExecuteChanged();
     }
 
-    private async Task RunAsync(string message, Func<CancellationToken, Task> action)
+    private async Task RunAsync(string message, Func<CancellationToken, Action<string>, Task> action)
     {
         using var cancellation = new CancellationTokenSource();
         _operationCancellation = cancellation;
@@ -309,7 +315,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         StatusMessage = message;
         try
         {
-            await action(cancellation.Token);
+            await action(cancellation.Token, ReportProgress);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -465,6 +471,21 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 AppendLog($"{description}失败：{ex.Message}");
             }
         }
+    }
+
+    // Toolchain progress arrives on thread-pool threads from the process
+    // runner; bound properties only update on the constructing context. In
+    // hosts without a captured context (tests) the line is applied inline.
+    private void ReportProgress(string line)
+    {
+        var context = _creationContext;
+        if (context is not null && !ReferenceEquals(context, SynchronizationContext.Current))
+        {
+            context.Post(_ => AppendLog(line), null);
+            return;
+        }
+
+        AppendLog(line);
     }
 
     private void AppendLog(string text)

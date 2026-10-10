@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using ClassroomToolkit.Infra.Abstractions;
@@ -13,7 +14,8 @@ public sealed class PowerShellProcessRunner : IProcessRunner
         IReadOnlyList<string> arguments,
         string workingDirectory,
         CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        Action<string>? onOutputLine = null)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -85,8 +87,15 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             });
         });
 
-        var standardOutputTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
-        var standardErrorTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
+        // With a line sink the reads must be line-by-line so the caller sees
+        // progress while the child runs; without one, ReadToEnd keeps the
+        // aggregate single-shot path that lifecycle tests pin down.
+        var standardOutputTask = onOutputLine is null
+            ? process.StandardOutput.ReadToEndAsync(linkedCts.Token)
+            : ReadForwardedLinesAsync(process.StandardOutput, onOutputLine, linkedCts.Token);
+        var standardErrorTask = onOutputLine is null
+            ? process.StandardError.ReadToEndAsync(linkedCts.Token)
+            : ReadForwardedLinesAsync(process.StandardError, onOutputLine, linkedCts.Token);
         try
         {
             // ConfigureAwait(false) is load-bearing: callers such as the WPF health
@@ -160,5 +169,23 @@ public sealed class PowerShellProcessRunner : IProcessRunner
 
         TimeoutException TimeoutException() => new(
             $"Process exceeded the {timeout!.Value.TotalMinutes:0.#} minute limit and was terminated: {fileName}");
+    }
+
+    // Streams each line to the sink while accumulating the same full transcript
+    // ReadToEnd would have produced, so callers get live progress without a
+    // second code path for the final ProcessRunResult.
+    private static async Task<string> ReadForwardedLinesAsync(
+        StreamReader reader,
+        Action<string> onOutputLine,
+        CancellationToken cancellationToken)
+    {
+        var transcript = new StringBuilder();
+        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
+        {
+            transcript.AppendLine(line);
+            onOutputLine(line);
+        }
+
+        return transcript.ToString();
     }
 }
