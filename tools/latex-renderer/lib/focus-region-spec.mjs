@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { sha256File } from "../shared.mjs";
+import { sha256File } from "../../shared.mjs";
 
 const ROOT_FIELDS = new Set(["schemaVersion", "sourcePdfSha256", "regions"]);
 const REGION_FIELDS = new Set([

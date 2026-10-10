@@ -7,7 +7,7 @@ import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-com
 import { resolveProfileSnapshotRelativePath } from "../rule-compiler/subject-pack-registry.mjs";
 import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
+import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 // Generous per-tool ceiling: visual pipelines run a full browser render, but a

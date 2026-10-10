@@ -12,8 +12,8 @@ import {
   makeRenderTempHtmlPath,
   makeReviewOutputDir
 } from "./pdf-output-path.mjs";
-import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { removePathRecursive } from "../safe-remove.mjs";
+import { writeTextFileAtomic } from "../../atomic-write.mjs";
+import { removePathRecursive } from "../../safe-remove.mjs";
 
 test("browser PDF output always uses an ASCII temporary file name", () => {
   const target = path.join("D:\\repo\\正式交付", "2025广州中考参考答案.pdf");
@@ -107,7 +107,7 @@ test("atomic text writes clean up the temporary file when the replace fails", ()
 
 test("PDF review rejects an unknown option instead of silently using a default", () => {
   const result = spawnSync(process.execPath, [
-    fileURLToPath(new URL("./review-source-pdf.mjs", import.meta.url)),
+    fileURLToPath(new URL("../review-source-pdf.mjs", import.meta.url)),
     "missing.pdf",
     "--scal",
     "4"

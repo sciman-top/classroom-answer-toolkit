@@ -7,15 +7,15 @@ import { chromium } from "playwright-core";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { fail } from "../shared.mjs";
-import { analyzeAnalogMeterCanvas } from "./analog-meter-reading.mjs";
-import { analyzeLinearScaleCanvas } from "./linear-scale-reading.mjs";
-import { analyzeOpticalRayCanvas } from "./optical-ray-geometry.mjs";
-import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
-import { loadFocusRegionSpec, resolveFocusRegionPixels } from "./focus-region-spec.mjs";
-import { createRendererServer } from "./pdf-render-host.mjs";
-import { getPageDimensionsInBrowser, loadPdfDocumentInBrowser, renderPdfPageInBrowser } from "./render-pdf-page.mjs";
-import { parsePageSelection } from "./review-page-selection.mjs";
-import { writeReviewHtml } from "./review-html.mjs";
+import { analyzeAnalogMeterCanvas } from "./lib/analog-meter-reading.mjs";
+import { analyzeLinearScaleCanvas } from "./lib/linear-scale-reading.mjs";
+import { analyzeOpticalRayCanvas } from "./lib/optical-ray-geometry.mjs";
+import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
+import { loadFocusRegionSpec, resolveFocusRegionPixels } from "./lib/focus-region-spec.mjs";
+import { createRendererServer } from "./lib/pdf-render-host.mjs";
+import { getPageDimensionsInBrowser, loadPdfDocumentInBrowser, renderPdfPageInBrowser } from "./lib/render-pdf-page.mjs";
+import { parsePageSelection } from "./lib/review-page-selection.mjs";
+import { writeReviewHtml } from "./lib/review-html.mjs";
 
 const require = createRequire(import.meta.url);
 const toolDir = path.dirname(fileURLToPath(import.meta.url));

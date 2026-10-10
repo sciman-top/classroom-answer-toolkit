@@ -2,6 +2,18 @@
 
 This folder contains the lightweight local toolchain used by the answer workflow.
 
+## Layout
+
+- Root `*.mjs` files are CLI entry points (package.json scripts, workflow
+  callers, and .NET integration tests spawn or reference them by these paths).
+- `lib/*.mjs` holds pure library modules with no CLI side effects; a module
+  moves to `lib/` only when nothing outside this package executes it as a
+  script. Library tests live in `lib/` next to their subject; CLI tests stay at
+  the root next to their entry point.
+
+New rendering/validation logic goes in `lib/`; only a genuinely new operator
+command justifies a new root entry point.
+
 ## Render final answer PDF
 
 ```powershell

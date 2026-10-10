@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
-import { repositoryRoot as repoRoot } from "../shared.mjs";
+import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../../rule-compiler/shared.mjs";
+import { repositoryRoot as repoRoot } from "../../shared.mjs";
 import {
   listSubjectPacks,
   resolveProfileSnapshotRelativePath
-} from "../rule-compiler/subject-pack-registry.mjs";
+} from "../../rule-compiler/subject-pack-registry.mjs";
 
 export { getDefaultSubjectPackName };
 

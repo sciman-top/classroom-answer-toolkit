@@ -5,13 +5,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import MarkdownIt from "markdown-it";
 import katex from "katex";
 import { chromium } from "playwright-core";
-import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
+import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
 import {
   commitBrowserPdfOutput,
   makeBrowserPdfOutputPath,
   makeRenderTempHtmlPath
-} from "./pdf-output-path.mjs";
-import { loadRenderProfile } from "./render-profiles.mjs";
+} from "./lib/pdf-output-path.mjs";
+import { loadRenderProfile } from "./lib/render-profiles.mjs";
 import {
   findUnbalancedLatexDelimiterPositions,
   mapInlineMath,
@@ -19,9 +19,9 @@ import {
   normalizeLatexParenDelimiters,
   repairSplitMathSpans,
   restoreLatexCodeSegments
-} from "./inline-math.mjs";
+} from "./lib/inline-math.mjs";
 import { escapeHtml, parseArgvFlags } from "../shared.mjs";
-import { getDefaultSubjectPackName, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { getDefaultSubjectPackName, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./lib/runtime-config.mjs";
 
 function parseArgs(argv) {
   return parseArgvFlags(argv, {

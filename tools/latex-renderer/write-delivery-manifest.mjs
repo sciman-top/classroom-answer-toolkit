@@ -3,7 +3,7 @@ import path from "node:path";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { fail, parseArgvFlags, readJsonFileIfExists, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
-import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
+import { loadRequiredResolvedSnapshot } from "./lib/runtime-config.mjs";
 
 const deliveryManifestSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
 

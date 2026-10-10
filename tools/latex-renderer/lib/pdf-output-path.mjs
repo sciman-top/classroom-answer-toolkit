@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { renameWithRetry } from "../atomic-write.mjs";
-import { sha256Hex } from "../shared.mjs";
+import { renameWithRetry } from "../../atomic-write.mjs";
+import { sha256Hex } from "../../shared.mjs";
 
 function sanitizeToken(value) {
   const token = String(value ?? "")

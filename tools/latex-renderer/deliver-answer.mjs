@@ -7,9 +7,9 @@ import { chromium } from "playwright-core";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
 import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
-import { resolveLocalBrowserPath } from "./browser-candidates.mjs";
-import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./pdf-output-path.mjs";
-import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
+import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./lib/pdf-output-path.mjs";
+import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./lib/runtime-config.mjs";
 import { runCleanup } from "./cleanup-answer-artifacts.mjs";
 import { validateDeliveryManifest } from "./validate-delivery-manifest.mjs";
 

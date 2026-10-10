@@ -8,9 +8,9 @@ import {
   maskLatexCodeSegments,
   normalizeLatexParenDelimiters,
   repairSplitMathSpans
-} from "./inline-math.mjs";
+} from "./lib/inline-math.mjs";
 import { fail, parseArgvFlags } from "../shared.mjs";
-import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./runtime-config.mjs";
+import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./lib/runtime-config.mjs";
 
 const usage = `Usage:
   npm --prefix tools/latex-renderer run validate:answer -- <answer.md> [--profile classroom|compact] [--snapshot <snapshot.json>]

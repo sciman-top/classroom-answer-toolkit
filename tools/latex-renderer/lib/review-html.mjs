@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { escapeHtml } from "../shared.mjs";
+import { escapeHtml } from "../../shared.mjs";
 
 export function writeReviewHtml({ outputDir, inputPath, manifest }) {
   fs.mkdirSync(outputDir, { recursive: true });

@@ -1,4 +1,4 @@
-import { deepMerge } from "../shared.mjs";
+import { deepMerge } from "../../shared.mjs";
 import { getSnapshotActiveProfile } from "./runtime-config.mjs";
 
 const fallbackRenderProfile = {

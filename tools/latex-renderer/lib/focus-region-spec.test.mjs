@@ -9,7 +9,7 @@ import {
   parseFocusRegionSpec,
   resolveFocusRegionPixels
 } from "./focus-region-spec.mjs";
-import { sha256File } from "../shared.mjs";
+import { sha256File } from "../../shared.mjs";
 
 const validSpec = {
   schemaVersion: "1.0",

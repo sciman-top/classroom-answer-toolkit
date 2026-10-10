@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { unzipSync } from "fflate";
-import { mapInlineMath } from "./inline-math.mjs";
+import { mapInlineMath } from "./lib/inline-math.mjs";
 import { parseArgvFlags } from "../shared.mjs";
 
 // Exports an answer Markdown file to DOCX with native Word (OMML) equations via

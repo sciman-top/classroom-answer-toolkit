@@ -3,7 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
-import { loadRequiredResolvedSnapshot } from "./runtime-config.mjs";
+import { loadRequiredResolvedSnapshot } from "./lib/runtime-config.mjs";
 
 const defaultSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
 const placedAnswerGraphicSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "placed-answer-graphic.schema.json");

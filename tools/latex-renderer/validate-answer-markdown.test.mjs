@@ -6,7 +6,7 @@ import {
   findUnbalancedLatexDelimiterLines,
   findExecutableRawHtml
 } from "./validate-answer-markdown.mjs";
-import { repairSplitMathSpans } from "./inline-math.mjs";
+import { repairSplitMathSpans } from "./lib/inline-math.mjs";
 
 test("strict validator rejects bare CJK labels in inline and display math", () => {
   const findings = findStrictKatexErrors([
