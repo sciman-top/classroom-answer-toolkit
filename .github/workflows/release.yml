@@ -86,7 +86,6 @@ jobs:
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package-release.ps1 `
             -Version $version `
             -WorkspaceContract "2" `
-            -Audience ordinary-users `
             -SigningCertificateThumbprint $env:SIGNING_CERTIFICATE_THUMBPRINT
 
       - name: Accept ordinary-user packages

@@ -577,8 +577,6 @@ public sealed class ReleaseUpdateServiceTests
     public async Task CheckAsync_SkipsSourceWorkspaceWithoutInstalledApplication()
     {
         var repositoryRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-update-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(Path.Combine(repositoryRoot, "scripts"));
-        File.WriteAllText(Path.Combine(repositoryRoot, "scripts", "update-release.ps1"), "# updater");
         try
         {
             using var service = new ReleaseUpdateService(repositoryRoot, repositoryRoot, currentVersion: new Version(1, 0, 0));
@@ -596,13 +594,11 @@ public sealed class ReleaseUpdateServiceTests
     }
 
     [Fact]
-    public async Task CheckAsync_SkipsSourceBuildEvenWhenItContainsAnApphostAndUpdater()
+    public async Task CheckAsync_SkipsSourceBuildEvenWhenItContainsAnApphost()
     {
         var repositoryRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-update-{Guid.NewGuid():N}");
         var debugApplicationDirectory = Path.Combine(repositoryRoot, "src", "ClassroomToolkit.App", "bin", "Debug", "net10.0-windows");
-        Directory.CreateDirectory(Path.Combine(repositoryRoot, "scripts"));
         Directory.CreateDirectory(debugApplicationDirectory);
-        File.WriteAllText(Path.Combine(repositoryRoot, "scripts", "update-release.ps1"), "# updater");
         File.WriteAllText(Path.Combine(debugApplicationDirectory, "ClassroomToolkit.App.exe"), "debug apphost");
         try
         {

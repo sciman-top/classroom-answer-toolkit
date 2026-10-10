@@ -95,82 +95,19 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public async Task InstallReleaseValidatesMissingEmptyAndNonEmptyDestinations()
+    public async Task InstallReleaseRejectsLoopbackManifestWithoutSimulationSwitch()
     {
         var root = ToolchainTestHost.FindRepoRoot();
-        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-InstallDestination", Guid.NewGuid().ToString("N"));
-        var destination = Path.Combine(testRoot, "install");
-
-        try
-        {
-            var missingResult = await RunAsync(
-                "pwsh",
-                root,
-                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
-                "-Destination", destination,
-                "-ValidateDestinationOnly");
-            missingResult.ExitCode.Should().Be(0, missingResult.Output);
-
-            Directory.CreateDirectory(destination);
-            var emptyResult = await RunAsync(
-                "pwsh",
-                root,
-                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
-                "-Destination", destination,
-                "-ValidateDestinationOnly");
-            emptyResult.ExitCode.Should().Be(0, emptyResult.Output);
-
-            File.WriteAllText(Path.Combine(destination, "occupied.txt"), "occupied");
-            var occupiedResult = await RunAsync(
-                "pwsh",
-                root,
-                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
-                "-Destination", destination,
-                "-ValidateDestinationOnly");
-            occupiedResult.ExitCode.Should().NotBe(0);
-            occupiedResult.Output.Should().Contain("Destination is not empty");
-        }
-        finally
-        {
-            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
-        }
-    }
-
-    [Fact]
-    public async Task InstallReleaseAllowsLoopbackOnlyWithExplicitSimulationSwitch()
-    {
-        var root = ToolchainTestHost.FindRepoRoot();
-        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-LoopbackInstall", Guid.NewGuid().ToString("N"));
-        var destination = Path.Combine(testRoot, "install");
         var manifestUrl = "http://127.0.0.1:43210/update-manifest.json";
 
-        try
-        {
-            var rejected = await RunAsync(
-                "pwsh",
-                root,
-                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
-                "-ManifestUrl", manifestUrl,
-                "-Destination", destination,
-                "-ValidateDestinationOnly");
-            rejected.ExitCode.Should().NotBe(0);
-            rejected.Output.Should().Contain("approved GitHub HTTPS host");
+        var rejected = await RunAsync(
+            "pwsh",
+            root,
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
+            "-ManifestUrl", manifestUrl);
 
-            var allowed = await RunAsync(
-                "pwsh",
-                root,
-                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/install-release.ps1",
-                "-ManifestUrl", manifestUrl,
-                "-Destination", destination,
-                "-ValidateDestinationOnly",
-                "-AllowLocalSimulation");
-            allowed.ExitCode.Should().Be(0, allowed.Output);
-            allowed.Output.Should().Contain("Install destination is available");
-        }
-        finally
-        {
-            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
-        }
+        rejected.ExitCode.Should().NotBe(0);
+        rejected.Output.Should().Contain("approved GitHub HTTPS host");
     }
 
     [Fact]
@@ -251,37 +188,6 @@ public sealed class ToolchainCliBehaviorTests
             Directory.Exists(oldDelivery).Should().BeFalse();
             Directory.Exists(work).Should().BeFalse();
             File.Exists(Path.Combine(history, "receipt.json")).Should().BeTrue();
-        }
-        finally
-        {
-            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
-        }
-    }
-
-    [Fact]
-    public async Task UpdateReleaseRejectsRestartExecutableOutsideTargetApp()
-    {
-        var root = ToolchainTestHost.FindRepoRoot();
-        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-UpdateContainment", Guid.NewGuid().ToString("N"));
-        var targetApp = Path.Combine(testRoot, "app");
-        Directory.CreateDirectory(targetApp);
-
-        try
-        {
-            var result = await RunAsync(
-                "pwsh",
-                root,
-                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/update-release.ps1",
-                "-PackageUrl", "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v0.0.0/missing.zip",
-                "-ExpectedSha256", new string('a', 64),
-                "-ExpectedBytes", "1",
-                "-TargetAppDirectory", targetApp,
-                "-RepositoryRoot", testRoot,
-                "-ProcessId", "999999",
-                "-RestartExecutable", Path.Combine(testRoot, "outside.exe"));
-
-            result.ExitCode.Should().NotBe(0);
-            result.Output.Should().Contain("Path escapes root");
         }
         finally
         {

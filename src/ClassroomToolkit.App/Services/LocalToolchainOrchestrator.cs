@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.IO;
-using ClassroomToolkit.Domain.Delivery;
-using ClassroomToolkit.Domain.Toolchain;
+using ClassroomToolkit.App.Delivery;
+using ClassroomToolkit.App.Toolchain;
 using ClassroomToolkit.Infra.Abstractions;
 using ClassroomToolkit.Infra.Workspace;
 

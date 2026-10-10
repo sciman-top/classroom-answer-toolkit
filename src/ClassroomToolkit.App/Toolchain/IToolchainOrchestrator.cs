@@ -1,6 +1,6 @@
-using ClassroomToolkit.Domain.Delivery;
+using ClassroomToolkit.App.Delivery;
 
-namespace ClassroomToolkit.Domain.Toolchain;
+namespace ClassroomToolkit.App.Toolchain;
 
 public interface IToolchainOrchestrator
 {

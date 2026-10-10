@@ -1,4 +1,4 @@
-namespace ClassroomToolkit.Domain.Toolchain;
+namespace ClassroomToolkit.App.Toolchain;
 
 public enum ToolchainScriptKind
 {

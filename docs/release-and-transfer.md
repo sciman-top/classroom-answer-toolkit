@@ -2,25 +2,18 @@
 
 ## Scope
 
-This repository defines five intentionally separate delivery types. The installer and portable ZIP are the two ordinary-user product deliveries and share one versioned runtime bundle:
+This repository defines four intentionally separate delivery types. The installer and portable ZIP are the two ordinary-user product deliveries and share one versioned runtime bundle:
 
 | Artifact | Audience | Includes | Must not include |
 | --- | --- | --- | --- |
-| Ordinary-user installer | teachers and other Windows users | signed installer, writable runtime bundle, install/update/rollback contract | repository-coupled preview ZIP presented as a finished installer |
+| Ordinary-user installer | teachers and other Windows users | signed installer, writable runtime bundle, install/update/rollback contract | any repository-coupled or unsigned package presented as a finished installer |
 | Ordinary-user portable ZIP | teachers and other Windows users | self-contained runtime, extract-and-run launch, no registry writes | Git, PowerShell, .NET SDK or system Node.js requirements |
-| Developer/operator online preview | repository maintainers familiar with the local toolchain | independently verified published WPF application and matching public workspace | real `.env`, private papers, delivery outputs, `.git` |
 | `ClassroomToolkit-<version>-source.zip` | public developers | source, tests, scripts, prompt assets, lock files, `.env.example` | real `.env`, `node_modules`, local cache and delivery data |
 | PrivateDev transfer ZIP | the private maintainer only | current working-tree snapshot and, only when explicitly requested, `.env` / `.git` / app | GitHub Release publication or any shared distribution channel |
 
-The online preview remains a repository-coupled companion. Its
-initial installer fetches the matching public source workspace as a separate,
-verified Release asset and initializes the supported toolchain. This does not
-embed source inside the app ZIP, and it is not a claim of an offline,
-self-contained MSIX product.
-
 ## Public Release
 
-本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；其中 `installer/stable/` 放普通用户安装程序及清单，`portable/` 放绿色版，`installer/preview/` 放可选脚本安装预览，`source/` 放公开源码包，`private-transfer/` 放按需私用迁移包，`_release-metadata/` 放版本清单、SBOM 和 provenance。历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
+本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；其中 `installer/stable/` 放普通用户安装程序及清单，`portable/` 放绿色版，`source/` 放公开源码包，`private-transfer/` 放按需私用迁移包，`_release-metadata/` 放版本清单、SBOM 和 provenance。历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
 
 Create an annotated tag named `v<major>.<minor>.<patch>` and push that tag.
 The GitHub Actions workflow performs the local setup and integration gates,
@@ -44,51 +37,18 @@ HTTPS. It verifies byte count and SHA-256 before launching the signed setup for
 an in-place upgrade. Portable copies do not self-replace while running; users
 download and extract the newer portable ZIP.
 
-Developer/operator preview installation, after downloading `install-release.ps1`
-from a GitHub Release:
+`install-release.ps1`, after being downloaded from a GitHub Release, accepts
+only GitHub HTTPS manifests and assets and verifies the signed installer asset
+before launching Inno Setup (`-RunSetup` auto-starts). `-AllowLocalSimulation`
+is an explicit test-only seam; the normal installer accepts only approved
+GitHub HTTPS hosts and loopback is never an implicit production fallback.
 
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\install-release.ps1 -RunSetup -Launch
-```
-
-The installer only accepts GitHub HTTPS manifests and assets and rejects
-zip-slip entries. A preview manifest (schema 1.0) expands the verified
-`app`/`source` assets into a public workspace; a stable manifest (schema 2.0)
-verifies the signed installer asset and launches Inno Setup (no
-`-Destination`; `-RunSetup` auto-starts). First install creates `.env` from
-`.env.example`, with cloud egress still disabled until the operator fills in
-provider settings.
-
-## Automated Simulation Acceptance
-
-Repeatable operator work can be exercised without a second machine or a
-GitHub write by running:
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/simulate-release-acceptance.ps1 -Version 1.0.3
-```
-
-The simulation serves the already verified candidate assets from a temporary
-loopback HTTP server and drives the real installer, updater and transfer
-scripts. It covers empty and occupied destinations, a successful update and
-smoke restart, replacement failure with rollback, and PrivateDev import with
-existing `.env` preservation. The receipt is written under
-`artifacts/work/verification/release-simulation/` and is intentionally
-cleaned with the other generated work artifacts.
-
-`-AllowLocalSimulation` and `-Simulation` are explicit test-only seams. The
-normal installer and updater continue to accept only approved GitHub HTTPS
-hosts; loopback is never an implicit production fallback. A passed receipt is
-`simulated-acceptance` evidence for deterministic operational contracts. It
-does not establish publisher identity, GitHub publication, UAC/antivirus or
-ordinary-user experience, live provider quality, or teacher/classroom
-acceptance.
-
-`package-release.ps1 -Audience ordinary-users` builds both the setup EXE and
-portable ZIP from one runtime bundle. Local engineering may use
-`-AllowUnsignedCandidate` only to verify install/repair/uninstall and portable
-launch. Stable publication remains blocked until the setup and app have valid
-Authenticode signatures and a representative non-developer acceptance record.
+`package-release.ps1` forwards to `build-ordinary-user-package.ps1`, which
+builds both the setup EXE and portable ZIP from one runtime bundle. Local
+engineering may use `-AllowUnsignedCandidate` only to verify
+install/repair/uninstall and portable launch. Stable publication remains
+blocked until the setup and app have valid Authenticode signatures and a
+representative non-developer acceptance record.
 
 No code-signing certificate is configured by this repository. SHA-256 is an
 integrity check for the published Release asset; it is not a substitute for a

@@ -1,7 +1,7 @@
 using ClassroomToolkit.App.Services;
 using ClassroomToolkit.App.ViewModels;
-using ClassroomToolkit.Domain.Delivery;
-using ClassroomToolkit.Domain.Toolchain;
+using ClassroomToolkit.App.Delivery;
+using ClassroomToolkit.App.Toolchain;
 using FluentAssertions;
 
 namespace ClassroomToolkit.Tests.App;

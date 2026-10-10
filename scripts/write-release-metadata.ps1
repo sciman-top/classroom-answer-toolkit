@@ -58,13 +58,6 @@ if ([string]$installManifest.publisherSignature.status -ne "Valid" -or
 
 $publicPaths = [Collections.Generic.List[string]]::new()
 $requiredPublicPaths | ForEach-Object { $publicPaths.Add($_) }
-if (Test-Path -LiteralPath (Join-Path $versionRoot "installer/preview/update-manifest.json") -PathType Leaf) {
-    @(
-        "installer/preview/ClassroomToolkit-$Version-win-x64.zip",
-        "installer/preview/install-release.ps1",
-        "installer/preview/update-manifest.json"
-    ) | ForEach-Object { $publicPaths.Add($_) }
-}
 $files = @($publicPaths | Sort-Object | ForEach-Object {
     $relativePath = $_
     $path = Join-Path $versionRoot $relativePath
@@ -88,11 +81,6 @@ $manifest = [ordered]@{
             kind = "ordinary-user-installer"
             visibility = "public"
             status = "packaged"
-        },
-        [ordered]@{
-            kind = "preview-installer"
-            visibility = "public"
-            status = if (Test-Path -LiteralPath (Join-Path $versionRoot "installer/preview/update-manifest.json") -PathType Leaf) { "packaged" } else { "not-requested" }
         },
         [ordered]@{
             kind = "portable-user-package"

@@ -111,13 +111,13 @@ WPF 当前是仓库伴随应用，运行 check/deliver 仍依赖外部可写仓�
 
 ## 获取与迁移
 
-项目提供五种互不覆盖的分发方式：ordinary-user 标准安装版、ordinary-user 绿色便携版、联网 developer/operator 预览版、公开源码开发包和私用开发迁移包。它们都不把真实 API key 放入 GitHub Release 或公开源码包。标准安装版与绿色版共享版本化 runtime bundle；只有完成代码签名和代表性非开发者验收后，才可标记为 stable 对外发布，不会用 preview ZIP 代替发布。
+项目提供四种互不覆盖的分发方式：ordinary-user 标准安装版、ordinary-user 绿色便携版、公开源码开发包和私用开发迁移包。它们都不把真实 API key 放入 GitHub Release 或公开源码包。标准安装版与绿色版共享版本化 runtime bundle；只有完成代码签名和代表性非开发者验收后，才可标记为 stable 对外发布。
 
 ## 交付物目录与发布状态
 
 本机可重建产物统一写入 Git 忽略的 `artifacts/`，`deliveries/`、`history/`、`work/` 三层不混放；目录约定与清理命令见 [`artifacts/README.md`](artifacts/README.md)，正式公开下载以 GitHub Release 资产为准。GitHub 上的 `v1.0.1` 是遗留 tag/release 资产，后续 `main` 的发布、安装、迁移和签名边界加固已在仓库中完成，但尚未由新的 tag/release 对外发布；不要把本机 `artifacts/deliveries/<version>/` 候选包当作线上下载地址，发布前必须重新打 tag、运行 workflow，并以新的 `update-manifest.json` 和 provenance/SBOM 为准。
 
-五种分发方式的对照表、安装/导出/导入/发布模拟命令、`workspaceContract` 升级边界、签名与回滚流程，统一维护在 [docs/release-and-transfer.md](docs/release-and-transfer.md)；该文档与 `src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` 的 `<Version>` 是这些事实的单点真源，README 不重复维护命令与表格。
+四种分发方式的对照表、安装/导出/导入命令、`workspaceContract` 升级边界、签名与回滚流程，统一维护在 [docs/release-and-transfer.md](docs/release-and-transfer.md)；该文档与 `src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` 的 `<Version>` 是这些事实的单点真源，README 不重复维护命令与表格。
 
 ## 可信边界
 

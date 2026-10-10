@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ClassroomToolkit.Domain\ClassroomToolkit.Domain.csproj" />
     <ProjectReference Include="..\ClassroomToolkit.Infra\ClassroomToolkit.Infra.csproj" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-namespace ClassroomToolkit.Domain.Delivery;
+namespace ClassroomToolkit.App.Delivery;
 
 public sealed record AnswerDeliveryResult(
     string OutputPdfPath,
