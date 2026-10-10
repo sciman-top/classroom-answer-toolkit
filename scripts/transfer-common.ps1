@@ -223,7 +223,7 @@ function Write-JsonFileAtomic {    param(
 }
 
 # Copies license/notices into a package. Every package that ships the
-# self-contained .NET/desktop runtime (preview and ordinary-user alike) must
+# self-contained .NET/desktop runtime must
 # pass -IncludeRuntimeLicenses: the packed THIRD_PARTY_NOTICES.md promises the
 # runtime license and notice files, and redistribution requires them.
 function Copy-PublishNotices {

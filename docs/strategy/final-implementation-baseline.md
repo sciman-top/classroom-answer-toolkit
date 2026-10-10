@@ -54,8 +54,8 @@ SourceExam
 - Reference Review 完成后才可称 Reference-reviewed Delivery；只有教师实际验收后才可称 Teacher Accepted。
 - WPF 不复制 Node 业务逻辑，不因缺少历史 review/trust 对象而扩建领域模型。
 - WPF 的 deliver 成功必须核对 manifest 的 input/output、subject-pack、profile 和本次生成时间；不能接受另一份 Markdown 或旧回执留下的产物。
-- developer/operator preview 仍是 repository-coupled companion；普通用户安装版和绿色版使用带 `runtime-manifest.json` 的版本化 runtime bundle，不依赖 Git 仓库标记。当前不采用 MSIX。
-- `simulated-acceptance` receipt 可以替代重复的工程操作演练：它必须使用隔离 loopback 资产驱动真实安装/更新/回滚/迁移脚本，并绑定当前提交与候选 manifest；它不能替代 publisher identity、线上发布、普通用户实机或 Teacher Accepted。
+- 分发通道只有 stable 四类（安装版、绿色便携版、源码包、私用迁移包）；developer/operator preview 已于 2026-10-10 退场。普通用户安装版和绿色版使用带 `runtime-manifest.json` 的版本化 runtime bundle，不依赖 Git 仓库标记。当前不采用 MSIX。
+- 可重复的本地安装、修复、卸载与便携启动验收由 loopback 隔离回放形成 `classroom-toolkit-ordinary-user-package-acceptance` 回执（`scripts/test-ordinary-user-package.ps1`）；该状态只证明工程操作合同，不得推导 publisher identity、线上发布、普通用户实机或 Teacher Accepted。
 - 2026-08-31 裁决：普通用户安装版与绿色便携版已获明确实施授权并复用同一 runtime bundle；本地安装/修复/卸载/便携 smoke、publisher identity、GitHub stable 发布和代表性普通用户验收仍是不同证据层。签名或代表性验收缺失时不得宣称 stable 已发布。
 - 验证按变更面路由：C# 用 build+xUnit，gateway/renderer 用 focused Node 测试，subject spec/rules 用 Core；shared spec/schema、跨学科或 release 才用 Full。
 - Full 的通用 renderer/layout 合同由主产品包运行一次；其他 subject-pack 必须保留独立 snapshot 和学科特异 sentinel，不复制同一输入与视觉基准。

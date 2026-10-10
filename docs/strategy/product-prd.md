@@ -45,7 +45,7 @@
 - 新生成的 Delivery Manifest 必须把实际输入 Markdown、最终 PDF、交付 snapshot 和同目录 `<PDF基名>.review/` 包内文件集合绑定到 SHA-256；任一文件缺失或篡改必须 fail closed，`.pdf-review/` 调试缓存不得成为归档依赖。
 - workflow receipt 必须绑定 Source Exam、可选 Reference PDF、prompt、各阶段 summary/产物和阶段终态；参考差异必须以实际送入 Reference Review 的候选为基线。
 - WPF publish smoke 必须在开发仓之外运行并绑定 commit、EXE 与 publish tree；当前 repository-coupled 形态不得产出或宣称自包含 MSIX。
-- 可重复的安装、更新、回滚、迁移和发布包完整性可由 loopback 隔离回放形成 `simulated-acceptance`；该状态只证明工程操作合同，不得推导 publisher identity、普通用户体验、真实 provider 质量或 Teacher Accepted。
+- 可重复的本地安装、修复、卸载与便携启动验收由 loopback 隔离回放形成 `classroom-toolkit-ordinary-user-package-acceptance` 回执；该状态只证明工程操作合同，不得推导 publisher identity、普通用户体验、真实 provider 质量或 Teacher Accepted。
 - Teacher Accepted 只能来自教师对指定交付物的实际验收，不由 repo gate 或 manifest 自动推导。
 
 ## Current evidence boundary
@@ -58,7 +58,7 @@
 
 ## Decisions 2026-08-25 / 2026-08-30 / 2026-08-31
 
-- **2026-08-31 用户明确授权普通用户安装版和绿色便携版实施，解除 WPF runtime bundle 的实现冻结。** 两种普通用户交付复用同一版本化 runtime bundle：安装版采用 per-user Inno Setup EXE，提供开始菜单、覆盖安装、更新和卸载；绿色版为解压即用 ZIP，不写注册表。二者必须内置 self-contained WPF、锁定 Node runtime、生产工具与依赖、prompts、snapshots 和健康状态所需资产，不要求 Git、PowerShell、.NET SDK 或系统 Node.js。`developer/operator preview` 保留为独立维护者交付，不得代替普通用户版本。公开 stable 发布仍要求有效 Authenticode 身份和代表性非开发者验收；本地 unsigned candidate 只能形成工程验证证据。
+- **2026-08-31 用户明确授权普通用户安装版和绿色便携版实施，解除 WPF runtime bundle 的实现冻结。** 两种普通用户交付复用同一版本化 runtime bundle：安装版采用 per-user Inno Setup EXE，提供开始菜单、覆盖安装、更新和卸载；绿色版为解压即用 ZIP，不写注册表。二者必须内置 self-contained WPF、锁定 Node runtime、生产工具与依赖、prompts、snapshots 和健康状态所需资产，不要求 Git、PowerShell、.NET SDK 或系统 Node.js。`developer/operator preview` 保留为独立维护者交付，不得代替普通用户版本（该 preview 通道已于 2026-10-10 退场，此保留句不再有效）。公开 stable 发布仍要求有效 Authenticode 身份和代表性非开发者验收；本地 unsigned candidate 只能形成工程验证证据。
 - **2026 回归基线暂不建立。** 在来源/使用权确认、是否纳入长期回归的方向决策、首次真实运行授权（约 6 次 AI 请求）、质量档与失败重试策略、blind/visual/reference/delivery 证据保留策略全部齐备前，两份 PDF 只能标记为待授权输入，不得称为 baseline，也不得把文件入库解释为回归链完成。
 - **Teacher Acceptance 保持产品未闭合项，不由工程门禁代替。** `2025广州中考-original-三档复跑` 是已有真实验收记录绑定的独立交付，已可称 Teacher Accepted；`eval/real-paper` 中的 2024/2025 baseline 仍分别保持 `teacherAccepted: false`，不得把前者外推给 baseline 或未来重跑。其余交付在真实验收记录存在前，最高状态只能是 reference-reviewed 或相应机器验证状态。最小真实验收协议：指定教师与试卷；记录查看版本及 manifest/hash；记录接受、拒绝或修改意见；结果写回对应 workflow receipt 或独立 acceptance record；只有记录存在且绑定产物哈希才可进入 teacher-accepted。
 - **M4/VISION-101 维持 blocked。** authority、provider 稳定性与预算任一缺失即保持 blocked；代码准备度、mock 测试与本地门禁不能替代缺失的外部授权或运行预算。
