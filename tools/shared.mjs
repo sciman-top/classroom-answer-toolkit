@@ -216,6 +216,7 @@ function kebabToCamel(name) {
 export function parseArgvFlags(argv, {
   stringFlags = {},
   booleanFlags = {},
+  optionalValueFlags = {},
   defaults = {},
   help = false,
   unknownFlag = "ignore",
@@ -257,6 +258,28 @@ export function parseArgvFlags(argv, {
         }
         options[key] = rawValue;
         index += hasInlineValue ? 0 : 1;
+        continue;
+      }
+
+      // An optional-value flag consumes the next argument only when it is a
+      // plain value.  With no value, or an inline empty value (--flag=), the
+      // declared fallback stands so a flag's bare form can differ from its
+      // absent form (e.g. --ocr alone still enables OCR with a default
+      // language while omitting the flag keeps it disabled).
+      if (optionalValueFlags[flagName] !== undefined) {
+        const { target, fallback } = optionalValueFlags[flagName];
+        const key = target === true ? kebabToCamel(flagName) : target;
+        if (hasInlineValue) {
+          options[key] = arg.slice(equalsIndex + 1) || (fallback ?? options[key]);
+        } else {
+          const next = argv[index + 1];
+          if (next !== undefined && !next.startsWith("--")) {
+            options[key] = next;
+            index += 1;
+          } else if (fallback !== undefined) {
+            options[key] = fallback;
+          }
+        }
         continue;
       }
 

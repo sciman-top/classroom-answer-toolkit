@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { fail } from "../shared.mjs";
+import { fail, parseArgvFlags } from "../shared.mjs";
 import { analyzeAnalogMeterCanvas } from "./lib/analog-meter-reading.mjs";
 import { analyzeLinearScaleCanvas } from "./lib/linear-scale-reading.mjs";
 import { analyzeOpticalRayCanvas } from "./lib/optical-ray-geometry.mjs";
@@ -29,137 +29,45 @@ Examples:
   npm run review-source-pdf -- "../../<试卷.pdf>" --pages 1,last --scale 2
 `;
 
-function requireValue(argv, index, flag) {
-  const value = argv[index];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-  return value;
-}
-
-// Kept as a hand-written parser: --ocr takes an optional value and --help
-// short-circuits with the positional list, which the shared flag parser does
-// not model.
 function parseArgs(argv) {
-  const positional = [];
-  const options = {
-    out: null,
-    pages: "all",
-    scale: 1.8,
-    verticalTiles: 1,
-    horizontalTiles: 1,
-    questionRegions: false,
-    tileOverlap: 0.15,
-    focusRegionsFile: null,
-    ocr: null
+  const { options, positional } = parseArgvFlags(argv, {
+    stringFlags: {
+      "out": "out",
+      "pages": "pages",
+      "focus-regions-file": "focusRegionsFile"
+    },
+    optionalValueFlags: {
+      "ocr": { target: "ocr", fallback: "chi_sim" }
+    },
+    booleanFlags: {
+      "question-regions": "questionRegions"
+    },
+    defaults: {
+      out: null,
+      pages: "all",
+      scale: 1.8,
+      verticalTiles: 1,
+      horizontalTiles: 1,
+      questionRegions: false,
+      tileOverlap: 0.15,
+      focusRegionsFile: null,
+      ocr: null
+    },
+    help: true,
+    unknownFlag: "error",
+    positional: true
+  });
+  return {
+    help: options.help === true,
+    positional,
+    options: {
+      ...options,
+      scale: Number(options.scale),
+      verticalTiles: Number(options.verticalTiles),
+      horizontalTiles: Number(options.horizontalTiles),
+      tileOverlap: Number(options.tileOverlap)
+    }
   };
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--help" || arg === "-h") {
-      return { help: true, positional, options };
-    }
-
-    if (arg === "--out") {
-      options.out = requireValue(argv, ++index, arg);
-      continue;
-    }
-
-    if (arg.startsWith("--out=")) {
-      options.out = arg.slice("--out=".length);
-      continue;
-    }
-
-    if (arg === "--pages") {
-      options.pages = requireValue(argv, ++index, arg);
-      continue;
-    }
-
-    if (arg.startsWith("--pages=")) {
-      options.pages = arg.slice("--pages=".length);
-      continue;
-    }
-
-    if (arg === "--scale") {
-      options.scale = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-
-    if (arg.startsWith("--scale=")) {
-      options.scale = Number(arg.slice("--scale=".length));
-      continue;
-    }
-
-    if (arg === "--vertical-tiles") {
-      options.verticalTiles = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-
-    if (arg.startsWith("--vertical-tiles=")) {
-      options.verticalTiles = Number(arg.slice("--vertical-tiles=".length));
-      continue;
-    }
-
-    if (arg === "--horizontal-tiles") {
-      options.horizontalTiles = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-
-    if (arg.startsWith("--horizontal-tiles=")) {
-      options.horizontalTiles = Number(arg.slice("--horizontal-tiles=".length));
-      continue;
-    }
-
-    if (arg === "--question-regions") {
-      options.questionRegions = true;
-      continue;
-    }
-
-    if (arg === "--tile-overlap") {
-      options.tileOverlap = Number(requireValue(argv, ++index, arg));
-      continue;
-    }
-
-    if (arg.startsWith("--tile-overlap=")) {
-      options.tileOverlap = Number(arg.slice("--tile-overlap=".length));
-      continue;
-    }
-
-    if (arg === "--focus-regions-file") {
-      options.focusRegionsFile = requireValue(argv, ++index, arg);
-      continue;
-    }
-
-    if (arg.startsWith("--focus-regions-file=")) {
-      options.focusRegionsFile = arg.slice("--focus-regions-file=".length);
-      continue;
-    }
-
-    if (arg === "--ocr") {
-      const next = argv[index + 1];
-      if (next && !next.startsWith("--")) {
-        options.ocr = next;
-        index += 1;
-      } else {
-        options.ocr = "chi_sim";
-      }
-      continue;
-    }
-
-    if (arg.startsWith("--ocr=")) {
-      options.ocr = arg.slice("--ocr=".length) || "chi_sim";
-      continue;
-    }
-
-    if (arg.startsWith("-")) {
-      throw new Error(`Unknown argument: ${arg}`);
-    }
-
-    positional.push(arg);
-  }
-
-  return { help: false, positional, options };
 }
 
 function makeDefaultOutputDir(inputPath) {
