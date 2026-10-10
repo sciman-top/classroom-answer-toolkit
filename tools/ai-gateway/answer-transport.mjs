@@ -493,6 +493,24 @@ export function buildAnswerRequestBody(provider, options) {
   };
 }
 
+// One shape for every attempt receipt, success or failure; overrides replace
+// the failure defaults so call sites only state what differs.
+function attemptResult(provider, options, startedAt, requestBody, overrides = {}) {
+  return {
+    provider: provider.role,
+    model: provider.visionModel,
+    reasoningEffort: provider.reasoningEffort || null,
+    attemptNumber: options.attemptNumber ?? 1,
+    durationMs: Date.now() - startedAt,
+    requestBytes: requestBody === null ? 0 : Buffer.byteLength(requestBody),
+    transport: options.transportPolicy,
+    ok: false,
+    retryable: true,
+    status: null,
+    ...overrides
+  };
+}
+
 async function callProvider(provider, options) {
   const endpointPath = provider.visionSurface === "chat_completions" ? "chat/completions" : "responses";
   const endpoint = `${provider.baseUrl.replace(/\/+$/, "")}/${endpointPath}`;
@@ -522,85 +540,42 @@ async function callProvider(provider, options) {
     });
     const bodyText = await readResponseTextCapped(response);
     if (!response.ok) {
-      return {
-        provider: provider.role,
-        model: provider.visionModel,
-        reasoningEffort: provider.reasoningEffort || null,
-        attemptNumber: options.attemptNumber ?? 1,
-        durationMs: Date.now() - startedAt,
-        requestBytes: Buffer.byteLength(requestBody),
-        transport: options.transportPolicy,
-        ok: false,
+      return attemptResult(provider, options, startedAt, requestBody, {
         retryable: isRetryableGatewayFailure(response.status),
         status: response.status,
         retryAfterMs: parseRetryAfterMs(response.headers),
         error: summarizeProviderErrorBody(bodyText)
-      };
+      });
     }
     let parsed;
     try {
       parsed = JSON.parse(bodyText);
     } catch (error) {
-      return {
-        provider: provider.role,
-        model: provider.visionModel,
-        reasoningEffort: provider.reasoningEffort || null,
-        attemptNumber: options.attemptNumber ?? 1,
-        durationMs: Date.now() - startedAt,
-        requestBytes: Buffer.byteLength(requestBody),
-        transport: options.transportPolicy,
-        ok: false,
-        retryable: true,
+      return attemptResult(provider, options, startedAt, requestBody, {
         status: response.status,
         error: `Provider response was not JSON: ${error instanceof Error ? error.message : String(error)}`
-      };
+      });
     }
     const truncationError = detectTruncation(parsed, provider, options.maxOutputTokens);
     if (truncationError) {
-      return {
-        provider: provider.role,
-        model: provider.visionModel,
-        reasoningEffort: provider.reasoningEffort || null,
-        attemptNumber: options.attemptNumber ?? 1,
-        durationMs: Date.now() - startedAt,
-        requestBytes: Buffer.byteLength(requestBody),
-        transport: options.transportPolicy,
-        ok: false,
-        retryable: true,
+      return attemptResult(provider, options, startedAt, requestBody, {
         status: response.status,
         answerMarkdown: "",
         error: truncationError
-      };
+      });
     }
     const answerMarkdown = normalizeAnswerMarkdown(extractTextOutput(parsed));
-    return {
-      provider: provider.role,
-      model: provider.visionModel,
-      reasoningEffort: provider.reasoningEffort || null,
-      attemptNumber: options.attemptNumber ?? 1,
-      durationMs: Date.now() - startedAt,
-      requestBytes: Buffer.byteLength(requestBody),
-      transport: options.transportPolicy,
+    return attemptResult(provider, options, startedAt, requestBody, {
       ok: answerMarkdown.length > 0,
       retryable: answerMarkdown.length === 0,
       status: response.status,
       answerMarkdown,
       error: answerMarkdown.length > 0 ? "" : "Provider response did not contain answer Markdown."
-    };
+    });
   } catch (error) {
-    return {
-      provider: provider.role,
-      model: provider.visionModel,
-      reasoningEffort: provider.reasoningEffort || null,
-      attemptNumber: options.attemptNumber ?? 1,
-      durationMs: Date.now() - startedAt,
-      requestBytes: Buffer.byteLength(requestBody),
-      transport: options.transportPolicy,
-      ok: false,
-      retryable: true,
-      status: null,
+    return attemptResult(provider, options, startedAt, requestBody, {
       error: summarizeRequestError(error)
-    };
+    });
   } finally {
     clearTimeout(timeout);
   }
@@ -640,19 +615,13 @@ export async function requestAnswerWithFailover(config, options) {
         if (!(error instanceof ExecutionSlotTimeoutError)) {
           throw error;
         }
-        attempt = {
-          provider: provider.role,
-          model: provider.visionModel,
-          reasoningEffort: provider.reasoningEffort || null,
-          attemptNumber,
-          durationMs: Date.now() - attemptStartedAt,
-          requestBytes: 0,
-          transport: requestOptions.transportPolicy,
-          ok: false,
-          retryable: true,
-          status: null,
-          error: error.message
-        };
+        attempt = attemptResult(
+          provider,
+          { ...requestOptions, attemptNumber },
+          attemptStartedAt,
+          null,
+          { error: error.message }
+        );
       }
         attempt.executionSlot = provider.executionSlot;
         attempt.qualityProfile = provider.qualityProfile;

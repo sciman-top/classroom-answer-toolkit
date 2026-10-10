@@ -372,12 +372,13 @@ function main() {
     }
   }
 
+  // profile IS snapshot.activeProfile (compile backfills answerRules from
+  // layout), so the snapshot.profiles lookup below only re-reads the same
+  // object; a mismatch there is a compile bug, not a case to paper over.
   validateLineLengths(
     lines,
     profile.answerRules?.maxPlainTextCjkPerLine
       ?? profile.layout?.plainTextCjkMax
-      ?? snapshot.profiles?.[profile.name]?.answerRules?.maxPlainTextCjkPerLine
-      ?? snapshot.profiles?.[profile.name]?.layout?.plainTextCjkMax
       ?? 24,
     warnings
   );
