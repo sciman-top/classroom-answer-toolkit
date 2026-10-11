@@ -106,8 +106,13 @@ function alignedWorkspace() {
   return workspace;
 }
 
+function writeEnvFile(workspace, content) {
+  workspace.writeRaw(".env", content);
+}
+
 test("healthy report when the primary pack is aligned", () => {
   const workspace = alignedWorkspace();
+  writeEnvFile(workspace, "CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY=teacher-key\n");
   try {
     const report = workspace.health();
     assert.deepEqual(report.issues, []);
@@ -117,6 +122,45 @@ test("healthy report when the primary pack is aligned", () => {
     assert.equal(report.snapshotExists, true);
     assert.equal(report.evalOk, true);
     assert.equal(report.evalCaseCount, 4);
+    assert.equal(report.apiKeyConfigured, true);
+  } finally {
+    workspace.dispose();
+  }
+});
+
+test("a seeded .env without a key stays healthy and carries the setup hint", () => {
+  const workspace = alignedWorkspace();
+  // The installer seeds .env from .env.example with an empty key: pending
+  // setup is not breakage, so the report must stay healthy while pointing at
+  // the one manual step.
+  writeEnvFile(workspace, "# seeded template\nCLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY=\n");
+  try {
+    const report = workspace.health();
+    assert.deepEqual(report.issues, []);
+    assert.equal(report.apiKeyConfigured, false);
+    assert.ok(report.summary.includes("CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY"));
+    assert.ok(report.summary.includes("CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED"));
+  } finally {
+    workspace.dispose();
+  }
+});
+
+test("a quoted key value counts as configured", () => {
+  const workspace = alignedWorkspace();
+  writeEnvFile(workspace, "CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY=\"sk-teacher\"\n");
+  try {
+    assert.equal(workspace.health().apiKeyConfigured, true);
+  } finally {
+    workspace.dispose();
+  }
+});
+
+test("a missing .env file is a structural issue", () => {
+  const workspace = alignedWorkspace();
+  try {
+    const report = workspace.health();
+    assert.ok(report.issues.some((issue) => issue.includes("缺少 .env")));
+    assert.equal(report.apiKeyConfigured, false);
   } finally {
     workspace.dispose();
   }

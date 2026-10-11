@@ -136,14 +136,20 @@ try {
         $runtimeManifest = Get-Content -LiteralPath (Join-Path $installRoot "runtime-manifest.json") -Raw | ConvertFrom-Json
         if ([string]$runtimeManifest.distributionMode -ne "installer") { throw "Installed runtime mode is not installer." }
         if (-not (Test-Path -LiteralPath (Join-Path $installRoot "runtime/node/node.exe") -PathType Leaf)) { throw "Bundled Node.js is missing." }
+        if (-not (Test-Path -LiteralPath (Join-Path $installRoot ".env") -PathType Leaf)) { throw "Seeded .env template is missing." }
         Invoke-AppSmoke -Root $installRoot
     }
 
-    Invoke-Scenario -Name "installer-repair" -Summary "Rerunning setup restores a missing packaged file and preserves install viability." -Action {
+    Invoke-Scenario -Name "installer-repair" -Summary "Rerunning setup restores a missing packaged file, preserves the configured .env, and keeps install viability." -Action {
+        # The seeded .env is the teacher's configuration carrier: a repair (or
+        # upgrade) rerun must never overwrite a configured key file.
+        $envPath = Join-Path $installRoot ".env"
+        Set-Content -LiteralPath $envPath -Value "CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY=teacher-acceptance-key" -Encoding utf8
         $noticePath = Join-Path $installRoot "LICENSE.txt"
         Remove-Item -LiteralPath $noticePath -Force
         Invoke-Setup -LogName "repair.log"
         if (-not (Test-Path -LiteralPath $noticePath -PathType Leaf)) { throw "Repair did not restore LICENSE.txt." }
+        if ((Get-Content -LiteralPath $envPath -Raw) -notmatch "teacher-acceptance-key") { throw "Repair overwrote the configured .env." }
         Invoke-AppSmoke -Root $installRoot
     }
 
@@ -167,6 +173,7 @@ try {
         Wait-ProcessBounded -Process $process -Description "uninstaller"
         if ($process.ExitCode -ne 0) { throw "Uninstaller failed (exit $($process.ExitCode))." }
         if (Test-Path -LiteralPath (Join-Path $installRoot "ClassroomToolkit.App.exe") -PathType Leaf) { throw "Application executable remains after uninstall." }
+        if (-not (Test-Path -LiteralPath (Join-Path $installRoot ".env") -PathType Leaf)) { throw "Teacher .env must survive uninstall." }
     }
 }
 catch {

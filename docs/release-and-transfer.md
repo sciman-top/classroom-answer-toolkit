@@ -50,6 +50,13 @@ install/repair/uninstall and portable launch. Stable publication remains
 blocked until the setup and app have valid Authenticode signatures and a
 representative non-developer acceptance record.
 
+Both ordinary-user packages seed a keyless `.env` (from the committed
+`.env.example`) into the writable runtime root; the app health card points
+there for the teacher's only setup step (own API key and
+`CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true`). Installer upgrades and repairs
+never overwrite an existing `.env` (`onlyifdoesntexist`), and uninstall
+preserves it (`uninsneveruninstall`); acceptance asserts all three behaviors.
+
 No code-signing certificate is configured by this repository. SHA-256 is an
 integrity check for the published Release asset; it is not a substitute for a
 publisher identity signature. Before distributing to non-developer users,

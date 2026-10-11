@@ -56,6 +56,36 @@ function readEvalSnapshotId(evalResult, profile) {
   return null;
 }
 
+// The teacher's only setup step is filling their own key into the seeded .env,
+// so health reports key PRESENCE (never its value). A missing file is
+// structural (the installer seeds it, dev setup generates it); an unfilled key
+// is pending setup, not breakage — it surfaces through the summary hint and
+// must not turn the workspace unhealthy (the packaged smoke ships a keyless
+// seed).
+const TEACHER_API_KEY_FIELD = "CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY";
+
+function readEnvSetupStatus(repositoryRoot) {
+  let content;
+  try {
+    content = fs.readFileSync(path.join(repositoryRoot, ".env"), "utf8");
+  } catch {
+    return { fileExists: false, apiKeyConfigured: false };
+  }
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (line.length === 0 || line.startsWith("#")) {
+      continue;
+    }
+    const separator = line.indexOf("=");
+    if (separator <= 0 || line.slice(0, separator).trim() !== TEACHER_API_KEY_FIELD) {
+      continue;
+    }
+    const value = line.slice(separator + 1).trim().replace(/^["']|["']$/g, "");
+    return { fileExists: true, apiKeyConfigured: value.length > 0 };
+  }
+  return { fileExists: true, apiKeyConfigured: false };
+}
+
 function readEvalStatus(evalResultsPath, profile) {
   if (!fs.existsSync(evalResultsPath)) {
     return { exists: false, ok: false, assetVersion: null, caseCount: 0, snapshotId: null };
@@ -76,6 +106,10 @@ function readEvalStatus(evalResultsPath, profile) {
 export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, repositoryRoot = repoRoot } = {}) {
   const issues = [];
   const isPackagedRuntime = fs.existsSync(path.join(repositoryRoot, "runtime-manifest.json"));
+  const envSetup = readEnvSetupStatus(repositoryRoot);
+  if (!envSetup.fileExists) {
+    issues.push("缺少 .env 配置文件（安装包自带模板，开发工作区由 setup 生成）。");
+  }
   let packs;
   try {
     packs = listSubjectPacks({ repositoryRoot });
@@ -94,6 +128,7 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
       evalExists: false,
       evalOk: false,
       evalCaseCount: 0,
+      apiKeyConfigured: false,
       summary: `无法读取 subject pack 注册表：${error.message}`,
       issues: [`无法读取 subject pack 注册表：${error.message}`]
     };
@@ -147,9 +182,12 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
   }
 
   const uniqueIssues = [...new Set(issues)];
-  const summary = uniqueIssues.length === 0
+  const setupHint = envSetup.apiKeyConfigured
+    ? ""
+    : `尚未配置 AI 密钥：用记事本打开 ${path.join(repositoryRoot, ".env")}，填入自备 API key（${TEACHER_API_KEY_FIELD}、BASE_URL 等），并把 CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED 改为 true，保存后重新体检。`;
+  const summary = uniqueIssues.length === 0 && !setupHint
     ? "规则快照、评测结果与最新规范已对齐。"
-    : uniqueIssues.join("；");
+    : [...uniqueIssues, setupHint].filter(Boolean).join("；");
 
   return {
     primarySubjectPack: pack?.assetId ?? primarySubjectPackAssetId,
@@ -163,6 +201,7 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
     evalExists: evalStatus.exists,
     evalOk: evalStatus.ok,
     evalCaseCount: evalStatus.caseCount,
+    apiKeyConfigured: envSetup.apiKeyConfigured,
     summary,
     issues: uniqueIssues
   };

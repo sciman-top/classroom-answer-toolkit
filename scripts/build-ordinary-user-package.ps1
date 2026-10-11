@@ -181,6 +181,11 @@ try {
     # same package promises exactly that (review 2026-10).
     Copy-PublishNotices -DestinationDirectory $stageRoot -IncludeRuntimeLicenses
     Copy-Item -LiteralPath (Join-Path $repoRoot "prompts") -Destination (Join-Path $stageRoot "prompts") -Recurse -Force
+    # The teacher's only setup step is filling their own key into this seeded
+    # template (the app health card points at it). The installer copies it with
+    # onlyifdoesntexist so an upgrade or repair never overwrites a configured
+    # .env; see installer/ClassroomToolkit.iss.
+    Copy-Item -LiteralPath (Join-Path $repoRoot ".env.example") -Destination (Join-Path $stageRoot ".env") -Force
     if (Test-Path -LiteralPath (Join-Path $repoRoot ".snapshot-cache") -PathType Container) {
         Copy-Item -LiteralPath (Join-Path $repoRoot ".snapshot-cache") -Destination (Join-Path $stageRoot ".snapshot-cache") -Recurse -Force
     }

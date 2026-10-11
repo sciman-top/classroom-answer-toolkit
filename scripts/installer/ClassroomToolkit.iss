@@ -40,7 +40,11 @@ VersionInfoDescription=Classroom Answer Toolkit installer
 VersionInfoCompany=sciman-top
 
 [Files]
-Source: "{#StageRoot}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#StageRoot}\*"; DestDir: "{app}"; Excludes: ".env"; Flags: ignoreversion recursesubdirs createallsubdirs
+; The seeded .env is the teacher's configuration carrier: onlyifdoesntexist
+; keeps an upgrade or repair from overwriting a configured key file, and
+; uninsneveruninstall keeps it through an uninstall so a reinstall finds it.
+Source: "{#StageRoot}\.env"; DestDir: "{app}"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Icons]
 Name: "{autoprograms}\Classroom Answer Toolkit"; Filename: "{app}\ClassroomToolkit.App.exe"; WorkingDir: "{app}"
