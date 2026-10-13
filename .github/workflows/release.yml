@@ -1,29 +1,33 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
+      action:
+        description: Build a retryable candidate or publish one already accepted
+        required: true
+        type: choice
+        options:
+          - build-candidate
+          - publish-accepted-candidate
       version:
-        description: Version of the tested candidate, without the leading v
+        description: Product version, without the leading v
         required: true
         type: string
       candidate_run_id:
-        description: Successful tag-triggered Release run that built the candidate
-        required: true
+        description: Successful candidate build run ID (required for publication)
+        required: false
         type: string
       acceptance_record:
         description: JSON record from a representative non-developer who tested this exact candidate
-        required: true
+        required: false
         type: string
 
 permissions: {}
 
 jobs:
   build-candidate:
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'build-candidate'
     runs-on: windows-latest
     permissions:
       contents: read
@@ -36,9 +40,17 @@ jobs:
       - name: Set release version
         id: release
         shell: pwsh
+        env:
+          RELEASE_VERSION_INPUT: ${{ inputs.version }}
         run: |
-          $version = $env:GITHUB_REF_NAME -replace '^v', ''
-          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Release tag must be v<major>.<minor>.<patch>." }
+          $version = $env:RELEASE_VERSION_INPUT
+          if ($env:GITHUB_REF_TYPE -ne "branch" -or $env:GITHUB_REF_NAME -ne "main") {
+            throw "Candidate builds must run from the main branch."
+          }
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Release version must be major.minor.patch." }
+          $existingTag = & git ls-remote --refs origin "refs/tags/v$version"
+          if ($LASTEXITCODE -ne 0) { throw "Unable to verify whether release tag v$version is available." }
+          if ($existingTag) { throw "Release tag v$version already exists; choose the next unused version." }
           "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Setup .NET
@@ -154,7 +166,7 @@ jobs:
           retention-days: 30
 
   publish-accepted-candidate:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'publish-accepted-candidate'
     runs-on: windows-latest
     permissions:
       actions: read
@@ -168,7 +180,7 @@ jobs:
           ref: ${{ github.ref }}
           persist-credentials: false
 
-      - name: Validate version tag and successful candidate run
+      - name: Validate version tag and successful main-branch candidate run
         id: candidate
         shell: pwsh
         env:
@@ -185,12 +197,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Unable to read candidate run $env:CANDIDATE_RUN_ID." }
           $run = ($runJson -join "`n") | ConvertFrom-Json
           if ([string]$run.path -notmatch '^\.github/workflows/release\.yml(?:@|$)' -or
-              [string]$run.event -ne "push" -or
+              [string]$run.event -ne "workflow_dispatch" -or
               [string]$run.status -ne "completed" -or
               [string]$run.conclusion -ne "success" -or
-              [string]$run.head_branch -ne "v$env:RELEASE_VERSION" -or
+              [string]$run.head_branch -ne "main" -or
               -not [string]::Equals([string]$run.head_sha, $env:GITHUB_SHA, [StringComparison]::OrdinalIgnoreCase)) {
-            throw "Candidate run must be a successful tag-triggered Release workflow for this exact source commit and version."
+            throw "Candidate run must be a successful main-branch Release workflow_dispatch for this exact source commit."
           }
           "source-commit=$($run.head_sha)" >> $env:GITHUB_OUTPUT
           "candidate-completed-at=$($run.updated_at)" >> $env:GITHUB_OUTPUT

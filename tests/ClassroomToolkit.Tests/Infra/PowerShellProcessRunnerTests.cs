@@ -249,10 +249,12 @@ public sealed class PowerShellProcessRunnerTests
         var runner = new PowerShellProcessRunner();
         var lines = new List<string>();
         var firstLineSeen = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var continuePath = Path.Combine(Path.GetTempPath(), $"runner-continue-{Guid.NewGuid():N}.txt");
+        var script = "const fs=require('node:fs');const continuePath=process.argv[1];console.log('one');const wait=()=>{if(fs.existsSync(continuePath)){console.log('two');return;}setTimeout(wait,10);};wait();";
 
         var runTask = runner.RunAsync(
             "node",
-            ["-e", "console.log('one'); setTimeout(() => console.log('two'), 400)"],
+            ["-e", script, continuePath],
             Path.GetTempPath(),
             onOutputLine: line =>
             {
@@ -267,12 +269,38 @@ public sealed class PowerShellProcessRunnerTests
                 }
             });
 
-        await firstLineSeen.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        // The child sleeps 400ms before its last line, so a completed runTask
-        // here would mean the sink only fired after exit.
-        runTask.IsCompleted.Should().BeFalse();
+        var firstLineWasForwarded = false;
+        var runWasIncompleteWhenFirstLineWasForwarded = false;
+        try
+        {
+            await firstLineSeen.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            firstLineWasForwarded = true;
+            // Keep the child alive until this test explicitly continues it, so
+            // scheduler delays cannot turn live forwarding into a false failure.
+            runWasIncompleteWhenFirstLineWasForwarded = !runTask.IsCompleted;
+        }
+        catch (TimeoutException)
+        {
+            // Release the child below, then assert that the live callback was
+            // missing. This keeps the subprocess from hanging on a failed test.
+        }
+        finally
+        {
+            await File.WriteAllTextAsync(continuePath, "continue");
+        }
 
-        var result = await runTask;
+        ProcessRunResult result;
+        try
+        {
+            result = await runTask;
+        }
+        finally
+        {
+            File.Delete(continuePath);
+        }
+
+        firstLineWasForwarded.Should().BeTrue("the first output line should be forwarded before the child is released");
+        runWasIncompleteWhenFirstLineWasForwarded.Should().BeTrue("the child waits for this test before exiting");
         lock (lines)
         {
             lines.Should().Equal("one", "two");

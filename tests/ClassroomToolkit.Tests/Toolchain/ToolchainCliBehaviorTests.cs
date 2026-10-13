@@ -215,22 +215,30 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public void ReleaseWorkflowSkipsMachineSpecificHealthEvalButKeepsCoreGate()
+    public void ReleaseWorkflowAllowsRetryableCandidatesBeforeTaggedPublication()
     {
         var workflow = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), ".github", "workflows", "release.yml"));
 
         workflow.Should().Contain("setup-development.ps1 -NoInstall -SkipHealthEval");
         workflow.Should().NotContain("setup-development.ps1 -NoInstall -SkipCore");
         // AGENTS.md routes release changes through -Mode Full (cross-subject,
-        // delivery contract and every subject-pack eval); a tag build must not
-        // ship with only the Core gate.
+        // delivery contract and every subject-pack eval); candidate retries
+        // must pass that gate before any stable version tag is created.
         workflow.Should().Contain("check-toolchain.ps1 -Mode Full");
-        workflow.Should().Contain("if: github.event_name == 'push'");
-        workflow.Should().Contain("if: github.event_name == 'workflow_dispatch'");
+        workflow.Should().NotContain("  push:\n    tags:");
+        workflow.Should().Contain("- build-candidate");
+        workflow.Should().Contain("- publish-accepted-candidate");
+        workflow.Should().Contain("if: github.event_name == 'workflow_dispatch' && inputs.action == 'build-candidate'");
+        workflow.Should().Contain("if: github.event_name == 'workflow_dispatch' && inputs.action == 'publish-accepted-candidate'");
+        workflow.Should().Contain("Candidate builds must run from the main branch.");
+        workflow.Should().Contain("git ls-remote --refs origin \"refs/tags/v$version\"");
+        workflow.Should().Contain("Release tag v$version already exists; choose the next unused version.");
         workflow.Should().Contain("release-candidate-");
         workflow.Should().Contain("verify-release-acceptance.ps1");
         workflow.Should().Contain("Build unsigned stable release candidate");
         workflow.Should().NotContain("WINDOWS_SIGNING_CERTIFICATE");
+        workflow.Should().Contain("[string]$run.event -ne \"workflow_dispatch\"");
+        workflow.Should().Contain("[string]$run.head_branch -ne \"main\"");
         workflow.Should().Contain("candidate-completed-at=$($run.updated_at)");
         workflow.Should().NotContain("candidate-created-at=");
         workflow.Should().Contain("gh release create");

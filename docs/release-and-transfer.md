@@ -15,21 +15,37 @@ This repository defines four intentionally separate delivery types. The installe
 
 本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；其中 `installer/stable/` 放普通用户安装程序及清单，`portable/` 放绿色版，`source/` 放公开源码包，`private-transfer/` 放按需私用迁移包，`_release-metadata/` 放版本清单、SBOM 和 provenance。历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
 
-Create an annotated tag named `v<major>.<minor>.<patch>` and push that tag.
-The tag workflow performs the setup and integration gates, builds the installer
-and portable ZIP, verifies both packages, generates the source ZIP and SPDX
-SBOM, then uploads a 30-day candidate artifact. Authenticode signing is
-optional; the stable candidate workflow does not require signing certificate
-secrets. A tag run never publishes a GitHub Release.
+Only allocate a product version when starting a formal release cycle. Before
+the first candidate, update `<Version>` in
+`src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` once to the next unused
+version and commit it to `main`. Every candidate retry for that release reuses
+the same version; never delete or repoint an old tag to free a number. The
+current source version is `1.0.5`, and `v1.0.5` is already an immutable tag, so
+the next formal release must start at `1.0.6`.
+
+Start **Actions -> Release -> Run workflow** from the `main` branch with
+`action=build-candidate` and the version from
+`src/ClassroomToolkit.App/ClassroomToolkit.App.csproj`. This runs the setup and
+integration gates, builds the installer and portable ZIP, verifies both
+packages, generates the source ZIP and SPDX SBOM, then uploads a 30-day
+candidate artifact. Authenticode signing is optional; candidate builds do not
+require signing certificate secrets. Candidate builds do not create a tag or
+publish a GitHub Release, so a failed build can be fixed and retried at the
+same product version. Choose the next product version only when starting a
+formal release cycle; keep it unchanged across candidate retries. Do not create
+the version tag until the exact candidate has passed representative acceptance.
 
 A representative non-developer must install and repair the candidate, launch
 the portable package, and render a Markdown answer to PDF from both package
-types. After those checks, start **Release -> Run workflow** with the matching
-version tag selected. Supply the successful candidate run ID and an acceptance
-record containing the candidate's source commit and both package SHA-256 values
-from the candidate run summary. The publish workflow downloads that exact
-candidate and rejects a missing, stale, mismatched, or incomplete record before
-writing release metadata, provenance, checksums, or a GitHub Release.
+types. Test the artifact from one successful candidate run and record that run
+ID, source commit, and both package SHA-256 values from its summary. After
+acceptance, create and push the matching annotated tag `v<version>` at that
+candidate's source commit. Then start **Release -> Run workflow** with
+`action=publish-accepted-candidate`, the matching version tag selected, the
+successful candidate run ID, and the acceptance record. The publish workflow
+downloads that exact candidate and verifies its run, source commit, and package
+hashes before writing release metadata, provenance, checksums, or a GitHub
+Release.
 
 The acceptance record input has this shape; every package hash must come from
 the candidate artifact the representative person actually tested:
@@ -68,10 +84,13 @@ role or prove that they performed the real-world checks. The automated
 `test-ordinary-user-package.ps1` receipt remains engineering evidence and
 cannot substitute for this record.
 
-The existing `v1.0.1` Release is a legacy tag snapshot. Later versions are
-represented only when their matching tag runs this workflow. Do not replace an
-existing Release asset manually with a locally generated ZIP; the manifest, SBOM and
-attestation must be produced by the same clean tagged source.
+The existing `v1.0.1` Release is a legacy tag snapshot. Tags through `v1.0.5`
+are immutable history; `v1.0.4` and `v1.0.5` are earlier candidate tags and
+must not be reused, deleted, or repointed. Later versions are represented
+only after an accepted candidate's exact source commit is tagged and the
+publish workflow completes. Do not replace an existing Release asset manually
+with a locally generated ZIP; the manifest, SBOM and attestation must be
+produced from the same source commit as the accepted candidate.
 
 `<版本>` below is always the `<Version>` in
 `src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` (currently 1.0.5);
