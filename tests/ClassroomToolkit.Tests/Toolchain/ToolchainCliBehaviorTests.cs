@@ -203,7 +203,7 @@ public sealed class ToolchainCliBehaviorTests
             "pwsh",
             ToolchainTestHost.FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
-            "-Version", "1.0.4",
+            "-Version", "1.0.5",
             "-SkipPublish",
             "-IsccPath", Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-ISCC.exe"));
 

@@ -74,7 +74,7 @@ existing Release asset manually with a locally generated ZIP; the manifest, SBOM
 attestation must be produced by the same clean tagged source.
 
 `<版本>` below is always the `<Version>` in
-`src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` (currently 1.0.4);
+`src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` (currently 1.0.5);
 `package-release.ps1` rejects a mismatch.
 
 The manifest binds each asset to a URL, byte count and SHA-256, plus a
