@@ -4,7 +4,29 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { deepMerge, isDirectInvocation, parseArgvFlags, sha256File, sha256Hex } from "./shared.mjs";
+import { deepMerge, isDirectInvocation, parseArgvFlags, readResponseTextCapped, sha256File, sha256Hex } from "./shared.mjs";
+
+test("oversized response headers cancel the body without reading it", async () => {
+  let canceled = false;
+  const response = new Response(new ReadableStream({
+    cancel() { canceled = true; }
+  }), { headers: { "content-length": "101" } });
+  await assert.rejects(readResponseTextCapped(response, 100),
+    (error) => error.providerResponseOverSizeLimit === true);
+  assert.equal(canceled, true);
+});
+
+test("streamed response limit cancels and releases the reader", async () => {
+  let canceled = false;
+  const response = new Response(new ReadableStream({
+    start(controller) { controller.enqueue(new Uint8Array(101)); },
+    cancel() { canceled = true; }
+  }));
+  await assert.rejects(readResponseTextCapped(response, 100),
+    (error) => error.providerResponseOverSizeLimit === true);
+  assert.equal(canceled, true);
+  assert.equal(response.body.locked, false);
+});
 
 test("sha256Hex matches known digest for text", () => {
   assert.equal(sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");

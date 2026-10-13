@@ -39,15 +39,25 @@ jobs:
         shell: pwsh
         run: |
           npm --prefix tools/ai-gateway run test:answer
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm --prefix tools/latex-renderer run test:render
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm --prefix tools/latex-renderer run test:output-path
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm --prefix tools/latex-renderer run test:eval-runtime
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm --prefix tools/latex-renderer run test:visual
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm --prefix tools/rule-compiler run test:rules
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm --prefix tools/spec-assembler run test:assemble
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm --prefix eval/real-paper test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate!=ToolchainIntegration"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate=ToolchainIntegration"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       # Evidence collection must sit after the steps that produce it: a failure()
       # step never fires retroactively for a later failure, so the upload used

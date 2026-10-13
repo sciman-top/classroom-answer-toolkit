@@ -35,7 +35,7 @@ SourceExam
 - `tools/ai-gateway`
 - `tools/latex-renderer`
 - renderer 内的 Tesseract.js OCR，仅作为明确请求时的辅助能力
-- App/Domain/Infra 三程序集的最小 WPF 桌面壳层
+- App 单项目的最小 WPF 桌面壳层，Domain/Infra 已并入 App
 
 ## Frozen and removal targets
 
@@ -74,5 +74,5 @@ SourceExam
 2. `M1 dead-surface-removal`（verified）：退出主链的工具、专属 schema/eval、死 DTO、未使用 diagnostics 和空项目已删除。
 3. `M2 gate-tiering`（verified）：Focused/Core/Full 已分层、去重并解除 patch SDK 摩擦。
 4. `M3 real-paper-regression`（verified）：2024/2025 真实错题已绑定 authority、输入/产物 hash 和独立阶段结果。
-5. `M4 targeted-visual-grounding`：在真实标注和稳定 provider 前提下接入有限部件定位；兼任 WPF 产品化决策门（runtime bundle 只在本门通过后立项）。
+5. `M4 targeted-visual-grounding`：在真实标注和稳定 provider 前提下接入有限部件定位；保持 blocked。WPF runtime bundle 已由 2026-08-31 的独立用户授权立项，按 execution-backlog 中 WPF-RUNTIME-101 的边界执行。
 6. `M5 historical-rollout`：按同一主链推进 2015-2023 真实回归。

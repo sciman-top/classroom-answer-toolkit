@@ -102,6 +102,17 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     {
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("健康检查结果必须是 JSON object。");
+        }
+        var evalCaseCount = 0;
+        if (root.TryGetProperty("evalCaseCount", out var caseCount)
+            && (caseCount.ValueKind != JsonValueKind.Number
+                || !caseCount.TryGetInt32(out evalCaseCount) || evalCaseCount < 0))
+        {
+            throw new JsonException("evalCaseCount 必须是非负 Int32。");
+        }
         return new WorkspaceHealthReport(
             ReadOptionalString(root, "primarySubjectPack"),
             ReadStringArray(root, "subjectPacks"),
@@ -112,9 +123,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 ? snapshotPath.GetString()!
                 : string.Empty,
             ReadBool(root, "evalOk"),
-            root.TryGetProperty("evalCaseCount", out var caseCount) && caseCount.ValueKind == JsonValueKind.Number
-                ? caseCount.GetInt32()
-                : 0,
+            evalCaseCount,
             root.TryGetProperty("summary", out var summary) && summary.ValueKind == JsonValueKind.String
                 ? summary.GetString()!
                 : string.Empty,

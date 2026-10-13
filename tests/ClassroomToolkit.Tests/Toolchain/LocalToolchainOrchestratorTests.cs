@@ -8,6 +8,24 @@ namespace ClassroomToolkit.Tests.Toolchain;
 
 public sealed class LocalToolchainOrchestratorTests
 {
+    [Theory]
+    [InlineData("{\"evalCaseCount\":2147483648}")]
+    [InlineData("{\"evalCaseCount\":1.5}")]
+    [InlineData("{\"evalCaseCount\":-1}")]
+    [InlineData("{\"evalCaseCount\":\"bad\"}")]
+    [InlineData("[]")]
+    public async Task GetWorkspaceHealthReportAsync_MalformedReportDegradesToDiagnostics(string json)
+    {
+        using var workspace = new TemporaryWorkspace();
+        var runner = new DeliveryRunner(workspace.Root, healthJson: json);
+        var orchestrator = new LocalToolchainOrchestrator(new RepositoryRootResolver(workspace.Root), runner);
+
+        var health = await orchestrator.GetWorkspaceHealthReportAsync();
+
+        health.IsHealthy.Should().BeFalse();
+        health.Issues.Should().ContainSingle(issue => issue.Contains("健康检查工具不可用"));
+    }
+
     [Fact]
     public async Task GetWorkspaceHealthReportAsync_ParsesTheNodeRegistryReport()
     {

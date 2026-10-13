@@ -96,6 +96,13 @@ export function summarizeProviderErrorBody(bodyText, maxLength = DEFAULT_PROVIDE
 export async function readResponseTextCapped(response, maxBytes = MAX_PROVIDER_RESPONSE_BYTES) {
   const declared = Number(response.headers?.get?.("content-length"));
   if (Number.isFinite(declared) && declared > maxBytes) {
+    // Rejecting headers alone leaves the response streaming and its connection
+    // occupied. Release it before handing the failure to the retry policy.
+    try {
+      await response.body?.cancel();
+    } catch {
+      // Keep the size-limit error authoritative if cancellation also fails.
+    }
     throw responseSizeLimitError(`Provider response declared ${declared} bytes, above the ${maxBytes}-byte limit.`);
   }
 

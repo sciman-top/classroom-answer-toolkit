@@ -4,7 +4,7 @@ function normalizePageToken(token, pageCount) {
   }
 
   const pageNumber = Number(token);
-  if (!Number.isInteger(pageNumber)) {
+  if (!/^\d+$/u.test(token) || !Number.isSafeInteger(pageNumber)) {
     throw new Error(`Invalid page token: ${token}`);
   }
 
@@ -12,6 +12,14 @@ function normalizePageToken(token, pageCount) {
 }
 
 export function parsePageSelection(selection, pageCount) {
+  if (!Number.isSafeInteger(pageCount) || pageCount < 1) {
+    throw new Error(`Invalid page count: ${pageCount}`);
+  }
+  const assertInBounds = (pageNumber) => {
+    if (pageNumber < 1 || pageNumber > pageCount) {
+      throw new Error(`Page ${pageNumber} is outside 1-${pageCount}`);
+    }
+  };
   if (!selection || selection.toLowerCase() === "all") {
     return Array.from({ length: pageCount }, (_value, index) => index + 1);
   }
@@ -19,6 +27,9 @@ export function parsePageSelection(selection, pageCount) {
   const selected = [];
   const seen = new Set();
   const tokens = selection.split(",").map((token) => token.trim().toLowerCase()).filter(Boolean);
+  if (tokens.length === 0) {
+    throw new Error("Page selection must contain at least one page.");
+  }
 
   for (const token of tokens) {
     if (token.includes("-")) {
@@ -32,6 +43,10 @@ export function parsePageSelection(selection, pageCount) {
       if (start > end) {
         throw new Error(`Invalid page range: ${token}`);
       }
+      // Validate before expanding: an invalid huge range must never allocate
+      // millions of entries or stall the review process.
+      assertInBounds(start);
+      assertInBounds(end);
 
       for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
         if (!seen.has(pageNumber)) {
@@ -43,6 +58,7 @@ export function parsePageSelection(selection, pageCount) {
     }
 
     const pageNumber = normalizePageToken(token, pageCount);
+    assertInBounds(pageNumber);
     if (!seen.has(pageNumber)) {
       selected.push(pageNumber);
       seen.add(pageNumber);
