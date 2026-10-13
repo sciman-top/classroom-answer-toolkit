@@ -10,6 +10,81 @@ namespace ClassroomToolkit.Tests.App;
 public sealed class ReleaseUpdateServiceTests
 {
     [Fact]
+    public async Task InstallAsync_StalledBodyTimesOutAndRemovesStagedInstaller()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StalledResponseHandler());
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory,
+            httpClient: client, downloadTimeout: TimeSpan.FromMilliseconds(100));
+        var before = SnapshotStagedInstallers();
+
+        var result = await service.InstallAsync(ValidUpdateInfo(new string('a', 64), 8))
+            .WaitAsync(TimeSpan.FromSeconds(3));
+
+        result.Started.Should().BeFalse();
+        SnapshotStagedInstallers().Should().BeEquivalentTo(before);
+    }
+
+    [Fact]
+    public async Task InstallAsync_CallerCancellationStillPropagatesAndCleansUp()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StalledResponseHandler());
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+        var before = SnapshotStagedInstallers();
+
+        var action = () => service.InstallAsync(ValidUpdateInfo(new string('a', 64), 8), cancellation.Token);
+
+        await action.Should().ThrowAsync<OperationCanceledException>();
+        SnapshotStagedInstallers().Should().BeEquivalentTo(before);
+    }
+
+    [Fact]
+    public async Task CheckAsync_StalledBodyHonorsTheCheckDeadline()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StalledResponseHandler()) { Timeout = TimeSpan.FromMilliseconds(100) };
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var result = await service.CheckAsync().WaitAsync(TimeSpan.FromSeconds(3));
+
+        result.Succeeded.Should().BeFalse();
+        result.Message.Should().Contain("更新检查失败");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CheckAsync_RejectsOversizedManifest(bool declaredLength)
+    {
+        using var fixture = new InstalledApplicationFixture();
+        var bytes = new byte[1024 * 1024 + 1];
+        using var client = new HttpClient(declaredLength
+            ? new BinaryResponseHandler(bytes) : new UnknownLengthResponseHandler(bytes));
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var result = await service.CheckAsync();
+
+        result.Succeeded.Should().BeFalse();
+        result.Message.Should().Contain("大小限制");
+    }
+
+    [Fact]
+    public async Task CheckAsync_NullAssetReturnsDiagnostic()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StaticResponseHandler(
+            """{"schemaVersion":"2.0","kind":"classroom-toolkit-update-manifest","version":"99.0.0","assets":[null]}"""));
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var result = await service.CheckAsync();
+
+        result.Succeeded.Should().BeFalse();
+        result.Message.Should().Contain("缺少 installer");
+    }
+
+    [Fact]
     public async Task CheckAsync_AcceptsInstallerManifestAndFindsNewerSetup()
     {
         using var fixture = new InstalledApplicationFixture();
@@ -803,6 +878,31 @@ public sealed class ReleaseUpdateServiceTests
             length = 0;
             return false;
         }
+    }
+
+    private sealed class StalledResponseHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new StalledStream()) });
+    }
+
+    private sealed class StalledStream : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return 0;
+        }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Flush() { }
     }
 
     private sealed class StaticResponseHandler : HttpMessageHandler

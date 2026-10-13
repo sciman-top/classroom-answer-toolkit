@@ -8,6 +8,21 @@ import { fileURLToPath } from "node:url";
 
 const toolDirectory = path.dirname(fileURLToPath(import.meta.url));
 
+test("renderer resolves the requested compact snapshot without an explicit snapshot", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "classroom-compact-"));
+  try {
+    const input = path.join(directory, "answer.md");
+    const output = path.join(directory, "answer.pdf");
+    fs.writeFileSync(input, "# 参考答案\n\n1．$v=2\\,\\mathrm{m/s}$。\n");
+    execFileSync(process.execPath, ["render-md-latex.mjs", input, output,
+      "--subject-pack", "junior-physics-answer", "--profile", "compact"],
+    { cwd: toolDirectory, stdio: "pipe", timeout: 60000 });
+    assert.ok(fs.statSync(output).size > 0);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("renderer keeps Markdown tables as bordered, non-splitting layout blocks", () => {
   const rendererSource = fs.readFileSync(path.join(toolDirectory, "render-md-latex.mjs"), "utf8");
 

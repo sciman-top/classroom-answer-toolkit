@@ -11,6 +11,94 @@ namespace ClassroomToolkit.Tests.Toolchain;
 public sealed class ToolchainCliBehaviorTests
 {
     [Fact]
+    public async Task TransferHelpersRespectWorkingDirectoryAndLiteralBackupNames()
+    {
+        var root = ToolchainTestHost.FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), $"transfer-helpers-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(testRoot);
+        var prefix = Path.Combine(testRoot, "destination[1]");
+        var oldBackup = Directory.CreateDirectory(prefix + ".backup.old").FullName;
+        var newBackup = Directory.CreateDirectory(prefix + ".backup.new").FullName;
+        var unrelated = Directory.CreateDirectory(Path.Combine(testRoot, "destination1.backup.unrelated")).FullName;
+        Directory.SetLastWriteTimeUtc(oldBackup, DateTime.UtcNow.AddDays(-1));
+        try
+        {
+            var script = $$"""
+                $ErrorActionPreference = 'Stop'
+                . '{{Path.Combine(root, "scripts", "transfer-common.ps1").Replace("'", "''")}}'
+                $original = $PWD.Path
+                Invoke-CheckedNative -FileName node -Arguments @('-p', 'process.cwd()') -WorkingDirectory '{{testRoot.Replace("'", "''")}}'
+                if ($PWD.Path -ne $original) { throw 'Working directory was not restored' }
+                try {
+                    Invoke-CheckedNative -FileName node -Arguments @('-e', 'process.exit(23)') -WorkingDirectory '{{testRoot.Replace("'", "''")}}'
+                    throw 'Expected native failure'
+                } catch {
+                    if ($_.Exception.Message -notmatch 'exit=23') { throw }
+                }
+                if ($PWD.Path -ne $original) { throw 'Failure did not restore working directory' }
+                Remove-SupersededSiblingBackups -BasePath '{{prefix.Replace("'", "''")}}' -SuffixPrefix '.backup.' -Keep 1
+                """;
+            var result = await RunAsync("pwsh", root, "-NoProfile", "-Command", script);
+            result.ExitCode.Should().Be(0, result.Output);
+            result.Output.Should().Contain(testRoot);
+            Directory.Exists(oldBackup).Should().BeFalse();
+            Directory.Exists(newBackup).Should().BeTrue();
+            Directory.Exists(unrelated).Should().BeTrue();
+        }
+        finally { Directory.Delete(testRoot, true); }
+    }
+
+    [Fact]
+    public async Task LiveWorkflowRejectsAnActiveOutputLockBeforeDeletingReceipts()
+    {
+        var root = ToolchainTestHost.FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), $"workflow-lock-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(testRoot);
+        var source = Path.Combine(testRoot, "exam.pdf");
+        var prompt = Path.Combine(testRoot, "prompt.md");
+        var env = Path.Combine(testRoot, "config.env");
+        var receipt = Path.Combine(testRoot, "exam.workflow-run.json");
+        File.WriteAllText(source, "%PDF-source");
+        File.WriteAllText(prompt, "# prompt");
+        File.WriteAllText(env, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false");
+        File.WriteAllText(receipt, "prior receipt");
+        try
+        {
+            using var lease = new FileStream(Path.Combine(testRoot, ".exam.workflow.lock"), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+            var result = await RunAsync("pwsh", root, "-NoProfile", "-File", "scripts/run-live-answer-workflow.ps1",
+                "-SourcePdf", source, "-OutputDirectory", testRoot, "-PromptFile", prompt, "-ConfigEnvFile", env);
+            result.ExitCode.Should().NotBe(0);
+            result.Output.Should().Contain("output lock is unavailable");
+            File.ReadAllText(receipt).Should().Be("prior receipt");
+        }
+        finally { Directory.Delete(testRoot, true); }
+    }
+
+    [Fact]
+    public async Task LiveWorkflowProtectsInputsInsideTheDeliveryReviewDirectory()
+    {
+        var root = ToolchainTestHost.FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), $"workflow-directory-input-{Guid.NewGuid():N}");
+        var review = Path.Combine(testRoot, "exam参考答案.review");
+        Directory.CreateDirectory(review);
+        var source = Path.Combine(review, "exam.pdf");
+        var prompt = Path.Combine(testRoot, "prompt.md");
+        var env = Path.Combine(testRoot, "config.env");
+        File.WriteAllText(source, "%PDF-source");
+        File.WriteAllText(prompt, "# prompt");
+        File.WriteAllText(env, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false");
+        try
+        {
+            var result = await RunAsync("pwsh", root, "-NoProfile", "-File", "scripts/run-live-answer-workflow.ps1",
+                "-SourcePdf", source, "-OutputDirectory", testRoot, "-PromptFile", prompt, "-ConfigEnvFile", env);
+            result.ExitCode.Should().NotBe(0);
+            result.Output.Should().Contain("collides with input SourcePdf");
+            File.ReadAllText(source).Should().Be("%PDF-source");
+        }
+        finally { Directory.Delete(testRoot, true); }
+    }
+
+    [Fact]
     public async Task SnapshotCliProducesManifestAlignedArtifact()
     {
         var root = ToolchainTestHost.FindRepoRoot();

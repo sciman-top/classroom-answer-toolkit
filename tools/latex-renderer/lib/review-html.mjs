@@ -11,16 +11,16 @@ export function writeReviewHtml({ outputDir, inputPath, manifest }) {
       ? `Page ${page.pageNumber} focus: ${escapeHtml(page.focusLabel)}`
       : `Page ${page.pageNumber}`;
     const textLayer = page.textLayerPath
-      ? `<a href="${escapeHtml(path.basename(page.textLayerPath))}">text layer</a>`
+      ? `<a href="${escapeHtml(encodeURIComponent(path.basename(page.textLayerPath)))}">text layer</a>`
       : "no text layer";
     const ocr = page.ocrTextPath
-      ? ` · <a href="${escapeHtml(path.basename(page.ocrTextPath))}">ocr</a>`
+      ? ` · <a href="${escapeHtml(encodeURIComponent(path.basename(page.ocrTextPath)))}">ocr</a>`
       : "";
 
     return `<section>
   <h2>${heading}</h2>
   <p>${page.width} x ${page.height}px · ${textLayer}${ocr}</p>
-  <img src="${escapeHtml(imageName)}" alt="Page ${page.pageNumber}">
+  <img src="${escapeHtml(encodeURIComponent(imageName))}" alt="Page ${page.pageNumber}">
 </section>`;
   }).join("\n");
 

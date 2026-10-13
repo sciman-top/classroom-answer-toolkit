@@ -71,7 +71,7 @@ export function parseArgs(argv) {
   }
   if (options.timeoutMs !== null) {
     options.timeoutMs = Number(options.timeoutMs);
-    if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
+    if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1000 || options.timeoutMs > 2147483647) {
       throw new Error("--timeout-ms must be an integer >= 1000.");
     }
   }

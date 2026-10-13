@@ -9,6 +9,42 @@ namespace ClassroomToolkit.Tests.App;
 public sealed class MainViewModelTests
 {
     [Fact]
+    public async Task InstallingUpdateDisablesToolchainAndDisposeCancelsDownload()
+    {
+        var updates = new BlockingUpdateService();
+        using var viewModel = new MainViewModel(new FakeOrchestrator(), new FakePathOpener(), updates)
+        {
+            SelectedAnswerMarkdownPath = "answer.md"
+        };
+        var checkNotifications = 0;
+        viewModel.CheckCommand.CanExecuteChanged += (_, _) => checkNotifications++;
+        var installTask = viewModel.InstallUpdateCommand.ExecuteAsync(null);
+        await updates.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        viewModel.DeliverCommand.CanExecute(null).Should().BeFalse();
+        viewModel.CheckCommand.CanExecute(null).Should().BeFalse();
+        viewModel.BootstrapCommand.CanExecute(null).Should().BeFalse();
+        checkNotifications.Should().BeGreaterThan(0);
+        viewModel.Dispose();
+        await installTask.WaitAsync(TimeSpan.FromSeconds(2));
+        viewModel.UpdateStatus.Should().Be("已取消更新下载");
+        viewModel.CheckCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    private sealed class BlockingUpdateService : IUpdateService
+    {
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(UpdateCheckResult.Available(new UpdateInfo("1.0.1", "1", "https://github.com/setup.exe", new string('a', 64), 8)));
+        public async Task<UpdateInstallResult> InstallAsync(UpdateInfo update, CancellationToken cancellationToken = default)
+        {
+            Started.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return new UpdateInstallResult(false, "unexpected completion");
+        }
+    }
+
+    [Fact]
     public void ConstructorPrefersJuniorPhysicsPack()
     {
         var viewModel = new MainViewModel(new FakeOrchestrator(), new FakePathOpener());

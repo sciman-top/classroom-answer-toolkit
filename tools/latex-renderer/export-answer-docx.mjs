@@ -1,10 +1,12 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { unzipSync } from "fflate";
 import { mapInlineMath, maskLatexCodeSegments } from "./lib/inline-math.mjs";
 import { isDirectInvocation, parseArgvFlags } from "../shared.mjs";
+import { renameWithRetry } from "../atomic-write.mjs";
 
 // Exports an answer Markdown file to DOCX with native Word (OMML) equations via
 // pandoc. The PDF renderer keeps LaTeX math through KaTeX; pandoc converts the
@@ -49,7 +51,7 @@ function countOmathElements(documentXml) {
 }
 
 function resolvePandoc() {
-  const probe = spawnSync("pandoc", ["--version"], { encoding: "utf8", windowsHide: true });
+  const probe = spawnSync("pandoc", ["--version"], { encoding: "utf8", windowsHide: true, timeout: 10_000 });
   if (probe.error || probe.status !== 0) {
     throw new Error(
       "pandoc was not found on PATH. Install pandoc 3+ (winget install --id JohnMacFarlane.Pandoc) "
@@ -68,18 +70,23 @@ export function exportAnswerDocx({ markdownPath, outputPath, verify = true, refe
   if (!fs.existsSync(markdownPath)) {
     throw new Error(`Answer Markdown not found: ${markdownPath}`);
   }
-  const pandocVersion = resolvePandoc();
   const resolvedOutput = outputPath ?? path.join(
     path.dirname(markdownPath),
     `${path.basename(markdownPath, path.extname(markdownPath))}.docx`
   );
+  if (path.resolve(resolvedOutput).toLowerCase() === path.resolve(markdownPath).toLowerCase()
+      || (reference && path.resolve(resolvedOutput).toLowerCase() === path.resolve(reference).toLowerCase())) {
+    throw new Error("DOCX output must not overwrite the Markdown input or reference template.");
+  }
+  const pandocVersion = resolvePandoc();
   fs.mkdirSync(path.dirname(path.resolve(resolvedOutput)), { recursive: true });
+  const temporaryOutput = path.join(path.dirname(path.resolve(resolvedOutput)), `.classroom-docx-${crypto.randomUUID()}.docx`);
 
   const args = [
     "--from", "markdown+tex_math_dollars+tex_math_single_backslash",
     "--to", "docx",
     "--resource-path", path.dirname(markdownPath),
-    "--output", resolvedOutput
+    "--output", temporaryOutput
   ];
   if (reference) {
     if (!fs.existsSync(reference)) {
@@ -88,27 +95,32 @@ export function exportAnswerDocx({ markdownPath, outputPath, verify = true, refe
     args.push("--reference-doc", reference);
   }
   args.push(markdownPath);
-  const run = spawnSync("pandoc", args, { encoding: "utf8", windowsHide: true });
-  if (run.error) {
-    throw new Error(`Failed to launch pandoc: ${run.error.message}`);
-  }
-  if (run.status !== 0) {
-    throw new Error(`pandoc exited with status ${run.status}: ${run.stderr.trim()}`);
-  }
-
   let mathReport;
-  if (verify) {
-    const markdown = fs.readFileSync(markdownPath, "utf8");
-    const expected = countMathRegions(markdown);
-    const actual = countOmathElements(readDocumentXml(resolvedOutput));
-    if (actual !== expected) {
-      throw new Error(
-        `DOCX math verification failed for ${path.basename(resolvedOutput)}: `
-        + `Markdown has ${expected} math region(s) but DOCX contains ${actual} m:oMath element(s). `
-        + "A delimiter pandoc could not parse would leak literal LaTeX into the DOCX."
-      );
+  try {
+    const run = spawnSync("pandoc", args, { encoding: "utf8", windowsHide: true, timeout: 120_000 });
+    if (run.error) {
+      throw new Error(`Failed to launch pandoc: ${run.error.message}`);
     }
-    mathReport = { expected, actual };
+    if (run.status !== 0) {
+      throw new Error(`pandoc exited with status ${run.status}: ${run.stderr.trim()}`);
+    }
+
+    if (verify) {
+      const markdown = fs.readFileSync(markdownPath, "utf8");
+      const expected = countMathRegions(markdown);
+      const actual = countOmathElements(readDocumentXml(temporaryOutput));
+      if (actual !== expected) {
+        throw new Error(
+          `DOCX math verification failed for ${path.basename(resolvedOutput)}: `
+          + `Markdown has ${expected} math region(s) but DOCX contains ${actual} m:oMath element(s). `
+          + "A delimiter pandoc could not parse would leak literal LaTeX into the DOCX."
+        );
+      }
+      mathReport = { expected, actual };
+    }
+    renameWithRetry(temporaryOutput, path.resolve(resolvedOutput));
+  } finally {
+    fs.rmSync(temporaryOutput, { force: true });
   }
 
   return { outputPath: resolvedOutput, pandocVersion, mathReport };

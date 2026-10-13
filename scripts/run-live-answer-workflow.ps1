@@ -91,10 +91,16 @@ function Assert-WorkflowOutputDoesNotOverwriteInput {
 
         foreach ($outputName in $Outputs.Keys) {
             $outputPath = $Outputs[$outputName]
+            $resolvedInput = [IO.Path]::GetFullPath($inputPath)
+            $resolvedOutput = [IO.Path]::GetFullPath($outputPath)
+            $directoryOutput = $outputName -eq "DeliveryReview" -or (Test-Path -LiteralPath $resolvedOutput -PathType Container)
             if ([string]::Equals(
-                    [IO.Path]::GetFullPath($inputPath),
-                    [IO.Path]::GetFullPath($outputPath),
-                    [StringComparison]::OrdinalIgnoreCase)) {
+                    $resolvedInput,
+                    $resolvedOutput,
+                    [StringComparison]::OrdinalIgnoreCase) -or
+                ($directoryOutput -and $resolvedInput.StartsWith(
+                    $resolvedOutput.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar,
+                    [StringComparison]::OrdinalIgnoreCase))) {
                 throw "Workflow output $outputName collides with input $inputName`: $outputPath"
             }
         }
@@ -566,6 +572,19 @@ else {
 
 New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
+# Hold an OS-owned lock before clearing receipts or quarantining prior finals.
+# Concurrent runs for the same exam must not destroy one another's artifacts;
+# the OS releases the lease even if the process crashes.
+$workflowLockPath = Join-Path $outputRoot ".${baseName}.workflow.lock"
+try {
+    $workflowLock = [IO.FileStream]::new($workflowLockPath, [IO.FileMode]::OpenOrCreate,
+        [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 1, [IO.FileOptions]::DeleteOnClose)
+}
+catch {
+    throw "Another workflow is using this exam output, or the output lock is unavailable: $workflowLockPath"
+}
+
+try {
 $generationOutputPath = $blindMarkdownPath
 $phaseStates = [ordered]@{
     blindGeneration = [ordered]@{ status = "pending"; summaryPath = $blindSummaryPath; artifactPath = $generationOutputPath }
@@ -1077,4 +1096,8 @@ finally {
     elseif (Test-Path -LiteralPath $workRoot) {
         Write-Warning "Workflow failed; retained diagnostics: $workRoot"
     }
+}
+}
+finally {
+    $workflowLock.Dispose()
 }

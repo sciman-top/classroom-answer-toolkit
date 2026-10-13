@@ -69,12 +69,30 @@ test("exportAnswerDocx rejects output whose math count diverges", { skip: hasPan
   // closing `$` because a digit follows it, so the DOCX would silently lose the
   // region unless verification compares both sides.
   fs.writeFileSync(markdownPath, "# 货币误判\n\n13. 价格为 $100和$200 元。\n", "utf8");
+  const outputPath = path.join(tempRoot, "货币误判.docx");
+  fs.writeFileSync(outputPath, "previous verified delivery");
 
   assert.throws(
     () => exportAnswerDocx({ markdownPath }),
     (error) => error.message.includes("DOCX math verification failed"),
     "a math region pandoc could not reproduce must fail the export"
   );
+  assert.equal(fs.readFileSync(outputPath, "utf8"), "previous verified delivery");
+  assert.equal(fs.readdirSync(tempRoot).some((name) => name.startsWith(".classroom-docx-")), false);
+});
+
+test("DOCX export refuses to overwrite source and reference files", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "docx-collision-"));
+  const markdownPath = path.join(directory, "answer.md");
+  const reference = path.join(directory, "template.docx");
+  try {
+    fs.writeFileSync(markdownPath, "# source");
+    fs.writeFileSync(reference, "template");
+    assert.throws(() => exportAnswerDocx({ markdownPath, outputPath: markdownPath }), /must not overwrite/);
+    assert.throws(() => exportAnswerDocx({ markdownPath, outputPath: reference, reference }), /must not overwrite/);
+    assert.equal(fs.readFileSync(markdownPath, "utf8"), "# source");
+    assert.equal(fs.readFileSync(reference, "utf8"), "template");
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
 
 test("module is importable without side effects", () => {

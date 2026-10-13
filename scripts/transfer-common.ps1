@@ -42,9 +42,15 @@ function Invoke-CheckedNative {
         [string]$FailureMessage = "Native command failed."
     )
 
-    & $FileName @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "$FailureMessage exit=$LASTEXITCODE"
+    Push-Location -LiteralPath $WorkingDirectory
+    try {
+        & $FileName @Arguments
+        if ($LASTEXITCODE -ne 0) {
+            throw "$FailureMessage exit=$LASTEXITCODE"
+        }
+    }
+    finally {
+        Pop-Location
     }
 }
 
@@ -181,10 +187,13 @@ function Remove-SupersededSiblingBackups {
         return
     }
 
-    $pattern = "$leaf$SuffixPrefix*"
+    if ($Keep -lt 0 -or [string]::IsNullOrWhiteSpace($SuffixPrefix)) {
+        throw "Backup retention requires a non-negative Keep and a non-empty suffix."
+    }
+    $prefix = "$leaf$SuffixPrefix"
     $candidates = @(
         Get-ChildItem -LiteralPath $parent -Force -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -like $pattern } |
+            Where-Object { $_.Name.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) } |
             Sort-Object -Property LastWriteTimeUtc -Descending
     )
     if ($candidates.Count -le $Keep) {

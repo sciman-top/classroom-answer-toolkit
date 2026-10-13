@@ -170,10 +170,7 @@ try {
     if (-not (Test-Path -LiteralPath $smokeReportPath -PathType Leaf)) {
         throw "Published application smoke report was not found: $smokeReportPath"
     }
-    $smokeReport = Get-Content -LiteralPath $smokeReportPath -Raw -Encoding utf8 | ConvertFrom-Json
-    if ([string]$smokeReport.status -ne "passed" -or [string]$smokeReport.source.commit -ne $currentCommit -or [bool]$smokeReport.source.dirty) {
-        throw "Published application smoke report does not bind the current clean commit."
-    }
+    Assert-PublishReceipt -PublishDirectory $publishRoot -ReportPath $smokeReportPath -ExpectedCommit $currentCommit
 
     Copy-Item -Path (Join-Path $publishRoot "*") -Destination $stageRoot -Recurse -Force
     # Self-contained redistribution ships the .NET/desktop runtime, so the
@@ -218,7 +215,7 @@ try {
     if ($nodeArchiveUri.Scheme -ne "https" -or $nodeArchiveUri.Host.ToLowerInvariant() -ne "nodejs.org") {
         throw "Node runtime archive must come from the official HTTPS host nodejs.org: $nodeArchiveUri"
     }
-    Invoke-WebRequest -UseBasicParsing -Uri $nodeArchiveUri -OutFile $nodeArchivePath
+    Invoke-WebRequest -UseBasicParsing -Uri $nodeArchiveUri -OutFile $nodeArchivePath -TimeoutSec 300
     $nodeHash = Get-FileSha256 -PathValue $nodeArchivePath
     if ($nodeHash -ne ([string]$dependencies.node.sha256).ToLowerInvariant()) {
         throw "Node runtime archive SHA-256 mismatch. Expected $($dependencies.node.sha256), got $nodeHash."

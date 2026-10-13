@@ -70,6 +70,14 @@ function resolveExtraPath(rawPath) {
     throw new Error(`Refusing to delete non-temporary path: ${rawPath}`);
   }
 
+  // Removing a link itself is safe; traversing a linked parent can erase
+  // files outside the repository even when the lexical path is contained.
+  for (let parent = path.dirname(resolved); parent !== repoRoot; parent = path.dirname(parent)) {
+    if (fs.lstatSync(parent).isSymbolicLink()) {
+      throw new Error(`Refusing to delete through a linked parent: ${rawPath}`);
+    }
+  }
+
   return resolved;
 }
 

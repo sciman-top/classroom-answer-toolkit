@@ -183,10 +183,10 @@ function validateOptions(options) {
   if (!["low", "high", "original"].includes(options.visualDetailMode)) {
     throw new Error("--visual-detail must be low, high, or original.");
   }
-  if (!Number.isInteger(options.maxOutputTokens) || options.maxOutputTokens < 1000) {
+  if (!Number.isSafeInteger(options.maxOutputTokens) || options.maxOutputTokens < 1000) {
     throw new Error("--max-output-tokens must be an integer >= 1000.");
   }
-  if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
+  if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1000 || options.timeoutMs > 2147483647) {
     throw new Error("--timeout-ms must be an integer >= 1000.");
   }
   if ([options.semanticFindingsFile, options.auditImagesDir, options.referenceImagesDir, options.auditFindingsFile].filter(Boolean).length > 1) {
@@ -240,6 +240,7 @@ function validateOutputCollision(options) {
   const outputPath = path.resolve(options.outputPath);
   const summaryPath = options.summaryPath ? path.resolve(options.summaryPath) : null;
   const protectedInputs = [
+    options.envFile,
     options.promptFile,
     options.candidateFile,
     options.semanticFindingsFile,

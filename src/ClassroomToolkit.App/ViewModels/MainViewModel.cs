@@ -87,6 +87,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
     [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
     private bool isBusy;
     [ObservableProperty] private string lastOutputPdfPath = string.Empty;
     [ObservableProperty] private string lastDeliveryManifestPath = string.Empty;
@@ -99,6 +100,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
+    [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
     private bool isUpdateBusy;
     private UpdateInfo? _availableUpdate;
 
@@ -115,8 +119,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // PropertyChanged it would hit the disk (possibly a disconnected drive,
     // blocking for seconds) on every keystroke. Existence is validated once
     // when the command actually runs.
-    private bool CanDeliver() => !IsBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
-    private bool CanRunToolchain() => !IsBusy;
+    private bool CanDeliver() => !IsBusy && !IsUpdateBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
+    private bool CanRunToolchain() => !IsBusy && !IsUpdateBusy;
     private bool CanCancel()
         => (_operationCancellation is { IsCancellationRequested: false })
             || (IsUpdateBusy && InstallUpdateCommand.IsRunning);
@@ -539,5 +543,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _operationCancellation?.Cancel();
         _healthRefreshCancellation?.Cancel();
+        InstallUpdateCommand.Cancel();
     }
 }

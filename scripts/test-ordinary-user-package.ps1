@@ -85,7 +85,7 @@ function Invoke-AppSmoke {
     $stdout = Join-Path $testRoot ("smoke-{0}.stdout.log" -f [Guid]::NewGuid().ToString("N"))
     $stderr = Join-Path $testRoot ("smoke-{0}.stderr.log" -f [Guid]::NewGuid().ToString("N"))
     $process = Start-Process -FilePath (Join-Path $Root "ClassroomToolkit.App.exe") `
-        -ArgumentList @("--smoke", "--repository-root", $Root) `
+        -ArgumentList @("--smoke", "--repository-root", ('"{0}"' -f $Root)) `
         -WorkingDirectory $Root `
         -WindowStyle Hidden `
         -RedirectStandardOutput $stdout `
@@ -106,7 +106,7 @@ function Invoke-Setup {
     $process = Start-Process -FilePath $setupPath `
         -ArgumentList @(
             "/SP-", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS",
-            "/DIR=$installRoot", "/LOG=$logPath") `
+            ('/DIR="{0}"' -f $installRoot), ('/LOG="{0}"' -f $logPath)) `
         -WindowStyle Hidden `
         -PassThru
     $exitCode = Wait-ProcessBounded -Process $process -Description "Installer"
@@ -124,6 +124,13 @@ try {
     $manifest = Get-Content -LiteralPath $installManifestPath -Raw -Encoding utf8 | ConvertFrom-Json
 
     Invoke-Scenario -Name "artifact-integrity" -Summary "Installer and portable archive match the install manifest." -Action {
+        if ([string]$manifest.schemaVersion -ne "1.0" -or [string]$manifest.kind -ne "classroom-toolkit-install-manifest") { throw "Unsupported install manifest contract." }
+        if ([string]$manifest.version -ne $Version) { throw "Install manifest version mismatch." }
+        foreach ($kind in @("installer", "portable")) {
+            if (@($manifest.assets | Where-Object { $_.kind -eq $kind }).Count -ne 1) {
+                throw "Install manifest must contain exactly one $kind asset."
+            }
+        }
         foreach ($asset in @($manifest.assets | Where-Object { $_.kind -in @("installer", "portable") })) {
             $assetPath = if ($asset.kind -eq "installer") { $setupPath } else { $portablePath }
             if ([string]$asset.sha256 -ne (Get-FileSha256 -PathValue $assetPath)) { throw "SHA-256 mismatch: $($asset.name)" }

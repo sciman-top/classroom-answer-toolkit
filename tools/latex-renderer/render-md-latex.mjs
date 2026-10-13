@@ -67,6 +67,7 @@ if (!fs.existsSync(inputPath)) {
 const snapshot = loadRequiredResolvedSnapshot(
   resolveSnapshotPath(options.snapshot, {
     subjectPack: options.subjectPack,
+    profile: options.profile,
     callerCwd
   })
 );

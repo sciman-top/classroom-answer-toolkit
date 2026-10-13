@@ -16,6 +16,12 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
     throw "Transfer package not found: $packagePath"
 }
 $destinationPath = [IO.Path]::GetFullPath($Destination)
+if ([IO.Path]::GetPathRoot($destinationPath).TrimEnd('\', '/') -eq $destinationPath.TrimEnd('\', '/')) {
+    throw "Destination must be a directory, not a drive root: $destinationPath"
+}
+if ((Test-Path -LiteralPath $destinationPath) -and -not (Test-Path -LiteralPath $destinationPath -PathType Container)) {
+    throw "Destination must be a directory: $destinationPath"
+}
 $destinationParent = [IO.Path]::GetDirectoryName($destinationPath)
 [IO.Directory]::CreateDirectory($destinationParent) | Out-Null
 
@@ -26,6 +32,7 @@ if ((Test-Path -LiteralPath $destinationPath) -and @(Get-ChildItem -LiteralPath 
 $extractRoot = Join-Path ([IO.Path]::GetTempPath()) ("ClassroomToolkit-import-{0}" -f [Guid]::NewGuid().ToString("N"))
 [IO.Directory]::CreateDirectory($extractRoot) | Out-Null
 $backupPath = $null
+$backupCreated = $false
 
 try {
     Assert-ZipEntriesContained -ZipPath $packagePath -DestinationRoot $extractRoot
@@ -81,8 +88,9 @@ try {
             throw "Destination must be a directory, not a drive root: $destinationPath"
         }
         Remove-SupersededSiblingBackups -BasePath $destinationPath -SuffixPrefix ".backup." -Keep 1
-        $backupPath = "$destinationPath.backup.$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ'))"
+        $backupPath = "$destinationPath.backup.$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')).$([Guid]::NewGuid().ToString('N'))"
         Move-Item -LiteralPath $destinationPath -Destination $backupPath
+        $backupCreated = $true
     }
     Move-Item -LiteralPath $extractRoot -Destination $destinationPath
     $extractRoot = $null
@@ -120,7 +128,7 @@ try {
     }
 }
 catch {
-    if ($backupPath -and (Test-Path -LiteralPath $backupPath)) {
+    if ($backupCreated -and (Test-Path -LiteralPath $backupPath)) {
         if (Test-Path -LiteralPath $destinationPath) {
             $failedPath = "$destinationPath.failed.$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')).$([Guid]::NewGuid().ToString('N').Substring(0, 8))"
             Move-Item -LiteralPath $destinationPath -Destination $failedPath

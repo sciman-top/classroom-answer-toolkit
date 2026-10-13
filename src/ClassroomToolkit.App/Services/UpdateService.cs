@@ -58,6 +58,8 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
     private static readonly Version DevelopmentVersion = new(0, 0, 0);
     private const string LegacyWorkspaceContract = "1";
     private const long MaximumDownloadBytes = 1024L * 1024L * 1024L;
+    private const int MaximumManifestBytes = 1024 * 1024;
+    private readonly TimeSpan _downloadTimeout;
     private readonly HttpClient _httpClient;
     private readonly string _repositoryRoot;
     private readonly string _manifestUrl;
@@ -70,14 +72,20 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         string? applicationDirectory = null,
         string? manifestUrl = null,
         HttpClient? httpClient = null,
-        Version? currentVersion = null)
+        Version? currentVersion = null,
+        TimeSpan? downloadTimeout = null)
     {
         _repositoryRoot = Path.GetFullPath(repositoryRoot);
         _applicationDirectory = Path.GetFullPath(applicationDirectory ?? AppContext.BaseDirectory);
         _manifestUrl = manifestUrl ?? DefaultManifestUrl;
+        _currentVersion = currentVersion;
+        _downloadTimeout = downloadTimeout ?? TimeSpan.FromMinutes(15);
+        if (_downloadTimeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(downloadTimeout));
+        }
         _httpClient = httpClient ?? CreateHttpClient();
         _ownsHttpClient = httpClient is null;
-        _currentVersion = currentVersion;
     }
 
     public async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default)
@@ -96,6 +104,9 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
         try
         {
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            deadline.CancelAfter(_httpClient.Timeout == Timeout.InfiniteTimeSpan
+                ? TimeSpan.FromSeconds(30) : _httpClient.Timeout);
             if (!Uri.TryCreate(_manifestUrl, UriKind.Absolute, out var manifestUri))
             {
                 return UpdateCheckResult.Unavailable("更新清单 URL 无效");
@@ -103,19 +114,35 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
 
             using var response = await GetApprovedResponseAsync(
                 manifestUri,
-                HttpCompletionOption.ResponseContentRead,
-                cancellationToken).ConfigureAwait(false);
+                HttpCompletionOption.ResponseHeadersRead,
+                deadline.Token).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return UpdateCheckResult.Unavailable("GitHub Release 尚未发布更新清单");
             }
 
             response.EnsureSuccessStatusCode();
-            await using var content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            if (response.Content.Headers.ContentLength > MaximumManifestBytes)
+            {
+                throw new InvalidDataException("更新清单超过允许大小限制");
+            }
+            await using var source = await response.Content.ReadAsStreamAsync(deadline.Token).ConfigureAwait(false);
+            using var content = new MemoryStream();
+            var buffer = new byte[16 * 1024];
+            int read;
+            while ((read = await source.ReadAsync(buffer, deadline.Token).ConfigureAwait(false)) > 0)
+            {
+                if (content.Length + read > MaximumManifestBytes)
+                {
+                    throw new InvalidDataException("更新清单超过允许大小限制");
+                }
+                content.Write(buffer, 0, read);
+            }
+            content.Position = 0;
             var manifest = await JsonSerializer.DeserializeAsync<ReleaseUpdateManifest>(
                 content,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true },
-                cancellationToken).ConfigureAwait(false);
+                deadline.Token).ConfigureAwait(false);
             if (manifest is null)
             {
                 return UpdateCheckResult.Unavailable("更新清单为空");
@@ -152,7 +179,8 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                     $"新版本需要工作区合同 {targetWorkspaceContract}，当前安装为 {installedWorkspaceContract}；请运行新版安装程序完成升级");
             }
 
-            var asset = manifest.Assets?.FirstOrDefault(item => string.Equals(item.Kind, "installer", StringComparison.OrdinalIgnoreCase));
+            var asset = manifest.Assets?.FirstOrDefault(item => item is not null
+                && string.Equals(item.Kind, "installer", StringComparison.OrdinalIgnoreCase));
             if (asset is null)
             {
                 return UpdateCheckResult.Unavailable("更新清单缺少 installer 下载资产");
@@ -214,6 +242,11 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         {
             return new UpdateInstallResult(false, packageValidationError);
         }
+        if (!Version.TryParse(update.Version, out _)
+            || !string.Equals(ParseWorkspaceContract(update.WorkspaceContract), GetInstalledWorkspaceContract(), StringComparison.Ordinal))
+        {
+            return new UpdateInstallResult(false, "更新版本或工作区合同无效");
+        }
 
         var setupPath = Path.Combine(
             Path.GetTempPath(),
@@ -221,6 +254,10 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         var started = false;
         try
         {
+            // ResponseHeadersRead ends HttpClient's timeout at the headers;
+            // the body and hash must share an independent operation deadline.
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            deadline.CancelAfter(_downloadTimeout);
             if (!Uri.TryCreate(update.PackageUrl, UriKind.Absolute, out var packageUri))
             {
                 throw new InvalidDataException("更新资产 URL 无效");
@@ -229,7 +266,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             using var response = await GetApprovedResponseAsync(
                 packageUri,
                 HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken).ConfigureAwait(false);
+                deadline.Token).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             // Reject a mismatched payload before streaming it to disk so a
             // redirected or oversized asset cannot consume unbounded space.
@@ -243,11 +280,11 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 response.Content,
                 setupPath,
                 update.PackageBytes,
-                cancellationToken).ConfigureAwait(false);
+                deadline.Token).ConfigureAwait(false);
 
             await using (var setupStream = File.OpenRead(setupPath))
             {
-                var actualHash = Convert.ToHexString(await SHA256.HashDataAsync(setupStream, cancellationToken))
+                var actualHash = Convert.ToHexString(await SHA256.HashDataAsync(setupStream, deadline.Token))
                     .ToLowerInvariant();
                 if (!string.Equals(actualHash, update.PackageSha256, StringComparison.OrdinalIgnoreCase))
                 {
@@ -297,9 +334,15 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 startInfo.ArgumentList.Add(argument);
             }
 
-            Process.Start(startInfo)?.Dispose();
+            deadline.Token.ThrowIfCancellationRequested();
+            using var installer = Process.Start(startInfo)
+                ?? throw new InvalidOperationException("安装程序进程未启动");
             started = true;
             return new UpdateInstallResult(true, $"已启动 {update.Version} 安装程序，应用即将重启");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex) when (ex is HttpRequestException
             or IOException
@@ -307,7 +350,8 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             or UnauthorizedAccessException
             or InvalidOperationException
             or System.ComponentModel.Win32Exception
-            or CryptographicException)
+            or CryptographicException
+            or OperationCanceledException)
         {
             return new UpdateInstallResult(false, $"无法启动更新安装程序：{ex.Message}");
         }
@@ -515,7 +559,15 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             // The client is configured with auto-redirect disabled. Check the
             // final request URI as a defense-in-depth guard for injected/custom
             // handlers that may still follow redirects internally.
-            EnsureAllowedDownloadUri(response.RequestMessage?.RequestUri ?? currentUri);
+            try
+            {
+                EnsureAllowedDownloadUri(response.RequestMessage?.RequestUri ?? currentUri);
+            }
+            catch
+            {
+                response.Dispose();
+                throw;
+            }
             return response;
         }
 

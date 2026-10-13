@@ -64,6 +64,7 @@ function Invoke-ApprovedDownload {
         [long]$MaximumBytes = $script:MaximumDownloadBytes,
         [string]$TargetPath = "",
         [long]$ExactBytes = 0,
+        [ValidateRange(1, 1800)][int]$TimeoutSeconds = 900,
         [switch]$AllowLocalSimulation
     )
 
@@ -77,6 +78,7 @@ function Invoke-ApprovedDownload {
     $handler = [Net.Http.HttpClientHandler]::new()
     $handler.AllowAutoRedirect = $false
     $client = [Net.Http.HttpClient]::new($handler)
+    $deadline = [Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds($TimeoutSeconds))
     try {
         $currentUri = $UriValue
         for ($redirect = 0; $redirect -le 5; $redirect++) {
@@ -85,7 +87,8 @@ function Invoke-ApprovedDownload {
             try {
                 $response = $client.GetAsync(
                     $currentUri,
-                    [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+                    [Net.Http.HttpCompletionOption]::ResponseHeadersRead,
+                    $deadline.Token).GetAwaiter().GetResult()
                 if (@(
                         [Net.HttpStatusCode]::MovedPermanently,
                         [Net.HttpStatusCode]::Found,
@@ -105,14 +108,14 @@ function Invoke-ApprovedDownload {
                     continue
                 }
 
-                $response.EnsureSuccessStatusCode()
+                [void]$response.EnsureSuccessStatusCode()
                 $declaredBytes = $response.Content.Headers.ContentLength
-                if ($declaredBytes.HasValue) {
-                    if ($TargetPath -and $declaredBytes.Value -ne $ExactBytes) {
-                        throw "Downloaded asset byte length mismatch. expected=$ExactBytes actual=$($declaredBytes.Value)"
+                if ($null -ne $declaredBytes) {
+                    if ($TargetPath -and $declaredBytes -ne $ExactBytes) {
+                        throw "Downloaded asset byte length mismatch. expected=$ExactBytes actual=$declaredBytes"
                     }
-                    if (-not $TargetPath -and $declaredBytes.Value -gt $MaximumBytes) {
-                        throw "Downloaded text exceeds the permitted size: $($declaredBytes.Value) bytes"
+                    if (-not $TargetPath -and $declaredBytes -gt $MaximumBytes) {
+                        throw "Downloaded text exceeds the permitted size: $declaredBytes bytes"
                     }
                 }
 
@@ -120,7 +123,7 @@ function Invoke-ApprovedDownload {
                 $destination = $null
                 $memory = $null
                 try {
-                    $source = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+                    $source = $response.Content.ReadAsStreamAsync($deadline.Token).GetAwaiter().GetResult()
                     $buffer = [byte[]]::new(131072)
                     [long]$totalBytes = 0
                     if ($TargetPath) {
@@ -129,7 +132,7 @@ function Invoke-ApprovedDownload {
                             [IO.FileMode]::CreateNew,
                             [IO.FileAccess]::Write,
                             [IO.FileShare]::None)
-                        while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                        while (($read = $source.ReadAsync($buffer, 0, $buffer.Length, $deadline.Token).GetAwaiter().GetResult()) -gt 0) {
                             $totalBytes += $read
                             if ($totalBytes -gt $ExactBytes -or $totalBytes -gt $MaximumBytes) {
                                 throw "Downloaded asset exceeds the permitted size."
@@ -142,7 +145,7 @@ function Invoke-ApprovedDownload {
                     }
                     else {
                         $memory = [IO.MemoryStream]::new()
-                        while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                        while (($read = $source.ReadAsync($buffer, 0, $buffer.Length, $deadline.Token).GetAwaiter().GetResult()) -gt 0) {
                             $totalBytes += $read
                             if ($totalBytes -gt $MaximumBytes) {
                                 throw "Downloaded text exceeds the permitted size."
@@ -174,6 +177,7 @@ function Invoke-ApprovedDownload {
     finally {
         $client.Dispose()
         $handler.Dispose()
+        $deadline.Dispose()
     }
 }
 
@@ -216,17 +220,18 @@ function Download-VerifiedAsset {
     if ($expectedHash -notmatch '^[A-Fa-f0-9]{64}$') {
         throw "Asset SHA-256 is invalid: $($Asset.name)"
     }
-    if ([long]$Asset.bytes -le 0) {
+    if ([long]$Asset.bytes -le 0 -or [long]$Asset.bytes -gt $script:MaximumDownloadBytes) {
         throw "Asset byte length is invalid: $($Asset.name)"
     }
 
     $assetName = [string]$Asset.name
     Assert-SafeAssetName -AssetName $assetName
     $targetPath = Join-Path $DownloadDirectory $assetName
-    Invoke-ApprovedDownload -UriValue $uri -TargetPath $targetPath -ExpectedBytes ([long]$Asset.bytes) -AllowLocalSimulation:$AllowLocalSimulation
+    Invoke-ApprovedDownload -UriValue $uri -TargetPath $targetPath -ExactBytes ([long]$Asset.bytes) -AllowLocalSimulation:$AllowLocalSimulation
     $actualBytes = (Get-Item -LiteralPath $targetPath).Length
     $actualHash = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualBytes -ne [long]$Asset.bytes -or $actualHash -ne $expectedHash.ToLowerInvariant()) {
+        Remove-Item -LiteralPath $targetPath -Force -ErrorAction SilentlyContinue
         throw "Downloaded asset integrity mismatch: $($Asset.name)"
     }
     return $targetPath

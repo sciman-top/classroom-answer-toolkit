@@ -31,6 +31,20 @@ function buildManifest() {
   };
 }
 
+test("review URLs encode fragment and query characters in filenames", () => {
+  const outputDir = mkdtempSync(path.join(os.tmpdir(), "review-html-url-"));
+  try {
+    const manifest = buildManifest();
+    manifest.pages[0].imagePath = "/tmp/exam#1?.png";
+    manifest.pages[0].textLayerPath = "/tmp/exam#1?.txt";
+    const html = readFileSync(writeReviewHtml({ outputDir, inputPath: "exam.pdf", manifest }), "utf8");
+    assert.match(html, /src="exam%231%3F.png"/);
+    assert.match(html, /href="exam%231%3F.txt"/);
+  } finally {
+    rmSync(outputDir, { recursive: true, force: true });
+  }
+});
+
 test("writeReviewHtml writes one section per page and escapes markup", () => {
   const outputDir = mkdtempSync(path.join(os.tmpdir(), "review-html-"));
   try {

@@ -1534,6 +1534,32 @@ test("answer request refuses to overwrite one of its inputs", () => {
   }
 });
 
+test("answer request protects env configuration and rejects overflowing timers", () => {
+  const { directory, imagePaths } = createPageImages(1);
+  const envPath = path.join(directory, ".env");
+  const promptPath = path.join(directory, "spec.md");
+  writeFileSync(envPath, "fixture-config", "utf8");
+  writeFileSync(promptPath, "spec", "utf8");
+  try {
+    for (const extra of [
+      ["--output", envPath],
+      ["--output", path.join(directory, "answer.md"), "--summary-out", envPath],
+      ["--output", path.join(directory, "answer.md"), "--timeout-ms", "2147483648"]
+    ]) {
+      const result = spawnSync(process.execPath, [
+        fileURLToPath(new URL("./answer-request.mjs", import.meta.url)),
+        "--prompt-file", promptPath, "--images-dir", path.dirname(imagePaths[0]),
+        "--config-env-file", envPath, ...extra
+      ], { cwd: directory, encoding: "utf8" });
+      assert.notEqual(result.status, 0);
+      assert.match(`${result.stdout}\n${result.stderr}`, /must not overwrite|timeout-ms/);
+      assert.equal(readFileSync(envPath, "utf8"), "fixture-config");
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("answer request refuses a summary path that overwrites an input or output", () => {
   const { directory, imagePaths } = createPageImages(1);
   const promptPath = path.join(directory, "spec.md");

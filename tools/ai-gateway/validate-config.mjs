@@ -75,7 +75,7 @@ export function parseArgs(argv) {
   options.envFile = path.resolve(process.env.INIT_CWD || process.cwd(), options.envFile);
   options.timeoutMs = Number(options.timeoutMs);
 
-  if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1000) {
+  if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs < 1000 || options.timeoutMs > 2147483647) {
     throw new Error("--timeout-ms must be an integer >= 1000.");
   }
 

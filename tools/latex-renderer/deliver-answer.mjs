@@ -307,7 +307,9 @@ async function main() {
     runCleanup({
       dryRun: false,
       keepReview: true,
-      keepOcr: false,
+      // This delivery did not create the repository-wide OCR workspace; it
+      // may belong to another run and must not be removed here.
+      keepOcr: true,
       extraPaths: options.keepReview ? [] : [path.relative(repoRoot, reviewOutputDir)]
     });
     if (!options.keepReview) {
