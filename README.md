@@ -75,7 +75,7 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 - `tools/rule-compiler/`：subject-pack、规则和 snapshot 编译与校验。
 - `tools/latex-renderer/`：Markdown 校验、PDF 渲染、review 页图和交付 manifest。
 - `scripts/run-live-answer-workflow.ps1`：真实原卷主链入口。
-- `src/`：App、Domain、Infra 三个生产项目；WPF 只承载主链操作、状态展示与本机适配。
+- `src/`：单项目 WPF 应用；承载主链操作、状态展示与本机适配。
 - `eval/junior-physics-answer/`：共享 renderer/layout 合同与主产品包回归；其他学科只保留独有 case 和 subject-pack sentinel。
 
 ## 验证
@@ -83,7 +83,7 @@ live AI 请求必须显式允许云出网，并读取本机 `.env`。仓库不�
 按变更面运行最低充分检查：
 
 ```powershell
-# WPF / Domain / Infra
+# WPF 应用
 dotnet build ClassroomToolkit.sln -c Debug
 dotnet test tests/ClassroomToolkit.Tests/ClassroomToolkit.Tests.csproj -c Debug --no-build --filter "Gate!=ToolchainIntegration"
 
