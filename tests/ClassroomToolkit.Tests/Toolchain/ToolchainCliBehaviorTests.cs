@@ -197,17 +197,21 @@ public sealed class ToolchainCliBehaviorTests
     }
 
     [Fact]
-    public async Task PackageReleaseRequiresSigningForOrdinaryUserInstaller()
+    public async Task PackageReleaseDoesNotRequireCodeSigningSecrets()
     {
-            var result = await RunAsync(
-                "pwsh",
-                ToolchainTestHost.FindRepoRoot(),
-                "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
-                "-Version", "1.0.4",
-                "-SkipPublish");
+        var result = await RunAsync(
+            "pwsh",
+            ToolchainTestHost.FindRepoRoot(),
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
+            "-Version", "1.0.4",
+            "-SkipPublish",
+            "-IsccPath", Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-ISCC.exe"));
 
         result.ExitCode.Should().NotBe(0);
-        result.Output.Should().Contain("code-signing certificate");
+        result.Output.Should().NotContain("code-signing certificate");
+        (result.Output.Contains("Inno Setup compiler was not found", StringComparison.Ordinal)
+            || result.Output.Contains("Ordinary-user packaging requires a clean working tree.", StringComparison.Ordinal))
+            .Should().BeTrue(result.Output);
     }
 
     [Fact]
@@ -225,6 +229,8 @@ public sealed class ToolchainCliBehaviorTests
         workflow.Should().Contain("if: github.event_name == 'workflow_dispatch'");
         workflow.Should().Contain("release-candidate-");
         workflow.Should().Contain("verify-release-acceptance.ps1");
+        workflow.Should().Contain("Build unsigned stable release candidate");
+        workflow.Should().NotContain("WINDOWS_SIGNING_CERTIFICATE");
         workflow.Should().Contain("candidate-completed-at=$($run.updated_at)");
         workflow.Should().NotContain("candidate-created-at=");
         workflow.Should().Contain("gh release create");
@@ -242,6 +248,13 @@ public sealed class ToolchainCliBehaviorTests
         var releaseMetadata = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), "scripts", "write-release-metadata.ps1"));
         releaseMetadata.Should().Contain("_release-metadata/representative-acceptance.json");
         releaseMetadata.Should().Contain("Representative acceptance does not bind the current");
+        releaseMetadata.Should().Contain("Install manifest Authenticode status does not match");
+        releaseMetadata.Should().Contain("Update manifest publisherThumbprint does not match");
+        releaseMetadata.Should().Contain("Update manifest does not bind the current installer URL, byte count and SHA-256");
+
+        var packageBuilder = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), "scripts", "build-ordinary-user-package.ps1"));
+        packageBuilder.Should().Contain("SignatureStatus]::NotSigned");
+        packageBuilder.Should().Contain("Compatibility alias; unsigned packages are now the default.");
     }
 
     [Fact]
@@ -381,6 +394,126 @@ public sealed class ToolchainCliBehaviorTests
 
             mismatched.ExitCode.Should().NotBe(0);
             mismatched.Output.Should().Contain("portable hash does not match");
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ReleaseMetadataAcceptsUnsignedInstallerAndBindsUpdateManifestToItsHash()
+    {
+        var root = ToolchainTestHost.FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), $"ClassroomToolkit-UnsignedRelease-{Guid.NewGuid():N}");
+        var deliveryRoot = Path.Combine(testRoot, "delivery");
+        var installerPath = Path.Combine(deliveryRoot, "installer", "stable", "ClassroomToolkit-1.0.4-setup.exe");
+        var portablePath = Path.Combine(deliveryRoot, "portable", "ClassroomToolkit-1.0.4-portable-win-x64.zip");
+        var sourcePath = Path.Combine(deliveryRoot, "source", "ClassroomToolkit-1.0.4-source.zip");
+        var installManifestPath = Path.Combine(deliveryRoot, "installer", "stable", "install-manifest.json");
+        var updateManifestPath = Path.Combine(deliveryRoot, "installer", "stable", "update-manifest.json");
+        var sbomPath = Path.Combine(deliveryRoot, "_release-metadata", "sbom", "spdx_2.2", "manifest.spdx.json");
+        var acceptancePath = Path.Combine(deliveryRoot, "_release-metadata", "representative-acceptance.json");
+        const string sourceCommit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+        Directory.CreateDirectory(Path.GetDirectoryName(installerPath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(portablePath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(sourcePath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(sbomPath)!);
+        File.Copy(Path.Combine(root, "src", "ClassroomToolkit.App", "bin", "Debug", "net10.0-windows", "ClassroomToolkit.App.exe"), installerPath);
+        File.WriteAllText(portablePath, "portable fixture");
+        File.WriteAllText(sourcePath, "source fixture");
+        File.WriteAllText(sbomPath, "{}");
+
+        static string Sha256(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+        var installerHash = Sha256(installerPath);
+        var portableHash = Sha256(portablePath);
+        var sourceHash = Sha256(sourcePath);
+        var installerName = Path.GetFileName(installerPath);
+        var portableName = Path.GetFileName(portablePath);
+        var sourceName = Path.GetFileName(sourcePath);
+        var installerBytes = new FileInfo(installerPath).Length;
+        var portableBytes = new FileInfo(portablePath).Length;
+        var sourceBytes = new FileInfo(sourcePath).Length;
+
+        File.WriteAllText(installManifestPath, JsonSerializer.Serialize(new
+        {
+            schemaVersion = "1.0",
+            kind = "classroom-toolkit-install-manifest",
+            version = "1.0.4",
+            sourceCommit,
+            workspaceContract = "2",
+            publisherSignature = new { status = "NotSigned", signerSubject = (string?)null, signerThumbprint = (string?)null },
+            assets = new[]
+            {
+                new { kind = "installer", name = installerName, sha256 = installerHash, bytes = installerBytes },
+                new { kind = "portable", name = portableName, sha256 = portableHash, bytes = portableBytes },
+                new { kind = "source", name = sourceName, sha256 = sourceHash, bytes = sourceBytes }
+            }
+        }));
+        File.WriteAllText(updateManifestPath, JsonSerializer.Serialize(new
+        {
+            schemaVersion = "2.0",
+            kind = "classroom-toolkit-update-manifest",
+            version = "1.0.4",
+            workspaceContract = "2",
+            sourceCommit,
+            publisherThumbprint = (string?)null,
+            assets = new[]
+            {
+                new
+                {
+                    kind = "installer",
+                    name = installerName,
+                    url = $"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.4/{installerName}",
+                    sha256 = installerHash,
+                    bytes = installerBytes
+                }
+            }
+        }));
+        File.WriteAllText(acceptancePath, JsonSerializer.Serialize(new
+        {
+            schemaVersion = "1.0",
+            kind = "classroom-toolkit-representative-acceptance",
+            status = "accepted",
+            version = "1.0.4",
+            sourceCommit,
+            candidateRunId = "123456789",
+            submittedByGitHubActor = "release-owner",
+            tester = new { identifier = "teacher-test-01", role = "representative-non-developer" },
+            assets = new[]
+            {
+                new { kind = "installer", path = "installer/stable/ClassroomToolkit-1.0.4-setup.exe", bytes = installerBytes, sha256 = installerHash },
+                new { kind = "portable", path = "portable/ClassroomToolkit-1.0.4-portable-win-x64.zip", bytes = portableBytes, sha256 = portableHash }
+            },
+            scenarios = new
+            {
+                installerCleanInstall = "passed",
+                installerRepair = "passed",
+                installerMarkdownPdfDelivery = "passed",
+                portableLaunch = "passed",
+                portableMarkdownPdfDelivery = "passed"
+            }
+        }));
+
+        try
+        {
+            var accepted = await RunAsync(
+                "pwsh", root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/write-release-metadata.ps1",
+                "-Version", "1.0.4",
+                "-SourceCommit", sourceCommit,
+                "-DeliveryRoot", deliveryRoot);
+
+            accepted.ExitCode.Should().Be(0, accepted.Output);
+            File.Exists(Path.Combine(deliveryRoot, "_release-metadata", "release-manifest.json")).Should().BeTrue();
+            File.ReadAllText(Path.Combine(deliveryRoot, "_release-metadata", "checksums.sha256"))
+                .Should().Contain(installerHash)
+                .And.Contain("installer/stable/ClassroomToolkit-1.0.4-setup.exe");
+
+            using var updateManifest = JsonDocument.Parse(File.ReadAllText(updateManifestPath));
+            updateManifest.RootElement.GetProperty("publisherThumbprint").ValueKind.Should().Be(JsonValueKind.Null);
         }
         finally
         {

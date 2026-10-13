@@ -194,13 +194,21 @@ function Assert-InstallerSignature {
         return
     }
     if ([string]::IsNullOrWhiteSpace($ExpectedThumbprint)) {
-        throw "Stable update manifest is missing publisherThumbprint."
+        # No pin explicitly selects unsigned release mode; Download-VerifiedAsset already checked size and SHA-256.
+        $unsignedSignature = Get-AuthenticodeSignature -LiteralPath $InstallerPath
+        if ($unsignedSignature.Status -ne [Management.Automation.SignatureStatus]::NotSigned) {
+            throw "Unsigned release manifest does not match installer Authenticode status: $($unsignedSignature.Status)."
+        }
+        return
     }
     $signature = Get-AuthenticodeSignature -LiteralPath $InstallerPath
     if ($signature.Status -ne [Management.Automation.SignatureStatus]::Valid) {
         throw "Installer Authenticode signature is not valid: $($signature.Status)"
     }
     $actualThumbprint = [string]$signature.SignerCertificate.Thumbprint
+    if ([string]::IsNullOrWhiteSpace($actualThumbprint)) {
+        throw "Installer Authenticode signature has no signer certificate."
+    }
     if (-not [string]::Equals(
             ($actualThumbprint -replace '\s', '').ToUpperInvariant(),
             ($ExpectedThumbprint -replace '\s', '').ToUpperInvariant(),

@@ -44,8 +44,9 @@ foreach ($relativePath in $requiredPublicPaths) {
 
 $stableSetupPath = Join-Path $versionRoot "installer/stable/ClassroomToolkit-$Version-setup.exe"
 $setupSignature = Get-AuthenticodeSignature -LiteralPath $stableSetupPath
-if ($setupSignature.Status -ne [Management.Automation.SignatureStatus]::Valid) {
-    throw "Ordinary-user release metadata requires a valid Authenticode installer signature: $($setupSignature.Status)."
+if ($setupSignature.Status -ne [Management.Automation.SignatureStatus]::Valid -and
+    $setupSignature.Status -ne [Management.Automation.SignatureStatus]::NotSigned) {
+    throw "Installer Authenticode inspection failed: $($setupSignature.Status)."
 }
 $installManifest = Get-Content -LiteralPath (Join-Path $versionRoot "installer/stable/install-manifest.json") -Raw -Encoding utf8 | ConvertFrom-Json
 if ([string]$installManifest.schemaVersion -ne "1.0" -or
@@ -54,13 +55,47 @@ if ([string]$installManifest.schemaVersion -ne "1.0" -or
     -not [string]::Equals([string]$installManifest.sourceCommit, $sourceCommit, [StringComparison]::OrdinalIgnoreCase)) {
     throw "Install manifest does not match release version $Version and source commit $sourceCommit."
 }
-if ([string]$installManifest.publisherSignature.status -ne "Valid" -or
-    [string]::IsNullOrWhiteSpace([string]$installManifest.publisherSignature.signerThumbprint) -or
-    -not [string]::Equals(
-        [string]$installManifest.publisherSignature.signerThumbprint,
-        [string]$setupSignature.SignerCertificate.Thumbprint,
-        [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Install manifest publisher identity does not match the signed setup executable."
+$declaredSignatureStatus = [string]$installManifest.publisherSignature.status
+$declaredSignerSubject = [string]$installManifest.publisherSignature.signerSubject
+$declaredSignerThumbprint = [string]$installManifest.publisherSignature.signerThumbprint
+if ($declaredSignatureStatus -ne [string]$setupSignature.Status) {
+    throw "Install manifest Authenticode status does not match the setup executable."
+}
+if ($setupSignature.Status -eq [Management.Automation.SignatureStatus]::Valid) {
+    $actualSignerThumbprint = [string]$setupSignature.SignerCertificate.Thumbprint
+    if ([string]::IsNullOrWhiteSpace($declaredSignerThumbprint) -or
+        -not [string]::Equals($declaredSignerThumbprint, $actualSignerThumbprint, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Install manifest publisher identity does not match the signed setup executable."
+    }
+}
+elseif (-not [string]::IsNullOrWhiteSpace($declaredSignerSubject) -or
+    -not [string]::IsNullOrWhiteSpace($declaredSignerThumbprint)) {
+    throw "Unsigned installer metadata must not declare a publisher identity."
+}
+
+$updateManifest = Get-Content -LiteralPath (Join-Path $versionRoot "installer/stable/update-manifest.json") -Raw -Encoding utf8 | ConvertFrom-Json
+if ([string]$updateManifest.schemaVersion -ne "2.0" -or
+    [string]$updateManifest.kind -ne "classroom-toolkit-update-manifest" -or
+    [string]$updateManifest.version -ne $Version -or
+    [string]$updateManifest.workspaceContract -ne [string]$installManifest.workspaceContract -or
+    -not [string]::Equals([string]$updateManifest.sourceCommit, $sourceCommit, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Update manifest does not match release version $Version, workspace contract and source commit."
+}
+$updateSignerThumbprint = [string]$updateManifest.publisherThumbprint
+if (-not [string]::Equals($updateSignerThumbprint, $declaredSignerThumbprint, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Update manifest publisherThumbprint does not match install manifest Authenticode identity."
+}
+$updateInstallerAssets = @($updateManifest.assets | Where-Object { [string]$_.kind -eq "installer" })
+$actualSetupBytes = (Get-Item -LiteralPath $stableSetupPath).Length
+$actualSetupHash = Get-FileSha256 -PathValue $stableSetupPath
+$expectedSetupName = [IO.Path]::GetFileName($stableSetupPath)
+$expectedSetupUrl = "https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v$Version/$expectedSetupName"
+if ($updateInstallerAssets.Count -ne 1 -or
+    [string]$updateInstallerAssets[0].name -ne $expectedSetupName -or
+    [string]$updateInstallerAssets[0].url -ne $expectedSetupUrl -or
+    [long]$updateInstallerAssets[0].bytes -ne $actualSetupBytes -or
+    -not [string]::Equals([string]$updateInstallerAssets[0].sha256, $actualSetupHash, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Update manifest does not bind the current installer URL, byte count and SHA-256."
 }
 
 $acceptancePath = Join-Path $versionRoot "_release-metadata/representative-acceptance.json"

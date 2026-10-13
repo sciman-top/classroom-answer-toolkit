@@ -94,6 +94,7 @@ public sealed class ReleaseUpdateServiceTests
               "kind":"classroom-toolkit-update-manifest",
               "channel":"stable",
               "version":"1.0.1",
+              "publisherThumbprint":"0123456789abcdef0123456789abcdef01234567",
               "releaseUrl":"https://github.com/sciman-top/classroom-answer-toolkit/releases/tag/v1.0.1",
               "assets":[
                 {
@@ -121,6 +122,41 @@ public sealed class ReleaseUpdateServiceTests
         result.Update!.Version.Should().Be("1.0.1");
         result.Update.WorkspaceContract.Should().Be("1");
         result.Update.PackageBytes.Should().Be(123);
+        result.Update.PublisherThumbprint.Should().Be("0123456789abcdef0123456789abcdef01234567");
+    }
+
+    [Fact]
+    public async Task CheckAsync_RejectsMalformedOptionalPublisherThumbprint()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        using var client = new HttpClient(new StaticResponseHandler("""
+            {
+              "schemaVersion":"2.0",
+              "kind":"classroom-toolkit-update-manifest",
+              "version":"1.0.1",
+              "publisherThumbprint":"not-a-thumbprint",
+              "assets":[
+                {
+                  "kind":"installer",
+                  "url":"https://github.com/sciman-top/classroom-answer-toolkit/releases/download/v1.0.1/ClassroomToolkit-1.0.1-setup.exe",
+                  "sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "bytes":123
+                }
+              ]
+            }
+            """));
+        using var service = new ReleaseUpdateService(
+            fixture.RepositoryRoot,
+            fixture.AppDirectory,
+            "https://github.com/sciman-top/classroom-answer-toolkit/releases/latest/download/update-manifest.json",
+            client,
+            new Version(1, 0, 0));
+
+        var result = await service.CheckAsync();
+
+        result.Succeeded.Should().BeFalse();
+        result.UpdateAvailable.Should().BeFalse();
+        result.Message.Should().Contain("publisherThumbprint");
     }
 
     [Fact]
@@ -346,9 +382,10 @@ public sealed class ReleaseUpdateServiceTests
     }
 
     [Fact]
-    public async Task InstallAsync_RequiresPublisherThumbprintAndRemovesStagedInstaller()
+    public async Task InstallAsync_AllowsUnsignedReleaseFromPreviouslySignedRuntimeAfterHashVerification()
     {
         using var fixture = new InstalledApplicationFixture();
+        fixture.WriteRuntimeManifest("1", new string('a', 40));
         var payload = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         using var client = new HttpClient(new BinaryResponseHandler(payload));
         using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
@@ -358,7 +395,30 @@ public sealed class ReleaseUpdateServiceTests
         var after = SnapshotStagedInstallers();
 
         result.Started.Should().BeFalse();
-        result.Message.Should().Contain("publisherThumbprint");
+        result.Message.Should().NotContain("publisherThumbprint");
+        result.Message.Should().NotContain("Authenticode");
+        after.Should().BeEquivalentTo(before);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsDifferentSignedPublisherBeforeNativeTrustCheck()
+    {
+        using var fixture = new InstalledApplicationFixture();
+        fixture.WriteRuntimeManifest("1", new string('a', 40));
+        var payload = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        using var client = new HttpClient(new BinaryResponseHandler(payload));
+        using var service = new ReleaseUpdateService(fixture.RepositoryRoot, fixture.AppDirectory, httpClient: client);
+
+        var before = SnapshotStagedInstallers();
+        var update = ValidUpdateInfo(Sha256Of(payload), payload.Length) with
+        {
+            PublisherThumbprint = new string('b', 40)
+        };
+        var result = await service.InstallAsync(update);
+        var after = SnapshotStagedInstallers();
+
+        result.Started.Should().BeFalse();
+        result.Message.Should().Contain("当前安装版不一致");
         after.Should().BeEquivalentTo(before);
     }
 
@@ -717,11 +777,14 @@ public sealed class ReleaseUpdateServiceTests
         public string RepositoryRoot { get; }
         public string AppDirectory { get; }
 
-        public void WriteRuntimeManifest(string workspaceContract)
+        public void WriteRuntimeManifest(string workspaceContract, string? publisherThumbprint = null)
         {
-            File.WriteAllText(
-                Path.Combine(Root, "runtime-manifest.json"),
-                $$"""{"workspaceContract":"{{workspaceContract}}","distributionMode":"installer"}""");
+            File.WriteAllText(Path.Combine(Root, "runtime-manifest.json"), System.Text.Json.JsonSerializer.Serialize(new
+            {
+                workspaceContract,
+                distributionMode = "installer",
+                publisherThumbprint
+            }));
         }
 
         public void Dispose()

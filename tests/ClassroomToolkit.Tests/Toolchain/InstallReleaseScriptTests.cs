@@ -11,6 +11,31 @@ namespace ClassroomToolkit.Tests.Toolchain;
 [Trait("Gate", "ToolchainIntegration")]
 public sealed class InstallReleaseScriptTests
 {
+    [Fact]
+    public async Task UnsignedInstallerIsAcceptedWhenManifestDoesNotDeclarePublisherIdentity()
+    {
+        var root = ToolchainTestHost.FindRepoRoot();
+        var source = Path.Combine(root, "scripts", "install-release.ps1").Replace("'", "''");
+        var installerPath = Path.Combine(Path.GetTempPath(), $"unsigned-release-{Guid.NewGuid():N}.exe");
+        File.Copy(Path.Combine(root, "src", "ClassroomToolkit.App", "bin", "Debug", "net10.0-windows", "ClassroomToolkit.App.exe"), installerPath);
+        var escapedInstallerPath = installerPath.Replace("'", "''");
+        var script = $$"""
+            $ErrorActionPreference = 'Stop'
+            Set-StrictMode -Version Latest
+            $ast = [Management.Automation.Language.Parser]::ParseFile('{{source}}', [ref]$null, [ref]$null)
+            $function = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Assert-InstallerSignature' }, $true)
+            . ([scriptblock]::Create($function.Extent.Text))
+            Assert-InstallerSignature -InstallerPath '{{escapedInstallerPath}}' -ExpectedThumbprint ''
+            """;
+        try
+        {
+            var result = await new PowerShellProcessRunner().RunAsync("pwsh", ["-NoProfile", "-Command", script], root,
+                timeout: TimeSpan.FromSeconds(15));
+            result.ExitCode.Should().Be(0, result.StandardError);
+        }
+        finally { File.Delete(installerPath); }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -7,7 +7,7 @@ param(
     [string]$SigningCertificateThumbprint = "",
     [string]$TimestampServer = "http://timestamp.digicert.com",
     [switch]$SkipPublish,
-    [switch]$AllowUnsignedCandidate
+    [switch]$AllowUnsignedCandidate # Compatibility alias; unsigned packages are now the default.
 )
 
 $ErrorActionPreference = "Stop"
@@ -116,8 +116,9 @@ function Sign-And-Verify {
     }
 
     $verified = Get-AuthenticodeSignature -LiteralPath $PathValue
-    if (-not $AllowUnsignedCandidate -and $verified.Status -ne [Management.Automation.SignatureStatus]::Valid) {
-        throw "A valid Authenticode signature is required for ordinary-user delivery: $PathValue ($($verified.Status))."
+    if ($verified.Status -ne [Management.Automation.SignatureStatus]::NotSigned -and
+        $verified.Status -ne [Management.Automation.SignatureStatus]::Valid) {
+        throw "Authenticode signature inspection failed for ${PathValue}: $($verified.Status) $($verified.StatusMessage)"
     }
     return $verified
 }
@@ -144,9 +145,6 @@ if ([string]::IsNullOrWhiteSpace($currentCommit)) {
     throw "Unable to resolve the current source commit."
 }
 $certificate = Get-CodeSigningCertificate
-if (-not $certificate -and -not $AllowUnsignedCandidate) {
-    throw "No code-signing certificate was supplied. Use a protected signing identity; -AllowUnsignedCandidate is only for local engineering verification."
-}
 if (-not [string]::IsNullOrWhiteSpace((& git -C $repoRoot status --porcelain --untracked-files=all | Out-String).Trim())) {
     throw "Ordinary-user packaging requires a clean working tree."
 }

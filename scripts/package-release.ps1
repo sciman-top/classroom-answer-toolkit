@@ -6,7 +6,7 @@ param(
     [string]$IsccPath = "",
     [string]$SigningCertificateThumbprint = "",
     [switch]$SkipPublish,
-    [switch]$AllowUnsignedCandidate
+    [switch]$AllowUnsignedCandidate # Compatibility alias; unsigned packages are now the default.
 )
 
 $ErrorActionPreference = "Stop"
@@ -23,7 +23,6 @@ $arguments = @{
     IsccPath = $IsccPath
     SigningCertificateThumbprint = $SigningCertificateThumbprint
     SkipPublish = $SkipPublish
-    AllowUnsignedCandidate = $AllowUnsignedCandidate
 }
 & (Join-Path $PSScriptRoot "build-ordinary-user-package.ps1") @arguments
 # A .ps1 invoked with & never sets $LASTEXITCODE; build-ordinary fails via

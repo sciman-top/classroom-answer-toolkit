@@ -6,7 +6,7 @@ This repository defines four intentionally separate delivery types. The installe
 
 | Artifact | Audience | Includes | Must not include |
 | --- | --- | --- | --- |
-| Ordinary-user installer | teachers and other Windows users | signed installer, writable runtime bundle, install/update/rollback contract | any repository-coupled or unsigned package presented as a finished installer |
+| Ordinary-user installer | teachers and other Windows users | writable runtime bundle, install/update/rollback contract, hash-bound manifest; Authenticode is optional | any repository-coupled package presented as a finished installer |
 | Ordinary-user portable ZIP | teachers and other Windows users | self-contained runtime, extract-and-run launch, no registry writes | Git, PowerShell, .NET SDK or system Node.js requirements |
 | `ClassroomToolkit-<version>-source.zip` | public developers | source, tests, scripts, prompt assets, lock files, `.env.example` | real `.env`, `node_modules`, local cache and delivery data |
 | PrivateDev transfer ZIP | the private maintainer only | current working-tree snapshot and, only when explicitly requested, `.env` / `.git` / app | GitHub Release publication or any shared distribution channel |
@@ -16,10 +16,11 @@ This repository defines four intentionally separate delivery types. The installe
 本机生成的候选文件统一放在 Git 忽略的 `artifacts/deliveries/<version>/`；其中 `installer/stable/` 放普通用户安装程序及清单，`portable/` 放绿色版，`source/` 放公开源码包，`private-transfer/` 放按需私用迁移包，`_release-metadata/` 放版本清单、SBOM 和 provenance。历史证据和归档放在 `artifacts/history/<kind>/<date-or-id>/`，可重建中间物放在 `artifacts/work/<kind>/`，禁止跨层混放。清理旧版本及临时目录使用 `scripts/clean-artifacts.ps1 -KeepVersion <version>`。GitHub Release 才是公开下载入口，仓库不提交 ZIP、EXE、诊断输出或 SBOM 工具缓存。
 
 Create an annotated tag named `v<major>.<minor>.<patch>` and push that tag.
-The tag workflow performs the setup and integration gates, builds and signs the
-setup EXE and portable ZIP, verifies both packages, generates the source ZIP and
-SPDX SBOM, then uploads a 30-day candidate artifact. A tag run never publishes a
-GitHub Release.
+The tag workflow performs the setup and integration gates, builds the installer
+and portable ZIP, verifies both packages, generates the source ZIP and SPDX
+SBOM, then uploads a 30-day candidate artifact. Authenticode signing is
+optional; the stable candidate workflow does not require signing certificate
+secrets. A tag run never publishes a GitHub Release.
 
 A representative non-developer must install and repair the candidate, launch
 the portable package, and render a Markdown answer to PDF from both package
@@ -79,22 +80,32 @@ attestation must be produced by the same clean tagged source.
 The manifest binds each asset to a URL, byte count and SHA-256, plus a
 `workspaceContract`. The installed WPF app only accepts a newer semantic
 version, a matching runtime contract, and an installer asset hosted on GitHub
-HTTPS. It verifies byte count and SHA-256 before launching the signed setup for
-an in-place upgrade. Portable copies do not self-replace while running; users
-download and extract the newer portable ZIP.
+HTTPS. It verifies byte count and SHA-256 before launching setup for an
+in-place upgrade. If the manifest declares a `publisherThumbprint`, the app
+also verifies the Authenticode signature against it. Portable copies do not
+self-replace while running; users download and extract the newer portable ZIP.
+The updated app can move a signed installation to an unsigned release through
+this GitHub HTTPS and SHA-256 path; that transition relinquishes its prior
+Authenticode publisher pin for later updates. Apps from already published
+signed releases still require Authenticode and cannot perform that first
+unsigned update in-app. Users on those versions must download and run the
+unsigned installer once; the updated app can then use the hash-verified
+in-app update path.
 
 `install-release.ps1`, after being downloaded from a GitHub Release, accepts
-only GitHub HTTPS manifests and assets and verifies the signed installer asset
-before launching Inno Setup (`-RunSetup` auto-starts). `-AllowLocalSimulation`
-is an explicit test-only seam; the normal installer accepts only approved
-GitHub HTTPS hosts and loopback is never an implicit production fallback.
+only GitHub HTTPS manifests and assets and verifies byte count and SHA-256
+before launching Inno Setup (`-RunSetup` auto-starts). It also verifies
+Authenticode when the manifest declares a `publisherThumbprint`. An unsigned
+manifest must correspond to an unsigned installer. `-AllowLocalSimulation` is
+an explicit test-only seam; the normal installer accepts only approved GitHub
+HTTPS hosts and loopback is never an implicit production fallback.
 
 `package-release.ps1` forwards to `build-ordinary-user-package.ps1`, which
-builds both the setup EXE and portable ZIP from one runtime bundle. Local
-engineering may use `-AllowUnsignedCandidate` only to verify
-install/repair/uninstall and portable launch. Stable publication remains
-blocked until the setup and app have valid Authenticode signatures and the
-matching candidate has a representative non-developer acceptance record.
+builds both the setup EXE and portable ZIP from one runtime bundle. It builds
+unsigned packages by default. A maintainer can provide
+`-SigningCertificateThumbprint` to sign and verify the app and setup as an
+optional publisher-identity signal. Stable publication remains blocked until
+the matching candidate has a representative non-developer acceptance record.
 
 Both ordinary-user packages seed a keyless `.env` (from the committed
 `.env.example`) into the writable runtime root; the app health card points
@@ -103,11 +114,14 @@ there for the teacher's only setup step (own API key and
 never overwrite an existing `.env` (`onlyifdoesntexist`), and uninstall
 preserves it (`uninsneveruninstall`); acceptance asserts all three behaviors.
 
-No code-signing certificate is configured by this repository. SHA-256 is an
-integrity check for the published Release asset; it is not a substitute for a
-publisher identity signature. Before distributing to non-developer users,
-configure Authenticode signing in a protected CI secret; the existing
-ordinary-user packaging gate will then verify the signature before packaging.
+MIT does not require code signing. The release still publishes SHA-256
+checksums, an SPDX SBOM and GitHub build provenance, and both the installer
+and in-app updater verify the exact declared package bytes over approved GitHub
+HTTPS endpoints. These checks identify the candidate bytes and build source;
+they do not establish Windows publisher identity. Unsigned downloads may show
+an “Unknown publisher” or SmartScreen warning. Authenticode can be enabled
+optionally when publisher identity or a smoother Windows download experience
+is desired.
 
 ## Source Development
 

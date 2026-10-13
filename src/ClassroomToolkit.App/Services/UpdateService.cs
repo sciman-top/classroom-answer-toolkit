@@ -24,7 +24,8 @@ public sealed record UpdateInfo(
     string WorkspaceContract,
     string PackageUrl,
     string PackageSha256,
-    long PackageBytes);
+    long PackageBytes,
+    string? PublisherThumbprint = null);
 
 public sealed record UpdateCheckResult(
     bool Succeeded,
@@ -154,6 +155,11 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 // auto-update flow consumes; anything else needs a manual setup.
                 return UpdateCheckResult.Unavailable("更新清单 schema 不受支持，请手动下载新安装程序");
             }
+            if (!string.IsNullOrWhiteSpace(manifest.PublisherThumbprint)
+                && !System.Text.RegularExpressions.Regex.IsMatch(manifest.PublisherThumbprint, "\\A[A-Fa-f0-9]{40}\\z"))
+            {
+                return UpdateCheckResult.Unavailable("更新清单中的 publisherThumbprint 无效");
+            }
 
             var currentVersion = _currentVersion ?? GetCurrentVersion();
             if (!Version.TryParse(manifest.Version, out var latestVersion))
@@ -197,7 +203,8 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 targetWorkspaceContract,
                 asset.Url!,
                 asset.Sha256!.ToLowerInvariant(),
-                asset.Bytes));
+                asset.Bytes,
+                manifest.PublisherThumbprint));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -292,27 +299,36 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
                 }
             }
 
-            var runtimeManifest = ReadRuntimeManifest();
-            if (string.IsNullOrWhiteSpace(runtimeManifest?.PublisherThumbprint))
+            // A missing publisher pin is the intentional unsigned-release path;
+            // the approved GitHub HTTPS source and exact size/SHA-256 were checked above.
+            if (!string.IsNullOrWhiteSpace(update.PublisherThumbprint))
             {
-                throw new InvalidDataException("安装版运行时缺少 publisherThumbprint，无法验证更新发布者");
-            }
-            if (!WindowsAuthenticodeTrust.IsTrusted(setupPath))
-            {
-                throw new InvalidDataException("更新安装程序未通过 Windows Authenticode 信任验证");
-            }
-            // X509CertificateLoader.LoadCertificateFromFile expects a
-            // certificate file, not a PE image. Extract the Authenticode
-            // signer from the signed setup executable itself.
+                var currentPublisherThumbprint = ReadRuntimeManifest()?.PublisherThumbprint;
+                if (!string.IsNullOrWhiteSpace(currentPublisherThumbprint)
+                    && !string.Equals(
+                        currentPublisherThumbprint,
+                        update.PublisherThumbprint,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidDataException("更新安装程序发布者与当前安装版不一致");
+                }
+                if (!WindowsAuthenticodeTrust.IsTrusted(setupPath))
+                {
+                    throw new InvalidDataException("更新安装程序未通过 Windows Authenticode 信任验证");
+                }
+                // X509CertificateLoader.LoadCertificateFromFile expects a
+                // certificate file, not a PE image. Extract the Authenticode
+                // signer from the signed setup executable itself.
 #pragma warning disable SYSLIB0057 // PE Authenticode extraction has no X509CertificateLoader equivalent.
-            using var signer = X509Certificate.CreateFromSignedFile(setupPath);
+                using var signer = X509Certificate.CreateFromSignedFile(setupPath);
 #pragma warning restore SYSLIB0057
-            if (!string.Equals(
-                signer.GetCertHashString(),
-                runtimeManifest.PublisherThumbprint,
-                StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidDataException("更新安装程序发布者与当前安装版不一致");
+                if (!string.Equals(
+                    signer.GetCertHashString(),
+                    update.PublisherThumbprint,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidDataException("更新安装程序发布者与清单声明不一致");
+                }
             }
 
             var startInfo = new ProcessStartInfo
@@ -634,6 +650,7 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
         public string? Kind { get; set; }
         public string? Version { get; set; }
         public string? WorkspaceContract { get; set; }
+        public string? PublisherThumbprint { get; set; }
         public List<ReleaseAsset>? Assets { get; set; }
     }
 

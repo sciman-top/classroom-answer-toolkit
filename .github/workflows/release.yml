@@ -79,35 +79,14 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Unable to install Inno Setup 6.6.1." }
           }
 
-      - name: Import protected code-signing certificate
-        shell: pwsh
-        env:
-          WINDOWS_SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
-          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_BASE64) -or
-              [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD)) {
-            throw "Stable ordinary-user candidate requires WINDOWS_SIGNING_CERTIFICATE_BASE64 and WINDOWS_SIGNING_CERTIFICATE_PASSWORD."
-          }
-          $certificatePath = Join-Path $env:RUNNER_TEMP "classroom-toolkit-signing.pfx"
-          [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE_BASE64))
-          $password = ConvertTo-SecureString $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD -AsPlainText -Force
-          $certificate = Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation Cert:\CurrentUser\My -Password $password
-          if (-not $certificate.HasPrivateKey) {
-            throw "Imported code-signing certificate has no private key."
-          }
-          "SIGNING_CERTIFICATE_THUMBPRINT=$($certificate.Thumbprint)" >> $env:GITHUB_ENV
-          Remove-Item -LiteralPath $certificatePath -Force
-
-      - name: Build signed release candidate
+      - name: Build unsigned stable release candidate
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package-release.ps1 `
             -Version $env:RELEASE_VERSION `
-            -WorkspaceContract "2" `
-            -SigningCertificateThumbprint $env:SIGNING_CERTIFICATE_THUMBPRINT
+            -WorkspaceContract "2"
 
       - name: Verify ordinary-user package and bundled PDF renderer
         shell: pwsh
@@ -151,7 +130,7 @@ jobs:
           $setup = Join-Path $root "installer/stable/ClassroomToolkit-$version-setup.exe"
           $portable = Join-Path $root "portable/ClassroomToolkit-$version-portable-win-x64.zip"
           $summary = @(
-            "## Signed release candidate v$version",
+            "## Unsigned stable release candidate v$version",
             "",
             "Source commit: ``$env:GITHUB_SHA``",
             "Candidate run: ``$env:GITHUB_RUN_ID``",
@@ -161,11 +140,12 @@ jobs:
             "| Installer | ``$((Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant())`` | $((Get-Item -LiteralPath $setup).Length) |",
             "| Portable ZIP | ``$((Get-FileHash -LiteralPath $portable -Algorithm SHA256).Hash.ToLowerInvariant())`` | $((Get-Item -LiteralPath $portable).Length) |",
             "",
+            "These packages are unsigned. Windows may show an Unknown publisher or SmartScreen warning.",
             "The candidate artifact is available to download and test. This run does not publish a GitHub Release."
           ) -join "`n"
           [IO.File]::AppendAllText($env:GITHUB_STEP_SUMMARY, "$summary`n", [Text.UTF8Encoding]::new($false))
 
-      - name: Upload signed release candidate
+      - name: Upload stable release candidate
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: release-candidate-${{ steps.release.outputs.version }}
@@ -228,7 +208,7 @@ jobs:
             --repo $env:GITHUB_REPOSITORY `
             --name "release-candidate-$env:RELEASE_VERSION" `
             --dir $deliveryRoot
-          if ($LASTEXITCODE -ne 0) { throw "Unable to download the exact signed release candidate artifact." }
+          if ($LASTEXITCODE -ne 0) { throw "Unable to download the exact release candidate artifact." }
 
       - name: Verify representative acceptance and bind package hashes
         shell: pwsh

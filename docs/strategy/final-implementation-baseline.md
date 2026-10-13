@@ -56,7 +56,7 @@ SourceExam
 - WPF 的 deliver 成功必须核对 manifest 的 input/output、subject-pack、profile 和本次生成时间；不能接受另一份 Markdown 或旧回执留下的产物。
 - 分发通道只有 stable 四类（安装版、绿色便携版、源码包、私用迁移包）；developer/operator preview 已于 2026-10-10 退场。普通用户安装版和绿色版使用带 `runtime-manifest.json` 的版本化 runtime bundle，不依赖 Git 仓库标记。当前不采用 MSIX。
 - 可重复的本地安装、修复、卸载与便携启动验收由 loopback 隔离回放形成 `classroom-toolkit-ordinary-user-package-acceptance` 回执（`scripts/test-ordinary-user-package.ps1`）；该状态只证明工程操作合同，不得推导 publisher identity、线上发布、普通用户实机或 Teacher Accepted。
-- 2026-08-31 裁决：普通用户安装版与绿色便携版已获明确实施授权并复用同一 runtime bundle；本地安装/修复/卸载/便携 smoke、publisher identity、GitHub stable 发布和代表性普通用户验收仍是不同证据层。签名或代表性验收缺失时不得宣称 stable 已发布。
+- 2026-08-31 裁决：普通用户安装版与绿色便携版已获明确实施授权并复用同一 runtime bundle；本地安装/修复/卸载/便携 smoke、可选 publisher identity、GitHub stable 发布和代表性普通用户验收仍是不同证据层。2026-10-13 决策更新：Authenticode 不再是 stable 发布条件；无签名发布仍须保留 SHA-256、SBOM、GitHub build provenance 和代表性非开发者验收。更新后的应用可在包哈希验证后从签名 publisher pin 转入 GitHub HTTPS 信任；已经发布的旧版应用仍要求 Authenticode，首次迁移须手动安装无签名包。缺少代表性验收时不得宣称 stable 已发布。
 - 验证按变更面路由：C# 用 build+xUnit，gateway/renderer 用 focused Node 测试，subject spec/rules 用 Core；shared spec/schema、跨学科或 release 才用 Full。
 - Full 的通用 renderer/layout 合同由主产品包运行一次；其他 subject-pack 必须保留独立 snapshot 和学科特异 sentinel，不复制同一输入与视觉基准。
 
