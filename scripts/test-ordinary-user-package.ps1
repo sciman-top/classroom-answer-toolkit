@@ -37,15 +37,20 @@ $failureMessage = $null
 New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
 
 function Add-Scenario {
-    param([string]$Name, [string]$Status, [string]$Summary)
-    $scenarios.Add([ordered]@{ name = $Name; status = $Status; summary = $Summary })
+    param([string]$Name, [string]$Status, [string]$Summary, [object]$Artifacts = $null)
+    $scenario = [ordered]@{ name = $Name; status = $Status; summary = $Summary }
+    if ($null -ne $Artifacts) {
+        $scenario.artifacts = $Artifacts
+    }
+    $scenarios.Add($scenario)
 }
 
 function Invoke-Scenario {
     param([string]$Name, [string]$Summary, [scriptblock]$Action)
     try {
-        & $Action
-        Add-Scenario -Name $Name -Status "passed" -Summary $Summary
+        $result = & $Action
+        $artifacts = if ($result -is [Collections.IDictionary]) { $result } else { $null }
+        Add-Scenario -Name $Name -Status "passed" -Summary $Summary -Artifacts $artifacts
     }
     catch {
         Add-Scenario -Name $Name -Status "failed" -Summary $_.Exception.Message
@@ -99,6 +104,107 @@ function Invoke-AppSmoke {
     }
 }
 
+function Invoke-RendererSmoke {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][ValidateSet("installer", "portable")][string]$Distribution
+    )
+
+    $nodePath = Join-Path $Root "runtime/node/node.exe"
+    $rendererPath = Join-Path $Root "tools/latex-renderer/deliver-answer.mjs"
+    $snapshotPath = Join-Path $Root ".snapshot-cache/resolved-snapshot.json"
+    foreach ($requiredPath in @($nodePath, $rendererPath, $snapshotPath)) {
+        if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+            throw "Packaged renderer input is missing: $requiredPath"
+        }
+    }
+
+    $smokeRoot = Join-Path $testRoot "renderer-$Distribution"
+    [IO.Directory]::CreateDirectory($smokeRoot) | Out-Null
+    $markdownPath = Join-Path $smokeRoot "renderer-smoke.md"
+    $pdfPath = Join-Path $smokeRoot "renderer-smoke.pdf"
+    $deliveryManifestPath = Join-Path $smokeRoot "renderer-smoke.delivery-manifest.json"
+    $sampleMarkdown = @'
+# 渲染冒烟
+
+固定的无 AI 样例用于检查答案 PDF 交付链。
+
+合力满足 $F=ma。
+'@
+    [IO.File]::WriteAllText(
+        $markdownPath,
+        $sampleMarkdown,
+        [Text.UTF8Encoding]::new($false))
+
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $nodePath
+    $startInfo.WorkingDirectory = $Root
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.Environment["INIT_CWD"] = $Root
+    [void]$startInfo.Environment.Remove("CLASSROOM_TOOLKIT_BROWSER_WS_ENDPOINT")
+    foreach ($argument in @(
+        $rendererPath,
+        $markdownPath,
+        $pdfPath,
+        "--subject-pack", "junior-physics-answer",
+        "--snapshot-path", $snapshotPath,
+        "--keep-review")) {
+        $startInfo.ArgumentList.Add($argument)
+    }
+
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    if (-not $process.Start()) {
+        throw "Unable to start bundled Node.js for the $Distribution PDF smoke."
+    }
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    if (-not $process.WaitForExit($script:ProcessTimeoutSeconds * 1000)) {
+        try { $process.Kill($true) } catch { }
+        throw "Bundled $Distribution PDF render did not exit within $script:ProcessTimeoutSeconds seconds."
+    }
+    $process.WaitForExit()
+    $output = $stdoutTask.GetAwaiter().GetResult()
+    $errorOutput = $stderrTask.GetAwaiter().GetResult()
+    if ($process.ExitCode -ne 0) {
+        throw "Bundled $Distribution PDF render failed (exit $($process.ExitCode)): $output $errorOutput"
+    }
+    if (-not (Test-Path -LiteralPath $pdfPath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $deliveryManifestPath -PathType Leaf)) {
+        throw "Bundled $Distribution PDF render did not create both the PDF and delivery manifest. $output $errorOutput"
+    }
+
+    $pdfInfo = Get-Item -LiteralPath $pdfPath
+    if ($pdfInfo.Length -lt 1024) {
+        throw "Bundled $Distribution PDF output is unexpectedly small: $($pdfInfo.Length) bytes."
+    }
+    $pdfHeader = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($pdfPath), 0, 5)
+    if ($pdfHeader -ne "%PDF-") {
+        throw "Bundled $Distribution renderer output is not a PDF file."
+    }
+    $deliveryManifest = Get-Content -LiteralPath $deliveryManifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+    if ([string]$deliveryManifest.schemaVersion -ne "1.1" -or
+        $deliveryManifest.status.deliveryComplete -ne $true -or
+        [string]$deliveryManifest.integrity.algorithm -ne "sha256") {
+        throw "Bundled $Distribution renderer produced an incomplete or unsupported delivery manifest."
+    }
+    $pdfSha256 = Get-FileSha256 -PathValue $pdfPath
+    if ([string]$deliveryManifest.integrity.output.sha256 -ne $pdfSha256 -or
+        [long]$deliveryManifest.integrity.output.bytes -ne $pdfInfo.Length) {
+        throw "Bundled $Distribution delivery manifest does not match its PDF output."
+    }
+
+    return [ordered]@{
+        pdfSha256 = $pdfSha256
+        pdfBytes = $pdfInfo.Length
+        deliveryManifestSha256 = Get-FileSha256 -PathValue $deliveryManifestPath
+        deliveryManifestSchemaVersion = [string]$deliveryManifest.schemaVersion
+    }
+}
+
 function Invoke-Setup {
     param([Parameter(Mandatory = $true)][string]$LogName)
 
@@ -145,6 +251,7 @@ try {
         if (-not (Test-Path -LiteralPath (Join-Path $installRoot "runtime/node/node.exe") -PathType Leaf)) { throw "Bundled Node.js is missing." }
         if (-not (Test-Path -LiteralPath (Join-Path $installRoot ".env") -PathType Leaf)) { throw "Seeded .env template is missing." }
         Invoke-AppSmoke -Root $installRoot
+        Invoke-RendererSmoke -Root $installRoot -Distribution "installer"
     }
 
     Invoke-Scenario -Name "installer-repair" -Summary "Rerunning setup restores a missing packaged file, preserves the configured .env, and keeps install viability." -Action {
@@ -165,6 +272,7 @@ try {
         $runtimeManifest = Get-Content -LiteralPath (Join-Path $portableRoot "runtime-manifest.json") -Raw | ConvertFrom-Json
         if ([string]$runtimeManifest.distributionMode -ne "portable") { throw "Portable runtime mode is not portable." }
         Invoke-AppSmoke -Root $portableRoot
+        Invoke-RendererSmoke -Root $portableRoot -Distribution "portable"
     }
 
     Invoke-Scenario -Name "installer-uninstall" -Summary "The registered uninstaller removes the application executable." -Action {
@@ -177,7 +285,7 @@ try {
             -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") `
             -WindowStyle Hidden `
             -PassThru
-        Wait-ProcessBounded -Process $process -Description "uninstaller"
+        [void](Wait-ProcessBounded -Process $process -Description "uninstaller")
         if ($process.ExitCode -ne 0) { throw "Uninstaller failed (exit $($process.ExitCode))." }
         if (Test-Path -LiteralPath (Join-Path $installRoot "ClassroomToolkit.App.exe") -PathType Leaf) { throw "Application executable remains after uninstall." }
         if (-not (Test-Path -LiteralPath (Join-Path $installRoot ".env") -PathType Leaf)) { throw "Teacher .env must survive uninstall." }
@@ -195,7 +303,7 @@ finally {
         version = $Version
         deliveryRoot = $versionRoot
         signatureStatus = if (Test-Path -LiteralPath $setupPath -PathType Leaf) { [string](Get-AuthenticodeSignature -LiteralPath $setupPath).Status } else { $null }
-        evidenceBoundary = "local Windows install/repair/uninstall and portable smoke; not publisher or representative human acceptance"
+        evidenceBoundary = "local Windows install/repair/uninstall, packaged PDF rendering and delivery-manifest integrity; not representative human acceptance"
         scenarios = @($scenarios)
         error = $failureMessage
     }

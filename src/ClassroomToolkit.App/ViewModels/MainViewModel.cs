@@ -370,7 +370,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // overwriting a toolchain verdict is intentional.
     private void ApplyHealthReport(WorkspaceHealthReport health)
     {
-        StatusMessage = health.IsHealthy ? "答案生成与排版主链已就绪" : health.Summary;
+        // The summary also carries first-run setup guidance (for example, a
+        // missing AI key). A healthy local workspace must not hide that step.
+        StatusMessage = string.IsNullOrWhiteSpace(health.Summary)
+            ? health.IsHealthy ? "答案生成与排版主链已就绪" : "工作区健康检查未通过。"
+            : health.Summary;
         StatusCards.Clear();
         StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现"));
         StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath));

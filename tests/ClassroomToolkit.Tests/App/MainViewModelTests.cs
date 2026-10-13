@@ -137,6 +137,22 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task CheckKeepsAiSetupHintWhenLocalWorkspaceIsHealthy()
+    {
+        const string setupHint = "规则快照、评测结果与最新规范已对齐；尚未配置 AI 密钥：请完成首次设置。";
+        var orchestrator = new FakeOrchestrator(checkHealthReport: new WorkspaceHealthReport(
+            "junior-physics-answer", ["junior-physics-answer", "math-answer"], "v9.99", "v9.99",
+            true, @"D:\repo\.snapshot-cache\resolved-snapshot.json",
+            true, 12, setupHint, []));
+        using var viewModel = new MainViewModel(orchestrator, new FakePathOpener());
+
+        await viewModel.CheckCommand.ExecuteAsync(null);
+
+        viewModel.StatusMessage.Should().Contain("尚未配置 AI 密钥");
+        viewModel.StatusMessage.Should().Contain("首次设置");
+    }
+
+    [Fact]
     public async Task CancelStopsTheCurrentToolchainOperation()
     {
         var orchestrator = new FakeOrchestrator(blockCheck: true);

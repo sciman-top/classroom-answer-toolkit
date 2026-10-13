@@ -4,20 +4,42 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version of the tested candidate, without the leading v
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful tag-triggered Release run that built the candidate
+        required: true
+        type: string
+      acceptance_record:
+        description: JSON record from a representative non-developer who tested this exact candidate
+        required: true
+        type: string
 
-permissions:
-  attestations: write
-  contents: write
-  id-token: write
+permissions: {}
 
 jobs:
-  release:
+  build-candidate:
+    if: github.event_name == 'push'
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
+
+      - name: Set release version
+        id: release
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Release tag must be v<major>.<minor>.<patch>." }
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
@@ -65,7 +87,7 @@ jobs:
         run: |
           if ([string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_BASE64) -or
               [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD)) {
-            throw "Stable ordinary-user release requires WINDOWS_SIGNING_CERTIFICATE_BASE64 and WINDOWS_SIGNING_CERTIFICATE_PASSWORD."
+            throw "Stable ordinary-user candidate requires WINDOWS_SIGNING_CERTIFICATE_BASE64 and WINDOWS_SIGNING_CERTIFICATE_PASSWORD."
           }
           $certificatePath = Join-Path $env:RUNNER_TEMP "classroom-toolkit-signing.pfx"
           [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE_BASE64))
@@ -77,33 +99,31 @@ jobs:
           "SIGNING_CERTIFICATE_THUMBPRINT=$($certificate.Thumbprint)" >> $env:GITHUB_ENV
           Remove-Item -LiteralPath $certificatePath -Force
 
-      - name: Build release packages
+      - name: Build signed release candidate
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
-          $version = $env:RELEASE_TAG -replace '^v', ''
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package-release.ps1 `
-            -Version $version `
+            -Version $env:RELEASE_VERSION `
             -WorkspaceContract "2" `
             -SigningCertificateThumbprint $env:SIGNING_CERTIFICATE_THUMBPRINT
 
-      - name: Accept ordinary-user packages
+      - name: Verify ordinary-user package and bundled PDF renderer
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
-          $version = $env:RELEASE_TAG -replace '^v', ''
           pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-ordinary-user-package.ps1 `
-            -Version $version `
-            -DeliveryRoot "artifacts/deliveries/$version"
+            -Version $env:RELEASE_VERSION `
+            -DeliveryRoot "artifacts/deliveries/$env:RELEASE_VERSION"
 
       - name: Generate release SBOM
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
-          $version = $env:RELEASE_TAG -replace '^v', ''
+          $version = $env:RELEASE_VERSION
           dotnet tool install --tool-path artifacts/work/tools Microsoft.Sbom.DotNetTool --version 4.1.5
           artifacts/work/tools/sbom-tool generate `
             -b artifacts/deliveries/$version `
@@ -121,17 +141,128 @@ jobs:
             -Destination artifacts/deliveries/$version/_release-metadata/sbom/spdx_2.2
           Remove-Item -LiteralPath artifacts/deliveries/$version/_manifest -Recurse -Force
 
-      - name: Bind versioned release metadata
+      - name: Summarize and upload exact candidate packages
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
-          $version = $env:RELEASE_TAG -replace '^v', ''
-          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/write-release-metadata.ps1 `
-            -Version $version `
-            -SourceCommit $env:GITHUB_SHA
+          $version = $env:RELEASE_VERSION
+          $root = "artifacts/deliveries/$version"
+          $setup = Join-Path $root "installer/stable/ClassroomToolkit-$version-setup.exe"
+          $portable = Join-Path $root "portable/ClassroomToolkit-$version-portable-win-x64.zip"
+          $summary = @(
+            "## Signed release candidate v$version",
+            "",
+            "Source commit: ``$env:GITHUB_SHA``",
+            "Candidate run: ``$env:GITHUB_RUN_ID``",
+            "",
+            "| Package | SHA-256 | Bytes |",
+            "| --- | --- | ---: |",
+            "| Installer | ``$((Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant())`` | $((Get-Item -LiteralPath $setup).Length) |",
+            "| Portable ZIP | ``$((Get-FileHash -LiteralPath $portable -Algorithm SHA256).Hash.ToLowerInvariant())`` | $((Get-Item -LiteralPath $portable).Length) |",
+            "",
+            "The candidate artifact is available to download and test. This run does not publish a GitHub Release."
+          ) -join "`n"
+          [IO.File]::AppendAllText($env:GITHUB_STEP_SUMMARY, "$summary`n", [Text.UTF8Encoding]::new($false))
 
-      - name: Attest release provenance
+      - name: Upload signed release candidate
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: release-candidate-${{ steps.release.outputs.version }}
+          path: artifacts/deliveries/${{ steps.release.outputs.version }}
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-accepted-candidate:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout the selected version tag
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Validate version tag and successful candidate run
+        id: candidate
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+$') { throw "Release version must be major.minor.patch." }
+          if ($env:GITHUB_REF_TYPE -ne "tag" -or $env:GITHUB_REF_NAME -ne "v$env:RELEASE_VERSION") {
+            throw "Run the publish workflow from the matching v$($env:RELEASE_VERSION) tag."
+          }
+          if ($env:CANDIDATE_RUN_ID -notmatch '^[1-9]\d*$') { throw "Candidate run id must be a positive decimal integer." }
+          $runJson = & gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:CANDIDATE_RUN_ID"
+          if ($LASTEXITCODE -ne 0) { throw "Unable to read candidate run $env:CANDIDATE_RUN_ID." }
+          $run = ($runJson -join "`n") | ConvertFrom-Json
+          if ([string]$run.path -notmatch '^\.github/workflows/release\.yml(?:@|$)' -or
+              [string]$run.event -ne "push" -or
+              [string]$run.status -ne "completed" -or
+              [string]$run.conclusion -ne "success" -or
+              [string]$run.head_branch -ne "v$env:RELEASE_VERSION" -or
+              -not [string]::Equals([string]$run.head_sha, $env:GITHUB_SHA, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Candidate run must be a successful tag-triggered Release workflow for this exact source commit and version."
+          }
+          "source-commit=$($run.head_sha)" >> $env:GITHUB_OUTPUT
+          "candidate-created-at=$($run.created_at)" >> $env:GITHUB_OUTPUT
+
+      - name: Download exact candidate artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          $deliveryRoot = "artifacts/deliveries/$env:RELEASE_VERSION"
+          New-Item -ItemType Directory -Force -Path $deliveryRoot | Out-Null
+          gh run download $env:CANDIDATE_RUN_ID `
+            --repo $env:GITHUB_REPOSITORY `
+            --name "release-candidate-$env:RELEASE_VERSION" `
+            --dir $deliveryRoot
+          if ($LASTEXITCODE -ne 0) { throw "Unable to download the exact signed release candidate artifact." }
+
+      - name: Verify representative acceptance and bind package hashes
+        shell: pwsh
+        env:
+          ACCEPTANCE_RECORD_JSON: ${{ inputs.acceptance_record }}
+          CANDIDATE_CREATED_AT: ${{ steps.candidate.outputs.candidate-created-at }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          SOURCE_COMMIT: ${{ steps.candidate.outputs.source-commit }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:ACCEPTANCE_RECORD_JSON)) { throw "A representative acceptance record is required." }
+          $recordPath = Join-Path $env:RUNNER_TEMP "representative-acceptance-input.json"
+          [IO.File]::WriteAllText($recordPath, $env:ACCEPTANCE_RECORD_JSON, [Text.UTF8Encoding]::new($false))
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-release-acceptance.ps1 `
+            -Version $env:RELEASE_VERSION `
+            -SourceCommit $env:SOURCE_COMMIT `
+            -CandidateRunId $env:CANDIDATE_RUN_ID `
+            -GitHubActor $env:GITHUB_ACTOR `
+            -CandidateCreatedAt $env:CANDIDATE_CREATED_AT `
+            -AcceptanceRecordPath $recordPath `
+            -DeliveryRoot "artifacts/deliveries/$env:RELEASE_VERSION"
+
+      - name: Bind release metadata to accepted candidate
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          SOURCE_COMMIT: ${{ steps.candidate.outputs.source-commit }}
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/write-release-metadata.ps1 `
+            -Version $env:RELEASE_VERSION `
+            -DeliveryRoot "artifacts/deliveries/$env:RELEASE_VERSION" `
+            -SourceCommit $env:SOURCE_COMMIT
+
+      - name: Attest accepted release provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: |
@@ -141,25 +272,29 @@ jobs:
             artifacts/deliveries/*/portable/ClassroomToolkit-*-portable-win-x64.zip
             artifacts/deliveries/*/source/ClassroomToolkit-*-source.zip
             artifacts/deliveries/*/_release-metadata/sbom/spdx_2.2/manifest.spdx.json
+            artifacts/deliveries/*/_release-metadata/representative-acceptance.json
             artifacts/deliveries/*/_release-metadata/release-manifest.json
             artifacts/deliveries/*/_release-metadata/checksums.sha256
 
-      - name: Publish GitHub Release
+      - name: Publish accepted GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          $version = $env:RELEASE_TAG -replace '^v', ''
-          gh release create $env:RELEASE_TAG `
-            "artifacts/deliveries/$version/installer/stable/ClassroomToolkit-$version-setup.exe" `
-            "artifacts/deliveries/$version/installer/stable/install-manifest.json" `
-            "artifacts/deliveries/$version/installer/stable/update-manifest.json" `
-            "artifacts/deliveries/$version/portable/ClassroomToolkit-$version-portable-win-x64.zip" `
-            "artifacts/deliveries/$version/source/ClassroomToolkit-$version-source.zip" `
-            "artifacts/deliveries/$version/_release-metadata/sbom/spdx_2.2/manifest.spdx.json" `
-            "artifacts/deliveries/$version/_release-metadata/release-manifest.json" `
-            "artifacts/deliveries/$version/_release-metadata/checksums.sha256" `
+          $version = $env:RELEASE_VERSION
+          $root = "artifacts/deliveries/$version"
+          gh release create $env:GITHUB_REF_NAME `
+            "$root/installer/stable/ClassroomToolkit-$version-setup.exe" `
+            "$root/installer/stable/install-manifest.json" `
+            "$root/installer/stable/update-manifest.json" `
+            "$root/portable/ClassroomToolkit-$version-portable-win-x64.zip" `
+            "$root/source/ClassroomToolkit-$version-source.zip" `
+            "$root/_release-metadata/sbom/spdx_2.2/manifest.spdx.json" `
+            "$root/_release-metadata/representative-acceptance.json" `
+            "$root/_release-metadata/release-manifest.json" `
+            "$root/_release-metadata/checksums.sha256" `
             --title "ClassroomToolkit $version" `
             --generate-notes `
             --verify-tag
+          if ($LASTEXITCODE -ne 0) { throw "GitHub Release publication failed." }

@@ -221,6 +221,150 @@ public sealed class ToolchainCliBehaviorTests
         // delivery contract and every subject-pack eval); a tag build must not
         // ship with only the Core gate.
         workflow.Should().Contain("check-toolchain.ps1 -Mode Full");
+        workflow.Should().Contain("if: github.event_name == 'push'");
+        workflow.Should().Contain("if: github.event_name == 'workflow_dispatch'");
+        workflow.Should().Contain("release-candidate-");
+        workflow.Should().Contain("verify-release-acceptance.ps1");
+        workflow.Should().Contain("gh release create");
+        workflow.Split("publish-accepted-candidate:", StringSplitOptions.None)[0]
+            .Should().NotContain("gh release create");
+        workflow.IndexOf("verify-release-acceptance.ps1", StringComparison.Ordinal)
+            .Should().BeLessThan(workflow.IndexOf("gh release create", StringComparison.Ordinal));
+
+        var packageAcceptance = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), "scripts", "test-ordinary-user-package.ps1"));
+        packageAcceptance.Should().Contain("Invoke-RendererSmoke -Root $installRoot -Distribution \"installer\"");
+        packageAcceptance.Should().Contain("Invoke-RendererSmoke -Root $portableRoot -Distribution \"portable\"");
+        packageAcceptance.Should().Contain("integrity.output.sha256");
+        packageAcceptance.Should().Contain("representative human acceptance");
+
+        var releaseMetadata = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), "scripts", "write-release-metadata.ps1"));
+        releaseMetadata.Should().Contain("_release-metadata/representative-acceptance.json");
+        releaseMetadata.Should().Contain("Representative acceptance does not bind the current");
+    }
+
+    [Fact]
+    public async Task ReleaseAcceptanceBindsExactCandidateRunAndPackageHashes()
+    {
+        var root = ToolchainTestHost.FindRepoRoot();
+        var testRoot = Path.Combine(Path.GetTempPath(), "ClassroomToolkit-ReleaseAcceptance", Guid.NewGuid().ToString("N"));
+        var deliveryRoot = Path.Combine(testRoot, "delivery");
+        var installerPath = Path.Combine(deliveryRoot, "installer", "stable", "ClassroomToolkit-1.0.5-setup.exe");
+        var portablePath = Path.Combine(deliveryRoot, "portable", "ClassroomToolkit-1.0.5-portable-win-x64.zip");
+        var installManifestPath = Path.Combine(deliveryRoot, "installer", "stable", "install-manifest.json");
+        var acceptanceInputPath = Path.Combine(testRoot, "acceptance-input.json");
+        var sourceCommit = new string('a', 40);
+        const string candidateRunId = "123456789";
+        var candidateCreatedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var acceptedAt = DateTimeOffset.UtcNow.AddMinutes(-1);
+        Directory.CreateDirectory(Path.GetDirectoryName(installerPath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(portablePath)!);
+        File.WriteAllBytes(installerPath, Encoding.UTF8.GetBytes("signed installer package fixture"));
+        File.WriteAllBytes(portablePath, Encoding.UTF8.GetBytes("portable package fixture"));
+        var installerHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(installerPath))).ToLowerInvariant();
+        var portableHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(portablePath))).ToLowerInvariant();
+        File.WriteAllText(installManifestPath, JsonSerializer.Serialize(new
+        {
+            schemaVersion = "1.0",
+            kind = "classroom-toolkit-install-manifest",
+            version = "1.0.5",
+            sourceCommit,
+            assets = new[]
+            {
+                new { kind = "installer", name = Path.GetFileName(installerPath), sha256 = installerHash, bytes = new FileInfo(installerPath).Length },
+                new { kind = "portable", name = Path.GetFileName(portablePath), sha256 = portableHash, bytes = new FileInfo(portablePath).Length }
+            }
+        }));
+
+        try
+        {
+            var acceptanceRecord = new
+            {
+                schemaVersion = "1.0",
+                kind = "classroom-toolkit-representative-acceptance-input",
+                status = "accepted",
+                version = "1.0.5",
+                sourceCommit,
+                candidateRunId,
+                acceptedAt = acceptedAt.ToString("O"),
+                tester = new { identifier = "teacher-test-01", role = "representative-non-developer" },
+                assets = new { installerSha256 = installerHash, portableSha256 = portableHash },
+                scenarios = new
+                {
+                    installerCleanInstall = "passed",
+                    installerRepair = "passed",
+                    installerMarkdownPdfDelivery = "passed",
+                    portableLaunch = "passed",
+                    portableMarkdownPdfDelivery = "passed"
+                }
+            };
+            File.WriteAllText(acceptanceInputPath, JsonSerializer.Serialize(acceptanceRecord));
+
+            var accepted = await RunAsync(
+                "pwsh", root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/verify-release-acceptance.ps1",
+                "-Version", "1.0.5",
+                "-SourceCommit", sourceCommit,
+                "-CandidateRunId", candidateRunId,
+                "-GitHubActor", "release-owner",
+                "-CandidateCreatedAt", candidateCreatedAt.ToString("O"),
+                "-AcceptanceRecordPath", acceptanceInputPath,
+                "-DeliveryRoot", deliveryRoot);
+
+            accepted.ExitCode.Should().Be(0, accepted.Output);
+            var verifiedRecordPath = Path.Combine(deliveryRoot, "_release-metadata", "representative-acceptance.json");
+            using (var document = JsonDocument.Parse(File.ReadAllText(verifiedRecordPath)))
+            {
+                var verified = document.RootElement;
+                verified.GetProperty("candidateRunId").GetString().Should().Be(candidateRunId);
+                verified.GetProperty("submittedByGitHubActor").GetString().Should().Be("release-owner");
+                verified.GetProperty("assets").EnumerateArray()
+                    .Single(asset => asset.GetProperty("kind").GetString() == "installer")
+                    .GetProperty("sha256").GetString().Should().Be(installerHash);
+                verified.GetProperty("assets").EnumerateArray()
+                    .Single(asset => asset.GetProperty("kind").GetString() == "portable")
+                    .GetProperty("sha256").GetString().Should().Be(portableHash);
+            }
+
+            File.WriteAllText(acceptanceInputPath, JsonSerializer.Serialize(new
+            {
+                schemaVersion = "1.0",
+                kind = "classroom-toolkit-representative-acceptance-input",
+                status = "accepted",
+                version = "1.0.5",
+                sourceCommit,
+                candidateRunId,
+                acceptedAt = acceptedAt.ToString("O"),
+                tester = new { identifier = "teacher-test-01", role = "representative-non-developer" },
+                assets = new { installerSha256 = installerHash, portableSha256 = new string('0', 64) },
+                scenarios = new
+                {
+                    installerCleanInstall = "passed",
+                    installerRepair = "passed",
+                    installerMarkdownPdfDelivery = "passed",
+                    portableLaunch = "passed",
+                    portableMarkdownPdfDelivery = "passed"
+                }
+            }));
+            var mismatched = await RunAsync(
+                "pwsh", root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/verify-release-acceptance.ps1",
+                "-Version", "1.0.5",
+                "-SourceCommit", sourceCommit,
+                "-CandidateRunId", candidateRunId,
+                "-GitHubActor", "release-owner",
+                "-CandidateCreatedAt", candidateCreatedAt.ToString("O"),
+                "-AcceptanceRecordPath", acceptanceInputPath,
+                "-DeliveryRoot", deliveryRoot);
+
+            mismatched.ExitCode.Should().NotBe(0);
+            mismatched.Output.Should().Contain("portable hash does not match");
+        }
+        finally
+        {
+            if (Directory.Exists(testRoot)) Directory.Delete(testRoot, recursive: true);
+        }
     }
 
     [Fact]

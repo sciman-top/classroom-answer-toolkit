@@ -32,7 +32,8 @@ $requiredPublicPaths = @(
     "installer/stable/update-manifest.json",
     "portable/ClassroomToolkit-$Version-portable-win-x64.zip",
     "source/ClassroomToolkit-$Version-source.zip",
-    "_release-metadata/sbom/spdx_2.2/manifest.spdx.json"
+    "_release-metadata/sbom/spdx_2.2/manifest.spdx.json",
+    "_release-metadata/representative-acceptance.json"
 )
 foreach ($relativePath in $requiredPublicPaths) {
     $path = Join-Path $versionRoot $relativePath
@@ -47,6 +48,12 @@ if ($setupSignature.Status -ne [Management.Automation.SignatureStatus]::Valid) {
     throw "Ordinary-user release metadata requires a valid Authenticode installer signature: $($setupSignature.Status)."
 }
 $installManifest = Get-Content -LiteralPath (Join-Path $versionRoot "installer/stable/install-manifest.json") -Raw -Encoding utf8 | ConvertFrom-Json
+if ([string]$installManifest.schemaVersion -ne "1.0" -or
+    [string]$installManifest.kind -ne "classroom-toolkit-install-manifest" -or
+    [string]$installManifest.version -ne $Version -or
+    -not [string]::Equals([string]$installManifest.sourceCommit, $sourceCommit, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Install manifest does not match release version $Version and source commit $sourceCommit."
+}
 if ([string]$installManifest.publisherSignature.status -ne "Valid" -or
     [string]::IsNullOrWhiteSpace([string]$installManifest.publisherSignature.signerThumbprint) -or
     -not [string]::Equals(
@@ -54,6 +61,39 @@ if ([string]$installManifest.publisherSignature.status -ne "Valid" -or
         [string]$setupSignature.SignerCertificate.Thumbprint,
         [StringComparison]::OrdinalIgnoreCase)) {
     throw "Install manifest publisher identity does not match the signed setup executable."
+}
+
+$acceptancePath = Join-Path $versionRoot "_release-metadata/representative-acceptance.json"
+$acceptance = Get-Content -LiteralPath $acceptancePath -Raw -Encoding utf8 | ConvertFrom-Json
+if ([string]$acceptance.schemaVersion -ne "1.0" -or
+    [string]$acceptance.kind -ne "classroom-toolkit-representative-acceptance" -or
+    [string]$acceptance.status -ne "accepted" -or
+    [string]$acceptance.version -ne $Version -or
+    -not [string]::Equals([string]$acceptance.sourceCommit, $sourceCommit, [StringComparison]::OrdinalIgnoreCase) -or
+    [string]$acceptance.candidateRunId -notmatch '^[1-9]\d*$' -or
+    [string]::IsNullOrWhiteSpace([string]$acceptance.submittedByGitHubActor) -or
+    [string]$acceptance.tester.role -ne "representative-non-developer" -or
+    [string]::IsNullOrWhiteSpace([string]$acceptance.tester.identifier)) {
+    throw "Release metadata requires a valid representative non-developer acceptance record for version $Version and source $sourceCommit."
+}
+foreach ($asset in @(
+    [ordered]@{ kind = "installer"; path = "installer/stable/ClassroomToolkit-$Version-setup.exe"; file = $stableSetupPath },
+    [ordered]@{ kind = "portable"; path = "portable/ClassroomToolkit-$Version-portable-win-x64.zip"; file = (Join-Path $versionRoot "portable/ClassroomToolkit-$Version-portable-win-x64.zip") }
+)) {
+    $acceptedAssets = @($acceptance.assets | Where-Object { [string]$_.kind -eq $asset.kind })
+    $actualBytes = (Get-Item -LiteralPath $asset.file).Length
+    $actualHash = Get-FileSha256 -PathValue $asset.file
+    if ($acceptedAssets.Count -ne 1 -or
+        [string]$acceptedAssets[0].path -ne $asset.path -or
+        [long]$acceptedAssets[0].bytes -ne $actualBytes -or
+        -not [string]::Equals([string]$acceptedAssets[0].sha256, $actualHash, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Representative acceptance does not bind the current $($asset.kind) package bytes."
+    }
+}
+foreach ($scenario in @("installerCleanInstall", "installerRepair", "installerMarkdownPdfDelivery", "portableLaunch", "portableMarkdownPdfDelivery")) {
+    if ([string]$acceptance.scenarios.$scenario -ne "passed") {
+        throw "Representative acceptance scenario '$scenario' is missing or not passed."
+    }
 }
 
 $publicPaths = [Collections.Generic.List[string]]::new()
