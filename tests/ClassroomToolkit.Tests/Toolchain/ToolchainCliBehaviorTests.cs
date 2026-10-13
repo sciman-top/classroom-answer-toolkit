@@ -225,6 +225,8 @@ public sealed class ToolchainCliBehaviorTests
         workflow.Should().Contain("if: github.event_name == 'workflow_dispatch'");
         workflow.Should().Contain("release-candidate-");
         workflow.Should().Contain("verify-release-acceptance.ps1");
+        workflow.Should().Contain("candidate-completed-at=$($run.updated_at)");
+        workflow.Should().NotContain("candidate-created-at=");
         workflow.Should().Contain("gh release create");
         workflow.Split("publish-accepted-candidate:", StringSplitOptions.None)[0]
             .Should().NotContain("gh release create");
@@ -254,7 +256,8 @@ public sealed class ToolchainCliBehaviorTests
         var acceptanceInputPath = Path.Combine(testRoot, "acceptance-input.json");
         var sourceCommit = new string('a', 40);
         const string candidateRunId = "123456789";
-        var candidateCreatedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var candidateCreatedAt = DateTimeOffset.UtcNow.AddMinutes(-5);
+        var candidateCompletedAt = DateTimeOffset.UtcNow.AddMinutes(-3);
         var acceptedAt = DateTimeOffset.UtcNow.AddMinutes(-1);
         Directory.CreateDirectory(Path.GetDirectoryName(installerPath)!);
         Directory.CreateDirectory(Path.GetDirectoryName(portablePath)!);
@@ -307,7 +310,7 @@ public sealed class ToolchainCliBehaviorTests
                 "-SourceCommit", sourceCommit,
                 "-CandidateRunId", candidateRunId,
                 "-GitHubActor", "release-owner",
-                "-CandidateCreatedAt", candidateCreatedAt.ToString("O"),
+                "-CandidateCompletedAt", candidateCompletedAt.ToString("O"),
                 "-AcceptanceRecordPath", acceptanceInputPath,
                 "-DeliveryRoot", deliveryRoot);
 
@@ -325,6 +328,24 @@ public sealed class ToolchainCliBehaviorTests
                     .Single(asset => asset.GetProperty("kind").GetString() == "portable")
                     .GetProperty("sha256").GetString().Should().Be(portableHash);
             }
+
+            var earlyAcceptanceJson = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(acceptanceInputPath))!;
+            earlyAcceptanceJson["acceptedAt"] = candidateCreatedAt.AddMinutes(1).ToString("O");
+            File.WriteAllText(acceptanceInputPath, earlyAcceptanceJson.ToJsonString());
+            var acceptedBeforeCandidateCompleted = await RunAsync(
+                "pwsh", root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/verify-release-acceptance.ps1",
+                "-Version", "1.0.5",
+                "-SourceCommit", sourceCommit,
+                "-CandidateRunId", candidateRunId,
+                "-GitHubActor", "release-owner",
+                "-CandidateCompletedAt", candidateCompletedAt.ToString("O"),
+                "-AcceptanceRecordPath", acceptanceInputPath,
+                "-DeliveryRoot", deliveryRoot);
+
+            acceptedBeforeCandidateCompleted.ExitCode.Should().NotBe(0);
+            acceptedBeforeCandidateCompleted.Output.Should().Contain("acceptance must occur after the candidate completed");
 
             File.WriteAllText(acceptanceInputPath, JsonSerializer.Serialize(new
             {
@@ -354,7 +375,7 @@ public sealed class ToolchainCliBehaviorTests
                 "-SourceCommit", sourceCommit,
                 "-CandidateRunId", candidateRunId,
                 "-GitHubActor", "release-owner",
-                "-CandidateCreatedAt", candidateCreatedAt.ToString("O"),
+                "-CandidateCompletedAt", candidateCompletedAt.ToString("O"),
                 "-AcceptanceRecordPath", acceptanceInputPath,
                 "-DeliveryRoot", deliveryRoot);
 

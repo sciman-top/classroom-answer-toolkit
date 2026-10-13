@@ -213,7 +213,7 @@ jobs:
             throw "Candidate run must be a successful tag-triggered Release workflow for this exact source commit and version."
           }
           "source-commit=$($run.head_sha)" >> $env:GITHUB_OUTPUT
-          "candidate-created-at=$($run.created_at)" >> $env:GITHUB_OUTPUT
+          "candidate-completed-at=$($run.updated_at)" >> $env:GITHUB_OUTPUT
 
       - name: Download exact candidate artifact
         shell: pwsh
@@ -234,7 +234,7 @@ jobs:
         shell: pwsh
         env:
           ACCEPTANCE_RECORD_JSON: ${{ inputs.acceptance_record }}
-          CANDIDATE_CREATED_AT: ${{ steps.candidate.outputs.candidate-created-at }}
+          CANDIDATE_COMPLETED_AT: ${{ steps.candidate.outputs.candidate-completed-at }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           RELEASE_VERSION: ${{ inputs.version }}
           SOURCE_COMMIT: ${{ steps.candidate.outputs.source-commit }}
@@ -247,7 +247,7 @@ jobs:
             -SourceCommit $env:SOURCE_COMMIT `
             -CandidateRunId $env:CANDIDATE_RUN_ID `
             -GitHubActor $env:GITHUB_ACTOR `
-            -CandidateCreatedAt $env:CANDIDATE_CREATED_AT `
+            -CandidateCompletedAt $env:CANDIDATE_COMPLETED_AT `
             -AcceptanceRecordPath $recordPath `
             -DeliveryRoot "artifacts/deliveries/$env:RELEASE_VERSION"
 

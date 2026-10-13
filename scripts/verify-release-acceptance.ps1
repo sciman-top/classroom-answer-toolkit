@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory = $true)][ValidatePattern('^[A-Fa-f0-9]{40}$')][string]$SourceCommit,
     [Parameter(Mandatory = $true)][ValidatePattern('^[1-9]\d*$')][string]$CandidateRunId,
     [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string]$GitHubActor,
-    [Parameter(Mandatory = $true)][DateTimeOffset]$CandidateCreatedAt,
+    [Parameter(Mandatory = $true)][DateTimeOffset]$CandidateCompletedAt,
     [Parameter(Mandatory = $true)][string]$AcceptanceRecordPath,
     [string]$DeliveryRoot = ""
 )
@@ -105,8 +105,8 @@ try {
 catch {
     throw "Representative acceptance timestamp is invalid: $acceptedAtText"
 }
-if ($acceptedAt -lt $CandidateCreatedAt -or $acceptedAt -gt [DateTimeOffset]::UtcNow.AddMinutes(5)) {
-    throw "Representative acceptance must occur after the candidate was built and cannot be in the future."
+if ($acceptedAt -lt $CandidateCompletedAt -or $acceptedAt -gt [DateTimeOffset]::UtcNow.AddMinutes(5)) {
+    throw "Representative acceptance must occur after the candidate completed and cannot be in the future."
 }
 
 foreach ($package in $packageFacts) {
