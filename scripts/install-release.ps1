@@ -79,6 +79,7 @@ function Invoke-ApprovedDownload {
     $handler.AllowAutoRedirect = $false
     $client = [Net.Http.HttpClient]::new($handler)
     $deadline = [Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds($TimeoutSeconds))
+    $targetCreated = $false
     try {
         $currentUri = $UriValue
         for ($redirect = 0; $redirect -le 5; $redirect++) {
@@ -132,6 +133,7 @@ function Invoke-ApprovedDownload {
                             [IO.FileMode]::CreateNew,
                             [IO.FileAccess]::Write,
                             [IO.FileShare]::None)
+                        $targetCreated = $true
                         while (($read = $source.ReadAsync($buffer, 0, $buffer.Length, $deadline.Token).GetAwaiter().GetResult()) -gt 0) {
                             $totalBytes += $read
                             if ($totalBytes -gt $ExactBytes -or $totalBytes -gt $MaximumBytes) {
@@ -169,7 +171,7 @@ function Invoke-ApprovedDownload {
         throw "Too many redirects while downloading from $UriValue."
     }
     catch {
-        if ($TargetPath -and (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
+        if ($targetCreated -and (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
             Remove-Item -LiteralPath $TargetPath -Force -ErrorAction SilentlyContinue
         }
         throw

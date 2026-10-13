@@ -51,12 +51,15 @@ public sealed class InstallReleaseScriptTests
         }
     }
 
-    [Fact]
-    public async Task StalledDownloadHasDeadlineAndRemovesPartialFile()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StalledDownloadHasDeadlineAndOnlyRemovesItsOwnPartialFile(bool existingTarget)
     {
         await using var server = new LoopbackServer([], false) { Stall = true };
         var root = ToolchainTestHost.FindRepoRoot();
         var target = Path.Combine(Path.GetTempPath(), $"install-timeout-{Guid.NewGuid():N}.exe");
+        if (existingTarget) { File.WriteAllText(target, "preserved existing file"); }
         var source = Path.Combine(root, "scripts", "install-release.ps1").Replace("'", "''");
         var script = $$"""
             $ErrorActionPreference = 'Stop'
@@ -75,7 +78,8 @@ public sealed class InstallReleaseScriptTests
                 timeout: TimeSpan.FromSeconds(10));
             result.ExitCode.Should().NotBe(0);
             result.StandardError.Should().NotContain("cannot be found");
-            File.Exists(target).Should().BeFalse();
+            if (existingTarget) { File.ReadAllText(target).Should().Be("preserved existing file"); }
+            else { File.Exists(target).Should().BeFalse(); }
         }
         finally { File.Delete(target); }
     }
