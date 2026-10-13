@@ -244,6 +244,7 @@ public sealed class ToolchainCliBehaviorTests
         packageAcceptance.Should().Contain("Invoke-RendererSmoke -Root $portableRoot -Distribution \"portable\"");
         packageAcceptance.Should().Contain("integrity.output.sha256");
         packageAcceptance.Should().Contain("representative human acceptance");
+        packageAcceptance.Should().Contain("合力满足 $F=ma$。");
 
         var releaseMetadata = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), "scripts", "write-release-metadata.ps1"));
         releaseMetadata.Should().Contain("_release-metadata/representative-acceptance.json");

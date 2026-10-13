@@ -129,7 +129,7 @@ function Invoke-RendererSmoke {
 
 固定的无 AI 样例用于检查答案 PDF 交付链。
 
-合力满足 $F=ma。
+合力满足 $F=ma$。
 '@
     [IO.File]::WriteAllText(
         $markdownPath,
