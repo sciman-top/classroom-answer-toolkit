@@ -1,6 +1,6 @@
 # AGENTS.md - classroom-answer-toolkit
 **项目契约**: 2.0
-**全局规则复核**: 9.87
+**全局规则复核**: 9.88
 **最后更新**: 2026-10-17
 
 ## 1. 当前落点与目标归宿
@@ -17,7 +17,7 @@
 - 真实主链是“人类 spec -> compile/snapshot -> 答案生成 -> renderer -> 资产合同 -> 教师复核交付”；先跑通一个 subject-pack 的最薄闭环，再扩学科或恢复实验工具。
 
 ## B. 执行与风险边界
-- 默认主代理串行完成；子代理须有用户或适用项目/技能规则的明确委派授权，并限定独立切片、互斥 write set、最低证明与 stop；“继续”或要求深入分析不构成授权。
+- 默认主代理串行完成；子代理委派与并行已获用户常驻授权（见全局规则 A.2），每次委派仍须限定独立切片、互斥 write set、最低证明与 stop。
 - `scripts/bootstrap.ps1` 会安装 SDK 或依赖，只是 setup 入口，不是日常验证门禁。
 - 保持 4 空格、.NET `PascalCase`/`camelCase` 与 kebab-case subject/tool ID。
 - schema、runtime、renderer、WPF 或生成合同变化必须同步人类真源、生成物验证和兼容证据，不得只改 compiled 输出。
