@@ -6,7 +6,7 @@
 ## 1. 当前落点与目标归宿
 - 当前落点：本仓实现课堂参考答案生成、渲染、验证与交付工具链。
 - 目标归宿：以可维护的 WPF 应用和可版本化 subject-pack 合同稳定交付多学科答案资产。
-- 下一最小里程碑：从 `docs/strategy/README.md` 与 `execution-backlog.md` fresh read 首个可执行切片；历史证据只在当前基准或 waiver 精确引用时读取，未验收不得外推。
+- 下一最小里程碑：从 `docs/strategy/README.md` 与 `docs/strategy/execution-backlog.md` fresh read 首个可执行切片；历史证据只在当前基准或 waiver 精确引用时读取，未验收不得外推。
 
 ## A. 仓库事实与模块边界
 - `docs/strategy/` 是规划真源；先读 `README.md`、`product-prd.md` 与 `final-implementation-baseline.md`。
