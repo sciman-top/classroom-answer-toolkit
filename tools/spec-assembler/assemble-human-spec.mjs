@@ -71,6 +71,22 @@ function parseVersionFromFileName(filePath) {
   return match ? `v${match[1]}` : null;
 }
 
+export function assertEntrySourceVersion(assembly, entryMarkdown, entrySourcePath) {
+  const { title } = extractTitleAndBody(entryMarkdown);
+  const expectedTitle = `试卷参考答案交付规范-${assembly.subjectLabel}-调用版源 ${assembly.outputVersion}`;
+  if (title !== expectedTitle) {
+    throw new Error(
+      `Entry source title version must match assembly outputVersion: expected "${expectedTitle}", actual "${title}".`
+    );
+  }
+  const fileNameVersion = parseVersionFromFileName(entrySourcePath);
+  if (fileNameVersion !== assembly.outputVersion) {
+    throw new Error(
+      `Entry source filename version must match assembly outputVersion: expected ${assembly.outputVersion}, actual ${fileNameVersion ?? "<missing>"}.`
+    );
+  }
+}
+
 function makeGeneratedHeader({ title, assemblyPath, subjectPack, sourceLayers, outputVersion, kind }) {
   const layerSummary = sourceLayers
     .map((layer) => {
@@ -157,11 +173,13 @@ export function generateAssemblyOutputs(assemblyFilePath) {
   });
 
   const entrySourcePath = path.resolve(assemblyDir, assembly.entrySource);
+  const entrySourceMarkdown = fs.readFileSync(entrySourcePath, "utf8");
+  assertEntrySourceVersion(assembly, entrySourceMarkdown, entrySourcePath);
   const fullContent = buildFullContent(assemblyFilePath, assembly, sourceLayers);
   const entryContent = buildEntryContent(
     assemblyFilePath,
     assembly,
-    fs.readFileSync(entrySourcePath, "utf8"),
+    entrySourceMarkdown,
     sourceLayers
   );
 

@@ -6,6 +6,8 @@ AI gateway 只承担原卷答案生成和参考答案复核。默认禁止 live 
 - `CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true`；
 - `.env` 中存在可用 provider 配置。
 
+`run-live-answer-workflow.ps1` 的对应授权是显式 `-AllowCloudEgress`；配置文件中的 `CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED` 不能被父进程环境覆盖。两个条件任一缺失时，工作流在首个 provider 请求前失败。
+
 配置模板为 `.env.example`；当前本机 `.env` 和 `.env.cockpit` 使用 `http://localhost:45335/v1` 的 Cockpit API Service，真实 bearer token 只保存在本机配置，不提交到 Git。AI gateway 始终配置 5 个执行槽位；执行槽位不是 5 个 endpoint，也不是 5 个模型。单个 Node 进程内使用 FIFO 队列，多个 CLI 进程通过 runtime directory 中的原子 lease 共用同一组五槽位；跨进程调度以保持槽位可用为目标，不承诺全局 FIFO。
 
 主入口：

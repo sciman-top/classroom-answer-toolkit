@@ -91,6 +91,7 @@
         "skipVisualAudit",
         "keepReview",
         "useGatewayProxy",
+        "allowCloudEgress",
         "configEnvFile",
         "optionsFingerprint"
       ],
@@ -113,6 +114,7 @@
         "skipVisualAudit": { "type": "boolean" },
         "keepReview": { "type": "boolean" },
         "useGatewayProxy": { "type": "boolean" },
+        "allowCloudEgress": { "type": "boolean" },
         "configEnvFile": { "type": "string" },
         "optionsFingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       }

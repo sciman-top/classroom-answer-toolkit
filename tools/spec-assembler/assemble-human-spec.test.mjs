@@ -17,7 +17,7 @@ function writeWorkspace() {
 
   write("specs/platform/platform-rules-v1.0.md", "# 平台总则规范\n\n平台正文。\n");
   write("specs/subjects/subject-source-v2.1.md", "# 学科源规范\n\n学科正文。\n");
-  write("specs/subjects/subject-entry-v2.1.md", "# 学科调用版\n\n调用版正文。\n");
+  write("specs/subjects/subject-entry-v2.2.md", "# 试卷参考答案交付规范-测试学科-调用版源 v2.2\n\n调用版正文。\n");
 
   const assemblyPath = write("specs/assemblies/test-answer.json", `${JSON.stringify({
     schemaVersion: "1.0",
@@ -29,7 +29,7 @@ function writeWorkspace() {
       { label: "平台总则", path: "../platform/platform-rules-v1.0.md" },
       { label: "学科特异", path: "../subjects/subject-source-v2.1.md" }
     ],
-    entrySource: "../subjects/subject-entry-v2.1.md"
+    entrySource: "../subjects/subject-entry-v2.2.md"
   }, null, 2)}\n`);
   return { root, assemblyPath };
 }
@@ -87,6 +87,41 @@ test("layer sources must start with a first-level heading", () => {
   try {
     fs.writeFileSync(path.join(root, "specs/platform/platform-rules-v1.0.md"), "no heading\n", "utf8");
     assert.throws(() => generateAssemblyOutputs(assemblyPath), /missing first-level heading/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("entry source title version must match assembly outputVersion", () => {
+  const { root, assemblyPath } = writeWorkspace();
+  try {
+    fs.writeFileSync(
+      path.join(root, "specs/subjects/subject-entry-v2.2.md"),
+      "# 试卷参考答案交付规范-测试学科-调用版源 v2.1\n\n调用版正文。\n",
+      "utf8");
+    assert.throws(
+      () => generateAssemblyOutputs(assemblyPath),
+      /Entry source title version must match assembly outputVersion/
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("entry source filename version must match assembly outputVersion", () => {
+  const { root, assemblyPath } = writeWorkspace();
+  try {
+    const assembly = JSON.parse(fs.readFileSync(assemblyPath, "utf8"));
+    assembly.entrySource = "../subjects/subject-entry-v2.1.md";
+    fs.writeFileSync(assemblyPath, `${JSON.stringify(assembly, null, 2)}\n`, "utf8");
+    fs.writeFileSync(
+      path.join(root, "specs/subjects/subject-entry-v2.1.md"),
+      "# 试卷参考答案交付规范-测试学科-调用版源 v2.2\n\n调用版正文。\n",
+      "utf8");
+    assert.throws(
+      () => generateAssemblyOutputs(assemblyPath),
+      /Entry source filename version must match assembly outputVersion/
+    );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

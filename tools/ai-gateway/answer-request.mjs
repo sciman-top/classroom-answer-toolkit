@@ -19,7 +19,7 @@ import {
   requestAnswerWithFailover
 } from "./answer-transport.mjs";
 import { QUALITY_PROFILE_NAMES } from "./profile-matrix.mjs";
-import { loadGatewayConfig, repoRoot } from "./validate-config.mjs";
+import { assertLiveEgressAllowed, loadGatewayConfig, repoRoot } from "./validate-config.mjs";
 
 const summarySchemaPath = path.join(
   repoRoot,
@@ -325,6 +325,9 @@ export async function main() {
   if (loaded.validation.errors.length > 0) {
     throw new Error(loaded.validation.errors.join("; "));
   }
+  // Reject a config-file disable before prompt/image loading or any paid
+  // request. process.env cannot replace that file's explicit cloud decision.
+  assertLiveEgressAllowed(loaded.config, options.allowCloudEgress);
   const promptContext = {
     sourceText: options.sourceTextFile ? fs.readFileSync(options.sourceTextFile, "utf8") : ""
   };

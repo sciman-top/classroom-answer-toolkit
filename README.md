@@ -39,8 +39,11 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-live-answer-workflow.p
   -SourcePdf "习题/广州物理中考试卷/2025广州中考.pdf" `
   -ReferencePdf "习题/广州物理中考试卷/2025广州中考（答案）.pdf" `
   -OutputDirectory "tmp/runs/2025广州中考" `
+  -AllowCloudEgress `
   -KeepReview
 ```
+
+`-AllowCloudEgress` 是本次工作流的显式云端 AI 调用授权；所选配置文件还必须设置 `CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true`。缺少任一条件时，工作流会在发送原卷、图片或答案前直接失败。
 
 若 Node 直连 AI 网关出现 `UND_ERR_CONNECT_TIMEOUT`，但本机已配置 `HTTP_PROXY`、`HTTPS_PROXY` 或 `ALL_PROXY`，可在同一命令增加 `-UseGatewayProxy`。该开关只在本次工作流进程内启用 Node 环境代理，并仅从本次子进程的 `NO_PROXY` 副本中移除 `.env` 已配置的 AI 网关主机；不会修改持久环境变量。
 

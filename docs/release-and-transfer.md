@@ -177,6 +177,11 @@ existing target to a timestamped backup before placing the new package; if
 import or setup fails, it preserves the failed candidate alongside the
 destination and restores that backup.
 
+Transfer and published-tree integrity checks reject files or directories with
+the Windows reparse-point attribute, including junctions and symbolic links.
+Resolve or remove these links before packaging; a link is never hashed through
+its target or copied into a transfer package.
+
 Private packages can contain plain-text API keys. Store and transfer them only
 through an encrypted, maintainer-controlled channel. Rotate any provider key
 that is exposed to a shared drive, repository, chat, issue tracker, or Release.

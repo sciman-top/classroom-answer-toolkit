@@ -229,8 +229,11 @@ export function compileResolvedSnapshot(options = {}) {
   };
 }
 
-export function writeResolvedSnapshot(snapshot, outputRelativePath) {
-  const outputPath = resolveRepoPath(outputRelativePath);
-  writeJsonFile(outputPath, snapshot);
-  return outputPath;
+export function writeResolvedSnapshot(snapshot, outputPath) {
+  if (!path.isAbsolute(outputPath)) {
+    outputPath = resolveRepoPath(outputPath);
+  }
+  const resolvedOutputPath = outputPath;
+  writeJsonFile(resolvedOutputPath, snapshot);
+  return resolvedOutputPath;
 }

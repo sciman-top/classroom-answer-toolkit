@@ -68,6 +68,7 @@ function buildWorkflowRunReceipt({ status = "succeeded" } = {}) {
       skipVisualAudit: true,
       keepReview: false,
       useGatewayProxy: false,
+      allowCloudEgress: true,
       configEnvFile: "D:\\repo\\.env",
       optionsFingerprint: sha
     },

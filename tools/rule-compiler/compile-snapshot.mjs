@@ -25,7 +25,17 @@ export function resolveDefaultOutputRelativePath(subjectPack = defaultSubjectPac
   }
 
   const absoluteOutputPath = path.resolve(path.dirname(configPath), configuredPath);
-  return path.relative(repositoryRoot, absoluteOutputPath).replace(/\\/g, "/");
+  return path.relative(repositoryRoot, assertRepositoryContainedPath(absoluteOutputPath, repositoryRoot)).replace(/\\/g, "/");
+}
+
+export function assertRepositoryContainedPath(candidatePath, repositoryRoot = repoRoot) {
+  const root = path.resolve(repositoryRoot);
+  const candidate = path.resolve(candidatePath);
+  const relative = path.relative(root, candidate);
+  if (relative === "" || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative))) {
+    return candidate;
+  }
+  throw new Error(`Snapshot output must remain inside the repository: ${candidate}`);
 }
 
 export function parseArgs(argv) {
@@ -47,14 +57,16 @@ export function main(argv = process.argv.slice(2)) {
     return null;
   }
 
-  const outputRelativePath = options.out ?? resolveDefaultOutputRelativePath(options.subjectPack);
+  const outputRelativePath = assertRepositoryContainedPath(
+    path.resolve(repoRoot, options.out ?? resolveDefaultOutputRelativePath(options.subjectPack))
+  );
   const snapshot = compileResolvedSnapshot({
     profileName: options.profile,
     subjectPack: options.subjectPack
   });
-  const outputPath = writeResolvedSnapshot(snapshot, outputRelativePath);
-  console.log(outputPath);
-  return outputPath;
+  const writtenPath = writeResolvedSnapshot(snapshot, outputRelativePath);
+  console.log(writtenPath);
+  return writtenPath;
 }
 
 if (isDirectInvocation(import.meta.url)) {

@@ -60,6 +60,25 @@ function Get-FileSha256 {
     return (Get-FileHash -LiteralPath $PathValue -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+function Assert-NoReparsePoints {
+    param(
+        [Parameter(Mandatory = $true)][string]$RootPath,
+        [string]$Description = "tree"
+    )
+
+    $root = [IO.Path]::GetFullPath($RootPath)
+    # Get-ChildItem -Recurse follows directory junctions on Windows, while a
+    # linked file is hashed through its target. Either would make a manifest
+    # attest external bytes as part of a transfer/release package.
+    $reparsePoint = Get-ChildItem -LiteralPath $root -Recurse -Force -ErrorAction Stop |
+        Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint } |
+        Select-Object -First 1
+    if ($null -ne $reparsePoint) {
+        $relativePath = [IO.Path]::GetRelativePath($root, $reparsePoint.FullName).Replace("\", "/")
+        throw "$Description contains a reparse point and cannot be safely hashed or copied: $relativePath"
+    }
+}
+
 function Get-RelativeFileManifest {
     param(
         [Parameter(Mandatory = $true)][string]$RootPath,
@@ -67,11 +86,20 @@ function Get-RelativeFileManifest {
     )
 
     $root = [IO.Path]::GetFullPath($RootPath)
+    Assert-NoReparsePoints -RootPath $root -Description "Transfer manifest tree"
     # Windows path comparison is case-insensitive; a case-sensitive hashtable
     # would fail to exclude a manifest named Transfer-Manifest.json.
     $excluded = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($relative in $ExcludeRelativePaths) {
-        [void]$excluded.Add($relative.Replace("\", "/"))
+        $normalized = $relative.Replace("\", "/").TrimStart("/")
+        # The caller's declared exclusion is itself a manifest-relative path.
+        # Reject traversal before it can hide a file from set comparison.
+        if ([string]::IsNullOrWhiteSpace($normalized) -or
+            [IO.Path]::IsPathFullyQualified($normalized) -or
+            $normalized -match '(^|/)\.\.(/|$)') {
+            throw "Invalid transfer manifest exclusion: $relative"
+        }
+        [void]$excluded.Add($normalized)
     }
 
     return @(
@@ -79,6 +107,9 @@ function Get-RelativeFileManifest {
         # directory carries the Hidden attribute, and -IncludeGit transfers
         # would otherwise ship its contents outside every integrity check.
         Get-ChildItem -LiteralPath $root -Recurse -File -Force | ForEach-Object {
+            if ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Transfer manifest refuses linked file: $($_.FullName)"
+            }
             $relativePath = [IO.Path]::GetRelativePath($root, $_.FullName).Replace("\", "/")
             if (-not $excluded.Contains($relativePath)) {
                 [ordered]@{
@@ -95,7 +126,11 @@ function Get-DirectoryTreeReceipt {
     param([Parameter(Mandatory = $true)][string]$DirectoryPath)
 
     $root = [IO.Path]::GetFullPath($DirectoryPath)
+    Assert-NoReparsePoints -RootPath $root -Description "Published application tree"
     $entries = @(Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
+        if ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            throw "Directory tree receipt refuses linked file: $($_.FullName)"
+        }
         [ordered]@{
             relativePath = [IO.Path]::GetRelativePath($root, $_.FullName).Replace("\", "/")
             bytes = $_.Length
@@ -319,6 +354,9 @@ function Copy-RelativeFiles {
             # Fail loudly: a tracked-but-deleted (or mis-decoded) path would
             # otherwise silently ship an incomplete transfer that imports green.
             throw "Working-tree file listed by git is missing on disk: $sourcePath"
+        }
+        if ((Get-Item -LiteralPath $sourcePath -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            throw "Transfer refuses linked source file: $sourcePath"
         }
 
         $destinationPath = Assert-ContainedPath -PathValue (Join-Path $DestinationRoot $relativePath) -RootPath $DestinationRoot -Description "destination file"

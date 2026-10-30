@@ -59,6 +59,8 @@ param(
 
     [switch]$UseGatewayProxy,
 
+    [switch]$AllowCloudEgress,
+
     [switch]$KeepReview
 )
 
@@ -200,6 +202,13 @@ function Assert-ResumeBlindGeneration {
         throw "Resume workflow receipt has no options binding; start a new run: $ReceiptPath"
     }
     foreach ($optionName in $CurrentOptions.Keys) {
+        if ($optionName -eq "allowCloudEgress" -and
+            -not $priorOptions.ContainsKey("allowCloudEgress")) {
+            # Older receipts predate this explicit authorization. Their source
+            # implementation opened cloud egress unconditionally, so preserving
+            # that option boundary keeps their hash-bound blind candidate usable.
+            continue
+        }
         $optionMismatch = (
             (-not $priorOptions.ContainsKey($optionName)) -or
             ($priorOptions[$optionName] -ne $CurrentOptions[$optionName])
@@ -480,9 +489,10 @@ $referencePageDirectory = Join-Path $workRoot "reference-pages"
 $sourceTextPath = Join-Path $workRoot "source-exam-text.txt"
 $referenceTextPath = Join-Path $workRoot "reference-answer-text.txt"
 $workflowSucceeded = $false
-$previousCloudEgress = $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
 $previousNodeOptions = $env:NODE_OPTIONS
 $previousNoProxy = $env:NO_PROXY
+$processEgressWasSet = -not [string]::IsNullOrEmpty($env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED)
+$previousEgressValue = $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
 $referencePath = if ([string]::IsNullOrWhiteSpace($ReferencePdf)) { $null } else { Resolve-WorkflowPath $ReferencePdf }
 $resumeWorkflowReceiptPath = if ([string]::IsNullOrWhiteSpace($ResumeFromWorkflowReceipt)) { $null } else { Resolve-WorkflowPath $ResumeFromWorkflowReceipt }
 $workflowRunId = [Guid]::NewGuid().ToString("N")
@@ -521,6 +531,7 @@ $workflowOptions = [ordered]@{
     skipVisualAudit = [bool]$SkipVisualAudit
     keepReview = [bool]$KeepReview
     useGatewayProxy = [bool]$UseGatewayProxy
+    allowCloudEgress = [bool]$AllowCloudEgress
     configEnvFile = $envFilePath
 }
 $workflowOptionsJson = $workflowOptions | ConvertTo-Json -Compress -Depth 10
@@ -768,9 +779,11 @@ function New-AnswerRequestArguments {
         "--provider", $Provider,
         "--quality-profile", $QualityProfile,
         "--max-output-tokens", $MaxOutputTokens.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture),
-        "--allow-cloud-egress"
+        "--timeout-ms", $TimeoutMs.ToString([Globalization.CultureInfo]::InvariantCulture)
     )
+    if ($AllowCloudEgress) {
+        $arguments += "--allow-cloud-egress"
+    }
     if ($IncludeVisualDetail) {
         $arguments += @("--visual-detail", $VisualDetail)
     }
@@ -813,10 +826,28 @@ function New-AnswerRequestArguments {
 }
 
 try {
-    # Resume runs still execute non-reused AI phases (semantic/visual findings),
-    # so the egress override must cover every entry path, not just fresh
-    # blindGeneration; otherwise -ResumeFromWorkflowReceipt fails its first live
-    # request while the same .env works for a fresh run.
+    if (-not $AllowCloudEgress) {
+        throw "Live AI requests require explicit -AllowCloudEgress and CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true in the selected config file."
+    }
+
+    $configEgressValue = Get-Content -LiteralPath $envFilePath |
+        Where-Object { $_ -match '^\s*(?:export\s+)?CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED\s*=\s*(?<value>.*?)\s*$' } |
+        Select-Object -Last 1
+    if ($configEgressValue) {
+        $configEgressValue = $configEgressValue -replace '^\s*(?:export\s+)?CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED\s*=\s*', ''
+        $configEgressValue = $configEgressValue.Trim()
+        if (-not (($configEgressValue.StartsWith('"') -and $configEgressValue.EndsWith('"')) -or
+                ($configEgressValue.StartsWith("'") -and $configEgressValue.EndsWith("'")))) {
+            $configEgressValue = $configEgressValue -replace '\s+#.*$', ''
+        }
+        $configEgressValue = $configEgressValue.Trim().Trim('"').Trim("'")
+    }
+    if ($configEgressValue -notin @("1", "true", "yes", "on")) {
+        throw "Live request blocked. Set CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true in the selected config file; this cannot be supplied by an inherited process variable."
+    }
+
+    # Set the process value from the verified config, so a parent's value cannot
+    # override its false state. The finally block restores the parent value.
     $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true"
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
     New-Item -ItemType Directory -Force -Path $pageDirectory | Out-Null
@@ -1070,13 +1101,11 @@ catch {
     throw $failure
 }
 finally {
-    if ($null -eq $previousCloudEgress) {
-        Remove-Item Env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED -ErrorAction SilentlyContinue
+    # The workflow process owns this change and ends immediately. Restoring the
+    # inherited override here is useful for command-hosted invocation.
+    if ($processEgressWasSet) {
+        $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = $previousEgressValue
     }
-    else {
-        $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = $previousCloudEgress
-    }
-
     if ($null -eq $previousNodeOptions) {
         Remove-Item Env:NODE_OPTIONS -ErrorAction SilentlyContinue
     }

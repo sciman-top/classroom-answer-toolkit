@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { normalizeConfig, parseEnvFile, validateConfig } from "./validate-config.mjs";
+import { loadEnvironment, normalizeConfig, parseEnvFile, validateConfig } from "./validate-config.mjs";
 
 const PRIMARY = {
   CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
@@ -111,6 +111,26 @@ test("env parser strips inline comments from unquoted values only", () => {
     assert.equal(values.CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY, "sk-plain");
     assert.equal(values.CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL, "gpt-5.6-sol");
   } finally {
+    fs.rmSync(envDir, { recursive: true, force: true });
+  }
+});
+
+test("config file egress disable cannot be overridden by process environment", () => {
+  const envDir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-env-egress-"));
+  const envPath = path.join(envDir, "egress.env");
+  const previous = process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED;
+  fs.writeFileSync(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=false\n", "utf8");
+
+  try {
+    process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true";
+    const { env } = loadEnvironment({ envFile: envPath });
+    assert.equal(env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED, "false");
+  } finally {
+    if (previous === undefined) {
+      delete process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED;
+    } else {
+      process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = previous;
+    }
     fs.rmSync(envDir, { recursive: true, force: true });
   }
 });
