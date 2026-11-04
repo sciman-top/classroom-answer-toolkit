@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { fail, parseArgvFlags } from "../shared.mjs";
+import { fail, parseArgvFlags, sha256File } from "../shared.mjs";
 import { analyzeAnalogMeterCanvas } from "./lib/analog-meter-reading.mjs";
 import { analyzeLinearScaleCanvas } from "./lib/linear-scale-reading.mjs";
 import { analyzeOpticalRayCanvas } from "./lib/optical-ray-geometry.mjs";
@@ -168,7 +168,8 @@ async function main() {
   const pdfWorkerPath = require.resolve("pdfjs-dist/build/pdf.worker.mjs");
 
   const manifest = {
-    inputPath,
+    kind: "pdf-source-review",
+    schemaVersion: "1.0",
     outputDir,
     generatedAt: new Date().toISOString(),
     renderer: "pdfjs-dist + local Chrome/Edge via Playwright",
@@ -186,9 +187,9 @@ async function main() {
     selectedPages: [],
     pageCount: 0,
     pages: [],
-    ocrProvider: options.ocr ? "tesseract.js" : null,
+    ocrProvider: null,
     ocrProviderVersion: options.ocr ? tesseractPackageJson.version : null,
-    ocrLanguage: options.ocr,
+    ocrLanguage: null,
     ocrStatus: options.ocr ? "requested" : "not-requested"
   };
 
@@ -221,6 +222,13 @@ async function main() {
     });
 
     const pdfData = fs.readFileSync(inputPath).toString("base64");
+    // A successful legacy run records the exact source bytes regardless of
+    // which PDF.js fingerprint version the installed browser package emits.
+    // The validator uses this independently verifiable digest rather than
+    // treating the parser's implementation fingerprint as evidence.
+    manifest.inputPath = inputPath;
+    manifest.inputSha256 = sha256File(inputPath);
+    manifest.inputBytes = fs.statSync(inputPath).size;
     const loaded = await page.evaluate(loadPdfDocumentInBrowser, { data: pdfData });
 
     manifest.pageCount = loaded.pageCount;
@@ -349,8 +357,12 @@ async function main() {
   if (options.ocr) {
     try {
       await runOcr({ manifest, language: options.ocr });
+      manifest.ocrProvider = "tesseract.js";
+      manifest.ocrLanguage = options.ocr;
       manifest.ocrStatus = "ok";
     } catch (error) {
+      manifest.ocrProvider = "tesseract.js";
+      manifest.ocrLanguage = options.ocr;
       manifest.ocrStatus = "failed";
       manifest.ocrError = error instanceof Error ? error.message : String(error);
       console.error(`OCR failed: ${manifest.ocrError}`);

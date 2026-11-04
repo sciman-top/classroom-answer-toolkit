@@ -12,6 +12,9 @@ import { validateJsonFileAgainstSchema, validateValueAgainstSchema } from "./sch
 import { assertSpecBoundary } from "./validate-spec-boundary.mjs";
 
 const schemaRoot = resolveRepoPath("prompts/shared/schemas");
+const localSchemaPaths = [
+  resolveRepoPath("scripts/verify-release-acceptance.schema.json")
+];
 const promptRoot = resolveRepoPath("prompts");
 
 function assertValid(filePath, schemaName) {
@@ -34,7 +37,7 @@ function subjectPackNames() {
 }
 
 function validateSchemas() {
-  const schemaFiles = listJsonFiles(schemaRoot);
+  const schemaFiles = [...listJsonFiles(schemaRoot), ...localSchemaPaths];
   for (const schemaFile of schemaFiles) {
     const schema = readJsonFile(schemaFile);
     if (!schema.$schema || !schema.$id || typeof schema.type !== "string") {

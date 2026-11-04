@@ -4,7 +4,8 @@ import {
   findStrictKatexErrors,
   findLeakingDollarLines,
   findUnbalancedLatexDelimiterLines,
-  findExecutableRawHtml
+  findExecutableRawHtml,
+  validateChoiceLine
 } from "./validate-answer-markdown.mjs";
 import { repairSplitMathSpans } from "./lib/inline-math.mjs";
 
@@ -194,4 +195,20 @@ test("variable-length backtick runs only close on equal-length runs", () => {
   const text = "前 ``a$b`` 中 $E_{甲}$ 后";
   assert.deepEqual(findStrictKatexErrors(text).map((finding) => finding.lineNumber), [1]);
   assert.deepEqual(findLeakingDollarLines("记 ``a$$b`` 作 与 $v$。"), []);
+});
+
+test("choice ranges are structurally validated independently of optional subject rules", () => {
+  const rule = { severity: "hard" };
+  for (const line of [
+    "1-10：A、B、C、D、A、B、C、D、A、B",
+    "1—5：A、B、C、D",
+    "1—5：A、B、C、Z、A"
+  ]) {
+    const errors = [];
+    validateChoiceLine(line, 1, rule, errors, []);
+    assert.ok(errors.length > 0, `expected rejection: ${line}`);
+  }
+  const errors = [];
+  validateChoiceLine("1—5：A、B、C、D、A", 1, rule, errors, []);
+  assert.deepEqual(errors, []);
 });

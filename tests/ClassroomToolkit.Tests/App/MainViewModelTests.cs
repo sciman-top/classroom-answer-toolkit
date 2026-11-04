@@ -22,6 +22,7 @@ public sealed class MainViewModelTests
         await updates.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
         viewModel.DeliverCommand.CanExecute(null).Should().BeFalse();
+        viewModel.RunLiveWorkflowCommand.CanExecute(null).Should().BeFalse();
         viewModel.CheckCommand.CanExecute(null).Should().BeFalse();
         viewModel.BootstrapCommand.CanExecute(null).Should().BeFalse();
         checkNotifications.Should().BeGreaterThan(0);
@@ -153,6 +154,66 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task LiveWorkflowUsesExplicitSourceReferenceAndEgressConsent()
+    {
+        var sourcePath = Path.GetTempFileName();
+        var referencePath = Path.GetTempFileName();
+        try
+        {
+            var orchestrator = new FakeOrchestrator();
+            using var viewModel = new MainViewModel(orchestrator, new FakePathOpener())
+            {
+                SelectedSourcePdfPath = sourcePath,
+                SelectedReferencePdfPath = referencePath,
+                SelectedWorkflowOutputDirectory = Path.GetTempPath(),
+                AllowCloudEgress = true,
+                SkipVisualAudit = false,
+                UseGatewayProxy = true
+            };
+
+            await viewModel.RunLiveWorkflowCommand.ExecuteAsync(null);
+
+            viewModel.StatusMessage.Should().Contain("原卷工作流完成");
+            orchestrator.LastLiveWorkflowRequest.Should().NotBeNull();
+            orchestrator.LastLiveWorkflowRequest!.SourcePdfPath.Should().Be(sourcePath);
+            orchestrator.LastLiveWorkflowRequest.ReferencePdfPath.Should().Be(referencePath);
+            orchestrator.LastLiveWorkflowRequest.AllowCloudEgress.Should().BeTrue();
+            orchestrator.LastLiveWorkflowRequest.SkipVisualAudit.Should().BeFalse();
+            viewModel.LastWorkflowReceiptPath.Should().EndWith(".workflow-run.json");
+            viewModel.LastOutputPdfPath.Should().EndWith("参考答案.pdf");
+        }
+        finally
+        {
+            File.Delete(sourcePath);
+            File.Delete(referencePath);
+        }
+    }
+
+    [Fact]
+    public async Task LiveWorkflowWithoutEgressStillRunsButDoesNotGrantConsentImplicitly()
+    {
+        var sourcePath = Path.GetTempFileName();
+        try
+        {
+            var orchestrator = new FakeOrchestrator();
+            using var viewModel = new MainViewModel(orchestrator, new FakePathOpener())
+            {
+                SelectedSourcePdfPath = sourcePath,
+                SelectedWorkflowOutputDirectory = Path.GetTempPath()
+            };
+
+            await viewModel.RunLiveWorkflowCommand.ExecuteAsync(null);
+
+            orchestrator.LastLiveWorkflowRequest.Should().NotBeNull();
+            orchestrator.LastLiveWorkflowRequest!.AllowCloudEgress.Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(sourcePath);
+        }
+    }
+
+    [Fact]
     public async Task CancelStopsTheCurrentToolchainOperation()
     {
         var orchestrator = new FakeOrchestrator(blockCheck: true);
@@ -223,6 +284,7 @@ public sealed class MainViewModelTests
         }
 
         public AnswerDeliveryRequest? LastDeliveryRequest { get; private set; }
+        public LiveAnswerWorkflowRequest? LastLiveWorkflowRequest { get; private set; }
         public string? LastHealthSubjectPack { get; private set; }
         public int HealthProbeCount { get; private set; }
         public TaskCompletionSource CheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -310,6 +372,25 @@ public sealed class MainViewModelTests
                 @"D:\out\answer.pdf", @"D:\out\answer.delivery-manifest.json",
                 @"D:\repo\.pdf-review\answer", "snapshot-test", "junior-physics-answer");
             return Task.FromResult<(ToolchainExecutionResult, AnswerDeliveryResult?)>((Success(ToolchainScriptKind.Deliver), delivery));
+        }
+
+        public Task<(ToolchainExecutionResult Execution, LiveAnswerWorkflowResult? Result)> RunLiveWorkflowAsync(
+            LiveAnswerWorkflowRequest request,
+            CancellationToken cancellationToken = default,
+            Action<string>? progress = null)
+        {
+            LastLiveWorkflowRequest = request;
+            progress?.Invoke("[live-workflow] fixture");
+            var baseName = Path.GetFileNameWithoutExtension(request.SourcePdfPath);
+            var result = new LiveAnswerWorkflowResult(
+                Path.Combine(request.OutputDirectory, $"{baseName}.workflow-run.json"),
+                Path.Combine(request.OutputDirectory, $"{baseName}参考答案.md"),
+                Path.Combine(request.OutputDirectory, $"{baseName}参考答案.pdf"),
+                Path.Combine(request.OutputDirectory, $"{baseName}参考答案.delivery-manifest.json"),
+                Path.Combine(request.OutputDirectory, $"{baseName}参考答案.review"),
+                "snapshot-test");
+            return Task.FromResult<(ToolchainExecutionResult, LiveAnswerWorkflowResult?)>(
+                (Success(ToolchainScriptKind.LiveWorkflow), result));
         }
 
         private static ToolchainExecutionResult Success(ToolchainScriptKind kind) =>

@@ -112,9 +112,18 @@ test("package-relative manifest paths are accepted (2026-08-27 portability contr
     const reviewFixtureRoot = path.join(path.dirname(manifestPath), "answer.review");
     fs.mkdirSync(reviewFixtureRoot, { recursive: true });
     const reviewFileNames = ["manifest.json", "page-001.png"];
-    for (const name of reviewFileNames) {
-      fs.writeFileSync(path.join(reviewFixtureRoot, name), "review fixture", "utf8");
-    }
+    fs.writeFileSync(path.join(reviewFixtureRoot, "page-001.png"), "review fixture", "utf8");
+    writeJson(path.join(reviewFixtureRoot, "manifest.json"), {
+      kind: "pdf-source-review",
+      schemaVersion: "1.0",
+      inputPath: "../answer.pdf",
+      inputSha256: fileIntegrity(path.join(path.dirname(manifestPath), manifest.output)).sha256,
+      inputBytes: fs.statSync(path.join(path.dirname(manifestPath), manifest.output)).size,
+      pageCount: 1,
+      selectedPages: [1],
+      pages: [{ kind: "page-tile", pageNumber: 1, imagePath: path.join(reviewFixtureRoot, "page-001.png") }],
+      ocrStatus: "not-requested"
+    });
     manifest.integrity.reviewFiles = reviewFileNames.map((name) => {
       const filePath = path.join(reviewFixtureRoot, name);
       return { ...fileIntegrity(filePath), path: `answer.review/${name}` };
@@ -212,5 +221,29 @@ test("delivery manifest rejects a referenced snapshot mismatch", () => {
     const errors = validateDeliveryManifest(manifest, manifestPath);
     assert.ok(errors.includes("snapshotId must match referenced snapshot.snapshotId."));
     assert.ok(errors.includes("snapshot.version must match referenced snapshot.subjectPack.version."));
+  });
+});
+
+test("complete 1.1 delivery cannot claim success without a review package", () => {
+  withFixture(({ manifest, manifestPath }) => {
+    manifest.status.reviewArtifactReady = true;
+    const errors = validateDeliveryManifest(manifest, manifestPath);
+    assert.ok(errors.some((error) => error.includes("review")));
+  });
+});
+
+test("1.1 schema requires integrity metadata", () => {
+  withFixture(({ manifest, manifestPath }) => {
+    delete manifest.integrity;
+    const errors = validateDeliveryManifest(manifest, manifestPath);
+    assert.ok(errors.some((error) => error.includes("integrity")));
+  });
+});
+
+test("delivery rejects a status flag that claims toolchain failure while delivery is complete", () => {
+  withFixture(({ manifest, manifestPath }) => {
+    manifest.status.toolchainPassed = false;
+    const errors = validateDeliveryManifest(manifest, manifestPath);
+    assert.ok(errors.some((error) => error.includes("toolchainPassed")));
   });
 });

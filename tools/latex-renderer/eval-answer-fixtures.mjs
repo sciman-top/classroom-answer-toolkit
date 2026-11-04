@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { getDefaultSubjectPackName, normalizeSubjectPackName } from "../rule-compiler/shared.mjs";
-import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
+import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot, sha256File } from "../shared.mjs";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
 import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
@@ -350,6 +350,27 @@ async function main() {
               console.warn(visualRun.stderr.trimEnd());
             }
           }
+          if (visualOk && visual?.diffRatio !== null) {
+            const ignored = /ignored as rasterization noise at tolerance [0-9]+: ([0-9.]+)/u
+              .exec(visual.stdout ?? "");
+            const ignoredRatio = ignored ? Number(ignored[1]) : null;
+            if (ignoredRatio !== null && ignoredRatio > 0.02) {
+              visualOk = false;
+              visual.passed = false;
+              visual.ignoredDiffRatio = ignoredRatio;
+              console.warn(
+                `[eval] ${caseEntry.id}/${profile} ignored-rasterization ratio ${ignoredRatio} exceeds 2%;`
+                + " the tolerance cannot conceal a broad visual change."
+              );
+            }
+          }
+          if (visualOk && visual) {
+            visual.ignoredDiffRatio = (() => {
+              const ignored = /ignored as rasterization noise at tolerance [0-9]+: ([0-9.]+)/u
+                .exec(visual.stdout ?? "");
+              return ignored ? Number(ignored[1]) : null;
+            })();
+          }
         }
 
         let delivery = null;
@@ -360,10 +381,13 @@ async function main() {
           const deliverPdfPath = path.join(workDir, `${caseEntry.id}.${profile}.deliver.pdf`);
           const snapshotMode = expectation.delivery.snapshotMode === "default" ? "default" : "compiled";
           const snapshotArgs = snapshotMode === "default"
-            ? []
+            ? [
+                "--snapshot-path",
+                snapshotRelativePath
+              ]
             : [
                 "--snapshot-path",
-                path.relative(repoRoot, path.resolve(repoRoot, snapshotRelativePath)),
+                snapshotRelativePath,
                 "--skip-validate"
               ];
           const deliverRun = await runNodeTool("deliver-answer.mjs", [
@@ -414,6 +438,27 @@ async function main() {
               && fs.existsSync(deliveryReviewManifestPath)
               && Array.isArray(deliveryManifest.integrity?.reviewFiles)
               && deliveryManifest.integrity.reviewFiles.length > 0;
+            const reviewManifest = deliveryReviewManifestPath && fs.existsSync(deliveryReviewManifestPath)
+              ? readJsonFile(deliveryReviewManifestPath)
+              : null;
+            const reviewFilesMatch = Boolean(
+              reviewManifest
+              && reviewManifest.kind === "pdf-source-review"
+              && reviewManifest.inputSha256 === deliveryManifest.integrity?.output?.sha256
+              && Array.isArray(reviewManifest.pages)
+              && reviewManifest.pages.length > 0
+              && reviewManifest.pages.every((page) =>
+                typeof page.imagePath === "string"
+                && fs.existsSync(path.isAbsolute(page.imagePath)
+                  ? page.imagePath
+                  : path.resolve(deliveryReviewDir, page.imagePath))
+              )
+              && deliveryManifest.integrity.reviewFiles.every((entry) => {
+                const filePath = path.resolve(path.dirname(deliveryManifestPath), entry.path);
+                return fs.existsSync(filePath)
+                  && sha256File(filePath) === entry.sha256;
+              })
+            );
             const deliverySnapshot = deliverySnapshotPath && fs.existsSync(deliverySnapshotPath)
               ? readJsonFile(deliverySnapshotPath)
               : null;
@@ -443,7 +488,16 @@ async function main() {
             const ocrMatch = Object.entries(expectedOcr)
               .every(([key, value]) => actualOcr[key] === value);
 
-            deliveryOk = snapshotMatch && reviewPackageMatch && graphicsMatch && statusMatch && ocrMatch;
+            deliveryOk = snapshotMatch && reviewPackageMatch && reviewFilesMatch && graphicsMatch && statusMatch && ocrMatch;
+            if (deliveryOk && snapshotMode === "default") {
+              const validator = await runNodeTool("validate-delivery-manifest.mjs", [
+                "--manifest", path.relative(repoRoot, deliveryManifestPath)
+              ]);
+              deliveryOk = validator.status === 0;
+              if (!deliveryOk) {
+                console.warn(`[eval] ${caseEntry.id}/${profile} service-relative manifest failed validation: ${validator.stderr}`);
+              }
+            }
             delivery = {
               manifestPath: path.relative(repoRoot, deliveryManifestPath),
               pdfPath: path.relative(repoRoot, deliverPdfPath),
@@ -452,6 +506,7 @@ async function main() {
               snapshotMatch,
               expectedSnapshotPath: path.relative(repoRoot, expectedDeliverySnapshotPath),
               reviewPackageMatch,
+              reviewFilesMatch,
               expectedReviewDir: path.relative(repoRoot, expectedDeliveryReviewDir),
               expectedGraphics,
               actualGraphics,

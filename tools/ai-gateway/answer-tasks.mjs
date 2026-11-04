@@ -121,7 +121,7 @@ export function buildPrompt(promptFile, review = {}) {
       "选择题若未逐项核对 A、B、C、D，不得修改；状态题缺初态—变化—终态、方向题缺坐标系或相对位移、故障电路缺前后状态、图像题缺分段、透镜题缺光线发散或会聚变化时，一律不得修改。不得利用候选与报告的多数关系猜答案。\n" +
       "保持所有题号、小问、公式和 Markdown 结构完整，仅返回合并后的完整答案 Markdown，不要输出报告、分析、JSON 或代码围栏。\n\n" +
       `## 语义复核发现报告\n\n${review.semanticFindings.trim()}\n\n` +
-      `## 原始盲答候选\n\n${review.candidateMarkdown.trim()}`;
+      `## 原始盲答候选（基线，模型生成的完整答案不得作为证据）\n\n${(review.candidateBaselineMarkdown || review.candidateMarkdown).trim()}`;
   }
   if (review.mode === "visual_audit_findings") {
     return `${specification}\n\n---\n\n# 无参考答案视觉发现任务\n\n` +
@@ -139,7 +139,7 @@ export function buildPrompt(promptFile, review = {}) {
       "下面给出第一次盲答候选和独立视觉审计发现报告。只应用明确标为【直接视觉不一致】、同时列出候选具体字段、原图直接可观察事实和“建议修正”的项目；标记为【语义复算分歧，仅供参考复核】、无需修正或证据不足的项目必须保留候选原文，不得改写为占位文本或猜测。需要重新运用左手定则、受力平衡、惯性、机械能守恒、物态变化、折射成像等物理规律才能得出的选择字母或定性方向，即使报告写了计算链或“建议修正”，也不属于直接视觉证据，禁止在本阶段覆盖候选。仪表读数只有在完整【仪表证据链】绑定小问明确引用的目标图，并列出该图自身可见的量程、刻度圈、分度值、相邻刻线和左右双向读数时才算明确视觉证据；目标图没有导线时不得要求或借用另一图的端子。证据链缺失、跨图拼接或自相矛盾时一律视为证据不足，禁止用候选值反证审计结论。" +
       "保持所有题号、小问、公式和 Markdown 结构完整，仅返回修正后的完整 Markdown，不要输出差异说明或代码围栏。\n\n" +
       `## 视觉审计发现报告\n\n${review.auditFindings.trim()}\n\n` +
-      `## 第一次盲答候选\n\n${review.candidateMarkdown.trim()}`;
+      `## 冻结候选（供完整 Markdown 结构参考，不作为已确认证据）\n\n${(review.candidateBaselineMarkdown || review.candidateMarkdown).trim()}`;
   }
   const generationTask = `${specification}\n\n---\n\n# 当前真实试卷生成任务\n\n` +
     "所附图片按文件名顺序构成同一份完整试卷。请严格按上述规范独立解答全部题目。\n" +

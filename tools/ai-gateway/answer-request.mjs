@@ -64,11 +64,13 @@ const CALLER_PATH_KEYS = [
   "imagesDir",
   "sourceTextFile",
   "candidateFile",
+  "candidateBaselineFile",
   "semanticFindingsFile",
   "auditImagesDir",
   "auditFindingsFile",
   "referenceImagesDir",
   "referenceTextFile",
+  "referencePdfFile",
   "outputPath",
   "summaryPath"
 ];
@@ -81,11 +83,13 @@ function parseArgs(argv) {
       "images-dir": "imagesDir",
       "source-text-file": "sourceTextFile",
       "candidate-file": "candidateFile",
+      "candidate-baseline-file": "candidateBaselineFile",
       "semantic-findings-file": "semanticFindingsFile",
       "audit-images-dir": "auditImagesDir",
       "audit-findings-file": "auditFindingsFile",
       "reference-images-dir": "referenceImagesDir",
       "reference-text-file": "referenceTextFile",
+      "reference-pdf-file": "referencePdfFile",
       output: "outputPath",
       "summary-out": "summaryPath",
       provider: true,
@@ -111,7 +115,9 @@ function parseArgs(argv) {
       auditFindingsFile: null,
       referenceImagesDir: null,
       referenceTextFile: null,
+      referencePdfFile: null,
       candidateFile: null,
+      candidateBaselineFile: null,
       outputPath: null,
       summaryPath: null,
       provider: "all",
@@ -200,6 +206,12 @@ function validateOptions(options) {
   if (options.candidateFile && !fs.existsSync(options.candidateFile)) {
     throw new Error(`Candidate Markdown not found: ${options.candidateFile}`);
   }
+  if (options.candidateBaselineFile && !fs.existsSync(options.candidateBaselineFile)) {
+    throw new Error(`Candidate baseline Markdown not found: ${options.candidateBaselineFile}`);
+  }
+  if (options.candidateBaselineFile && options.referenceImagesDir) {
+    throw new Error("--candidate-baseline-file is only valid for semantic or visual review, not reference review.");
+  }
   if (options.auditFindingsOnly && !options.auditImagesDir) {
     throw new Error("--audit-findings-only requires --audit-images-dir.");
   }
@@ -230,6 +242,12 @@ function validateOptions(options) {
   if (options.referenceTextFile && !fs.existsSync(options.referenceTextFile)) {
     throw new Error(`Reference text file not found: ${options.referenceTextFile}`);
   }
+  if (options.referencePdfFile && !options.referenceImagesDir) {
+    throw new Error("--reference-pdf-file requires --reference-images-dir.");
+  }
+  if (options.referencePdfFile && !fs.existsSync(options.referencePdfFile)) {
+    throw new Error(`Reference PDF not found: ${options.referencePdfFile}`);
+  }
   if (options.sourceTextFile && !fs.existsSync(options.sourceTextFile)) {
     throw new Error(`Source text file not found: ${options.sourceTextFile}`);
   }
@@ -243,10 +261,12 @@ function validateOutputCollision(options) {
     options.envFile,
     options.promptFile,
     options.candidateFile,
+    options.candidateBaselineFile,
     options.semanticFindingsFile,
     options.auditFindingsFile,
     options.sourceTextFile,
     options.referenceTextFile,
+    options.referencePdfFile,
     ...options.imagePaths
   ].filter(Boolean).map((inputPath) => path.resolve(inputPath));
   const normalizePath = (filePath) => process.platform === "win32" ? filePath.toLowerCase() : filePath;
@@ -335,6 +355,9 @@ export async function main() {
     ...promptContext,
     mode,
     candidateMarkdown: fs.readFileSync(options.candidateFile, "utf8"),
+    candidateBaselineMarkdown: options.candidateBaselineFile
+      ? fs.readFileSync(options.candidateBaselineFile, "utf8")
+      : "",
     semanticFindings: options.semanticFindingsFile ? fs.readFileSync(options.semanticFindingsFile, "utf8") : "",
     auditFindings: options.auditFindingsFile ? fs.readFileSync(options.auditFindingsFile, "utf8") : "",
     referenceText: options.referenceTextFile ? fs.readFileSync(options.referenceTextFile, "utf8") : "",
@@ -350,6 +373,10 @@ export async function main() {
   if (!result.ok) {
     throw new Error(`${result.error}\n${JSON.stringify(result.attempts.map(redactAttempt), null, 2)}`);
   }
+  const baselinePath = options.candidateBaselineFile ?? options.candidateFile;
+  if (result.answerMarkdown.trim() === "" || !Array.isArray(result.attempts) || result.attempts.length === 0) {
+    throw new Error("Provider returned no verified answer content.");
+  }
 
   // Persist the paid raw output before any override or summary step can
   // throw; losing a completed generation to post-processing is unrecoverable.
@@ -359,7 +386,9 @@ export async function main() {
     ? applySemanticChoiceFindings(
         result.answerMarkdown,
         fs.readFileSync(options.semanticFindingsFile, "utf8"),
-        options.candidateFile ? fs.readFileSync(options.candidateFile, "utf8") : result.answerMarkdown
+        (options.candidateBaselineFile ?? options.candidateFile)
+          ? fs.readFileSync(options.candidateBaselineFile ?? options.candidateFile, "utf8")
+          : result.answerMarkdown
       )
     : { markdown: result.answerMarkdown, applied: false, questions: [], overriddenModelLetters: 0 };
   if (options.semanticFindingsFile && !semanticChoiceOverride.applied) {
@@ -388,7 +417,7 @@ export async function main() {
     : semanticChoiceOverride.markdown;
   writeTextFileAtomic(options.outputPath, `${answerMarkdown}\n`);
   const summary = {
-    schemaVersion: "1.2",
+    schemaVersion: "1.3",
     kind: "live-answer-generation-summary",
     generatedAt: new Date().toISOString(),
     provider: result.provider,
@@ -405,6 +434,10 @@ export async function main() {
     routing: buildAnswerRoutingSummary(result),
     candidatePath: options.candidateFile,
     candidateSha256: options.candidateFile ? sha256File(options.candidateFile) : null,
+    candidateBaselinePath: options.candidateBaselineFile ?? options.candidateFile,
+    candidateBaselineSha256: (options.candidateBaselineFile ?? options.candidateFile)
+      ? sha256File(options.candidateBaselineFile ?? options.candidateFile)
+      : null,
     semanticFindingsPath: options.semanticFindingsFile,
     semanticFindingsSha256: options.semanticFindingsFile ? sha256File(options.semanticFindingsFile) : null,
     auditFindingsPath: options.auditFindingsFile,
@@ -413,6 +446,8 @@ export async function main() {
     sourceTextSha256: options.sourceTextFile ? sha256File(options.sourceTextFile) : null,
     referenceTextPath: options.referenceTextFile,
     referenceTextSha256: options.referenceTextFile ? sha256File(options.referenceTextFile) : null,
+    referencePdfPath: options.referencePdfFile ?? null,
+    referencePdfSha256: options.referencePdfFile ? sha256File(options.referencePdfFile) : null,
     pageCount: options.imagePaths.length,
     pageImages: options.imagePaths.map((imagePath, index) => ({
       path: imagePath,
@@ -432,6 +467,10 @@ export async function main() {
     },
     attempts: result.attempts.map(redactAttempt)
   };
+  if (baselinePath && !summary.candidateBaselineSha256
+      && !["blind_generation"].includes(mode)) {
+    throw new Error("Review summary is missing the frozen candidate baseline hash.");
+  }
   const summaryErrors = validateValueAgainstSchema(summary, summarySchemaPath);
   if (summaryErrors.length > 0) {
     throw new Error(

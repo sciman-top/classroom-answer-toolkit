@@ -11,6 +11,8 @@ _docx_render_check/
 .env
 .env.*
 !.env.example
+.npmrc
+.credentials*
 
 # Node dependency folders
 node_modules/

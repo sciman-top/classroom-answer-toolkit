@@ -4,6 +4,10 @@
   "displayName": "初中物理试卷参考答案生成与渲染",
   "version": "v8.23",
   "status": "active",
+  "workflow": {
+    "liveAnswers": true,
+    "requiresExplicitCloudEgress": true
+  },
   "locale": "zh-CN",
   "domain": "junior-high-school-physics",
   "kind": "subject-pack",

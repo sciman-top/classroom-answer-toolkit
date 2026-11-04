@@ -5,7 +5,8 @@ namespace ClassroomToolkit.App.Workspace;
 
 public sealed record WorkspaceSubjectPackPaths(
     string AssetId,
-    string Status);
+    string Status,
+    bool SupportsLiveAnswers);
 
 public static class WorkspaceSubjectPackLocator
 {
@@ -87,6 +88,11 @@ public static class WorkspaceSubjectPackLocator
             ? statusElement.GetString() ?? string.Empty
             : string.Empty;
 
-        return new WorkspaceSubjectPackPaths(assetId, status);
+        var liveAnswers = root.TryGetProperty("workflow", out var workflow)
+            && workflow.ValueKind == JsonValueKind.Object
+            && workflow.TryGetProperty("liveAnswers", out var live)
+            && live.ValueKind == JsonValueKind.True;
+
+        return new WorkspaceSubjectPackPaths(assetId, status, liveAnswers);
     }
 }

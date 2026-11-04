@@ -361,6 +361,101 @@ public sealed class LocalToolchainOrchestratorTests
         delivery.Should().BeNull();
     }
 
+    [Fact]
+    public async Task LiveWorkflowBindsSourcePdfToTheLiveWorkflowScript()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var sourcePath = Path.Combine(workspace.Root, "exam.pdf");
+        var outputDirectory = Path.Combine(workspace.Root, "workflow-output");
+        File.WriteAllText(sourcePath, "%PDF-source");
+        var runner = new DeliveryRunner(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            runner);
+
+        var (execution, result) = await orchestrator.RunLiveWorkflowAsync(
+            new LiveAnswerWorkflowRequest(
+                sourcePath,
+                outputDirectory,
+                null,
+                "junior-physics-answer",
+                "classroom",
+                false,
+                true,
+                true,
+                false));
+
+        execution.Succeeded.Should().BeTrue(execution.Output);
+        result.Should().NotBeNull();
+        var workflowArguments = runner.Invocations.Single((invocation) =>
+            invocation.Any((argument) =>
+                argument.EndsWith("run-live-answer-workflow.ps1", StringComparison.OrdinalIgnoreCase)));
+        workflowArguments.Should().Contain("-SourcePdf");
+        workflowArguments.Should().Contain(sourcePath);
+        workflowArguments.Should().Contain("-AllowCloudEgress");
+        result!.OutputPdfPath.Should().EndWith("exam参考答案.pdf");
+    }
+
+    [Fact]
+    public async Task LiveWorkflowRejectsExperimentalPackBeforeStartingTheScript()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var mathPackRoot = Path.Combine(workspace.Root, "prompts", "math-answer");
+        Directory.CreateDirectory(mathPackRoot);
+        File.WriteAllText(
+            Path.Combine(mathPackRoot, "manifest.json"),
+            "{\"assetId\":\"math-answer\",\"kind\":\"subject-pack\",\"workflow\":{\"liveAnswers\":false,\"requiresExplicitCloudEgress\":true}}");
+        var runner = new DeliveryRunner(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            runner);
+
+        var (execution, result) = await orchestrator.RunLiveWorkflowAsync(
+            new LiveAnswerWorkflowRequest(
+                workspace.MarkdownPath,
+                Path.Combine(workspace.Root, "math-output"),
+                null,
+                "math-answer",
+                "classroom",
+                false,
+                true,
+                false,
+                false));
+
+        execution.Succeeded.Should().BeFalse();
+        execution.Output.Should().Contain("not enabled for live answer workflows");
+        result.Should().BeNull();
+        runner.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task LiveWorkflowBaseNamePreservesCjkSourceName()
+    {
+        using var workspace = new TemporaryWorkspace();
+        var sourcePath = Path.Combine(workspace.Root, "2025广州中考.pdf");
+        var outputDirectory = Path.Combine(workspace.Root, "workflow-output");
+        File.WriteAllText(sourcePath, "%PDF-source");
+        var runner = new DeliveryRunner(workspace.Root);
+        var orchestrator = new LocalToolchainOrchestrator(
+            new RepositoryRootResolver(workspace.Root),
+            runner);
+
+        var (execution, _) = await orchestrator.RunLiveWorkflowAsync(
+            new LiveAnswerWorkflowRequest(
+                sourcePath,
+                outputDirectory,
+                null,
+                "junior-physics-answer",
+                "classroom",
+                false,
+                true,
+                false,
+                false));
+
+        execution.Succeeded.Should().BeTrue(execution.Output);
+        File.Exists(Path.Combine(outputDirectory, "2025广州中考.workflow-run.json")).Should().BeTrue();
+    }
+
     private sealed class DeliveryRunner : IProcessRunner
     {
         private readonly string _root;
@@ -410,6 +505,7 @@ public sealed class LocalToolchainOrchestratorTests
             _healthError = healthError;
         }
         public IReadOnlyList<string> Arguments { get; private set; } = [];
+        public List<IReadOnlyList<string>> Invocations { get; } = [];
         public string FileName { get; private set; } = string.Empty;
         public int CallCount { get; private set; }
         public Action<string>? LastOutputLineSink { get; private set; }
@@ -417,6 +513,7 @@ public sealed class LocalToolchainOrchestratorTests
         public Task<ProcessRunResult> RunAsync(string fileName, IReadOnlyList<string> arguments, string workingDirectory, CancellationToken cancellationToken = default, TimeSpan? timeout = null, Action<string>? onOutputLine = null)
         {
             CallCount += 1;
+            Invocations.Add(arguments);
             FileName = fileName;
             Arguments = arguments;
             LastOutputLineSink = onOutputLine;
@@ -428,8 +525,17 @@ public sealed class LocalToolchainOrchestratorTests
                     _healthError ?? ""));
             }
 
+            if (arguments.Count > 0 && arguments[0].EndsWith("validate-workflow-receipt.mjs", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult(new ProcessRunResult(0, "Validated workflow receipt.", ""));
+            }
             if (arguments.Count > 0 && arguments[0] == "-NoProfile")
             {
+                if (arguments.Any((argument) =>
+                    argument.EndsWith("run-live-answer-workflow.ps1", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return FulfillLiveWorkflowAsync(arguments);
+                }
                 // The pwsh script path (bootstrap/check): no artifacts to fake.
                 return Task.FromResult(new ProcessRunResult(_scriptExitCode, _scriptOutput ?? "", ""));
             }
@@ -470,6 +576,50 @@ public sealed class LocalToolchainOrchestratorTests
             }));
             return Task.FromResult(new ProcessRunResult(0, "ok", ""));
         }
+
+        private Task<ProcessRunResult> FulfillLiveWorkflowAsync(IReadOnlyList<string> arguments)
+        {
+            string Option(string name)
+            {
+                var index = arguments.ToList().IndexOf(name);
+                return index >= 0 && index + 1 < arguments.Count ? arguments[index + 1] : "";
+            }
+            var sourcePath = Option("-SourcePdf");
+            var outputDirectory = Option("-OutputDirectory");
+            Directory.CreateDirectory(outputDirectory);
+            var baseName = Path.GetFileNameWithoutExtension(sourcePath);
+            var answerPath = Path.Combine(outputDirectory, $"{baseName}参考答案.md");
+            var pdfPath = Path.Combine(outputDirectory, $"{baseName}参考答案.pdf");
+            var manifestPath = Path.Combine(outputDirectory, $"{baseName}参考答案.delivery-manifest.json");
+            File.WriteAllText(answerPath, "# 参考答案\n");
+            File.WriteAllText(pdfPath, "%PDF-test");
+            File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
+            {
+                generatedAt = DateTimeOffset.UtcNow,
+                subjectPack = "junior-physics-answer",
+                input = "answer.md",
+                output = Path.GetFileName(pdfPath),
+                snapshotId = "snapshot-test",
+                profile = "classroom",
+                review = new { outputDir = "answer.review", manifestPath = "answer.review/manifest.json" },
+                status = new { deliveryComplete = true }
+            }));
+            File.WriteAllText(Path.Combine(outputDirectory, $"{baseName}.workflow-run.json"), JsonSerializer.Serialize(new
+            {
+                kind = "live-answer-workflow-run",
+                status = "succeeded",
+                finishedAt = DateTimeOffset.UtcNow,
+                phases = new
+                {
+                    delivery = new
+                    {
+                        status = "completed",
+                        artifactPath = pdfPath
+                    }
+                }
+            }));
+            return Task.FromResult(new ProcessRunResult(0, "live workflow fixture", ""));
+        }
     }
 
     private sealed class CanceledHealthRunner : IProcessRunner
@@ -490,12 +640,15 @@ public sealed class LocalToolchainOrchestratorTests
             Root = Path.Combine(Path.GetTempPath(), $"classroom-toolkit-{Guid.NewGuid():N}");
             Directory.CreateDirectory(Path.Combine(Root, "scripts"));
             Directory.CreateDirectory(Path.Combine(Root, "tools", "latex-renderer"));
+            Directory.CreateDirectory(Path.Combine(Root, "tools", "rule-compiler"));
             Directory.CreateDirectory(Path.Combine(Root, "prompts", "junior-physics-answer"));
             File.WriteAllText(Path.Combine(Root, "ClassroomToolkit.sln"), "");
             File.WriteAllText(Path.Combine(Root, "scripts", "bootstrap.ps1"), "");
             File.WriteAllText(Path.Combine(Root, "scripts", "check-toolchain.ps1"), "");
+            File.WriteAllText(Path.Combine(Root, "scripts", "run-live-answer-workflow.ps1"), "");
             File.WriteAllText(Path.Combine(Root, "tools", "latex-renderer", "deliver-answer.mjs"), "");
-            File.WriteAllText(Path.Combine(Root, "prompts", "junior-physics-answer", "manifest.json"), "{\"assetId\":\"junior-physics-answer\",\"kind\":\"subject-pack\"}");
+            File.WriteAllText(Path.Combine(Root, "tools", "rule-compiler", "validate-workflow-receipt.mjs"), "");
+            File.WriteAllText(Path.Combine(Root, "prompts", "junior-physics-answer", "manifest.json"), "{\"assetId\":\"junior-physics-answer\",\"kind\":\"subject-pack\",\"workflow\":{\"liveAnswers\":true,\"requiresExplicitCloudEgress\":true}}");
             File.WriteAllText(Path.Combine(Root, "prompts", "junior-physics-answer", "config.json"), "{\"snapshot\":{\"cachePath\":\"../../.snapshot-cache/resolved-snapshot.json\"}}");
             MarkdownPath = Path.Combine(Root, "answer.md");
             PdfPath = Path.Combine(Root, "answer.pdf");

@@ -396,9 +396,9 @@ function imageDataUrl(imagePath) {
       : "image/jpeg";
   const { size } = fs.statSync(imagePath);
   if (size > maxInlineImageBytes) {
-    throw new Error(
+    throw Object.assign(new Error(
       `Image is too large to inline: ${imagePath} is ${size} bytes (limit ${maxInlineImageBytes}).`
-    );
+    ), { providerImageInputFailure: true });
   }
   return `data:${mimeType};base64,${fs.readFileSync(imagePath).toString("base64")}`;
 }
@@ -551,6 +551,7 @@ async function callProvider(provider, options) {
       // An oversized response is deterministic for this endpoint; failing over
       // without re-downloading is the point of the cap.
       retryable: error?.providerResponseOverSizeLimit !== true
+        && error?.providerImageInputFailure !== true
     });
   } finally {
     clearTimeout(timeout);

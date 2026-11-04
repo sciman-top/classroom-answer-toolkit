@@ -40,6 +40,21 @@ function normalizePathForComparison(filePath) {
   return process.platform === "win32" ? resolvedPath.toLowerCase() : resolvedPath;
 }
 
+function isWithinDirectory(directoryPath, filePath) {
+  const relative = path.relative(path.resolve(directoryPath), path.resolve(filePath));
+  return relative !== ""
+    && !path.isAbsolute(relative)
+    && relative !== ".."
+    && !relative.startsWith(`..${path.sep}`);
+}
+
+function isPackageInputPath(filePath, manifestDir) {
+  const relative = path.relative(manifestDir, filePath);
+  return relative === "" || (!path.isAbsolute(relative)
+    && relative !== ".."
+    && !relative.startsWith(`..${path.sep}`));
+}
+
 function collectFilePaths(directoryPath) {
   if (!isDirectory(directoryPath)) {
     return [];
@@ -83,6 +98,12 @@ function validateFileIntegrity(errors, entry, expectedPath, label, manifestDir) 
   if (!isFile(integrityPath)) {
     errors.push(`integrity.${label}.path not found: ${entry.path}`);
     return;
+  }
+  if (label === "input") {
+    const relative = `integrity.input.path relative to its anchored delivery`;
+    if (expectedPath && !isPackageInputPath(integrityPath, manifestDir)) {
+      errors.push(`${relative} must stay inside the delivery package.`);
+    }
   }
 
   const bytes = fs.readFileSync(integrityPath);
@@ -240,9 +261,68 @@ function validateReviewMetadata(errors, manifest, manifestDir) {
     if (!reviewOutputDir || !isDirectory(reviewOutputDir)) {
       errors.push("status.reviewArtifactReady cannot be true unless review.outputDir is a directory.");
     }
-
     if (!reviewManifestPath || !isFile(reviewManifestPath)) {
       errors.push("status.reviewArtifactReady cannot be true unless review.manifestPath is a file.");
+    }
+    if (reviewOutputDir && reviewManifestPath && isDirectory(reviewOutputDir) && isFile(reviewManifestPath)) {
+      let reviewManifest;
+      try {
+        reviewManifest = readJsonFile(reviewManifestPath);
+      } catch {
+        errors.push("review.manifestPath is not valid JSON.");
+      }
+      if (reviewManifest) {
+        if (reviewManifest.kind !== "pdf-source-review") {
+          errors.push("review.manifestPath must point to a pdf-source-review manifest.");
+        }
+        if (manifest.schemaVersion === "1.0") {
+          return;
+        }
+        const outputPath = typeof manifest.output === "string"
+          ? resolveManifestRelativePath(manifest.output, manifestDir)
+          : null;
+        const reviewInputPath = typeof reviewManifest.inputPath === "string"
+          ? path.resolve(path.dirname(reviewManifestPath), reviewManifest.inputPath)
+          : null;
+        if (!outputPath || !reviewInputPath
+            || normalizePathForComparison(reviewInputPath) !== normalizePathForComparison(outputPath)) {
+          errors.push("review manifest inputPath must match the delivery PDF.");
+        } else {
+          const inputBytes = fs.readFileSync(outputPath);
+          if (reviewManifest.inputSha256 !== sha256Hex(inputBytes)
+              || reviewManifest.inputBytes !== inputBytes.byteLength) {
+            errors.push("review manifest source bytes do not match the delivery PDF.");
+          }
+        }
+        const selectedPages = reviewManifest.selectedPages;
+        if (!Array.isArray(selectedPages)
+            || !Number.isSafeInteger(reviewManifest.pageCount)
+            || reviewManifest.pageCount < 1
+            || selectedPages.length !== reviewManifest.pageCount
+            || selectedPages.some((page, index) => page !== index + 1)) {
+          errors.push("review manifest must cover every PDF page in order.");
+        }
+        if (!Array.isArray(reviewManifest.pages) || reviewManifest.pages.length === 0) {
+          errors.push("review manifest must contain page images.");
+        } else {
+          for (const [index, page] of reviewManifest.pages.entries()) {
+            const imagePath = typeof page?.imagePath === "string"
+              ? path.resolve(path.dirname(reviewManifestPath), page.imagePath)
+              : null;
+            if (!imagePath || !isFile(imagePath)
+                || !isWithinDirectory(reviewOutputDir, imagePath)) {
+              errors.push(`review manifest pages[${index}].imagePath must be a packaged file.`);
+            }
+            const textLayerPath = typeof page?.textLayerPath === "string"
+              ? path.resolve(path.dirname(reviewManifestPath), page.textLayerPath)
+              : null;
+            if (textLayerPath
+                && (!isFile(textLayerPath) || !isWithinDirectory(reviewOutputDir, textLayerPath))) {
+              errors.push(`review manifest pages[${index}].textLayerPath must be a packaged file.`);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -343,6 +423,34 @@ export function validateDeliveryManifest(
   validateOcrMetadata(errors, manifest.ocr);
   validateReviewMetadata(errors, manifest, manifestDir);
   validateIntegrity(errors, manifest, manifestDir);
+  if (manifest.schemaVersion === "1.1") {
+    if (manifest.status?.deliveryComplete === true && manifest.status?.toolchainPassed !== true) {
+      errors.push("A complete delivery requires status.toolchainPassed=true.");
+    }
+    const boundPaths = new Set([
+      manifest.input,
+      manifest.output,
+      manifest.snapshotPath,
+      ...(manifest.integrity?.reviewFiles ?? []).map((entry) => entry?.path),
+      ...((manifest.graphics?.items ?? []).flatMap((item) => [
+        item?.placementPath,
+        item?.previewPath
+      ]))
+    ].filter((entry) => typeof entry === "string").map((entry) =>
+      normalizePathForComparison(resolveManifestRelativePath(entry, manifestDir))
+    ));
+    for (const [index, item] of (manifest.graphics?.items ?? []).entries()) {
+      for (const field of ["placementPath", "previewPath"]) {
+        if (typeof item?.[field] !== "string" || item[field].trim().length === 0) {
+          continue;
+        }
+        const filePath = resolveManifestRelativePath(item[field], manifestDir);
+        if (!boundPaths.has(normalizePathForComparison(filePath))) {
+          errors.push(`graphics.items[${index}].${field} is not bound by delivery integrity.`);
+        }
+      }
+    }
+  }
 
   if (manifest.graphics !== undefined && !Array.isArray(manifest.graphics?.items)) {
     errors.push("graphics.items must be an array.");

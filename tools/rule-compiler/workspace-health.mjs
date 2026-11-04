@@ -129,6 +129,9 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
       evalOk: false,
       evalCaseCount: 0,
       apiKeyConfigured: false,
+      aiConfigured: false,
+      cloudEgressConfigured: false,
+      workflowsEnabled: false,
       summary: `无法读取 subject pack 注册表：${error.message}`,
       issues: [`无法读取 subject pack 注册表：${error.message}`]
     };
@@ -185,9 +188,35 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
   const setupHint = envSetup.apiKeyConfigured
     ? ""
     : `尚未配置 AI 密钥：用记事本打开 ${path.join(repositoryRoot, ".env")}，填入自备 API key（${TEACHER_API_KEY_FIELD}、BASE_URL 等），并把 CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED 改为 true，保存后重新体检。`;
-  const summary = uniqueIssues.length === 0 && !setupHint
-    ? "规则快照、评测结果与最新规范已对齐。"
-    : [...uniqueIssues, setupHint].filter(Boolean).join("；");
+  const toolchainReady = uniqueIssues.length === 0;
+  const aiConfigured = envSetup.apiKeyConfigured;
+  const referenceReviewedDelivery = aiConfigured
+    ? "答案可信度仍须参考复核或教师验收，不能由工具链通过自动推导。"
+    : "当前仅能重新排版已有 Markdown；从原卷生成答案尚不可用。";
+  const setupParts = [];
+  if (envSetup.fileExists && !envSetup.apiKeyConfigured) {
+    setupParts.push("AI 密钥未配置：本地排版可用，真实答案生成不可用。");
+  }
+  const egressEnabled = /^\s*CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED\s*=\s*(?:1|true|yes|on)\s*$/imu.test(
+    (() => {
+      try {
+        return fs.readFileSync(path.join(repositoryRoot, ".env"), "utf8");
+      } catch {
+        return "";
+      }
+    })()
+  );
+  if (envSetup.fileExists && !egressEnabled) {
+    setupParts.push("云出网未启用：每次真实运行仍须显式授权。");
+  }
+  const summary = [
+    toolchainReady
+      ? `工具链、快照与固定回归已对齐；${referenceReviewedDelivery}`
+      : [],
+    ...uniqueIssues,
+    envSetup.apiKeyConfigured ? "" : setupHint,
+    ...setupParts
+  ].flat().filter(Boolean).join("；");
 
   return {
     primarySubjectPack: pack?.assetId ?? primarySubjectPackAssetId,
@@ -201,7 +230,10 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
     evalExists: evalStatus.exists,
     evalOk: evalStatus.ok,
     evalCaseCount: evalStatus.caseCount,
-    apiKeyConfigured: envSetup.apiKeyConfigured,
+    apiKeyConfigured: aiConfigured,
+    aiConfigured,
+    cloudEgressConfigured: egressEnabled,
+    workflowsEnabled: aiConfigured,
     summary,
     issues: uniqueIssues
   };

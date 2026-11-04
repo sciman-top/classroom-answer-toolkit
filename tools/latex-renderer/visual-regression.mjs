@@ -65,6 +65,7 @@ export function compareImageData(actual, baseline, channelTolerance = 0) {
   }
 
   let differentPixels = 0;
+  let ignoredPixels = 0;
   let rawDifferentPixels = 0;
   const totalPixels = actual.width * actual.height;
 
@@ -82,6 +83,8 @@ export function compareImageData(actual, baseline, channelTolerance = 0) {
     }
     if (maxDelta > channelTolerance) {
       differentPixels += 1;
+    } else if (maxDelta > 0) {
+      ignoredPixels += 1;
     }
   }
 
@@ -92,6 +95,7 @@ export function compareImageData(actual, baseline, channelTolerance = 0) {
     totalPixels,
     diffRatio: differentPixels / totalPixels,
     rawDiffRatio: rawDifferentPixels / totalPixels,
+    ignoredDiffRatio: ignoredPixels / totalPixels,
     channelTolerance
   };
 }
@@ -142,7 +146,8 @@ async function main() {
   console.log(`Diff ratio: ${result.diffRatio}`);
   console.log(
     `Raw differing pixels (any channel delta): ${result.rawDifferentPixels} (${result.rawDiffRatio.toFixed(6)})`
-    + `; ignored as rasterization noise at tolerance ${result.channelTolerance}`
+    + `; ignored as rasterization noise at tolerance ${result.channelTolerance}: `
+    + `${result.ignoredDiffRatio.toFixed(6)} (${result.ignoredDiffRatio.toFixed(2)}% of all pixels)`
   );
 
   if (result.diffRatio > options.maxDiffRatio) {

@@ -14,6 +14,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
     private static readonly TimeSpan BootstrapTimeout = TimeSpan.FromMinutes(45);
     private static readonly TimeSpan CheckTimeout = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan DeliverTimeout = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan LiveWorkflowTimeout = TimeSpan.FromHours(4);
     private static readonly TimeSpan HealthCheckTimeout = TimeSpan.FromMinutes(2);
 
     private readonly RepositoryRootResolver _repositoryRootResolver;
@@ -118,16 +119,18 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             ReadStringArray(root, "subjectPacks"),
             ReadOptionalString(root, "latestProductionSpecVersion"),
             ReadOptionalString(root, "assetVersion"),
-            ReadBool(root, "snapshotExists"),
+            IsTruthy(root, "snapshotExists"),
             root.TryGetProperty("snapshotPath", out var snapshotPath) && snapshotPath.ValueKind == JsonValueKind.String
                 ? snapshotPath.GetString()!
                 : string.Empty,
-            ReadBool(root, "evalOk"),
+            IsTruthy(root, "evalOk"),
             evalCaseCount,
             root.TryGetProperty("summary", out var summary) && summary.ValueKind == JsonValueKind.String
                 ? summary.GetString()!
                 : string.Empty,
-            ReadStringArray(root, "issues"));
+            ReadStringArray(root, "issues"),
+            IsTruthy(root, "aiConfigured", "apiKeyConfigured"),
+            IsTruthy(root, "cloudEgressConfigured"));
     }
 
     private static WorkspaceHealthReport DegradedHealthReport(
@@ -145,7 +148,9 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             false,
             0,
             issue,
-            [issue]);
+            [issue],
+            false,
+            false);
     }
 
     private static string? ReadOptionalString(JsonElement root, string name) =>
@@ -155,6 +160,9 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
 
     private static bool ReadBool(JsonElement root, string name) =>
         root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.True;
+
+    private static bool IsTruthy(JsonElement root, params string[] names) =>
+        names.Any((name) => ReadBool(root, name));
 
     private static IReadOnlyList<string> ReadStringArray(JsonElement root, string name) =>
         root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Array
@@ -302,6 +310,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         if (!File.Exists(outputPath))
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -312,6 +321,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         if (!File.Exists(manifestPath))
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -332,6 +342,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             or KeyNotFoundException)
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -343,6 +354,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             || context.GeneratedAt > finishedAt.AddSeconds(2))
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -353,6 +365,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         if (!context.DeliveryComplete)
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -364,6 +377,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             || !string.Equals(context.Profile, request.Profile, StringComparison.Ordinal))
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -377,6 +391,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 StringComparison.OrdinalIgnoreCase))
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -390,6 +405,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
                 StringComparison.OrdinalIgnoreCase))
         {
             return (ArtifactFailure(
+                ToolchainScriptKind.Deliver,
                 toolPath,
                 startedAt,
                 finishedAt,
@@ -403,6 +419,220 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             context.ReviewDirectoryPath ?? string.Empty,
             context.SnapshotId,
             subjectPack));
+    }
+
+    public async Task<(ToolchainExecutionResult Execution, LiveAnswerWorkflowResult? Result)> RunLiveWorkflowAsync(
+        LiveAnswerWorkflowRequest request,
+        CancellationToken cancellationToken = default,
+        Action<string>? progress = null)
+    {
+        var workspace = GetWorkspaceInfo();
+        var sourcePath = AnswerArtifactPathResolver.ResolveUserPath(
+            request.SourcePdfPath,
+            workspace.RepositoryRoot);
+        var outputPath = AnswerArtifactPathResolver.ResolveUserPath(
+            request.OutputDirectory,
+            workspace.RepositoryRoot);
+        var referencePath = string.IsNullOrWhiteSpace(request.ReferencePdfPath)
+            ? null
+            : AnswerArtifactPathResolver.ResolveUserPath(request.ReferencePdfPath, workspace.RepositoryRoot);
+        var scriptPath = Path.Combine(workspace.RepositoryRoot, "scripts", "run-live-answer-workflow.ps1");
+        var manifestPath = Path.Combine(
+            workspace.RepositoryRoot,
+            "prompts",
+            request.SubjectPack,
+            "manifest.json");
+        var startedAt = DateTimeOffset.Now;
+
+        if (!File.Exists(sourcePath))
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Source exam PDF not found: {sourcePath}"), null);
+        }
+        if (!File.Exists(manifestPath))
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Subject pack manifest not found: {manifestPath}"), null);
+        }
+        try
+        {
+            using var manifestDocument = JsonDocument.Parse(File.ReadAllText(manifestPath));
+            if (manifestDocument.RootElement.GetProperty("workflow").GetProperty("liveAnswers").GetBoolean() != true)
+            {
+                return (ToolchainExecutionResult.Failure(
+                    ToolchainScriptKind.LiveWorkflow,
+                    scriptPath,
+                    -1,
+                    startedAt,
+                    DateTimeOffset.Now,
+                    $"Subject pack '{request.SubjectPack}' is not enabled for live answer workflows."), null);
+            }
+        }
+        catch (Exception ex) when (ex is JsonException
+            or InvalidOperationException
+            or KeyNotFoundException
+            or FormatException)
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Subject pack workflow contract is invalid: {ex.Message}"), null);
+        }
+        if (referencePath is not null && !File.Exists(referencePath))
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Reference PDF not found: {referencePath}"), null);
+        }
+        if (!File.Exists(scriptPath))
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                $"Live workflow script not found: {scriptPath}"), null);
+        }
+
+        var arguments = new List<string>
+        {
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            scriptPath,
+            "-SourcePdf",
+            sourcePath,
+            "-OutputDirectory",
+            outputPath,
+            "-SubjectPack",
+            request.SubjectPack,
+            "-Profile",
+            request.Profile
+        };
+        if (referencePath is not null)
+        {
+            arguments.Add("-ReferencePdf");
+            arguments.Add(referencePath);
+        }
+        if (request.SkipVisualAudit)
+        {
+            arguments.Add("-SkipVisualAudit");
+        }
+        if (request.AllowCloudEgress)
+        {
+            arguments.Add("-AllowCloudEgress");
+        }
+        if (request.KeepReview)
+        {
+            arguments.Add("-KeepReview");
+        }
+        if (request.UseGatewayProxy)
+        {
+            arguments.Add("-UseGatewayProxy");
+        }
+        string powershellExecutable;
+        try
+        {
+            powershellExecutable = ResolvePowerShellExecutable(workspace.RepositoryRoot);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return (ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                -1,
+                startedAt,
+                DateTimeOffset.Now,
+                ex.Message), null);
+        }
+
+        var process = await _processRunner.RunAsync(
+            powershellExecutable,
+            arguments,
+            workspace.RepositoryRoot,
+            cancellationToken,
+            LiveWorkflowTimeout,
+            progress).ConfigureAwait(false);
+        var finishedAt = DateTimeOffset.Now;
+        var output = BuildOutput(process.StandardOutput, process.StandardError);
+        var execution = process.ExitCode == 0
+            ? ToolchainExecutionResult.Success(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                startedAt,
+                finishedAt,
+                output)
+            : ToolchainExecutionResult.Failure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                process.ExitCode,
+                startedAt,
+                finishedAt,
+                output);
+        if (!execution.Succeeded)
+        {
+            return (execution, null);
+        }
+
+        var baseName = Path.GetFileNameWithoutExtension(sourcePath);
+        var receiptPath = Path.Combine(outputPath, $"{baseName}.workflow-run.json");
+        if (!File.Exists(receiptPath))
+        {
+            return (ArtifactFailure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                startedAt,
+                finishedAt,
+                output,
+                $"Workflow exited successfully but its receipt was not created: {receiptPath}"), null);
+        }
+
+        try
+        {
+            var receipt = ReadLiveWorkflowReceipt(
+                receiptPath,
+                outputPath,
+                workspace.RepositoryRoot,
+                cancellationToken,
+                baseName,
+                startedAt,
+                finishedAt);
+            return (execution, receipt);
+        }
+        catch (Exception ex) when (ex is IOException
+            or UnauthorizedAccessException
+            or JsonException
+            or FormatException
+            or InvalidOperationException
+            or KeyNotFoundException)
+        {
+            return (ArtifactFailure(
+                ToolchainScriptKind.LiveWorkflow,
+                scriptPath,
+                startedAt,
+                finishedAt,
+                output,
+                $"Workflow receipt is invalid: {ex.Message}"), null);
+        }
     }
 
     private async Task<ToolchainExecutionResult> RunScriptAsync(
@@ -429,6 +659,9 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             arguments.AddRange(scriptArguments);
         }
 
+        // Source check/bootstrap intentionally retain the developer prerequisite.
+        // Packaged source tooling uses the bundled pwsh only when it is invoked
+        // through migration/release surfaces; ordinary WPF check uses health.
         var process = await _processRunner.RunAsync(
             "pwsh",
             arguments,
@@ -457,6 +690,24 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         return IsPackagedRuntime(workspaceRoot)
             ? File.Exists(bundledNode) ? bundledNode : null
             : "node";
+    }
+
+    private static string ResolvePowerShellExecutable(string workspaceRoot)
+    {
+        if (!IsPackagedRuntime(workspaceRoot))
+        {
+            return "pwsh";
+        }
+        var bundledPowerShell = Path.Combine(
+            workspaceRoot,
+            "runtime",
+            "pwsh",
+            OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh");
+        if (!File.Exists(bundledPowerShell))
+        {
+            throw new InvalidOperationException("安装版 runtime 缺少 bundled PowerShell：请修复或重新安装运行时。");
+        }
+        return bundledPowerShell;
     }
 
     private static ManifestContext ReadManifestContext(string manifestPath)
@@ -495,7 +746,82 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             .Where(value => !string.IsNullOrWhiteSpace(value)));
     }
 
+    private LiveAnswerWorkflowResult ReadLiveWorkflowReceipt(
+        string receiptPath,
+        string outputDirectory,
+        string repositoryRoot,
+        CancellationToken cancellationToken,
+        string baseName,
+        DateTimeOffset startedAt,
+        DateTimeOffset finishedAt)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        var root = document.RootElement;
+        if (!File.Exists(Path.Combine(repositoryRoot, "tools", "rule-compiler", "validate-workflow-receipt.mjs")))
+        {
+            throw new InvalidDataException("Workflow receipt validator is missing from the packaged toolchain.");
+        }
+        var receiptValidation = _processRunner.RunAsync(
+            ResolveNodeExecutable(repositoryRoot)
+                ?? throw new InvalidOperationException("Bundled Node.js is missing; repair the runtime before validating a workflow."),
+            [
+                Path.Combine(repositoryRoot, "tools", "rule-compiler", "validate-workflow-receipt.mjs"),
+                "--receipt",
+                receiptPath
+            ],
+            repositoryRoot,
+            cancellationToken,
+            TimeSpan.FromMinutes(2)).GetAwaiter().GetResult();
+        if (receiptValidation.ExitCode != 0)
+        {
+            throw new InvalidDataException(
+                BuildOutput(receiptValidation.StandardOutput, receiptValidation.StandardError));
+        }
+        if (!root.GetProperty("kind").GetString()!.Equals(
+                "live-answer-workflow-run",
+                StringComparison.Ordinal)
+            || !root.GetProperty("status").GetString()!.Equals("succeeded", StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Workflow receipt does not record a succeeded live-answer-workflow-run.");
+        }
+        var deliveredAt = root.GetProperty("finishedAt").GetDateTimeOffset();
+        if (deliveredAt < startedAt.AddSeconds(-2) || deliveredAt > finishedAt.AddSeconds(5))
+        {
+            throw new InvalidDataException("Workflow receipt does not belong to the current application run.");
+        }
+        var delivery = root.GetProperty("phases").GetProperty("delivery");
+        if (delivery.GetProperty("status").GetString() != "completed")
+        {
+            throw new InvalidDataException("Workflow receipt has no completed delivery phase.");
+        }
+        var outputPdfPath = delivery.GetProperty("artifactPath").GetString()
+            ?? throw new InvalidDataException("Workflow receipt delivery artifact is empty.");
+        var manifestPath = AnswerArtifactPathResolver.ResolveDeliveryManifestPath(outputPdfPath);
+        if (!File.Exists(outputPdfPath) || !File.Exists(manifestPath))
+        {
+            throw new InvalidDataException("Workflow delivery or its manifest is missing.");
+        }
+        var manifest = ReadManifestContext(manifestPath);
+        if (manifest.GeneratedAt < startedAt.AddSeconds(-2)
+            || manifest.GeneratedAt > finishedAt.AddSeconds(5)
+            || !string.Equals(
+                Path.GetFullPath(manifest.OutputPath),
+                Path.GetFullPath(outputPdfPath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("Workflow delivery manifest is incomplete or does not match its PDF.");
+        }
+        return new LiveAnswerWorkflowResult(
+            receiptPath,
+            Path.Combine(outputDirectory, $"{baseName}参考答案.md"),
+            outputPdfPath,
+            manifestPath,
+            manifest.ReviewDirectoryPath,
+            manifest.SnapshotId);
+    }
+
     private static ToolchainExecutionResult ArtifactFailure(
+        ToolchainScriptKind kind,
         string toolPath,
         DateTimeOffset startedAt,
         DateTimeOffset finishedAt,
@@ -503,7 +829,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         string message)
     {
         return ToolchainExecutionResult.Failure(
-            ToolchainScriptKind.Deliver,
+            kind,
             toolPath,
             -2,
             startedAt,

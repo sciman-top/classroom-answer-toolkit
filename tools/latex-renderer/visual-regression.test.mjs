@@ -41,6 +41,7 @@ test("antialiasing-level deltas are ignored at the default tolerance", () => {
 
   assert.equal(result.rawDifferentPixels, 1, "the raw count still sees the pixel");
   assert.equal(result.differentPixels, 0, "the gated count must ignore it");
+  assert.equal(result.ignoredDiffRatio, 0.25, "the report must expose the ignored anti-aliasing fraction");
   assert.equal(result.diffRatio, 0);
 });
 

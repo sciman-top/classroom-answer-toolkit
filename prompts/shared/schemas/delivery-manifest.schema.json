@@ -7,6 +7,19 @@
   },
   "title": "DeliveryManifest",
   "type": "object",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schemaVersion": { "const": "1.1" }
+        },
+        "required": ["schemaVersion"]
+      },
+      "then": {
+        "required": ["integrity"]
+      }
+    }
+  ],
   "required": [
     "schemaVersion",
     "kind",

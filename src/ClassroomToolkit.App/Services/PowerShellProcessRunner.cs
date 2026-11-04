@@ -140,6 +140,11 @@ public sealed class PowerShellProcessRunner : IProcessRunner
             TryKillEntireTree(process);
             throw TimeoutException();
         }
+        catch (OperationCanceledException)
+        {
+            TryKillEntireTree(process);
+            throw;
+        }
 
         return new ProcessRunResult(
             process.ExitCode,

@@ -51,6 +51,19 @@ public sealed class WorkspaceSubjectPackLocatorTests
             .ContainSingle("junior-physics-answer");
     }
 
+    [Fact]
+    public void FindSubjectPacks_RequiresExplicitWorkflowOptIn()
+    {
+        using var workspace = new TemporaryWorkspace();
+        workspace.WritePack("junior-physics-answer", status: "active", liveAnswers: true);
+        workspace.WritePack("math-answer", status: "experimental", liveAnswers: false);
+
+        var packs = WorkspaceSubjectPackLocator.FindSubjectPacks(workspace.Root);
+
+        packs.Should().ContainSingle(pack => pack.AssetId == "junior-physics-answer" && pack.SupportsLiveAnswers);
+        packs.Should().ContainSingle(pack => pack.AssetId == "math-answer" && !pack.SupportsLiveAnswers);
+    }
+
     private sealed class TemporaryWorkspace : IDisposable
     {
         private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
@@ -63,7 +76,7 @@ public sealed class WorkspaceSubjectPackLocatorTests
 
         public string Root { get; }
 
-        public void WritePack(string assetId, string status)
+        public void WritePack(string assetId, string status, bool liveAnswers = false)
         {
             var manifestPath = Path.Combine(Root, "prompts", assetId, "manifest.json");
             Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
@@ -74,6 +87,11 @@ public sealed class WorkspaceSubjectPackLocatorTests
                 assetId,
                 version = "v0.1",
                 status,
+                workflow = new
+                {
+                    liveAnswers,
+                    requiresExplicitCloudEgress = true
+                },
                 sourceOfTruth = new { runtimeConfig = "./config.json" },
                 evaluation = new { resultsDir = $"../../eval/{assetId}/results" }
             });

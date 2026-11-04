@@ -111,6 +111,11 @@ if ([string]$acceptance.schemaVersion -ne "1.0" -or
     [string]::IsNullOrWhiteSpace([string]$acceptance.tester.identifier)) {
     throw "Release metadata requires a valid representative non-developer acceptance record for version $Version and source $sourceCommit."
 }
+if ([string]::IsNullOrWhiteSpace([string]$acceptance.releaseOwnerConfirmation.confirmedByGitHubActor) -or
+    [string]$acceptance.releaseOwnerConfirmation.acknowledgement -ne "I confirm the representative tester performed the recorded real-world checks on these exact package hashes." -or
+    -not [string]::Equals([string]$acceptance.submittedByGitHubActor, [string]$acceptance.releaseOwnerConfirmation.confirmedByGitHubActor, [StringComparison]::Ordinal)) {
+    throw "Release metadata requires an authenticated release-owner confirmation of the representative real-world acceptance."
+}
 foreach ($asset in @(
     [ordered]@{ kind = "installer"; path = "installer/stable/ClassroomToolkit-$Version-setup.exe"; file = $stableSetupPath },
     [ordered]@{ kind = "portable"; path = "portable/ClassroomToolkit-$Version-portable-win-x64.zip"; file = (Join-Path $versionRoot "portable/ClassroomToolkit-$Version-portable-win-x64.zip") }

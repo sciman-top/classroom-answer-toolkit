@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "assetId": "math-answer",
-  "version": "v0.2-derived",
+  "version": "v0.2",
   "sourceOfTruth": {
     "humanSpec": "../specs/compiled/试卷参考答案交付规范-初中数学-完整版-v0.2.md",
     "acceptanceChecklist": "./checklists/acceptance.md"

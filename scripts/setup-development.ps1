@@ -41,7 +41,8 @@ function Refresh-ProcessPath {
 function Install-WingetPackage {
     param(
         [Parameter(Mandatory = $true)][string]$Id,
-        [Parameter(Mandatory = $true)][string]$DisplayName
+        [Parameter(Mandatory = $true)][string]$DisplayName,
+        [string]$PackageVersion = ""
     )
 
     if (-not (Test-CommandAvailable "winget")) {
@@ -49,7 +50,12 @@ function Install-WingetPackage {
     }
 
     Write-Host "Installing $DisplayName with winget..."
-    & winget install --id $Id --exact --accept-source-agreements --accept-package-agreements --disable-interactivity
+    $wingetArguments = @("install", "--id", $Id, "--exact")
+    if (-not [string]::IsNullOrWhiteSpace($PackageVersion)) {
+        $wingetArguments += @("--version", $PackageVersion)
+    }
+    $wingetArguments += @("--accept-source-agreements", "--accept-package-agreements", "--disable-interactivity")
+    & winget @wingetArguments
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install $DisplayName with winget."
     }
@@ -59,7 +65,8 @@ function Assert-OrInstallCommand {
     param(
         [Parameter(Mandatory = $true)][string]$CommandName,
         [Parameter(Mandatory = $true)][string]$PackageId,
-        [Parameter(Mandatory = $true)][string]$DisplayName
+        [Parameter(Mandatory = $true)][string]$DisplayName,
+        [string]$PackageVersion = ""
     )
 
     if (Test-CommandAvailable $CommandName) {
@@ -69,15 +76,20 @@ function Assert-OrInstallCommand {
         throw "$DisplayName is missing: $CommandName"
     }
 
-    Install-WingetPackage -Id $PackageId -DisplayName $DisplayName
+    Install-WingetPackage -Id $PackageId -DisplayName $DisplayName -PackageVersion $PackageVersion
     Refresh-ProcessPath
     if (-not (Test-CommandAvailable $CommandName)) {
         throw "$DisplayName was installed but $CommandName is still unavailable in this process. Open a new pwsh session and rerun."
     }
 }
 
-Assert-OrInstallCommand -CommandName "node" -PackageId "OpenJS.NodeJS.LTS" -DisplayName "Node.js LTS"
-Assert-OrInstallCommand -CommandName "npm" -PackageId "OpenJS.NodeJS.LTS" -DisplayName "npm"
+$requiredNodeVersion = (Get-Content -LiteralPath (Join-Path $repoRoot ".node-version") -Raw).Trim()
+if ($requiredNodeVersion -notmatch '^24(?:\.\d+){0,2}$') {
+    throw "The repo .node-version must pin Node.js 24.x, got '$requiredNodeVersion'."
+}
+$nodePackageVersion = "24.14.0"
+Assert-OrInstallCommand -CommandName "node" -PackageId "OpenJS.NodeJS.24" -PackageVersion $nodePackageVersion -DisplayName "Node.js $nodePackageVersion"
+Assert-OrInstallCommand -CommandName "npm" -PackageId "OpenJS.NodeJS.24" -PackageVersion $nodePackageVersion -DisplayName "npm"
 $nodeVersion = (& node --version 2>$null | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch "^v$requiredNodeMajor\.") {
     throw "Node.js $requiredNodeMajor.x is required; found $nodeVersion. Install the supported LTS major and rerun."

@@ -12,6 +12,7 @@ import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./lib/pdf-output-pa
 import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./lib/runtime-config.mjs";
 import { runCleanup } from "./cleanup-answer-artifacts.mjs";
 import { validateDeliveryManifest } from "./validate-delivery-manifest.mjs";
+import { compileResolvedSnapshot } from "../rule-compiler/merge-rules.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = path.join(toolDir, "package.json");
@@ -218,14 +219,28 @@ async function main() {
   }
 
   const snapshot = loadRequiredResolvedSnapshot(snapshotPath);
+  const finalExtensions = snapshot.delivery?.rules?.finalDeliverables;
+  if (!Array.isArray(finalExtensions) || !finalExtensions.includes(".pdf")) {
+    fail(`Snapshot delivery rules do not permit .pdf: ${snapshotPath}`);
+  }
+  if (Array.isArray(snapshot.delivery?.rules?.forbiddenFinalArtifacts)
+      && snapshot.delivery.rules.forbiddenFinalArtifacts.includes(".pdf")) {
+    fail(`Snapshot delivery rules forbid .pdf: ${snapshotPath}`);
+  }
   const activeProfile = getSnapshotActiveProfile(snapshot, options.profile);
   const profileName = activeProfile.name;
+  if (options.snapshotPath
+      && (options.subjectPack !== snapshot.subjectPack?.assetId
+        || (options.profile !== null && options.profile !== profileName))) {
+    fail(`Snapshot pack/profile does not match the requested delivery: ${options.subjectPack}/${options.profile ?? profileName}`);
+  }
   const snapshotSubjectPack = snapshot.subjectPack?.assetId;
   if (typeof snapshotSubjectPack !== "string" || snapshotSubjectPack.trim().length === 0) {
     fail(`Resolved snapshot is missing subjectPack.assetId: ${snapshotPath}`);
   }
 
   const deliverySnapshotPath = makeDeliverySnapshotPath(outputPath);
+  const deliveryManifestPath = makeDeliveryManifestPath(outputPath);
 
   if (!options.skipValidate) {
     console.log(`[${packageName}] validate: ${path.relative(repoRoot, inputPath)}`);
@@ -298,7 +313,7 @@ async function main() {
   // On Windows, Node's synchronous recursive copy can terminate the process
   // with STATUS_STACK_BUFFER_OVERRUN for real delivery paths containing CJK
   // names. The asynchronous implementation copies the same tree safely.
-  await fsp.cp(reviewOutputDir, deliveryReviewDir, { recursive: true });
+    await fsp.cp(reviewOutputDir, deliveryReviewDir, { recursive: true });
 
   console.log(`[${packageName}] cleanup`);
   if (snapshot.delivery?.rules?.cleanupAfterSuccessfulDeliver !== false) {
@@ -325,7 +340,19 @@ async function main() {
   const reviewManifestPath = path.join(deliveryReviewDir, "manifest.json");
   // Written only after validate/render/review/cleanup all succeeded: an earlier
   // write would leave an orphan delivery snapshot when a later step fails.
-  writeTextFileAtomic(deliverySnapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+  // Snapshot SHA-256 identifies bytes, not just semantic content. Compile a
+  // fresh delivery-only snapshot after `generatedAt` was allocated; otherwise
+  // reusing a caller's snapshot-path can leave the manifest hash stale.
+  // A caller-provided snapshot is the exact version to validate and deliver;
+  // recompiling without its custom input paths can silently substitute the
+  // default subject pack. The copied bytes are what get hashed in the manifest.
+  const deliverySnapshot = options.snapshotPath
+    ? loadRequiredResolvedSnapshot(snapshotPath)
+    : compileResolvedSnapshot({
+        subjectPack: options.subjectPack,
+        profileName: profileName
+      });
+  writeTextFileAtomic(deliverySnapshotPath, `${JSON.stringify(deliverySnapshot, null, 2)}\n`);
   console.log(`[${packageName}] write-delivery-manifest`);
   await runNodeScript("write-delivery-manifest.mjs", [
     "--input",
@@ -341,17 +368,15 @@ async function main() {
     "--review-scale",
     options.reviewScale
   ]);
-
   console.log(`[${packageName}] validate-delivery-manifest`);
-  // In-process reuse of the exported pure validator: identical checks and
-  // failure text as the CLI wrapper, minus one Node cold start per delivery.
-  const deliveryManifestPath = makeDeliveryManifestPath(outputPath);
-  const manifestErrors = validateDeliveryManifest(
+  // In-process validation avoids one extra Node cold start while using the
+  // exact manifest and validator emitted by the renderer above.
+  const validationErrors = validateDeliveryManifest(
     readJsonFile(deliveryManifestPath),
     deliveryManifestPath
   );
-  if (manifestErrors.length > 0) {
-    fail(`Delivery manifest validation failed for ${deliveryManifestPath}:\n${manifestErrors.map((error) => `- ${error}`).join("\n")}`, 1);
+  if (validationErrors.length > 0) {
+    fail(`Delivery manifest validation failed for ${deliveryManifestPath}:\n${validationErrors.map((error) => `- ${error}`).join("\n")}`, 1);
   }
   console.log(`Validated delivery manifest: ${deliveryManifestPath}`);
 

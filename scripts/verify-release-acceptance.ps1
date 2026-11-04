@@ -72,6 +72,11 @@ try {
 catch {
     throw "Representative acceptance record is not valid JSON: $($_.Exception.Message)"
 }
+$recordSchemaPath = Join-Path $PSScriptRoot "verify-release-acceptance.schema.json"
+$recordSchemaErrors = @(& node (Join-Path $PSScriptRoot "../tools/rule-compiler/validate-json.mjs") --schema $recordSchemaPath --value $AcceptanceRecordPath 2>&1)
+if ($LASTEXITCODE -ne 0) {
+    throw "Representative acceptance record failed schema validation: $($recordSchemaErrors -join [Environment]::NewLine)"
+}
 if ([string]$record.schemaVersion -ne "1.0" -or
     [string]$record.kind -ne "classroom-toolkit-representative-acceptance-input" -or
     [string]$record.status -ne "accepted" -or
@@ -87,6 +92,35 @@ if ([string]$record.tester.role -ne "representative-non-developer" -or
     ([string]$record.tester.identifier).Length -gt 80 -or
     [string]$record.tester.identifier -match '[\x00-\x1F\x7F]') {
     throw "Representative acceptance record must identify a representative non-developer tester."
+}
+if ([string]$record.confirmedByReleaseOwner -ne $GitHubActor) {
+    throw "Representative acceptance must be explicitly confirmed by the submitting release owner."
+}
+if ([string]::IsNullOrWhiteSpace([string]$record.evidenceReference)) {
+    throw "Representative acceptance must reference the retained manual test evidence for the exact candidate."
+}
+$allowedRecordFields = @(
+    "schemaVersion", "kind", "status", "version", "sourceCommit", "candidateRunId",
+    "acceptedAt", "tester", "assets", "scenarios", "confirmedByReleaseOwner", "acknowledgement",
+    "evidenceReference"
+)
+foreach ($property in $record.PSObject.Properties.Name) {
+    if ($property -notin $allowedRecordFields) {
+        throw "Representative acceptance record contains an unknown field: $property"
+    }
+}
+foreach ($property in $record.tester.PSObject.Properties.Name) {
+    if ($property -notin @("identifier", "role")) {
+        throw "Representative acceptance tester contains an unknown field: $property"
+    }
+}
+foreach ($property in $record.assets.PSObject.Properties.Name) {
+    if ($property -notin @("installerSha256", "portableSha256")) {
+        throw "Representative acceptance assets contains an unknown field: $property"
+    }
+}
+if ([string]$record.acknowledgement -ne "I confirm the representative tester performed the recorded real-world checks on these exact package hashes.") {
+    throw "Representative acceptance acknowledgement is missing or does not match the required statement."
 }
 
 $timestampDocument = [System.Text.Json.JsonDocument]::Parse($recordJson)
@@ -142,6 +176,11 @@ $acceptance = [ordered]@{
         identifier = ([string]$record.tester.identifier).Trim()
         role = "representative-non-developer"
     }
+    releaseOwnerConfirmation = [ordered]@{
+        confirmedByGitHubActor = $GitHubActor
+        acknowledgement = [string]$record.acknowledgement
+    }
+    evidenceReference = ([string]$record.evidenceReference).Trim()
     assets = @($packageFacts | ForEach-Object {
         [ordered]@{
             kind = $_.kind

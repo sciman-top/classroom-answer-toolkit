@@ -111,12 +111,23 @@ function Invoke-RendererSmoke {
     )
 
     $nodePath = Join-Path $Root "runtime/node/node.exe"
+    $pwshPath = Join-Path $Root "runtime/pwsh/pwsh.exe"
+    $workflowPath = Join-Path $Root "scripts/run-live-answer-workflow.ps1"
     $rendererPath = Join-Path $Root "tools/latex-renderer/deliver-answer.mjs"
     $snapshotPath = Join-Path $Root ".snapshot-cache/resolved-snapshot.json"
-    foreach ($requiredPath in @($nodePath, $rendererPath, $snapshotPath)) {
+    foreach ($requiredPath in @($nodePath, $pwshPath, $workflowPath, $rendererPath, $snapshotPath)) {
         if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
             throw "Packaged renderer input is missing: $requiredPath"
         }
+    }
+    $pwshProbe = Start-Process -FilePath $pwshPath `
+        -ArgumentList @("-NoProfile", "-NonInteractive", "-Command", '$PSVersionTable.PSVersion.Major') `
+        -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $smokeRoot "pwsh.stdout.log") `
+        -RedirectStandardError (Join-Path $smokeRoot "pwsh.stderr.log")
+    [void](Wait-ProcessBounded -Process $pwshProbe -Description "Packaged PowerShell")
+    $pwshOutput = Get-Content -LiteralPath (Join-Path $smokeRoot "pwsh.stdout.log") -Raw
+    if ($pwshProbe.ExitCode -ne 0 -or $pwshOutput.Trim() -ne "7") {
+        throw "Bundled $Distribution PowerShell did not start or is not version 7: $pwshOutput"
     }
 
     $smokeRoot = Join-Path $testRoot "renderer-$Distribution"
@@ -195,6 +206,11 @@ function Invoke-RendererSmoke {
     if ([string]$deliveryManifest.integrity.output.sha256 -ne $pdfSha256 -or
         [long]$deliveryManifest.integrity.output.bytes -ne $pdfInfo.Length) {
         throw "Bundled $Distribution delivery manifest does not match its PDF output."
+    }
+    $manifestValidation = & $nodePath (Join-Path $Root "tools/latex-renderer/validate-delivery-manifest.mjs") `
+        --manifest $deliveryManifestPath 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Bundled $Distribution delivery manifest failed full validation: $($manifestValidation -join [Environment]::NewLine)"
     }
 
     return [ordered]@{

@@ -62,6 +62,7 @@ function buildWorkflowRunReceipt({ status = "succeeded" } = {}) {
       maxOutputTokens: 24000,
       timeoutMs: 600000,
       reviewScale: 1.8,
+      workflowReviewScale: 2,
       visualAuditScale: 3.6,
       blindFocusRegionsFile: null,
       visualAuditFocusRegionsFile: null,
@@ -111,7 +112,7 @@ test("workflow-run schema rejects drift", () => {
 
 function buildSummaryFixture() {
   return {
-    schemaVersion: "1.2",
+    schemaVersion: "1.3",
     kind: "live-answer-generation-summary",
     generatedAt: "2026-08-25T12:01:00.000Z",
     provider: "primary",
@@ -147,6 +148,8 @@ function buildSummaryFixture() {
     },
     candidatePath: null,
     candidateSha256: null,
+    candidateBaselinePath: null,
+    candidateBaselineSha256: null,
     semanticFindingsPath: null,
     semanticFindingsSha256: null,
     auditFindingsPath: null,
@@ -155,6 +158,8 @@ function buildSummaryFixture() {
     sourceTextSha256: null,
     referenceTextPath: null,
     referenceTextSha256: null,
+    referencePdfPath: null,
+    referencePdfSha256: null,
     pageCount: 8,
     pageImages: [{ path: "D:\\pages\\exam.page-001.png", sha256: sha, evidenceLabel: null }],
     outputPath: "D:\\delivery\\盲答候选.md",
@@ -194,6 +199,22 @@ test("summary schema rejects mode drift", () => {
   const errors = validateValueAgainstSchema(summary, summarySchemaPath);
   assert.ok(errors.some((error) => error.includes("$/mode")));
   assert.ok(errors.some((error) => error.includes("pageImages/0/sha256")));
+});
+
+test("review summary schemas require a frozen candidate and reference PDF binding", () => {
+  const semantic = buildSummaryFixture();
+  semantic.mode = "semantic_review_merge";
+  semantic.routing.mode = "semantic_review_merge";
+  const semanticErrors = validateValueAgainstSchema(semantic, summarySchemaPath);
+  assert.ok(semanticErrors.some((error) => error.includes("candidateBaselinePath")));
+
+  const reference = buildSummaryFixture();
+  reference.mode = "reference_review";
+  reference.routing.mode = "reference_review";
+  reference.candidateBaselinePath = "D:\\delivery\\语义复核候选.md";
+  reference.candidateBaselineSha256 = sha;
+  const referenceErrors = validateValueAgainstSchema(reference, summarySchemaPath);
+  assert.ok(referenceErrors.some((error) => error.includes("referencePdfPath")));
 });
 
 test("validate-json CLI reports mismatches with a non-zero exit code", () => {

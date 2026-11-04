@@ -74,6 +74,8 @@ function Write-RuntimeManifest {
         runtime = [ordered]@{
             nodeVersion = [string]$dependencies.node.version
             nodeArchiveSha256 = [string]$dependencies.node.sha256
+            powershellVersion = $pwshVersion
+            powershellExeSha256 = $pwshExeHash
             browser = "installed Microsoft Edge or Google Chrome"
         }
         capabilities = @(
@@ -175,6 +177,18 @@ try {
     # runtime license files must travel with it — THIRD_PARTY_NOTICES.md in the
     # same package promises exactly that (review 2026-10).
     Copy-PublishNotices -DestinationDirectory $stageRoot -IncludeRuntimeLicenses
+    # The WPF live-workflow entrypoint executes the same repository PowerShell
+    # main chain. Only its explicit closure is staged; copying the whole dev
+    # script directory would ship packaging helpers and ignored files.
+    $stageScriptsRoot = Join-Path $stageRoot "scripts"
+    [IO.Directory]::CreateDirectory($stageScriptsRoot) | Out-Null
+    foreach ($scriptFile in @(
+            "run-live-answer-workflow.ps1",
+            "subject-pack-tooling.ps1",
+            "transfer-common.ps1"
+        )) {
+        Copy-Item -LiteralPath (Join-Path $repoRoot "scripts/$scriptFile") -Destination (Join-Path $stageScriptsRoot $scriptFile) -Force
+    }
     Copy-Item -LiteralPath (Join-Path $repoRoot "prompts") -Destination (Join-Path $stageRoot "prompts") -Recurse -Force
     # The teacher's only setup step is filling their own key into this seeded
     # template (the app health card points at it). The installer copies it with
@@ -218,6 +232,25 @@ try {
     if ($nodeHash -ne ([string]$dependencies.node.sha256).ToLowerInvariant()) {
         throw "Node runtime archive SHA-256 mismatch. Expected $($dependencies.node.sha256), got $nodeHash."
     }
+    # The WPF live-workflow entrypoint and its release scripts execute pwsh.
+    # Bundle PowerShell 7 plus Modules; ordinary teacher PCs may not have it.
+    $pwshSource = (Get-Command pwsh -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+    if (-not $pwshSource -or $PSVersionTable.PSVersion.Major -lt 7) {
+        throw "PowerShell 7+ is required to assemble the runtime bundle."
+    }
+    $pwshSourceRoot = Split-Path -Parent $pwshSource
+    $bundledPwshRoot = Join-Path $stageRoot "runtime/pwsh"
+    [IO.Directory]::CreateDirectory($bundledPwshRoot) | Out-Null
+    Get-ChildItem -LiteralPath $pwshSourceRoot -File |
+        Copy-Item -Destination $bundledPwshRoot -Force
+    foreach ($rootDirectory in @("Modules", "en-US")) {
+        $sourceDirectory = Join-Path $pwshSourceRoot $rootDirectory
+        if (Test-Path -LiteralPath $sourceDirectory -PathType Container) {
+            Copy-Item -LiteralPath $sourceDirectory -Destination $bundledPwshRoot -Recurse -Force
+        }
+    }
+    $pwshVersion = $PSVersionTable.PSVersion.ToString()
+    $pwshExeHash = Get-FileSha256 -PathValue (Join-Path $bundledPwshRoot "pwsh.exe")
     Expand-Archive -LiteralPath $nodeArchivePath -DestinationPath $nodeExtractRoot -Force
     $nodeDistributionRoot = Get-ChildItem -LiteralPath $nodeExtractRoot -Directory | Select-Object -First 1
     if (-not $nodeDistributionRoot) {

@@ -270,7 +270,7 @@ public sealed class ToolchainCliBehaviorTests
         File.WriteAllText(promptPath, "# prompt");
         File.WriteAllText(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true");
         File.WriteAllText(candidatePath, "# 已完成的盲答\n");
-        File.WriteAllText(summaryPath, "{\"kind\":\"live-answer-generation-summary\"}");
+        WriteMinimalBlindSummary(summaryPath, candidatePath);
 
         Dictionary<string, object> FileReceipt(string path)
         {
@@ -309,6 +309,7 @@ public sealed class ToolchainCliBehaviorTests
                 ["maxOutputTokens"] = 24000,
                 ["timeoutMs"] = 600000,
                 ["reviewScale"] = 2.0,
+                ["workflowReviewScale"] = 2.0,
                 ["visualAuditScale"] = 4.0,
                 ["blindFocusRegionsFile"] = null,
                 ["visualAuditFocusRegionsFile"] = null,
@@ -331,19 +332,42 @@ public sealed class ToolchainCliBehaviorTests
         WriteFakeNodeTool(fakeNodeDirectory, """
                 "review-source-pdf.mjs" {
                     $out = Get-Option "--out"
-                    Write-Text (Join-Path $out "source.page-1.png") "png"
+                    $prefix = if ($out -like "*reference-pages*") {
+                        "reference"
+                    } elseif ($out -like "*visual-audit-pages*") {
+                        "visual"
+                    } else {
+                        "source"
+                    }
+                    Write-Text (Join-Path $out "$prefix.page-1.png") "png"
                     Write-Text (Join-Path $out "manifest.json") '{"pages":[{}]}'
+                    if ($env:CLASSROOM_TOOLKIT_TEST_MUTATE_VISUAL_CANDIDATE -eq "true") {
+                        Write-Text (Join-Path $env:CLASSROOM_TOOLKIT_TEST_DELIVERY_ROOT "..\delivery\exam视觉审计候选.md") "# 参考复核前被篡改的候选`n"
+                    }
                 }
                 "answer-request.mjs" {
                     $output = Get-Option "--output"
                     if ($output -like "*盲答候选.md") { throw "blind generation must not be called during resume" }
                     Write-Text $output "# 物理试卷参考答案`n"
-                    Write-Text (Get-Option "--summary-out") '{"kind":"live-answer-generation-summary"}'
+                        $mode = if ($toolArgs -contains "--semantic-findings-only") {
+                        "semantic_review_findings"
+                        } elseif ($toolArgs -contains "--semantic-findings-file") {
+                        "semantic_review_merge"
+                    } elseif (Get-Option "--reference-images-dir") {
+                        "reference_review"
+                    } else {
+                        "blind_generation"
+                    }
+                    Write-SuccessSummary (Get-Option "--summary-out") $mode $output
                 }
                 "answer-diff-report.mjs" { Write-Text $toolArgs[2] "# diff`n" }
                 "deliver-answer.mjs" {
                     $pdf = [IO.Path]::GetFullPath($toolArgs[1])
                     $base = Join-Path ([IO.Path]::GetDirectoryName($pdf)) ([IO.Path]::GetFileNameWithoutExtension($pdf))
+                    $input = $toolArgs[0]
+                    $review = $base + ".review"
+                    Write-Text (Join-Path $review "page-001.png") "png"
+                    Write-Text (Join-Path $review "manifest.json") '{"kind":"pdf-source-review","pageCount":1,"selectedPages":[1],"pages":[]}'
                     Write-Text $pdf "%PDF-delivery"
                     Write-Text ($base + ".snapshot.json") '{"snapshotId":"test"}'
                     Write-Text ($base + ".delivery-manifest.json") '{"kind":"delivery-manifest"}'
@@ -450,7 +474,7 @@ public sealed class ToolchainCliBehaviorTests
             "pwsh",
             ToolchainTestHost.FindRepoRoot(),
             "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/package-release.ps1",
-            "-Version", "1.0.5",
+            "-Version", "1.0.6",
             "-SkipPublish",
             "-IsccPath", Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-ISCC.exe"));
 
@@ -559,6 +583,9 @@ public sealed class ToolchainCliBehaviorTests
                 candidateRunId,
                 acceptedAt = acceptedAt.ToString("O"),
                 tester = new { identifier = "teacher-test-01", role = "representative-non-developer" },
+                confirmedByReleaseOwner = "release-owner",
+                acknowledgement = "I confirm the representative tester performed the recorded real-world checks on these exact package hashes.",
+                evidenceReference = "manual-test/teacher-2026-11-04.json",
                 assets = new { installerSha256 = installerHash, portableSha256 = portableHash },
                 scenarios = new
                 {
@@ -597,6 +624,24 @@ public sealed class ToolchainCliBehaviorTests
                     .Single(asset => asset.GetProperty("kind").GetString() == "portable")
                     .GetProperty("sha256").GetString().Should().Be(portableHash);
             }
+            var unconfirmedInput = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(acceptanceInputPath))!;
+            unconfirmedInput["confirmedByReleaseOwner"] = "different-owner";
+            File.WriteAllText(acceptanceInputPath, unconfirmedInput.ToJsonString());
+            var unconfirmed = await RunAsync(
+                "pwsh", root,
+                "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/verify-release-acceptance.ps1",
+                "-Version", "1.0.5",
+                "-SourceCommit", sourceCommit,
+                "-CandidateRunId", candidateRunId,
+                "-GitHubActor", "release-owner",
+                "-CandidateCompletedAt", candidateCompletedAt.ToString("O"),
+                "-AcceptanceRecordPath", acceptanceInputPath,
+                "-DeliveryRoot", deliveryRoot);
+            unconfirmed.ExitCode.Should().NotBe(0);
+            unconfirmed.Output.Should().Contain("explicitly confirmed");
+            unconfirmedInput["confirmedByReleaseOwner"] = "release-owner";
+            File.WriteAllText(acceptanceInputPath, unconfirmedInput.ToJsonString());
 
             var earlyAcceptanceJson = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(acceptanceInputPath))!;
             earlyAcceptanceJson["acceptedAt"] = candidateCreatedAt.AddMinutes(1).ToString("O");
@@ -626,6 +671,9 @@ public sealed class ToolchainCliBehaviorTests
                 candidateRunId,
                 acceptedAt = acceptedAt.ToString("O"),
                 tester = new { identifier = "teacher-test-01", role = "representative-non-developer" },
+                confirmedByReleaseOwner = "release-owner",
+                acknowledgement = "I confirm the representative tester performed the recorded real-world checks on these exact package hashes.",
+                evidenceReference = "manual-test/teacher-2026-11-04.json",
                 assets = new { installerSha256 = installerHash, portableSha256 = new string('0', 64) },
                 scenarios = new
                 {
@@ -737,6 +785,11 @@ public sealed class ToolchainCliBehaviorTests
             candidateRunId = "123456789",
             submittedByGitHubActor = "release-owner",
             tester = new { identifier = "teacher-test-01", role = "representative-non-developer" },
+            releaseOwnerConfirmation = new
+            {
+                confirmedByGitHubActor = "release-owner",
+                acknowledgement = "I confirm the representative tester performed the recorded real-world checks on these exact package hashes."
+            },
             assets = new[]
             {
                 new { kind = "installer", path = "installer/stable/ClassroomToolkit-1.0.4-setup.exe", bytes = installerBytes, sha256 = installerHash },
@@ -987,10 +1040,12 @@ public sealed class ToolchainCliBehaviorTests
         var outputDirectory = Path.Combine(testRoot, "delivery");
         var answerCallMarker = Path.Combine(testRoot, "answer-called.txt");
         var sourcePath = Path.Combine(testRoot, "exam.pdf");
+        var referencePath = Path.Combine(testRoot, "exam-answers.pdf");
         var promptPath = Path.Combine(testRoot, "prompt.md");
         var envPath = Path.Combine(testRoot, ".env");
         Directory.CreateDirectory(fakeNodeDirectory);
         File.WriteAllText(sourcePath, "%PDF-source");
+        File.WriteAllText(referencePath, "%PDF-reference");
         File.WriteAllText(promptPath, "# prompt");
         File.WriteAllText(envPath, configAllowsEgress
             ? "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true"
@@ -1011,6 +1066,7 @@ public sealed class ToolchainCliBehaviorTests
                 "-NoProfile", "-ExecutionPolicy", "Bypass",
                 "-File", "scripts/run-live-answer-workflow.ps1",
                 "-SourcePdf", sourcePath,
+                "-ReferencePdf", referencePath,
                 "-OutputDirectory", outputDirectory,
                 "-PromptFile", promptPath,
                 "-ConfigEnvFile", envPath,
@@ -1063,7 +1119,6 @@ public sealed class ToolchainCliBehaviorTests
                 "-OutputDirectory", outputDirectory,
                 "-PromptFile", promptPath,
                 "-ConfigEnvFile", envPath,
-                "-SkipVisualAudit",
                 "-AllowCloudEgress");
 
             result.ExitCode.Should().NotBe(0, result.Output);
@@ -1101,10 +1156,37 @@ public sealed class ToolchainCliBehaviorTests
                     if ($toolArgs -notcontains "--allow-cloud-egress") { throw "explicit egress permission missing" }
                     if ($env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED -ne "true") { throw "verified config egress value was not propagated" }
                     Write-Text '{{requestMarker.Replace("'", "''")}}' "called"
-                    Write-Text (Get-Option "--output") "# answer"
-                    Write-Text (Get-Option "--summary-out") '{"kind":"live-answer-generation-summary"}'
+                    $output = Get-Option "--output"
+                    $mode = if ($toolArgs -contains "--semantic-findings-only") {
+                        "semantic_review_findings"
+                    } elseif ($toolArgs -contains "--semantic-findings-file") {
+                        "semantic_review_merge"
+                    } elseif ($toolArgs -contains "--audit-findings-only") {
+                        "visual_audit_findings"
+                    } elseif ($toolArgs -contains "--audit-findings-file") {
+                        "visual_audit_merge"
+                    } else {
+                        "blind_generation"
+                    }
+                    Write-Text $output "# 物理试卷参考答案`n1. （1）**答案：** 合力满足 10 N。`n"
+                    Write-SuccessSummary (Get-Option "--summary-out") $mode $output
                 }
-                "answer-diff-report.mjs" { Write-Text $toolArgs[2] "# diff" }
+                "answer-diff-report.mjs" {
+                    $evidenceIndex = [Array]::IndexOf($toolArgs, "--evidence-out")
+                    if ($evidenceIndex -ge 0) {
+                        Write-Text $toolArgs[$evidenceIndex + 1] (@{
+                            schemaVersion = "1.0"
+                            kind = "answer-review-evidence"
+                            coveredQuestions = @(1)
+                            confirmedCorrections = @()
+                            directCorrections = @()
+                            unresolvedQuestions = @()
+                            missingQuestions = @()
+                            diff = @{ lines = @(); added = 0; removed = 0 }
+                        } | ConvertTo-Json -Depth 4 -Compress)
+                    }
+                    Write-Text $toolArgs[2] "# diff"
+                }
                 "deliver-answer.mjs" {
                     $pdf = [IO.Path]::GetFullPath($toolArgs[1])
                     $base = Join-Path ([IO.Path]::GetDirectoryName($pdf)) ([IO.Path]::GetFileNameWithoutExtension($pdf))
@@ -1126,7 +1208,6 @@ public sealed class ToolchainCliBehaviorTests
                 "-OutputDirectory", outputDirectory,
                 "-PromptFile", promptPath,
                 "-ConfigEnvFile", envPath,
-                "-SkipVisualAudit",
                 "-AllowCloudEgress");
 
             result.ExitCode.Should().Be(0, result.Output);
@@ -1207,7 +1288,6 @@ public sealed class ToolchainCliBehaviorTests
                 "-OutputDirectory", outputDirectory,
                 "-PromptFile", promptPath,
                 "-ConfigEnvFile", envPath,
-                "-SkipVisualAudit",
                 "-AllowCloudEgress");
 
             result.ExitCode.Should().NotBe(0);
@@ -1238,6 +1318,7 @@ public sealed class ToolchainCliBehaviorTests
         var fakeNodeDirectory = Path.Combine(testRoot, "fake-node");
         var outputDirectory = Path.Combine(testRoot, "delivery");
         var sourcePath = Path.Combine(testRoot, "exam.pdf");
+        var referencePath = Path.Combine(testRoot, "exam-answers.pdf");
         var promptPath = Path.Combine(testRoot, "prompt.md");
         var envPath = Path.Combine(testRoot, ".env");
         var receiptPath = Path.Combine(outputDirectory, "exam.workflow-run.json");
@@ -1278,7 +1359,6 @@ public sealed class ToolchainCliBehaviorTests
                 "-OutputDirectory", outputDirectory,
                 "-PromptFile", promptPath,
                 "-ConfigEnvFile", envPath,
-                "-SkipVisualAudit",
                 "-AllowCloudEgress");
 
             result.ExitCode.Should().NotBe(0, result.Output);
@@ -1286,15 +1366,8 @@ public sealed class ToolchainCliBehaviorTests
             using var document = JsonDocument.Parse(receiptText);
             var receipt = document.RootElement;
             receipt.GetProperty("status").GetString().Should().Be("failed");
-            if (receipt.GetProperty("phases").TryGetProperty("blindGeneration", out var blindPhase)
-                && blindPhase.TryGetProperty("error", out _))
-            {
-                blindPhase.GetProperty("error").GetString().Should().Contain("status=503");
-            }
-            else
-            {
-                Console.WriteLine($"[test-diagnostic] workflow failure before receipt phases: {result.Output}");
-            }
+            var blindPhase = receipt.GetProperty("phases").GetProperty("blindGeneration");
+            blindPhase.GetProperty("error").GetString().Should().Contain("status=503");
             receipt.GetProperty("error").GetString().Should().Contain("status=503");
             var staleRunDirectory = Directory.GetDirectories(Path.Combine(outputDirectory, ".stale-runs")).Should().ContainSingle().Which;
             File.Exists(Path.Combine(staleRunDirectory, "exam参考答案.md")).Should().BeTrue();
@@ -1337,7 +1410,7 @@ public sealed class ToolchainCliBehaviorTests
         File.WriteAllText(promptPath, "# prompt");
         File.WriteAllText(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true");
         File.WriteAllText(candidatePath, "# 已完成的盲答\n");
-        File.WriteAllText(summaryPath, "{\"kind\":\"live-answer-generation-summary\"}");
+        WriteMinimalBlindSummary(summaryPath, candidatePath);
 
         Dictionary<string, object> FileReceipt(string path)
         {
@@ -1376,6 +1449,7 @@ public sealed class ToolchainCliBehaviorTests
                 ["maxOutputTokens"] = 24000,
                 ["timeoutMs"] = 600000,
                 ["reviewScale"] = 2.0,
+                ["workflowReviewScale"] = 2.0,
                 ["visualAuditScale"] = 4.0,
                 ["blindFocusRegionsFile"] = null,
                 ["visualAuditFocusRegionsFile"] = null,
@@ -1399,16 +1473,47 @@ public sealed class ToolchainCliBehaviorTests
         WriteFakeNodeTool(fakeNodeDirectory, """
                 "review-source-pdf.mjs" {
                     $out = Get-Option "--out"
-                    Write-Text (Join-Path $out "source.page-1.png") "png"
+                    $prefix = if ($out -like "*reference-pages*") {
+                        "reference"
+                    } elseif ($out -like "*visual-audit-pages*") {
+                        "visual"
+                    } else {
+                        "source"
+                    }
+                    Write-Text (Join-Path $out "$prefix.page-1.png") "png"
                     Write-Text (Join-Path $out "manifest.json") '{"pages":[{}]}'
                 }
                 "answer-request.mjs" {
                     $output = Get-Option "--output"
                     if ($output -like "*盲答候选.md") { throw "blind generation must not be called during resume" }
-                    Write-Text $output "# 物理试卷参考答案`n"
-                    Write-Text (Get-Option "--summary-out") '{"kind":"live-answer-generation-summary"}'
+                    $mode = if ($toolArgs -contains "--semantic-findings-only") {
+                        "semantic_review_findings"
+                    } elseif ($toolArgs -contains "--semantic-findings-file") {
+                        "semantic_review_merge"
+                    } elseif ($toolArgs -contains "--reference-images-dir") {
+                        "reference_review"
+                    } else {
+                        "blind_generation"
+                    }
+                    Write-Text $output "# 物理试卷参考答案`n1. （1）**答案：** 合力满足 10 N。`n"
+                    Write-SuccessSummary (Get-Option "--summary-out") $mode $output
                 }
-                "answer-diff-report.mjs" { Write-Text $toolArgs[2] "# diff`n" }
+                "answer-diff-report.mjs" {
+                    $evidenceIndex = [Array]::IndexOf($toolArgs, "--evidence-out")
+                    if ($evidenceIndex -ge 0) {
+                        Write-Text $toolArgs[$evidenceIndex + 1] (@{
+                            schemaVersion = "1.0"
+                            kind = "answer-review-evidence"
+                            coveredQuestions = @(1)
+                            confirmedCorrections = @()
+                            directCorrections = @()
+                            unresolvedQuestions = @()
+                            missingQuestions = @()
+                            diff = @{ lines = @(); added = 0; removed = 0 }
+                        } | ConvertTo-Json -Depth 4 -Compress)
+                    }
+                    Write-Text $toolArgs[2] "# diff`n"
+                }
                 "deliver-answer.mjs" {
                     $pdf = [IO.Path]::GetFullPath($toolArgs[1])
                     $base = Join-Path ([IO.Path]::GetDirectoryName($pdf)) ([IO.Path]::GetFileNameWithoutExtension($pdf))
@@ -1434,7 +1539,6 @@ public sealed class ToolchainCliBehaviorTests
                 "-ConfigEnvFile", envPath,
                 "-ResumeFromWorkflowReceipt", failedReceiptPath,
                 "-Provider", "primary",
-                "-SkipVisualAudit",
                 "-AllowCloudEgress");
             driftedOptions.ExitCode.Should().NotBe(0);
             driftedOptions.Output.Should().Contain("option does not match current provider");
@@ -1479,38 +1583,80 @@ public sealed class ToolchainCliBehaviorTests
         var fakeNodeDirectory = Path.Combine(testRoot, "fake-node");
         var outputDirectory = Path.Combine(testRoot, "delivery");
         var sourcePath = Path.Combine(testRoot, "exam.pdf");
+        var referencePath = Path.Combine(testRoot, "exam-answers.pdf");
         var promptPath = Path.Combine(testRoot, "prompt.md");
         var envPath = Path.Combine(testRoot, ".env");
         var receiptPath = Path.Combine(outputDirectory, "exam.workflow-run.json");
         string? retainedWorkRoot = null;
         Directory.CreateDirectory(fakeNodeDirectory);
+        var controlledDeliveryRoot = WriteControlledDeliveryFixture(testRoot);
         File.WriteAllText(sourcePath, "%PDF-source");
+        File.WriteAllText(referencePath, "%PDF-reference");
         File.WriteAllText(promptPath, "# prompt");
         File.WriteAllText(envPath, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true");
-        WriteFakeNodeTool(fakeNodeDirectory, """
+        WriteFakeNodeTool(fakeNodeDirectory, $$"""
                 "review-source-pdf.mjs" {
                     $out = Get-Option "--out"
-                    Write-Text (Join-Path $out "source.page-1.png") "png"
+                    $prefix = if ($out -like "*reference-pages*") {
+                        "reference"
+                    } elseif ($out -like "*visual-audit-pages*") {
+                        "visual"
+                    } else {
+                        "source"
+                    }
+                    Write-Text (Join-Path $out "$prefix.page-1.png") "png"
                     Write-Text (Join-Path $out "manifest.json") '{"pages":[{}]}'
                     if ($env:CLASSROOM_TOOLKIT_TEST_MUTATE_PROMPT -eq "true") {
                         Write-Text $env:CLASSROOM_TOOLKIT_TEST_PROMPT_PATH "# mutated prompt"
                     }
+                    if ($env:CLASSROOM_TOOLKIT_TEST_MUTATE_VISUAL_CANDIDATE -eq "true") {
+                        Write-Text (Join-Path $env:CLASSROOM_TOOLKIT_TEST_DELIVERY_ROOT "..\delivery\exam视觉审计候选.md") "# 参考复核前被篡改的候选`n"
+                    }
                 }
                 "answer-request.mjs" {
-                    Write-Text (Get-Option "--output") "# 物理试卷参考答案`n"
-                    Write-Text (Get-Option "--summary-out") '{"kind":"live-answer-generation-summary"}'
+                    $output = Get-Option "--output"
+                    $mode = if ($toolArgs -contains "--semantic-findings-only") {
+                        "semantic_review_findings"
+                    } elseif ($toolArgs -contains "--semantic-findings-file") {
+                        "semantic_review_merge"
+                    } elseif ($toolArgs -contains "--audit-findings-only") {
+                        "visual_audit_findings"
+                    } elseif ($toolArgs -contains "--audit-findings-file") {
+                        "visual_audit_merge"
+                    } elseif ($toolArgs -contains "--reference-images-dir") {
+                        "reference_review"
+                    } else {
+                        "blind_generation"
+                    }
+                    Write-Text $output "# 物理试卷参考答案`n1. （1）**答案：** 合力满足 10 N。`n"
+                    Write-SuccessSummary (Get-Option "--summary-out") $mode $output
+                    if ($mode -eq "reference_review" -and
+                        $env:CLASSROOM_TOOLKIT_TEST_MUTATE_VISUAL_CANDIDATE -eq "true") {
+                        $candidatePath = Get-Option "--candidate-file"
+                        [IO.File]::AppendAllText($candidatePath, "`n被篡改的候选证据`n")
+                    }
                 }
                 "answer-diff-report.mjs" {
+                    $evidenceIndex = [Array]::IndexOf($toolArgs, "--evidence-out")
+                    if ($evidenceIndex -ge 0) {
+                        Write-Text $toolArgs[$evidenceIndex + 1] (@{
+                            schemaVersion = "1.0"
+                            kind = "answer-review-evidence"
+                            coveredQuestions = @(1)
+                            confirmedCorrections = @()
+                            directCorrections = @()
+                            unresolvedQuestions = @()
+                            missingQuestions = @()
+                            diff = @{ lines = @(); added = 0; removed = 0 }
+                        } | ConvertTo-Json -Depth 4 -Compress)
+                    }
                     Write-Text $toolArgs[2] "# diff`n"
                 }
                 "deliver-answer.mjs" {
-                    $pdf = [IO.Path]::GetFullPath($toolArgs[1])
-                    $base = Join-Path ([IO.Path]::GetDirectoryName($pdf)) ([IO.Path]::GetFileNameWithoutExtension($pdf))
-                    Write-Text $pdf "%PDF-delivery"
-                    Write-Text ($base + ".snapshot.json") '{"snapshotId":"test"}'
-                    Write-Text ($base + ".delivery-manifest.json") '{"kind":"delivery-manifest"}'
+                    & node "{{Path.Combine(controlledDeliveryRoot, "deliver-answer.mjs").Replace("\\", "/")}}" @toolArgs
+                    if ($LASTEXITCODE -ne 0) { throw "Controlled delivery fixture failed" }
                 }
-                """);
+                """, supportsControlledDelivery: true);
 
         try
         {
@@ -1518,15 +1664,26 @@ public sealed class ToolchainCliBehaviorTests
             var result = await RunAsyncWithEnvironment(
                 "pwsh",
                 root,
-                new Dictionary<string, string?> { ["PATH"] = pathValue },
+                new Dictionary<string, string?>
+                {
+                    // The wrapper handles workflow tool names only. Put the
+                    // real runtime ahead of it so fixture-internal child
+                    // processes cannot re-enter fake-node recursively.
+                    ["PATH"] = fakeNodeDirectory + Path.PathSeparator
+                        + Path.GetDirectoryName(ToolchainTestHost.FindExecutableOnPath("node")) + Path.PathSeparator
+                        + Environment.GetEnvironmentVariable("PATH"),
+                    ["CLASSROOM_TOOLKIT_TEST_DELIVERY_ROOT"] = controlledDeliveryRoot,
+                    ["CLASSROOM_TOOLKIT_TEST_LOG"] = "true",
+                    ["CLASSROOM_TOOLKIT_TEST_DELIVERY_PROXY"] = "true"
+                },
                 "-NoProfile",
                 "-ExecutionPolicy", "Bypass",
                 "-File", "scripts/run-live-answer-workflow.ps1",
                 "-SourcePdf", sourcePath,
+                "-ReferencePdf", referencePath,
                 "-OutputDirectory", outputDirectory,
                 "-PromptFile", promptPath,
                 "-ConfigEnvFile", envPath,
-                "-SkipVisualAudit",
                 "-AllowCloudEgress");
 
             result.ExitCode.Should().Be(0, result.Output);
@@ -1535,10 +1692,40 @@ public sealed class ToolchainCliBehaviorTests
             receipt.GetProperty("status").GetString().Should().Be("succeeded");
             var phases = receipt.GetProperty("phases");
             phases.GetProperty("blindGeneration").GetProperty("status").GetString().Should().Be("completed");
-            phases.GetProperty("visualFindings").GetProperty("status").GetString().Should().Be("skipped");
-            phases.GetProperty("referenceReview").GetProperty("status").GetString().Should().Be("skipped");
+            phases.GetProperty("semanticFindings").GetProperty("status").GetString().Should().Be("completed");
+            phases.GetProperty("semanticMerge").GetProperty("status").GetString().Should().Be("completed");
+            phases.GetProperty("visualFindings").GetProperty("status").GetString().Should().Be("completed");
+            phases.GetProperty("visualMerge").GetProperty("status").GetString().Should().Be("completed");
+            phases.GetProperty("referenceReview").GetProperty("status").GetString().Should().Be("completed");
             phases.GetProperty("delivery").GetProperty("status").GetString().Should().Be("completed");
-            receipt.GetProperty("artifacts").GetArrayLength().Should().Be(7);
+            receipt.GetProperty("artifacts").GetArrayLength().Should().Be(8);
+            File.Exists(Path.Combine(outputDirectory, "exam参考答案.pdf")).Should().BeTrue();
+            Directory.GetFiles(Path.Combine(outputDirectory, "exam参考答案.review"), "*.png")
+                .Should().NotBeEmpty();
+            var tamperedOutputDirectory = Path.Combine(testRoot, "tampered-delivery");
+            var tamperedReceiptPath = Path.Combine(tamperedOutputDirectory, "exam.workflow-run.json");
+            var tamperedResult = await RunAsyncWithEnvironment(
+                "pwsh",
+                root,
+                new Dictionary<string, string?>
+                {
+                    ["PATH"] = pathValue,
+                    ["CLASSROOM_TOOLKIT_TEST_DELIVERY_ROOT"] = controlledDeliveryRoot,
+                    ["CLASSROOM_TOOLKIT_TEST_DELIVERY_PROXY"] = "true",
+                    ["CLASSROOM_TOOLKIT_TEST_MUTATE_VISUAL_CANDIDATE"] = "true"
+                },
+                "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", "scripts/run-live-answer-workflow.ps1",
+                "-SourcePdf", sourcePath,
+                "-ReferencePdf", referencePath,
+                "-OutputDirectory", tamperedOutputDirectory,
+                "-PromptFile", promptPath,
+                "-ConfigEnvFile", envPath,
+                "-AllowCloudEgress");
+            tamperedResult.ExitCode.Should().NotBe(0);
+            tamperedResult.Output.Should().Contain("Reference review baseline does not match");
+            using var tamperedDocument = JsonDocument.Parse(File.ReadAllText(tamperedReceiptPath));
+            retainedWorkRoot = tamperedDocument.RootElement.GetProperty("diagnostics").GetProperty("retainedWorkRoot").GetString();
 
             var driftOutputDirectory = Path.Combine(testRoot, "drift-delivery");
             var driftReceiptPath = Path.Combine(driftOutputDirectory, "exam.workflow-run.json");
@@ -1551,16 +1738,19 @@ public sealed class ToolchainCliBehaviorTests
                 {
                     ["PATH"] = pathValue,
                     ["CLASSROOM_TOOLKIT_TEST_MUTATE_PROMPT"] = "true",
-                    ["CLASSROOM_TOOLKIT_TEST_PROMPT_PATH"] = promptPath
+                    ["CLASSROOM_TOOLKIT_TEST_PROMPT_PATH"] = promptPath,
+                    ["CLASSROOM_TOOLKIT_TEST_DELIVERY_ROOT"] = controlledDeliveryRoot,
+                    ["CLASSROOM_TOOLKIT_TEST_LOG"] = "true",
+                    ["CLASSROOM_TOOLKIT_TEST_DELIVERY_PROXY"] = "true"
                 },
                 "-NoProfile",
                 "-ExecutionPolicy", "Bypass",
                 "-File", "scripts/run-live-answer-workflow.ps1",
                 "-SourcePdf", sourcePath,
+                "-ReferencePdf", referencePath,
                 "-OutputDirectory", driftOutputDirectory,
                 "-PromptFile", promptPath,
                 "-ConfigEnvFile", envPath,
-                "-SkipVisualAudit",
                 "-AllowCloudEgress");
 
             driftResult.ExitCode.Should().NotBe(0);
@@ -1587,19 +1777,41 @@ public sealed class ToolchainCliBehaviorTests
         return await RunAsyncWithEnvironment(fileName, workingDirectory, environment: null, arguments);
     }
 
-    // Shared node.cmd + fake-node.ps1 scaffold: the fake dispatches on the
-    // invoked tool file name; toolBody supplies the per-test switch branches
-    // on top of Get-Option/Write-Text helpers, and the trailer keeps
-    // validate-json succeeding while unknown tools fail loudly.
-    private static void WriteFakeNodeTool(string fakeNodeDirectory, string toolBody)
+    private static void WriteMinimalBlindSummary(string summaryPath, string candidatePath)
+    {
+        var bytes = File.ReadAllBytes(candidatePath);
+        File.WriteAllText(summaryPath, JsonSerializer.Serialize(new
+        {
+            schemaVersion = "1.3",
+            kind = "live-answer-generation-summary",
+            mode = "blind_generation",
+            candidatePath = (string?)null,
+            candidateSha256 = (string?)null,
+            candidateBaselinePath = (string?)null,
+            candidateBaselineSha256 = (string?)null,
+            outputPath = candidatePath,
+            outputSha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant(),
+            answerCharacters = 8,
+            attempts = new[] { new { ok = true } }
+        }));
+    }
+
+            // Shared node.cmd + fake-node.ps1 scaffold: the fake dispatches on the
+            // invoked tool file name; toolBody supplies the per-test switch branches
+            // on top of Get-Option/Write-Text helpers. The receipt validator is a
+            // workflow-side stub; unknown tools still fail loudly.
+    private static void WriteFakeNodeTool(string fakeNodeDirectory, string toolBody, bool supportsControlledDelivery = false)
     {
         Directory.CreateDirectory(fakeNodeDirectory);
+        var powerShellExecutable = ToolchainTestHost.FindExecutableOnPath("pwsh");
+        var realNodeExecutable = ToolchainTestHost.FindExecutableOnPath("node");
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "real-node.cmd"),
+            $"@echo off\r\n\"{realNodeExecutable}\" %*\r\nexit /b %ERRORLEVEL%\r\n");
         File.WriteAllText(Path.Combine(fakeNodeDirectory, "node.cmd"),
-            "@echo off\r\npwsh -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
-        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"), $$"""
+            $"@echo off\r\n\"{powerShellExecutable}\" -NoProfile -ExecutionPolicy Bypass -File \"%~dp0fake-node.ps1\" %*\r\nexit /b %ERRORLEVEL%\r\n");
+        var fakeSummaryPath = Path.Combine(fakeNodeDirectory, "summary-functions.ps1");
+        var fakeSummaryScript = $$"""
             $ErrorActionPreference = "Stop"
-            $tool = [IO.Path]::GetFileName($args[0])
-            $toolArgs = @($args | Select-Object -Skip 1)
             function Get-Option([string]$Name) {
                 for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
                     if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
@@ -1610,14 +1822,434 @@ public sealed class ToolchainCliBehaviorTests
                 [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PathValue))) | Out-Null
                 [IO.File]::WriteAllText([IO.Path]::GetFullPath($PathValue), $Value, [Text.UTF8Encoding]::new($false))
             }
+            function Write-SuccessSummary([string]$PathValue, [string]$ModeValue, [string]$OutputPath) {
+                $rehash = {
+                    param([AllowNull()][string]$BoundPath)
+                    if (-not $BoundPath -or -not [IO.File]::Exists($BoundPath)) { return $null }
+                    return [Convert]::ToHexString(
+                        [Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($BoundPath))).ToLowerInvariant()
+                }
+                $candidate = Get-Option "--candidate-file"
+                $baseline = Get-Option "--candidate-baseline-file"
+                $reference = Get-Option "--reference-pdf-file"
+                $findings = Get-Option "--semantic-findings-file"
+                $audit = Get-Option "--audit-findings-file"
+                $output = Get-Option "--output"
+                $summary = [ordered]@{
+                    schemaVersion = "1.3"
+                    kind = "live-answer-generation-summary"
+                    generatedAt = [DateTimeOffset]::UtcNow.ToString("O")
+                    provider = "fixture"
+                    model = "fixture"
+                    reasoningEffort = $null
+                    promptPath = [IO.Path]::GetFullPath([string](Get-Option "--prompt-file"))
+                    promptSha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+                    mode = $ModeValue
+                    sourcePageCount = 1
+                    auditImageCount = $(if (Get-Option "--audit-images-dir") { 1 } else { 0 })
+                    referencePageCount = $(if (Get-Option "--reference-images-dir") { 1 } else { 0 })
+                    requestedVisualDetailMode = "original"
+                    providerVisualDetailMode = "original"
+                    routing = [ordered]@{
+                        mode = $ModeValue
+                        qualityProfile = "auto"
+                        requestedQualityProfile = "auto"
+                        resolvedQualityProfile = "auto"
+                        requestedPreset = "sol"
+                        resolvedPreset = "sol"
+                        activePreset = "sol"
+                        qualityDegraded = $false
+                        selectedRole = "fixture"
+                        orderedPresets = @("sol")
+                        orderedRoles = @("fixture")
+                        orderedQualityProfiles = @("auto")
+                        orderedExecutionSlots = @(1)
+                        executionSlot = 1
+                        executionSlotCount = 1
+                        target = "fixture"
+                        resolvedRole = "fixture"
+                        attemptedRoles = @("fixture")
+                    }
+                    candidatePath = $(if (-not $candidate) { $null } else { [IO.Path]::GetFullPath($candidate) })
+                    candidateSha256 = $(if (-not $candidate) { $null } else { & $rehash ([IO.Path]::GetFullPath($candidate)) })
+                    candidateBaselinePath = $(if (-not $baseline) { $null } else { [IO.Path]::GetFullPath($baseline) })
+                    candidateBaselineSha256 = $(if (-not $baseline) { $null } else { & $rehash ([IO.Path]::GetFullPath($baseline)) })
+                    semanticFindingsPath = $(if (-not $findings) { $null } else { [IO.Path]::GetFullPath($findings) })
+                    semanticFindingsSha256 = $(if (-not $findings) { $null } else { & $rehash ([IO.Path]::GetFullPath($findings)) })
+                    auditFindingsPath = $(if (-not $audit) { $null } else { [IO.Path]::GetFullPath($audit) })
+                    auditFindingsSha256 = $(if (-not $audit) { $null } else { & $rehash ([IO.Path]::GetFullPath($audit)) })
+                    sourceTextPath = $null
+                    sourceTextSha256 = $null
+                    referenceTextPath = $null
+                    referenceTextSha256 = $null
+                    referencePdfPath = $(if (-not $reference) { $null } else { [IO.Path]::GetFullPath($reference) })
+                    referencePdfSha256 = $(if (-not $reference) { $null } else { & $rehash ([IO.Path]::GetFullPath($reference)) })
+                    pageCount = 1
+                    pageImages = @()
+                    outputPath = [IO.Path]::GetFullPath($output)
+                    outputSha256 = & $rehash ([IO.Path]::GetFullPath($output))
+                    answerCharacters = 8
+                    referenceChoiceOverride = @{ applied = $false }
+                    semanticChoiceOverride = @{ applied = $false; questions = @() }
+                    attempts = @(
+                        [ordered]@{
+                            provider = "fixture"
+                            model = "fixture"
+                            reasoningEffort = $null
+                            preset = "sol"
+                            qualityProfile = "auto"
+                            executionSlot = 1
+                            status = 200
+                            retryAfterMs = $null
+                            ok = $true
+                            retryable = $false
+                            attemptNumber = 1
+                            durationMs = 1
+                            requestBytes = 1
+                            transport = $null
+                            error = ""
+                        }
+                    )
+                }
+                Write-Text $PathValue ($summary | ConvertTo-Json -Depth 20 -Compress)
+            }
+            """;
+        File.WriteAllText(fakeSummaryPath, fakeSummaryScript);
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "proxy.cjs"), """
+            const path = require("node:path");
+            const { spawnSync } = require("node:child_process");
+            if (process.env.CLASSROOM_TOOLKIT_TEST_DELIVERY_PROXY !== "true") {
+              throw new Error("The delivery proxy must run exactly once under the real Node runtime.");
+            }
+            const tool = process.argv[2];
+            if (!tool || path.basename(tool) !== "deliver-answer.mjs") {
+              throw new Error(`Real-node proxy received an unexpected tool: ${tool}`);
+            }
+            // Use Node's module hook rather than PATH lookup here. This models
+            // deliver-answer's own child script without re-entering fake-node.
+            const childArgs = process.argv.slice(3);
+            const pdfArgument = childArgs.find((argument) => /\.pdf$/iu.test(argument));
+            const markdownArgument = childArgs.find((argument) => /\.md$/iu.test(argument));
+            if (!pdfArgument || !markdownArgument) throw new Error("Delivery proxy arguments are incomplete.");
+            const input = path.resolve(process.env.INIT_CWD, markdownArgument);
+            const output = path.resolve(process.env.INIT_CWD, pdfArgument);
+            const fixtureRoot = process.env.CLASSROOM_TOOLKIT_TEST_DELIVERY_ROOT;
+            const snapshotIndex = childArgs.indexOf("--snapshot-path");
+            process.argv = [process.execPath, path.join(fixtureRoot, "deliver-answer.mjs"),
+              "--input", input, "--output", output,
+              "--snapshot-path", path.resolve(process.env.INIT_CWD, childArgs[snapshotIndex + 1])];
+            const fixtureChild = spawnSync(process.execPath,
+              [path.join(fixtureRoot, "deliver-answer.mjs"), ...process.argv.slice(2)],
+              { stdio: "inherit", env: { ...process.env, CLASSROOM_TOOLKIT_TEST_DELIVERY_PROXY: "false" } });
+            process.exit(fixtureChild.status ?? 2);
+            """);
+        var fakeScript = $$"""
+            $ErrorActionPreference = "Stop"
+            $tool = [IO.Path]::GetFileName($args[0])
+            $toolArgs = [string[]]@($args | Select-Object -Skip 1)
+            if ($tool -eq "deliver-answer.mjs" -and
+                "{{supportsControlledDelivery.ToString().ToLowerInvariant()}}" -eq "true") {
+                . "{{fakeSummaryPath.Replace("\\", "/")}}"
+                if ($env:CLASSROOM_TOOLKIT_TEST_DELIVERY_PROXY -ne "true") {
+                    throw "Nested delivery invocation detected; the real Node runtime must own the proxy."
+                }
+                $env:CLASSROOM_TOOLKIT_TEST_DELIVERY_PROXY = $null
+                & (Join-Path $PSScriptRoot "real-node.cmd") @args
+                if ($LASTEXITCODE -ne 0) { throw "Controlled delivery fixture failed" }
+                return
+            }
+            . "{{fakeSummaryPath.Replace("\\", "/")}}"
+            if ($env:CLASSROOM_TOOLKIT_TEST_LOG -eq "true") {
+                $testRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+                $fixtureLog = Join-Path $testRoot "fake-node-invocations.log"
+                [IO.File]::AppendAllText($fixtureLog, "$tool`n")
+            }
+            function Get-Option([string]$Name) {
+                for ($index = 0; $index -lt $toolArgs.Count - 1; $index++) {
+                    if ($toolArgs[$index] -eq $Name) { return $toolArgs[$index + 1] }
+                }
+                return $null
+            }
+            if ($tool -eq "write-delivery-manifest.mjs" -and
+                "{{supportsControlledDelivery.ToString().ToLowerInvariant()}}" -eq "true") {
+                $deliveryOutputIndex = [Array]::IndexOf($toolArgs, "--out")
+                $deliveryInputIndex = [Array]::IndexOf($toolArgs, "--input")
+                $deliveryPdfIndex = [Array]::IndexOf($toolArgs, "--output")
+                $deliverySnapshotIndex = [Array]::IndexOf($toolArgs, "--snapshot-path")
+                $deliveryReviewIndex = [Array]::IndexOf($toolArgs, "--review-dir")
+                $deliveryReviewManifestIndex = [Array]::IndexOf($toolArgs, "--review-manifest")
+                $deliveryScaleIndex = [Array]::IndexOf($toolArgs, "--review-scale")
+                $requiredDeliveryIndexes = @($deliveryInputIndex, $deliveryPdfIndex, $deliverySnapshotIndex, $deliveryReviewIndex, $deliveryReviewManifestIndex)
+                if (@($requiredDeliveryIndexes | Where-Object { $_ -lt 0 }).Count -gt 0) {
+                    throw "Controlled delivery manifest arguments are incomplete."
+                }
+                $writerModule = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\controlled-fixture\fixture-writer.mjs"))
+                $writerUrl = ([Uri]$writerModule).AbsoluteUri
+                $nodeLines = @(
+                    'const { writeDeliveryManifest } = await import(process.argv.splice(1, 1)[0]);'
+                    'const errors = writeDeliveryManifest({ inputPath: process.argv[1], outputPath: process.argv[2], snapshotPath: process.argv[3], reviewDirectory: process.argv[4], reviewManifestPath: process.argv[5], reviewScale: process.argv[6], manifestPath: process.argv[0] });'
+                    'if (errors.length) throw new Error(errors.join("\x5cn"));'
+                    'console.log(process.argv[0]);'
+                )
+                $nodeCode = $nodeLines -join "`n"
+                & node --input-type=module -e $nodeCode `
+                    $writerUrl `
+                    $(if ($deliveryOutputIndex -ge 0) { $toolArgs[$deliveryOutputIndex + 1] }) `
+                    $toolArgs[$deliveryInputIndex + 1] $toolArgs[$deliveryPdfIndex + 1] `
+                    $toolArgs[$deliverySnapshotIndex + 1] $toolArgs[$deliveryReviewIndex + 1] `
+                    $toolArgs[$deliveryReviewManifestIndex + 1] `
+                    $(if ($deliveryScaleIndex -ge 0) { $toolArgs[$deliveryScaleIndex + 1] } else { "2" })
+                if ($LASTEXITCODE -ne 0) { throw "Controlled delivery writer failed" }
+                return
+            }
+            function Write-Text([string]$PathValue, [string]$Value) {
+                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PathValue))) | Out-Null
+                [IO.File]::WriteAllText([IO.Path]::GetFullPath($PathValue), $Value, [Text.UTF8Encoding]::new($false))
+            }
+            function Write-SuccessSummary([string]$PathValue, [string]$ModeValue, [string]$OutputPath) {
+                $rehash = {
+                    param([AllowNull()][string]$BoundPath)
+                    if (-not $BoundPath -or -not [IO.File]::Exists($BoundPath)) { return $null }
+                    return [Convert]::ToHexString(
+                        [Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($BoundPath))).ToLowerInvariant()
+                }
+                $candidate = Get-Option "--candidate-file"
+                $baseline = Get-Option "--candidate-baseline-file"
+                $reference = Get-Option "--reference-pdf-file"
+                $findings = Get-Option "--semantic-findings-file"
+                $audit = Get-Option "--audit-findings-file"
+                $output = Get-Option "--output"
+                $summary = [ordered]@{
+                    schemaVersion = "1.3"
+                    kind = "live-answer-generation-summary"
+                    generatedAt = [DateTimeOffset]::UtcNow.ToString("O")
+                    provider = "fixture"
+                    model = "fixture"
+                    reasoningEffort = $null
+                    promptPath = [IO.Path]::GetFullPath([string](Get-Option "--prompt-file"))
+                    promptSha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+                    mode = $ModeValue
+                    sourcePageCount = 1
+                    auditImageCount = $(if (Get-Option "--audit-images-dir") { 1 } else { 0 })
+                    referencePageCount = $(if (Get-Option "--reference-images-dir") { 1 } else { 0 })
+                    requestedVisualDetailMode = "original"
+                    providerVisualDetailMode = "original"
+                    routing = [ordered]@{
+                        mode = $ModeValue
+                        qualityProfile = "auto"
+                        requestedQualityProfile = "auto"
+                        resolvedQualityProfile = "auto"
+                        requestedPreset = "sol"
+                        resolvedPreset = "sol"
+                        activePreset = "sol"
+                        qualityDegraded = $false
+                        selectedRole = "fixture"
+                        orderedPresets = @("sol")
+                        orderedRoles = @("fixture")
+                        orderedQualityProfiles = @("auto")
+                        orderedExecutionSlots = @(1)
+                        executionSlot = 1
+                        executionSlotCount = 1
+                        target = "fixture"
+                        resolvedRole = "fixture"
+                        attemptedRoles = @("fixture")
+                    }
+                    candidatePath = $(if (-not $candidate) { $null } else { [IO.Path]::GetFullPath($candidate) })
+                    candidateSha256 = $(if (-not $candidate) { $null } else { & $rehash ([IO.Path]::GetFullPath($candidate)) })
+                    candidateBaselinePath = $(if (-not $baseline) { $null } else { [IO.Path]::GetFullPath($baseline) })
+                    candidateBaselineSha256 = $(if (-not $baseline) { $null } else { & $rehash ([IO.Path]::GetFullPath($baseline)) })
+                    semanticFindingsPath = $(if (-not $findings) { $null } else { [IO.Path]::GetFullPath($findings) })
+                    semanticFindingsSha256 = $(if (-not $findings) { $null } else { & $rehash ([IO.Path]::GetFullPath($findings)) })
+                    auditFindingsPath = $(if (-not $audit) { $null } else { [IO.Path]::GetFullPath($audit) })
+                    auditFindingsSha256 = $(if (-not $audit) { $null } else { & $rehash ([IO.Path]::GetFullPath($audit)) })
+                    sourceTextPath = $null
+                    sourceTextSha256 = $null
+                    referenceTextPath = $null
+                    referenceTextSha256 = $null
+                    referencePdfPath = $(if (-not $reference) { $null } else { [IO.Path]::GetFullPath($reference) })
+                    referencePdfSha256 = $(if (-not $reference) { $null } else { & $rehash ([IO.Path]::GetFullPath($reference)) })
+                    pageCount = 1
+                    pageImages = @()
+                    outputPath = [IO.Path]::GetFullPath($output)
+                    outputSha256 = & $rehash ([IO.Path]::GetFullPath($output))
+                    answerCharacters = 8
+                    referenceChoiceOverride = @{ applied = $false }
+                    semanticChoiceOverride = @{ applied = $false; questions = @() }
+                    attempts = @(
+                        [ordered]@{
+                            provider = "fixture"
+                            model = "fixture"
+                            reasoningEffort = $null
+                            preset = "sol"
+                            qualityProfile = "auto"
+                            executionSlot = 1
+                            status = 200
+                            retryAfterMs = $null
+                            ok = $true
+                            retryable = $false
+                            attemptNumber = 1
+                            durationMs = 1
+                            requestBytes = 1
+                            transport = $null
+                            error = ""
+                        }
+                    )
+                }
+                # Windows PowerShell's JSON pipeline can coerce a native node
+                # exit code into an array. Materialize entries explicitly.
+                Write-Text $PathValue ($summary | ConvertTo-Json -Depth 20 -Compress)
+            }
             switch ($tool) {
             {{toolBody}}
-                "validate-json.mjs" { exit 0 }
+                "validate-workflow-receipt.mjs" { exit 0 }
                 default { throw "Unexpected fake node tool: $tool" }
             }
-            """);
+            """;
+        File.WriteAllText(Path.Combine(fakeNodeDirectory, "fake-node.ps1"), fakeScript);
     }
 
+    private static string WriteControlledDeliveryFixture(string testRoot)
+    {
+        var repoRoot = ToolchainTestHost.FindRepoRoot();
+        var fixtureRoot = Path.Combine(testRoot, "controlled-fixture");
+        Directory.CreateDirectory(fixtureRoot);
+        File.WriteAllBytes(Path.Combine(fixtureRoot, "review-page.fixture.png"),
+            Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
+        var writerModule = Path.Combine(repoRoot, "tools", "latex-renderer", "write-delivery-manifest.mjs")
+            .Replace("\\", "/").Replace("'", "\\'");
+        File.WriteAllText(Path.Combine(fixtureRoot, "fixture-writer.mjs"), $$"""
+            export { writeDeliveryManifest } from '{{writerModule}}';
+            """);
+        var deliveryValidatorPath = Path.Combine(fixtureRoot, "deliver-answer.mjs");
+        File.WriteAllText(deliveryValidatorPath, $$"""
+            import fs from "node:fs";
+            import path from "node:path";
+            import crypto from "node:crypto";
+            import { spawn } from "node:child_process";
+            import { fileURLToPath } from "node:url";
+
+            const deliveryRoot = process.env.CLASSROOM_TOOLKIT_TEST_DELIVERY_ROOT;
+            const runtimeNode = process.execPath;
+            const currentFilePath = fileURLToPath(import.meta.url);
+            const pdfIndex = process.argv.findIndex((argument) => argument === "--output");
+            const markdownIndex = process.argv.findIndex((argument) => argument === "--input");
+            if (!deliveryRoot || pdfIndex < 1 || markdownIndex < 1) {
+              throw new Error("Controlled delivery fixture arguments are incomplete.");
+            }
+            const deliveredArgument = process.argv.slice(1).find((argument) => /\.pdf$/iu.test(argument));
+            if (deliveredArgument
+                && path.isAbsolute(deliveredArgument)
+                && path.isAbsolute(process.env.INIT_CWD)
+                && !process.argv.includes("--snapshot-path")) {
+              throw new Error(
+                `The fake node.cmd intercepted the real delivery script. current=${currentFilePath};`
+                + ` INIT_CWD=${process.env.INIT_CWD}; output=${deliveredArgument}`
+              );
+            }
+            const pdfPath = path.resolve(process.env.INIT_CWD, process.argv[pdfIndex + 1]);
+            const markdownPath = path.resolve(process.env.INIT_CWD, process.argv[markdownIndex + 1]);
+            const baseName = path.basename(pdfPath, path.extname(pdfPath));
+            const basePath = path.join(path.dirname(pdfPath), baseName);
+            const snapshotPath = `${basePath}.snapshot.json`;
+            const manifestPath = `${basePath}.delivery-manifest.json`;
+            const reviewRoot = `${basePath}.review`;
+            fs.mkdirSync(reviewRoot, { recursive: true });
+
+            const snapshotIndex = process.argv.indexOf("--snapshot-path");
+            if (snapshotIndex < 1) throw new Error("Controlled delivery fixture has no snapshot.");
+            const sourceSnapshot = path.resolve(process.env.INIT_CWD, process.argv[snapshotIndex + 1]);
+            fs.copyFileSync(sourceSnapshot, snapshotPath);
+            fs.writeFileSync(pdfPath, Buffer.from([
+              "%PDF-1.4\n",
+              "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+              "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n",
+              "trailer\n<< /Root 1 0 R /Size 3 >>\n%%EOF\n"
+            ].join(""), "ascii"));
+            if (!pdfPath.startsWith(process.env.INIT_CWD, process.platform === "win32" ? undefined : undefined)) {
+              throw new Error(`Controlled delivery output escaped its fixture root: ${pdfPath}`);
+            }
+            const reviewManifestPath = path.join(reviewRoot, "manifest.json");
+            const imagePath = path.join(reviewRoot, "page-001.png");
+            fs.writeFileSync(imagePath, fs.readFileSync(path.join(deliveryRoot, "review-page.fixture.png")));
+            const pdfBytes = fs.readFileSync(pdfPath);
+            fs.writeFileSync(reviewManifestPath, `${JSON.stringify({
+              schemaVersion: "1.0",
+              kind: "pdf-source-review",
+              inputPath: `../${path.basename(pdfPath)}`,
+              inputSha256: crypto.createHash("sha256").update(pdfBytes).digest("hex"),
+              inputBytes: pdfBytes.byteLength,
+              pageCount: 1,
+              selectedPages: [1],
+              pages: [{
+                pageNumber: 1,
+                kind: "page",
+                horizontalIndex: 0,
+                imagePath,
+                width: 1,
+                height: 1
+              }]
+            }, null, 2)}\n`);
+            // write-delivery-manifest owns the review package rewrite. The
+            // renderer only supplies a source review; the package copy and its
+            // HTML are the same objects a real delivery emits.
+            const fixtureModule = await import(
+              "{{new Uri(Path.Combine(fixtureRoot, "fixture-writer.mjs")).AbsoluteUri}}"
+            );
+            const errors = fixtureModule.writeDeliveryManifest({
+              inputPath: markdownPath,
+              outputPath: pdfPath,
+              snapshotPath,
+              reviewDirectory: reviewRoot,
+              reviewManifestPath,
+              reviewScale: "2",
+              manifestPath
+            });
+            const nestedExit = await new Promise((resolve, reject) => {
+              const child = spawn(runtimeNode, ["-e", "process.exit(0)"], { stdio: "ignore" });
+              const watchdog = setTimeout(() => {
+                child.kill();
+                reject(new Error("Controlled fixture nested Node runtime timed out."));
+              }, 15_000);
+              child.once("error", reject);
+              child.once("exit", (code) => {
+                clearTimeout(watchdog);
+                resolve(code);
+              });
+            });
+            if (nestedExit !== 0) {
+              throw new Error(`Controlled fixture nested runtime exited ${nestedExit}.`);
+            }
+            const validatorModule = "{{Path.Combine(repoRoot, "tools", "latex-renderer", "validate-delivery-manifest.mjs").Replace("\\", "/")}}";
+            const validation = await new Promise((resolve, reject) => {
+              const child = spawn(runtimeNode, [validatorModule, "--help"], {
+                stdio: ["ignore", "pipe", "pipe"],
+                env: { ...process.env, INIT_CWD: repoRoot }
+              });
+              let output = "";
+              child.stdout.on("data", (chunk) => { output += chunk; });
+              child.stderr.on("data", (chunk) => { output += chunk; });
+              const watchdog = setTimeout(() => {
+                child.kill();
+                reject(new Error("Real Node validator smoke timed out."));
+              }, 15_000);
+              child.once("error", reject);
+              child.once("exit", (code) => {
+                clearTimeout(watchdog);
+                resolve({ code, output });
+              });
+            });
+            if (validation.code !== 0 || !validation.output.includes("Usage: node validate-delivery-manifest.mjs")) {
+              throw new Error(`Real Node validator smoke failed: ${validation.output}`);
+            }
+            const written = { status: errors.length === 0 ? 0 : 1,
+              stderr: errors.join("\n") };
+            if (written.status !== 0) {
+              throw new Error(`Controlled delivery writer failed for ${markdownPath} -> ${pdfPath}:\n${written.stderr}`);
+            }
+            console.log(manifestPath);
+            """);
+        return fixtureRoot;
+    }
     private static void CreateTransferPackage(
         string packagePath,
         IReadOnlyDictionary<string, string> files,

@@ -20,8 +20,7 @@ the first candidate, update `<Version>` in
 `src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` once to the next unused
 version and commit it to `main`. Every candidate retry for that release reuses
 the same version; never delete or repoint an old tag to free a number. The
-current source version is `1.0.5`, and `v1.0.5` is already an immutable tag, so
-the next formal release must start at `1.0.6`.
+current source version is `1.0.6`; earlier tags remain immutable history.
 
 Start **Actions -> Release -> Run workflow** from the `main` branch with
 `action=build-candidate` and the version from
@@ -63,6 +62,9 @@ the candidate artifact the representative person actually tested:
     "identifier": "<approved tester name or public handle>",
     "role": "representative-non-developer"
   },
+  "confirmedByReleaseOwner": "<authenticated GitHub release owner>",
+  "acknowledgement": "I confirm the representative tester performed the recorded real-world checks on these exact package hashes.",
+  "evidenceReference": "<retained manual evidence reference for this candidate>",
   "assets": {
     "installerSha256": "<tested setup EXE SHA-256>",
     "portableSha256": "<tested portable ZIP SHA-256>"
@@ -78,9 +80,10 @@ the candidate artifact the representative person actually tested:
 ```
 
 The workflow records the authenticated GitHub actor who submitted the record.
-The tester identifier and non-developer role are human-supplied claims and must
-be confirmed by the release owner; the workflow cannot establish a person's
-role or prove that they performed the real-world checks. The automated
+The release owner's confirmation, acknowledgement and test-evidence reference
+are validated alongside the candidate run and exact package hashes; verify that
+the referenced evidence actually exists and belongs to the named tester. The
+tester identifier and non-developer role remain claims rather than platform-authenticated identities. The automated
 `test-ordinary-user-package.ps1` receipt remains engineering evidence and
 cannot substitute for this record.
 
@@ -93,7 +96,7 @@ with a locally generated ZIP; the manifest, SBOM and attestation must be
 produced from the same source commit as the accepted candidate.
 
 `<版本>` below is always the `<Version>` in
-`src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` (currently 1.0.5);
+`src/ClassroomToolkit.App/ClassroomToolkit.App.csproj` (currently 1.0.6);
 `package-release.ps1` rejects a mismatch.
 
 The manifest binds each asset to a URL, byte count and SHA-256, plus a

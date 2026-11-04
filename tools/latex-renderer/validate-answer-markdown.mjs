@@ -89,11 +89,8 @@ function findEnabledRule(snapshot, ruleIds) {
   return null;
 }
 
-function resolveValidationRules(snapshot) {
+export function resolveValidationRules(snapshot) {
   const subjectPackId = snapshot?.subjectPack?.assetId;
-  const choiceRuleIds = typeof subjectPackId === "string" && subjectPackId.trim().length > 0
-    ? [`${subjectPackId}.choice-answer.compact-line`]
-    : [];
   const questionRuleIds = typeof subjectPackId === "string" && subjectPackId.trim().length > 0
     ? [`${subjectPackId}.question-lead.same-line`]
     : [];
@@ -102,11 +99,16 @@ function resolveValidationRules(snapshot) {
     : ["rendering.true-latex"];
 
   return {
-    choiceAnswer: findEnabledRule(snapshot, choiceRuleIds),
+    choiceAnswer: findEnabledRule(snapshot, ["rendering.choice-answer.compact-line"]),
     questionLead: findEnabledRule(snapshot, questionRuleIds),
     trueLatex: findEnabledRule(snapshot, mathRuleIds)
   };
 }
+
+export const CHOICE_ANSWER_RULE = Object.freeze({
+  id: "rendering.choice-answer.compact-line",
+  severity: "hard"
+});
 
 function addRuleFinding(rule, message, errors, warnings) {
   if (rule?.severity === "hard") {
@@ -117,17 +119,46 @@ function addRuleFinding(rule, message, errors, warnings) {
   warnings.push(message);
 }
 
-function validateChoiceLine(line, lineNumber, rule, errors, warnings) {
+const APPROVED_CHOICE_RANGES = [
+  { start: 1, end: 5 },
+  { start: 6, end: 10 },
+  { start: 11, end: 12 }
+];
+
+export function validateChoiceLine(line, lineNumber, rule, errors, warnings) {
   const trimmed = line.trim();
-  if (!/^\d+\s*[-\u2013\u2014]\s*\d+\s*[:\uff1a]/u.test(trimmed)) {
+  const range = trimmed.match(/^(\d+)\s*([-\u2013\u2014])\s*(\d+)\s*[:\uff1a]\s*(.*)$/u);
+  if (!range) {
     return;
   }
 
-  if (/^\d+\s*-\s*\d+\s*[:\uff1a]/u.test(trimmed)) {
-    addRuleFinding(rule, `Line ${lineNumber}: choice answer ranges must use a Chinese dash, not an ASCII hyphen.`, errors, warnings);
+  if (range[2] === "-") {
+    addRuleFinding(
+      rule,
+      `Line ${lineNumber}: choice answer ranges must use a Chinese dash, not an ASCII hyphen.`,
+      errors,
+      warnings
+    );
   }
 
-  const answerPart = trimmed.replace(/^\d+\s*[-\u2013\u2014]\s*\d+\s*[:\uff1a]\s*/u, "");
+  const start = Number(range[1]);
+  const end = Number(range[3]);
+  const approved = APPROVED_CHOICE_RANGES.find((candidate) => candidate.start === start && candidate.end === end);
+  if (!approved) {
+    addRuleFinding(rule, `Line ${lineNumber}: unsupported grouped choice range ${start}–${end}.`, errors, warnings);
+    return;
+  }
+  const answers = [...range[4].matchAll(/[A-D](?![A-Z])/gu)].map((match) => match[0]);
+  if (answers.length !== approved.end - approved.start + 1
+      || range[4].replace(/[A-D、，,\s]/gu, "").length > 0) {
+    addRuleFinding(
+      rule,
+      `Line ${lineNumber}: grouped choice ${start}–${end} must contain exactly ${approved.end - approved.start + 1} A-D answers separated by 、.`,
+      errors,
+      warnings
+    );
+  }
+  const answerPart = range[4];
   if (/[A-Z]\s+[A-Z]/.test(answerPart)) {
     addRuleFinding(rule, `Line ${lineNumber}: choice answers should use separators, not spaces between options.`, errors, warnings);
   }
@@ -370,11 +401,17 @@ function main() {
     }
     const lineNumber = index + 1;
 
-    if (rules.choiceAnswer) {
-      validateChoiceLine(line, lineNumber, rules.choiceAnswer, errors, warnings);
-    }
+    validateChoiceLine(line, lineNumber, CHOICE_ANSWER_RULE, errors, warnings);
     if (rules.questionLead) {
       validateOrphanQuestionLead(lines, line, lineNumber, rules.questionLead, errors, warnings);
+    }
+    if (maskedLines[index] !== "" && /^\s*\d{1,3}[.．、]?\s*$/u.test(line)) {
+      addRuleFinding(
+        CHOICE_ANSWER_RULE,
+        `Line ${lineNumber}: question number must stay on the first line with its answer.`,
+        errors,
+        warnings
+      );
     }
     if (rules.trueLatex) {
       validateBacktickWrappedMath(line, lineNumber, rules.trueLatex, errors, warnings);

@@ -29,4 +29,9 @@ public interface IToolchainOrchestrator
         AnswerDeliveryRequest request,
         CancellationToken cancellationToken = default,
         Action<string>? progress = null);
+
+    Task<(ToolchainExecutionResult Execution, LiveAnswerWorkflowResult? Result)> RunLiveWorkflowAsync(
+        LiveAnswerWorkflowRequest request,
+        CancellationToken cancellationToken = default,
+        Action<string>? progress = null);
 }

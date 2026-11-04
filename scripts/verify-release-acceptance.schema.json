@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "classroom-toolkit://scripts/verify-release-acceptance.schema.json",
+  "title": "Representative package acceptance input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "status",
+    "version",
+    "sourceCommit",
+    "candidateRunId",
+    "acceptedAt",
+    "tester",
+    "assets",
+    "scenarios",
+    "confirmedByReleaseOwner",
+    "acknowledgement",
+    "evidenceReference"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "kind": { "const": "classroom-toolkit-representative-acceptance-input" },
+    "status": { "const": "accepted" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "sourceCommit": { "type": "string", "pattern": "^[A-Fa-f0-9]{40}$" },
+    "candidateRunId": { "type": "string", "pattern": "^[1-9]\\d*$" },
+    "acceptedAt": { "type": "string" },
+    "tester": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identifier", "role"],
+      "properties": {
+        "identifier": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "role": { "const": "representative-non-developer" }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["installerSha256", "portableSha256"],
+      "properties": {
+        "installerSha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+        "portableSha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "installerCleanInstall",
+        "installerRepair",
+        "installerMarkdownPdfDelivery",
+        "portableLaunch",
+        "portableMarkdownPdfDelivery"
+      ],
+      "properties": {
+        "installerCleanInstall": { "const": "passed" },
+        "installerRepair": { "const": "passed" },
+        "installerMarkdownPdfDelivery": { "const": "passed" },
+        "portableLaunch": { "const": "passed" },
+        "portableMarkdownPdfDelivery": { "const": "passed" }
+      }
+    },
+    "confirmedByReleaseOwner": { "type": "string", "minLength": 1, "maxLength": 39 },
+    "acknowledgement": {
+      "const": "I confirm the representative tester performed the recorded real-world checks on these exact package hashes."
+    },
+    "evidenceReference": { "type": "string", "minLength": 1, "maxLength": 500 }
+  }
+}

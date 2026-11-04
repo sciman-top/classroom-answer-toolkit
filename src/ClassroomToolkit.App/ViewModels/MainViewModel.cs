@@ -77,7 +77,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string activityLog = string.Empty;
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunLiveWorkflowCommand))]
     private string selectedAnswerMarkdownPath = string.Empty;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RunLiveWorkflowCommand))]
+    private string selectedSourcePdfPath = string.Empty;
+    [ObservableProperty] private string selectedReferencePdfPath = string.Empty;
+    [ObservableProperty] private string selectedWorkflowOutputDirectory = string.Empty;
+    [ObservableProperty] private bool skipVisualAudit;
+    [ObservableProperty] private bool allowCloudEgress;
+    [ObservableProperty] private bool useGatewayProxy;
+    [ObservableProperty] private string lastWorkflowReceiptPath = string.Empty;
+    [ObservableProperty] private string lastAnswerMarkdownPath = string.Empty;
     [ObservableProperty] private string selectedOutputPdfPath = string.Empty;
     [ObservableProperty] private string selectedSubjectPack = "junior-physics-answer";
     [ObservableProperty] private string selectedProfile = "classroom";
@@ -86,6 +97,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
     [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunLiveWorkflowCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
     private bool isBusy;
@@ -103,6 +115,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(DeliverCommand))]
     [NotifyCanExecuteChangedFor(nameof(BootstrapCommand))]
     [NotifyCanExecuteChangedFor(nameof(CheckCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunLiveWorkflowCommand))]
     private bool isUpdateBusy;
     private UpdateInfo? _availableUpdate;
 
@@ -120,6 +133,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // blocking for seconds) on every keystroke. Existence is validated once
     // when the command actually runs.
     private bool CanDeliver() => !IsBusy && !IsUpdateBusy && !string.IsNullOrWhiteSpace(SelectedAnswerMarkdownPath);
+    private bool CanRunLiveWorkflow()
+        => !IsBusy
+            && !IsUpdateBusy
+            && !string.IsNullOrWhiteSpace(SelectedSourcePdfPath)
+            && !string.IsNullOrWhiteSpace(SelectedWorkflowOutputDirectory);
     private bool CanRunToolchain() => !IsBusy && !IsUpdateBusy;
     private bool CanCancel()
         => (_operationCancellation is { IsCancellationRequested: false })
@@ -132,6 +150,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
             SafeFireAndForget(() => RefreshHealthAsync(), "工作区健康检查");
         }
     }
+
+    partial void OnSelectedSourcePdfPathChanged(string value)
+        => RunLiveWorkflowCommand.NotifyCanExecuteChanged();
+
+    partial void OnSelectedWorkflowOutputDirectoryChanged(string value)
+        => RunLiveWorkflowCommand.NotifyCanExecuteChanged();
 
     [RelayCommand]
     private void BrowseAnswerMarkdown()
@@ -149,6 +173,75 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 SelectedOutputPdfPath = Path.ChangeExtension(dialog.FileName, ".pdf");
             }
         }
+    }
+
+    [RelayCommand]
+    private void BrowseSourcePdf()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "选择原卷 PDF",
+            Filter = "PDF (*.pdf)|*.pdf|所有文件 (*.*)|*.*"
+        };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+        SelectedSourcePdfPath = dialog.FileName;
+        if (string.IsNullOrWhiteSpace(SelectedWorkflowOutputDirectory))
+        {
+            SelectedWorkflowOutputDirectory = Path.Combine(
+                Path.GetDirectoryName(dialog.FileName) ?? string.Empty,
+                $"{Path.GetFileNameWithoutExtension(dialog.FileName)}-答案运行");
+        }
+    }
+
+    [RelayCommand]
+    private void BrowseReferencePdf()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "选择权威参考答案 PDF（可选）",
+            Filter = "PDF (*.pdf)|*.pdf|所有文件 (*.*)|*.*"
+        };
+        if (dialog.ShowDialog() == true)
+        {
+            SelectedReferencePdfPath = dialog.FileName;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunLiveWorkflow))]
+    private async Task RunLiveWorkflowAsync()
+    {
+        await RunAsync("正在执行原卷到答案交付主链...", async (cancellationToken, progress) =>
+        {
+            var (execution, workflow) = await _toolchainOrchestrator.RunLiveWorkflowAsync(
+                new LiveAnswerWorkflowRequest(
+                    SelectedSourcePdfPath,
+                    SelectedWorkflowOutputDirectory,
+                    string.IsNullOrWhiteSpace(SelectedReferencePdfPath) ? null : SelectedReferencePdfPath,
+                    SelectedSubjectPack,
+                    SelectedProfile,
+                    SkipVisualAudit,
+                    AllowCloudEgress,
+                    KeepReviewArtifacts,
+                    UseGatewayProxy),
+                cancellationToken,
+                progress);
+            ApplyExecution(execution);
+            if (!execution.Succeeded || workflow is null)
+            {
+                StatusMessage = "原卷工作流未完成";
+                return;
+            }
+            LastWorkflowReceiptPath = workflow.WorkflowReceiptPath;
+            LastAnswerMarkdownPath = workflow.AnswerMarkdownPath;
+            LastOutputPdfPath = workflow.OutputPdfPath;
+            LastDeliveryManifestPath = workflow.ManifestPath;
+            LastReviewDirectoryPath = workflow.ReviewDirectoryPath ?? string.Empty;
+            LastSnapshotId = workflow.SnapshotId ?? string.Empty;
+            StatusMessage = "原卷工作流完成（rendered；答案可信度与教师验收仍需单独判断）";
+        });
     }
 
     [RelayCommand(CanExecute = nameof(CanDeliver))]
@@ -210,6 +303,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand] private void OpenLastOutputPdf() => OpenPath(LastOutputPdfPath);
+    [RelayCommand] private void OpenLastAnswerMarkdown() => OpenPath(LastAnswerMarkdownPath);
+    [RelayCommand] private void OpenLastWorkflowReceipt() => OpenPath(LastWorkflowReceiptPath);
     [RelayCommand] private void OpenLastDeliveryManifest() => OpenPath(LastDeliveryManifestPath);
     [RelayCommand] private void OpenLastReviewDirectory() => OpenPath(LastReviewDirectoryPath);
 
@@ -355,6 +450,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             IsBusy = false;
             CancelCommand.NotifyCanExecuteChanged();
             InstallUpdateCommand.NotifyCanExecuteChanged();
+            RunLiveWorkflowCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -373,13 +469,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // The summary also carries first-run setup guidance (for example, a
         // missing AI key). A healthy local workspace must not hide that step.
         StatusMessage = string.IsNullOrWhiteSpace(health.Summary)
-            ? health.IsHealthy ? "答案生成与排版主链已就绪" : "工作区健康检查未通过。"
+            ? health.IsHealthy
+                ? health.AiReady
+                    ? "本地工具链健康；真实答案生成仍需每次显式授权"
+                    : "本地排版可用；真实答案生成尚需完成 AI 与出网配置"
+                : "工作区健康检查未通过。"
             : health.Summary;
         StatusCards.Clear();
         StatusCards.Add(new StatusCardViewModel("Subject Packs", health.SubjectPacks.Count.ToString(), health.PrimarySubjectPack ?? "未发现"));
         StatusCards.Add(new StatusCardViewModel("Snapshot", health.SnapshotExists ? "Ready" : "Missing", health.SnapshotPath));
         StatusCards.Add(new StatusCardViewModel("Regression", health.EvalOk ? "Passed" : "Pending", $"{health.EvalCaseCount} cases"));
         StatusCards.Add(new StatusCardViewModel("Prompt", health.AssetVersion ?? "Unknown", health.LatestProductionSpecVersion ?? "未发现"));
+        StatusCards.Add(new StatusCardViewModel(
+            "AI / egress",
+            health.AiReady ? "Configured" : health.AiConfigured ? "Local only" : "Not configured",
+            health.AiConfigured
+                ? "真实运行仍须显式授权；不代表答案或教师验收通过"
+                : "可重排已有 Markdown；原卷生成不可用"));
         SyncSubjectPacks(health.SubjectPacks);
     }
 

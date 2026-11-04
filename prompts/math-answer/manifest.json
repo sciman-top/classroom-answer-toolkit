@@ -4,6 +4,10 @@
   "displayName": "Junior Math Answer Scaffold",
   "version": "v0.2",
   "status": "experimental",
+  "workflow": {
+    "liveAnswers": false,
+    "requiresExplicitCloudEgress": true
+  },
   "locale": "zh-CN",
   "domain": "junior-high-school-math",
   "kind": "subject-pack",

@@ -159,6 +159,22 @@ function validateValue(value, schema, currentPath, state) {
     return;
   }
 
+  if (Array.isArray(effectiveSchema.allOf)) {
+    for (const branch of effectiveSchema.allOf) {
+      validateValue(value, branch, currentPath, nextState);
+    }
+  }
+
+  if (effectiveSchema.if && typeof effectiveSchema.if === "object") {
+    const ifState = { ...nextState, errors: [] };
+    validateValue(value, effectiveSchema.if, currentPath, ifState);
+    if (ifState.errors.length === 0 && effectiveSchema.then) {
+      validateValue(value, effectiveSchema.then, currentPath, nextState);
+    } else if (ifState.errors.length > 0 && effectiveSchema.else) {
+      validateValue(value, effectiveSchema.else, currentPath, nextState);
+    }
+  }
+
   if (Array.isArray(effectiveSchema.anyOf)) {
     const matchesAnyBranch = effectiveSchema.anyOf.some((branch) => {
       const branchState = { ...nextState, errors: [] };

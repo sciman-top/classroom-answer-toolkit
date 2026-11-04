@@ -26,6 +26,15 @@
     "locale": { "type": "string" },
     "domain": { "type": "string" },
     "kind": { "type": "string" },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["liveAnswers", "requiresExplicitCloudEgress"],
+      "properties": {
+        "liveAnswers": { "type": "boolean" },
+        "requiresExplicitCloudEgress": { "type": "boolean" }
+      }
+    },
     "inherits": {
       "type": "array",
       "items": { "type": "string" }

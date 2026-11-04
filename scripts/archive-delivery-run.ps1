@@ -63,6 +63,35 @@ $workflowReceipt = Get-Content -LiteralPath $receiptFiles[0].FullName -Raw | Con
 if ($workflowReceipt.status -ne "succeeded") {
     throw ("Refusing to archive a delivery whose workflow-run status is '{0}': {1}" -f $workflowReceipt.status, $receiptFiles[0].FullName)
 }
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    throw "Node.js is required to validate a workflow receipt before archiving."
+}
+$receiptValidation = & node (Join-Path (Split-Path -Parent $PSScriptRoot) "tools/rule-compiler/validate-workflow-receipt.mjs") --receipt $receiptFiles[0].FullName 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "Workflow receipt failed full validation before archiving: $($receiptValidation -join [Environment]::NewLine)"
+}
+$delivery = $workflowReceipt.phases.delivery
+$deliveryManifestPath = if ($delivery -and [string]$delivery.artifactPath) {
+    Join-Path (Split-Path -Parent ([string]$delivery.artifactPath)) `
+        ([IO.Path]::GetFileNameWithoutExtension([string]$delivery.artifactPath) + ".delivery-manifest.json")
+}
+$deliveryArtifactPath = [string]$delivery.artifactPath
+if ([string]::IsNullOrWhiteSpace($deliveryManifestPath) -or
+    -not (Test-Path -LiteralPath $deliveryManifestPath -PathType Leaf)) {
+    throw "Workflow receipt has no delivery manifest to validate."
+}
+foreach ($boundPath in @($deliveryArtifactPath, $deliveryManifestPath)) {
+    $relativeToRun = [IO.Path]::GetRelativePath($resolvedRunDirectory, [IO.Path]::GetFullPath($boundPath))
+    if ([IO.Path]::IsPathRooted($relativeToRun) -or
+        $relativeToRun -eq ".." -or $relativeToRun.StartsWith("..$([IO.Path]::DirectorySeparatorChar)") -or
+        $relativeToRun.StartsWith("../")) {
+        throw "Workflow receipt delivery artifact or manifest is outside the run directory: $boundPath"
+    }
+}
+$manifestValidation = & node (Join-Path (Split-Path -Parent $PSScriptRoot) "tools/latex-renderer/validate-delivery-manifest.mjs") --manifest $deliveryManifestPath 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "Delivery manifest failed full validation before archiving: $($manifestValidation -join [Environment]::NewLine)"
+}
 $destinationDirectory = Join-Path (Join-Path $ArchiveRoot "正式交付") $runName
 if (Test-Path -LiteralPath $destinationDirectory) {
     throw "Archive destination already exists (remove it first to re-archive): $destinationDirectory"

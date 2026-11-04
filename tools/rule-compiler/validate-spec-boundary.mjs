@@ -71,8 +71,11 @@ export function collectSpecBoundaryErrors() {
     if (manifest.version !== assembly.outputVersion) {
       errors.push(`${assembly.subjectPack}: manifest version ${manifest.version} != assembly ${assembly.outputVersion}`);
     }
-    if (config.version !== `${assembly.outputVersion}-derived`) {
-      errors.push(`${assembly.subjectPack}: config version ${config.version} != ${assembly.outputVersion}-derived`);
+    if (config.version !== assembly.outputVersion) {
+      errors.push(`${assembly.subjectPack}: config version ${config.version} != ${assembly.outputVersion}`);
+    }
+    if (config.version !== manifest.version) {
+      errors.push(`${assembly.subjectPack}: config version ${config.version} != manifest version ${manifest.version}`);
     }
     for (const [label, actual] of [
       ["manifest humanSpec", manifestHumanSpecPath],

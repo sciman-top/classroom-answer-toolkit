@@ -1,11 +1,32 @@
 import fs from "node:fs";
 import path from "node:path";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { fail, parseArgvFlags, readJsonFileIfExists, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
+import { fail, isDirectInvocation, parseArgvFlags, readJsonFileIfExists, repositoryRoot as repoRoot, sha256Hex } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 import { loadRequiredResolvedSnapshot } from "./lib/runtime-config.mjs";
+import { writeReviewHtml } from "./lib/review-html.mjs";
 
 const deliveryManifestSchemaPath = path.join(repoRoot, "prompts", "shared", "schemas", "delivery-manifest.schema.json");
+
+export function writeDeliveryManifest({
+  inputPath,
+  outputPath,
+  snapshotPath,
+  reviewDirectory,
+  reviewManifestPath,
+  reviewScale,
+  manifestPath
+}) {
+  return writeDeliveryManifestCore({
+    inputPath: path.resolve(inputPath),
+    outputPath: path.resolve(outputPath),
+    snapshotPath: path.resolve(snapshotPath),
+    reviewDir: reviewDirectory ? path.resolve(reviewDirectory) : null,
+    reviewManifestPath: reviewManifestPath ? path.resolve(reviewManifestPath) : null,
+    reviewScale: reviewScale ?? null,
+    manifestOutPath: path.resolve(manifestPath)
+  });
+}
 
 function parseArgs(argv) {
   return parseArgvFlags(argv, {
@@ -108,18 +129,37 @@ function createFileIntegrity(filePath) {
   };
 }
 
+function readReviewSourceManifest(reviewDirectory, declaredManifestPath) {
+  if (!reviewDirectory || !declaredManifestPath) {
+    return null;
+  }
+  const candidates = [
+    declaredManifestPath,
+    path.join(reviewDirectory, "manifest.json")
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      const value = readJsonFileIfExists(candidate);
+      if (value?.kind === "pdf-source-review") {
+        return value;
+      }
+    }
+  }
+  return null;
+}
+
 function isPathWithin(directoryPath, filePath) {
   const relative = path.relative(directoryPath, filePath);
   return relative === ""
     || (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`));
 }
 
-function copyPackageFile(sourcePath, targetPath, manifestDirectory) {
-  if (!isPathWithin(manifestDirectory, targetPath)) {
-    throw new Error(`Delivery graphic reference escapes the package directory: ${targetPath}`);
+function copyPackageFile(sourcePath, targetPath) {
+  if (!fs.existsSync(sourcePath)) {
+    return false;
   }
 
-  if (!fs.existsSync(sourcePath) || !fs.statSync(sourcePath).isFile()) {
+  if (!fs.statSync(sourcePath).isFile()) {
     return false;
   }
 
@@ -137,7 +177,6 @@ function copyPackageFile(sourcePath, targetPath, manifestDirectory) {
 function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDirectory) {
   const source = fs.readFileSync(inputPath, "utf8");
   const sourceInputDir = path.dirname(inputPath);
-  const packagedInputDir = path.dirname(packagedInputPath);
   const markerPattern = /<!--\s*answer-graphic:\s*(.+?)\s*-->/g;
   const seen = new Set();
   let match;
@@ -150,21 +189,24 @@ function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDi
 
     seen.add(markerPath);
     const sourcePlacementPath = path.resolve(sourceInputDir, markerPath);
-    const packagedPlacementPath = path.resolve(packagedInputDir, markerPath);
-    copyPackageFile(sourcePlacementPath, packagedPlacementPath, manifestDirectory);
+    // A newly packaged answer is already anchored at the delivery directory;
+    // preserve its marker path. Rewriting the same external path beside the
+    // packaged Markdown would make the Markdown point to a different directory.
+    const packagedPlacementPath = path.resolve(manifestDirectory, markerPath);
+    copyPackageFile(sourcePlacementPath, packagedPlacementPath);
 
     const placement = readJsonFileIfExists(sourcePlacementPath);
-    if (typeof placement?.previewPath !== "string" || placement.previewPath.trim().length === 0) {
-      continue;
+    const previewPath = typeof placement?.previewPath === "string"
+      ? path.resolve(path.dirname(sourcePlacementPath), placement.previewPath)
+      : null;
+    if (previewPath) {
+      const packagedPreviewPath = path.resolve(path.dirname(packagedPlacementPath), placement.previewPath);
+      copyPackageFile(previewPath, packagedPreviewPath);
     }
-
-    const sourcePreviewPath = path.resolve(path.dirname(sourcePlacementPath), placement.previewPath);
-    const packagedPreviewPath = path.resolve(path.dirname(packagedPlacementPath), placement.previewPath);
-    copyPackageFile(sourcePreviewPath, packagedPreviewPath, manifestDirectory);
   }
 }
 
-function ensureInputInDeliveryPackage(inputPath, manifestDirectory) {
+function ensureInputInDeliveryPackage(inputPath, manifestDirectory, reservedPaths) {
   const relative = path.relative(manifestDirectory, inputPath);
   if (!path.isAbsolute(relative) && !relative.startsWith("..")) {
     return inputPath;
@@ -172,7 +214,10 @@ function ensureInputInDeliveryPackage(inputPath, manifestDirectory) {
 
   const extension = path.extname(inputPath);
   const baseName = path.basename(inputPath, extension);
-  const packagedPath = path.join(manifestDirectory, `${baseName}.delivery-input${extension}`);
+  let packagedPath = path.join(manifestDirectory, `${baseName}.delivery-input${extension}`);
+  if (reservedPaths.has(path.normalize(packagedPath))) {
+    throw new Error(`Delivery input copy would overwrite a delivery artifact: ${packagedPath}`);
+  }
   if (fs.existsSync(packagedPath)) {
     if (sha256Hex(fs.readFileSync(packagedPath)) !== sha256Hex(fs.readFileSync(inputPath))) {
       throw new Error(`Delivery input copy already exists with different content: ${packagedPath}`);
@@ -196,6 +241,9 @@ function collectReviewFilePaths(directoryPath) {
       .sort((left, right) => left.name.localeCompare(right.name, "en"));
     for (const entry of entries) {
       const entryPath = path.join(currentDirectory, entry.name);
+      if (entry.isSymbolicLink()) {
+        throw new Error(`Delivery review package contains a reparse point: ${entryPath}`);
+      }
       if (entry.isDirectory()) {
         visit(entryPath);
       } else if (entry.isFile()) {
@@ -208,22 +256,34 @@ function collectReviewFilePaths(directoryPath) {
   return paths;
 }
 
-function main() {
-  const options = parseArgs(process.argv.slice(2));
-  if (!options.input || !options.output || !options.snapshotPath) {
-    fail("Missing required arguments for delivery manifest.");
+function collectReviewSourcePaths(directoryPath) {
+  if (!directoryPath || !fs.existsSync(directoryPath)) {
+    return [];
   }
+  const paths = [];
+  const visit = (currentDirectory) => {
+    for (const entry of fs.readdirSync(currentDirectory, { withFileTypes: true })) {
+      const entryPath = path.join(currentDirectory, entry.name);
+      if (entry.isDirectory()) {
+        visit(entryPath);
+      } else if (entry.isFile()) {
+        paths.push(entryPath);
+      }
+    }
+  };
+  visit(directoryPath);
+  return paths;
+}
 
-  const callerCwd = process.env.INIT_CWD || process.cwd();
-  const inputPath = path.resolve(callerCwd, options.input);
-  const outputPath = path.resolve(callerCwd, options.output);
-  const snapshotPath = path.resolve(callerCwd, options.snapshotPath);
-  const reviewDir = options.reviewDir ? path.resolve(callerCwd, options.reviewDir) : null;
-  const reviewManifestPath = options.reviewManifestPath ? path.resolve(callerCwd, options.reviewManifestPath) : null;
-  const manifestOutPath = options.out
-    ? path.resolve(callerCwd, options.out)
-    : path.resolve(path.dirname(outputPath), `${path.basename(outputPath, path.extname(outputPath))}.delivery-manifest.json`);
-
+function writeDeliveryManifestCore({
+  inputPath,
+  outputPath,
+  snapshotPath,
+  reviewDir,
+  reviewManifestPath,
+  reviewScale,
+  manifestOutPath
+}) {
   for (const [label, filePath] of [
     ["Answer Markdown", inputPath],
     ["Rendered PDF", outputPath],
@@ -258,28 +318,149 @@ function main() {
     fail(`Resolved snapshot is missing subjectPack.version: ${snapshotPath}`);
   }
 
-  const reviewArtifactReady = Boolean(
+  const sourceReviewManifest = readReviewSourceManifest(reviewDir, reviewManifestPath);
+  let reviewArtifactReady = Boolean(
     reviewDir
     && reviewManifestPath
     && fs.existsSync(reviewDir)
     && fs.existsSync(reviewManifestPath)
+    && sourceReviewManifest?.kind === "pdf-source-review"
+    && sourceReviewManifest.inputSha256 === createFileIntegrity(outputPath).sha256
+    && Array.isArray(sourceReviewManifest.selectedPages)
+    && sourceReviewManifest.selectedPages.length === sourceReviewManifest.pageCount
+    && Array.isArray(sourceReviewManifest.pages)
+    && sourceReviewManifest.pages.length > 0
   );
-  const deliveryComplete = fs.existsSync(outputPath);
   const manifestDirectory = path.dirname(manifestOutPath);
   // Package-internal paths are relative to the manifest directory so an
   // archived delivery validates after the archive moves or changes machine.
   const anchoredPath = (filePath) => {
     const relative = path.relative(manifestDirectory, filePath);
-    return relative.startsWith("..") ? filePath : relative.split(path.sep).join("/");
+    const contained = relative === ""
+      || (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`));
+    return contained ? relative.split(path.sep).join("/") : filePath;
   };
-  const packagedInputPath = ensureInputInDeliveryPackage(inputPath, manifestDirectory);
+  if (reviewArtifactReady) {
+    // Delivery-owned review JSON must not retain development-cache absolute
+    // paths. Copy it beside the PDF, then rewrite the PDF/image references
+    // relative to its package before hashing either file.
+    const packagedReviewDirectory = path.join(
+      manifestDirectory,
+      `${path.basename(outputPath, path.extname(outputPath))}.review`
+    );
+    const declaredReviewManifestPath = reviewManifestPath;
+    const cachedSourceFiles = collectReviewSourcePaths(path.dirname(declaredReviewManifestPath));
+    const sourceDeliveryReviewIsCurrent = fs.existsSync(packagedReviewDirectory)
+      && declaredReviewManifestPath
+      && path.resolve(path.dirname(declaredReviewManifestPath)) === path.resolve(packagedReviewDirectory);
+    const sourceReviewFile = readReviewSourceManifest(
+      sourceDeliveryReviewIsCurrent ? reviewDir : path.dirname(declaredReviewManifestPath),
+      declaredReviewManifestPath
+    );
+    const sourceReviewDirectory = sourceReviewFile?.outputDir
+      ? path.resolve(sourceReviewFile.outputDir)
+      : path.dirname(declaredReviewManifestPath);
+    const packagedReviewManifestPath = path.join(packagedReviewDirectory, "manifest.json");
+    if (path.resolve(reviewDir) === path.resolve(packagedReviewDirectory)
+        && !fs.existsSync(path.join(packagedReviewDirectory, "manifest.json"))) {
+      throw new Error(`Existing delivery review package lacks manifest.json: ${packagedReviewDirectory}`);
+    }
+    if (path.resolve(reviewDir) !== path.resolve(packagedReviewDirectory)) {
+      fs.cpSync(reviewDir, packagedReviewDirectory, { recursive: true, force: true });
+    }
+    if (!fs.existsSync(packagedReviewManifestPath)) {
+      throw new Error(`Delivery review package did not include its manifest: ${packagedReviewManifestPath}`);
+    }
+    const packagedReview = readJsonFileIfExists(packagedReviewManifestPath);
+    if (sourceReviewFile && packagedReview) {
+      packagedReview.pages = structuredClone(sourceReviewFile.pages ?? []);
+    }
+    for (const page of packagedReview?.pages ?? []) {
+      const cachedPage = packagedReview?.pages?.find((candidate) =>
+        candidate?.pageNumber === page?.pageNumber
+        && candidate?.kind === page?.kind
+        && candidate?.horizontalIndex === page?.horizontalIndex
+      );
+      const sourcePage = sourceDeliveryReviewIsCurrent ? null : sourceReviewFile?.pages?.find((candidate) =>
+        candidate?.pageNumber === page?.pageNumber
+        && candidate?.kind === page?.kind
+        && candidate?.horizontalIndex === page?.horizontalIndex
+      );
+      const declaredImagePath = sourcePage?.imagePath ?? cachedPage?.imagePath;
+      const sourceImagePath = typeof declaredImagePath === "string"
+        ? (path.isAbsolute(declaredImagePath)
+            ? declaredImagePath
+            : path.resolve(sourceReviewDirectory, declaredImagePath))
+        : null;
+      const absoluteImagePath = sourceImagePath && fs.existsSync(sourceImagePath)
+        ? sourceImagePath
+        : path.resolve(packagedReviewDirectory, path.basename(sourceImagePath ?? ""));
+      const relativeImagePath = absoluteImagePath
+        ? path.relative(packagedReviewDirectory, absoluteImagePath)
+        : "";
+      const cachedImagePath = cachedSourceFiles.find((filePath) =>
+        path.basename(filePath) === path.basename(declaredImagePath ?? "")
+      );
+      const absoluteRatio = path.isAbsolute(sourceImagePath ?? "")
+        ? path.join(
+            path.basename(path.dirname(sourceImagePath)),
+            path.basename(sourceImagePath)
+          )
+        : sourceImagePath === null && page.imagePath
+          ? path.basename(page.imagePath)
+          : sourceImagePath;
+      const safeRelativeImagePath = absoluteRatio.startsWith("..") || !absoluteRatio
+        ? (cachedImagePath ? path.basename(cachedImagePath) : "")
+        : absoluteRatio;
+      if (!safeRelativeImagePath || path.isAbsolute(safeRelativeImagePath)) {
+        throw new Error(`Review page image is outside its package: ${page.imagePath ?? "<missing>"}`);
+      }
+      page.imagePath = cachedImagePath ?? path.resolve(packagedReviewDirectory, path.basename(safeRelativeImagePath));
+      if (page.kind === "page-tile" && (sourcePage?.textLayerPath ?? page.textLayerPath)) {
+        page.textLayerPath = fs.existsSync(path.resolve(
+          packagedReviewDirectory,
+          path.basename(sourcePage?.textLayerPath ?? page.textLayerPath)
+        ))
+          ? path.resolve(packagedReviewDirectory, path.basename(sourcePage?.textLayerPath ?? page.textLayerPath))
+          : null;
+      }
+    }
+    if (packagedReview) {
+      packagedReview.inputPath = path.relative(packagedReviewDirectory, outputPath);
+      packagedReview.outputDir = packagedReviewDirectory;
+      packagedReview.reviewHtmlPath = path.join(path.dirname(packagedReviewManifestPath), "review.html");
+      writeTextFileAtomic(packagedReviewManifestPath, `${JSON.stringify(packagedReview, null, 2)}\n`);
+      writeReviewHtml({
+        outputDir: path.dirname(packagedReviewManifestPath),
+        inputPath: outputPath,
+        manifest: packagedReview
+      });
+      reviewDir = packagedReviewDirectory;
+      reviewManifestPath = packagedReviewManifestPath;
+      reviewArtifactReady = true;
+    }
+  }
+  const deliveryComplete = fs.existsSync(outputPath);
+  if (reviewArtifactReady
+      && path.resolve(reviewManifestPath) !== path.resolve(
+        manifestDirectory,
+        `${path.basename(outputPath, path.extname(outputPath))}.review`,
+        "manifest.json"
+      )) {
+    throw new Error(`Delivery review must be anchored beside its PDF: ${reviewManifestPath}`);
+  }
+  const packagedInputPath = ensureInputInDeliveryPackage(inputPath, manifestDirectory, new Set([
+    path.normalize(outputPath),
+    path.normalize(snapshotPath),
+    path.normalize(manifestOutPath)
+  ]));
   const answerGraphics = collectAnswerGraphicReferences(packagedInputPath)
     .map((reference) => ({
       ...reference,
       placementPath: anchoredPath(reference.placementPath),
       ...(reference.previewPath ? { previewPath: anchoredPath(reference.previewPath) } : {})
     }));
-  const ocr = collectOcrMetadata(reviewManifestPath);
+  const ocr = collectOcrMetadata(reviewArtifactReady ? reviewManifestPath : null);
   const generatedAt = new Date().toISOString();
 
   // The review set is delivery-owned (<pdf-base>.review beside the PDF), so
@@ -310,7 +491,7 @@ function main() {
     review: {
       outputDir: reviewArtifactReady ? anchoredPath(reviewDir) : "",
       manifestPath: reviewArtifactReady ? anchoredPath(reviewManifestPath) : "",
-      scale: options.reviewScale ?? ""
+      scale: reviewScale ?? ""
     },
     ocr,
     graphics: {
@@ -331,19 +512,44 @@ function main() {
   };
 
   const errors = validateValueAgainstSchema(manifest, deliveryManifestSchemaPath);
-  if (errors.length > 0) {
-    fail(`Delivery manifest failed schema validation:\n${errors.map((error) => `- ${error}`).join("\n")}`, 1);
-  }
 
   fs.mkdirSync(path.dirname(manifestOutPath), { recursive: true });
   writeTextFileAtomic(manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  return errors;
+}
+
+function main() {
+  const options = parseArgs(process.argv.slice(2));
+  if (!options.input || !options.output || !options.snapshotPath) {
+    fail("Missing required arguments for delivery manifest.");
+  }
+
+  const callerCwd = process.env.INIT_CWD || process.cwd();
+  const outputPath = path.resolve(callerCwd, options.output);
+  const manifestOutPath = options.out
+    ? path.resolve(callerCwd, options.out)
+    : path.resolve(path.dirname(outputPath), `${path.basename(outputPath, path.extname(outputPath))}.delivery-manifest.json`);
+  const errors = writeDeliveryManifest({
+    inputPath: path.resolve(callerCwd, options.input),
+    outputPath,
+    snapshotPath: path.resolve(callerCwd, options.snapshotPath),
+    reviewDirectory: options.reviewDir ? path.resolve(callerCwd, options.reviewDir) : null,
+    reviewManifestPath: options.reviewManifestPath ? path.resolve(callerCwd, options.reviewManifestPath) : null,
+    reviewScale: options.reviewScale,
+    manifestPath: manifestOutPath
+  });
+  if (errors.length > 0) {
+    fail(`Delivery manifest failed schema validation:\n${errors.map((error) => `- ${error}`).join("\n")}`, 1);
+  }
   console.log(manifestOutPath);
 }
 
-try {
-  main();
-} catch (error) {
-  // Keep the gate failing, but report like fail() does instead of a raw stack.
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(2);
+if (isDirectInvocation(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    // Keep the gate failing, but report like fail() does instead of a raw stack.
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(2);
+  }
 }

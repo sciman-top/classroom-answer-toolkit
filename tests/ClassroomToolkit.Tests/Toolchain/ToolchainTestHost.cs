@@ -17,10 +17,48 @@ internal static class ToolchainTestHost
         throw new InvalidOperationException("Repository root not found.");
     }
 
+    internal static string FindExecutableOnPath(string executableName)
+    {
+        const string extensions = ".EXE;.CMD;.BAT;.COM";
+        var pathDirectories = (Environment.GetEnvironmentVariable("PATH") ?? "")
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var directory in pathDirectories)
+        {
+            var candidate = Path.Combine(directory, executableName);
+            if (Path.HasExtension(executableName))
+            {
+                if (File.Exists(candidate)) return candidate;
+            }
+            else
+            {
+                foreach (var extension in extensions.Split(';'))
+                {
+                    candidate = Path.Combine(directory, executableName + extension);
+                    if (File.Exists(candidate)) return candidate;
+                }
+            }
+        }
+
+        throw new InvalidOperationException($"{executableName} not found on PATH.");
+    }
+
+    internal static string? FindExecutableOnPathOrNull(string executableName)
+    {
+        try
+        {
+            return FindExecutableOnPath(executableName);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
     internal sealed record ProcessResult(int ExitCode, string Output)
     {
         // See ToolchainProcessOutput: ANSI escapes, the error-frame gutter and
         // path-length-dependent wrapping all break naive message assertions.
         public string NormalizedOutput => ToolchainProcessOutput.Normalize(Output);
     }
+
 }
