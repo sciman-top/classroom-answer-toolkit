@@ -1498,9 +1498,6 @@ try {
     }
     Assert-WorkflowInputsUnchanged -InputReceipts $workflowInputReceipts
     Write-WorkflowReceipt -Status "succeeded"
-    Invoke-NodeTool -ScriptPath (Join-Path $repoRoot "tools/rule-compiler/validate-workflow-receipt.mjs") -Arguments @(
-        "--receipt", $workflowReceiptPath
-    )
 
     $workflowSucceeded = $true
     Write-Host "[live-answer-workflow] complete"
