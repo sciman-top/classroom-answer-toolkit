@@ -1047,20 +1047,35 @@ function Write-WorkflowReceipt {
 
     $artifacts = @()
     if ($Status -eq "succeeded") {
-        foreach ($artifactPath in @(
-                $answerMarkdownPath,
-                $answerPdfPath,
-                $deliveryManifestPath,
-                $deliverySnapshotPath,
-                $semanticFindingsPath,
-                $blindEvidencePath,
-                $semanticReviewMarkdownPath,
-                $semanticReviewReportPath,
-                $semanticReviewEvidencePath,
-                $(if (-not $SkipVisualAudit) { $visualAuditFindingsPath; $visualAuditMarkdownPath; $visualAuditReportPath }),
+        # Conditional groups are appended with explicit concatenation: inside a
+        # comma array literal a $(if){ ... } group with several statements stays
+        # a single nested element, and foreach would stringify it instead of
+        # enumerating the individual paths.
+        $artifactCandidatePaths = @(
+            $answerMarkdownPath,
+            $answerPdfPath,
+            $deliveryManifestPath,
+            $deliverySnapshotPath,
+            $semanticFindingsPath,
+            $blindEvidencePath,
+            $semanticReviewMarkdownPath,
+            $semanticReviewReportPath,
+            $semanticReviewEvidencePath
+        )
+        if (-not $SkipVisualAudit) {
+            $artifactCandidatePaths += @(
+                $visualAuditFindingsPath,
+                $visualAuditMarkdownPath,
+                $visualAuditReportPath
+            )
+        }
+        if ($referencePath) {
+            $artifactCandidatePaths += @(
                 $comparisonReportPath,
                 $referenceReviewEvidencePath
-            )) {
+            )
+        }
+        foreach ($artifactPath in $artifactCandidatePaths) {
             $artifactReceipt = Get-WorkflowFileReceipt -PathValue $artifactPath
             if ($null -ne $artifactReceipt) {
                 $artifacts += $artifactReceipt

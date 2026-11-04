@@ -1711,6 +1711,9 @@ public sealed class ToolchainCliBehaviorTests
                     Path.Combine(outputDirectory, "exam语义复核候选.md"),
                     Path.Combine(outputDirectory, "exam盲答与语义复核差异报告.md"),
                     Path.Combine(outputDirectory, "exam.semantic-review-evidence.json"),
+                    Path.Combine(outputDirectory, "exam视觉审计发现.md"),
+                    Path.Combine(outputDirectory, "exam视觉审计候选.md"),
+                    Path.Combine(outputDirectory, "exam盲答与视觉审计差异报告.md"),
                     Path.Combine(outputDirectory, "exam答案自动复核文本差异报告.md"),
                     Path.Combine(outputDirectory, "exam.reference-review-evidence.json")
                 });
