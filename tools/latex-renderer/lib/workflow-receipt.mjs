@@ -63,6 +63,9 @@ function resolveManifestPath(manifestDirectory, value) {
 }
 
 function resolveInputPath(manifestDirectory, value) {
+  if (typeof value !== "string" || value.length === 0) {
+    return null;
+  }
   return path.isAbsolute(value) ? path.resolve(value) : path.resolve(manifestDirectory, value);
 }
 
@@ -193,6 +196,8 @@ function validateDeliveryManifest(phase, errors) {
           || typeof review.inputPath !== "string"
           || resolveInputPath(path.dirname(reviewManifestPath), review.inputPath) !== outputDirectory) {
         errors.push("review manifest is not bound to the delivery PDF.");
+      } else if (!fs.existsSync(outputDirectory)) {
+        errors.push("delivery manifest output is missing; review manifest bytes cannot be checked.");
       } else if (review.inputSha256 !== sha256Hex(fs.readFileSync(outputDirectory))
           || review.inputBytes !== fs.statSync(outputDirectory).size) {
         errors.push("review manifest source bytes do not match the delivery PDF.");
@@ -305,16 +310,16 @@ export function validateWorkflowReceipt(receipt, receiptPath, options = {}) {
         : null;
       if (deliveryManifest) {
         const deliveryInput = resolveInputPath(path.dirname(manifestPath), deliveryManifest.input);
-        const boundInput = receipt.artifacts?.find((entry) =>
-          isObject(entry) && typeof entry.path === "string"
-          && normalizePath(boundInputPath(entry.path), platform) === normalizePath(deliveryInput, platform)
-        );
+        const boundInput = typeof deliveryInput === "string"
+          ? receipt.artifacts?.find((entry) =>
+            isObject(entry) && typeof entry.path === "string"
+            && normalizePath(boundInputPath(entry.path), platform) === normalizePath(deliveryInput, platform)
+          )
+          : undefined;
         if (!boundInput) {
           errors.push("workflow artifacts is missing the delivery Markdown input.");
         }
-        const finalSha = boundInput?.sha256;
         const completedReceipts = new Set();
-        let referenceBaselineSha = null;
         for (const phase of Object.values(receipt.phases ?? {})) {
           if (!isObject(phase) || phase.status !== "completed" || !phase.summary?.path) {
             continue;
@@ -328,7 +333,6 @@ export function validateWorkflowReceipt(receipt, receiptPath, options = {}) {
             completedReceipts.add(summary.outputSha256);
           }
           if (phase === receipt.phases.referenceReview) {
-            referenceBaselineSha = summary.candidateBaselineSha256;
             if (!summary.candidateBaselineSha256
                 || (summary.candidatePath && !fs.existsSync(summary.candidatePath))) {
               errors.push("reference review must bind the frozen candidate as its comparison baseline.");
@@ -339,13 +343,18 @@ export function validateWorkflowReceipt(receipt, receiptPath, options = {}) {
             }
           }
         }
-        if (deliveryManifest.input && finalSha
-            && !(receipt.artifacts ?? []).some((entry) => entry.sha256 === finalSha)) {
-          errors.push("workflow artifacts is missing the final reviewed Markdown.");
+        // The receipt's artifact binding, the manifest's integrity record and
+        // the actual file bytes must all describe the same final Markdown.
+        if (boundInput && typeof deliveryManifest.integrity?.input?.sha256 === "string"
+            && boundInput.sha256 !== deliveryManifest.integrity.input.sha256) {
+          errors.push("workflow artifacts receipt for the delivery Markdown input does not match the delivery manifest integrity.");
         }
-        if (referenceBaselineSha && finalSha === referenceBaselineSha
-            && receipt.phases?.referenceReview?.status === "completed") {
-          errors.push("reference review did not produce a final Markdown checkpoint.");
+        // A completed reference review must feed the delivery directly; a
+        // no-op textual review still delivers the review's own output file.
+        const reviewOutputPath = receipt.phases?.referenceReview?.artifact?.path;
+        if (typeof reviewOutputPath === "string" && typeof boundInput?.path === "string"
+            && normalizePath(boundInput.path, platform) !== normalizePath(reviewOutputPath, platform)) {
+          errors.push("delivery Markdown input is not the reference review output checkpoint.");
         }
       }
     }
