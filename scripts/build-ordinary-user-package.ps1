@@ -4,6 +4,7 @@ param(
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')][string]$WorkspaceContract = "2",
     [string]$OutputDirectory = "artifacts\deliveries",
     [string]$IsccPath = "",
+    [string]$PwshRoot = "",
     [string]$SigningCertificateThumbprint = "",
     [string]$TimestampServer = "http://timestamp.digicert.com",
     [switch]$SkipPublish,
@@ -234,9 +235,39 @@ try {
     }
     # The WPF live-workflow entrypoint and its release scripts execute pwsh.
     # Bundle PowerShell 7 plus Modules; ordinary teacher PCs may not have it.
-    $pwshSource = (Get-Command pwsh -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-    if (-not $pwshSource -or $PSVersionTable.PSVersion.Major -lt 7) {
-        throw "PowerShell 7+ is required to assemble the runtime bundle."
+    # The Store (MSIX) edition lives under WindowsApps, where package ACLs
+    # block copying its files into the bundle, so resolve a classic MSI
+    # install (or an explicit -PwshRoot, e.g. an extracted portable zip) and
+    # reject the alias with an actionable error.
+    $pwshSource = $null
+    if (-not [string]::IsNullOrWhiteSpace($PwshRoot)) {
+        $candidate = Join-Path ([IO.Path]::GetFullPath($PwshRoot)) "pwsh.exe"
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            throw "-PwshRoot does not contain pwsh.exe: $PwshRoot"
+        }
+        $pwshSource = $candidate
+    }
+    if (-not $pwshSource) {
+        foreach ($classicRoot in @(
+                (Join-Path $env:ProgramFiles "PowerShell/7"),
+                (Join-Path ${env:ProgramFiles(x86)} "PowerShell/7")
+            )) {
+            $candidate = Join-Path $classicRoot "pwsh.exe"
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                $pwshSource = $candidate
+                break
+            }
+        }
+    }
+    if (-not $pwshSource) {
+        $resolvedPwsh = (Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue |
+            Select-Object -First 1).Source
+        if ($resolvedPwsh -and $resolvedPwsh -notlike "*\WindowsApps\*") {
+            $pwshSource = $resolvedPwsh
+        }
+    }
+    if (-not $pwshSource) {
+        throw "Bundling PowerShell requires a classic (MSI) PowerShell 7 install or -PwshRoot; the Microsoft Store edition under WindowsApps cannot be copied. Install with 'winget install --id Microsoft.PowerShell --exact' or pass -PwshRoot pointing at an extracted PowerShell win-x64 zip."
     }
     $pwshSourceRoot = Split-Path -Parent $pwshSource
     $bundledPwshRoot = Join-Path $stageRoot "runtime/pwsh"
@@ -249,8 +280,19 @@ try {
             Copy-Item -LiteralPath $sourceDirectory -Destination $bundledPwshRoot -Recurse -Force
         }
     }
-    $pwshVersion = $PSVersionTable.PSVersion.ToString()
-    $pwshExeHash = Get-FileSha256 -PathValue (Join-Path $bundledPwshRoot "pwsh.exe")
+    # Record the bundled binary's own version: the running pwsh may be a
+    # different edition with a different version than the MSI copy. Some
+    # distributions append a suffix to ProductVersion ("7.6.9 SHA: ...");
+    # keep the leading numeric version only.
+    $bundledPwshExe = Join-Path $bundledPwshRoot "pwsh.exe"
+    $pwshVersion = (((Get-Item -LiteralPath $bundledPwshExe).VersionInfo.ProductVersion) -split '\s')[0]
+    if ([string]::IsNullOrWhiteSpace($pwshVersion)) {
+        $pwshVersion = (((Get-Item -LiteralPath $bundledPwshExe).VersionInfo.FileVersion) -split '\s')[0]
+    }
+    if ($pwshVersion -notmatch '^[7-9]\.') {
+        throw "Bundled PowerShell is not version 7+: $pwshVersion"
+    }
+    $pwshExeHash = Get-FileSha256 -PathValue $bundledPwshExe
     Expand-Archive -LiteralPath $nodeArchivePath -DestinationPath $nodeExtractRoot -Force
     $nodeDistributionRoot = Get-ChildItem -LiteralPath $nodeExtractRoot -Directory | Select-Object -First 1
     if (-not $nodeDistributionRoot) {
