@@ -1698,7 +1698,22 @@ public sealed class ToolchainCliBehaviorTests
             phases.GetProperty("visualMerge").GetProperty("status").GetString().Should().Be("completed");
             phases.GetProperty("referenceReview").GetProperty("status").GetString().Should().Be("completed");
             phases.GetProperty("delivery").GetProperty("status").GetString().Should().Be("completed");
-            receipt.GetProperty("artifacts").GetArrayLength().Should().Be(8);
+            receipt.GetProperty("artifacts").EnumerateArray()
+                .Select((artifact) => artifact.GetProperty("path").GetString()!)
+                .Should().BeEquivalentTo(new[]
+                {
+                    Path.Combine(outputDirectory, "exam参考答案.md"),
+                    Path.Combine(outputDirectory, "exam参考答案.pdf"),
+                    Path.Combine(outputDirectory, "exam参考答案.delivery-manifest.json"),
+                    Path.Combine(outputDirectory, "exam参考答案.snapshot.json"),
+                    Path.Combine(outputDirectory, "exam语义复核发现.md"),
+                    Path.Combine(outputDirectory, "exam.blind-generation.evidence.json"),
+                    Path.Combine(outputDirectory, "exam语义复核候选.md"),
+                    Path.Combine(outputDirectory, "exam盲答与语义复核差异报告.md"),
+                    Path.Combine(outputDirectory, "exam.semantic-review-evidence.json"),
+                    Path.Combine(outputDirectory, "exam答案自动复核文本差异报告.md"),
+                    Path.Combine(outputDirectory, "exam.reference-review-evidence.json")
+                });
             File.Exists(Path.Combine(outputDirectory, "exam参考答案.pdf")).Should().BeTrue();
             Directory.GetFiles(Path.Combine(outputDirectory, "exam参考答案.review"), "*.png")
                 .Should().NotBeEmpty();
@@ -2002,103 +2017,8 @@ public sealed class ToolchainCliBehaviorTests
                 if ($LASTEXITCODE -ne 0) { throw "Controlled delivery writer failed" }
                 return
             }
-            function Write-Text([string]$PathValue, [string]$Value) {
-                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PathValue))) | Out-Null
-                [IO.File]::WriteAllText([IO.Path]::GetFullPath($PathValue), $Value, [Text.UTF8Encoding]::new($false))
-            }
-            function Write-SuccessSummary([string]$PathValue, [string]$ModeValue, [string]$OutputPath) {
-                $rehash = {
-                    param([AllowNull()][string]$BoundPath)
-                    if (-not $BoundPath -or -not [IO.File]::Exists($BoundPath)) { return $null }
-                    return [Convert]::ToHexString(
-                        [Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($BoundPath))).ToLowerInvariant()
-                }
-                $candidate = Get-Option "--candidate-file"
-                $baseline = Get-Option "--candidate-baseline-file"
-                $reference = Get-Option "--reference-pdf-file"
-                $findings = Get-Option "--semantic-findings-file"
-                $audit = Get-Option "--audit-findings-file"
-                $output = Get-Option "--output"
-                $summary = [ordered]@{
-                    schemaVersion = "1.3"
-                    kind = "live-answer-generation-summary"
-                    generatedAt = [DateTimeOffset]::UtcNow.ToString("O")
-                    provider = "fixture"
-                    model = "fixture"
-                    reasoningEffort = $null
-                    promptPath = [IO.Path]::GetFullPath([string](Get-Option "--prompt-file"))
-                    promptSha256 = "0000000000000000000000000000000000000000000000000000000000000000"
-                    mode = $ModeValue
-                    sourcePageCount = 1
-                    auditImageCount = $(if (Get-Option "--audit-images-dir") { 1 } else { 0 })
-                    referencePageCount = $(if (Get-Option "--reference-images-dir") { 1 } else { 0 })
-                    requestedVisualDetailMode = "original"
-                    providerVisualDetailMode = "original"
-                    routing = [ordered]@{
-                        mode = $ModeValue
-                        qualityProfile = "auto"
-                        requestedQualityProfile = "auto"
-                        resolvedQualityProfile = "auto"
-                        requestedPreset = "sol"
-                        resolvedPreset = "sol"
-                        activePreset = "sol"
-                        qualityDegraded = $false
-                        selectedRole = "fixture"
-                        orderedPresets = @("sol")
-                        orderedRoles = @("fixture")
-                        orderedQualityProfiles = @("auto")
-                        orderedExecutionSlots = @(1)
-                        executionSlot = 1
-                        executionSlotCount = 1
-                        target = "fixture"
-                        resolvedRole = "fixture"
-                        attemptedRoles = @("fixture")
-                    }
-                    candidatePath = $(if (-not $candidate) { $null } else { [IO.Path]::GetFullPath($candidate) })
-                    candidateSha256 = $(if (-not $candidate) { $null } else { & $rehash ([IO.Path]::GetFullPath($candidate)) })
-                    candidateBaselinePath = $(if (-not $baseline) { $null } else { [IO.Path]::GetFullPath($baseline) })
-                    candidateBaselineSha256 = $(if (-not $baseline) { $null } else { & $rehash ([IO.Path]::GetFullPath($baseline)) })
-                    semanticFindingsPath = $(if (-not $findings) { $null } else { [IO.Path]::GetFullPath($findings) })
-                    semanticFindingsSha256 = $(if (-not $findings) { $null } else { & $rehash ([IO.Path]::GetFullPath($findings)) })
-                    auditFindingsPath = $(if (-not $audit) { $null } else { [IO.Path]::GetFullPath($audit) })
-                    auditFindingsSha256 = $(if (-not $audit) { $null } else { & $rehash ([IO.Path]::GetFullPath($audit)) })
-                    sourceTextPath = $null
-                    sourceTextSha256 = $null
-                    referenceTextPath = $null
-                    referenceTextSha256 = $null
-                    referencePdfPath = $(if (-not $reference) { $null } else { [IO.Path]::GetFullPath($reference) })
-                    referencePdfSha256 = $(if (-not $reference) { $null } else { & $rehash ([IO.Path]::GetFullPath($reference)) })
-                    pageCount = 1
-                    pageImages = @()
-                    outputPath = [IO.Path]::GetFullPath($output)
-                    outputSha256 = & $rehash ([IO.Path]::GetFullPath($output))
-                    answerCharacters = 8
-                    referenceChoiceOverride = @{ applied = $false }
-                    semanticChoiceOverride = @{ applied = $false; questions = @() }
-                    attempts = @(
-                        [ordered]@{
-                            provider = "fixture"
-                            model = "fixture"
-                            reasoningEffort = $null
-                            preset = "sol"
-                            qualityProfile = "auto"
-                            executionSlot = 1
-                            status = 200
-                            retryAfterMs = $null
-                            ok = $true
-                            retryable = $false
-                            attemptNumber = 1
-                            durationMs = 1
-                            requestBytes = 1
-                            transport = $null
-                            error = ""
-                        }
-                    )
-                }
-                # Windows PowerShell's JSON pipeline can coerce a native node
-                # exit code into an array. Materialize entries explicitly.
-                Write-Text $PathValue ($summary | ConvertTo-Json -Depth 20 -Compress)
-            }
+            # Get-Option/Write-Text/Write-SuccessSummary come from the dot-sourced
+            # summary-functions.ps1 above; keep a single definition of each.
             switch ($tool) {
             {{toolBody}}
                 "validate-workflow-receipt.mjs" { exit 0 }
@@ -2165,7 +2085,7 @@ public sealed class ToolchainCliBehaviorTests
               "2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n",
               "trailer\n<< /Root 1 0 R /Size 3 >>\n%%EOF\n"
             ].join(""), "ascii"));
-            if (!pdfPath.startsWith(process.env.INIT_CWD, process.platform === "win32" ? undefined : undefined)) {
+            if (!pdfPath.startsWith(process.env.INIT_CWD)) {
               throw new Error(`Controlled delivery output escaped its fixture root: ${pdfPath}`);
             }
             const reviewManifestPath = path.join(reviewRoot, "manifest.json");

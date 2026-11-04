@@ -415,6 +415,12 @@ function writeDeliveryManifestCore({
       if (!safeRelativeImagePath || path.isAbsolute(safeRelativeImagePath)) {
         throw new Error(`Review page image is outside its package: ${page.imagePath ?? "<missing>"}`);
       }
+      // Review page images are recorded as absolute paths on purpose: the
+      // review HTML and validators resolve them against the packaged review
+      // directory today. Moving a delivery directory to another machine
+      // therefore relocates the whole folder as one unit; the delivery
+      // manifest itself (input/output/snapshot/integrity) stays package-
+      // relative and keeps validating after an archive move.
       page.imagePath = cachedImagePath ?? path.resolve(packagedReviewDirectory, path.basename(safeRelativeImagePath));
       if (page.kind === "page-tile" && (sourcePage?.textLayerPath ?? page.textLayerPath)) {
         page.textLayerPath = fs.existsSync(path.resolve(
@@ -538,6 +544,9 @@ function main() {
     reviewScale: options.reviewScale,
     manifestPath: manifestOutPath
   });
+  // The manifest is written before this schema check on purpose: a schema
+  // failure still leaves the paid delivery record on disk for diagnostics,
+  // and every downstream consumer re-validates before trusting it.
   if (errors.length > 0) {
     fail(`Delivery manifest failed schema validation:\n${errors.map((error) => `- ${error}`).join("\n")}`, 1);
   }

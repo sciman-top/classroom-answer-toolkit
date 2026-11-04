@@ -211,4 +211,12 @@ test("choice ranges are structurally validated independently of optional subject
   const errors = [];
   validateChoiceLine("1—5：A、B、C、D、A", 1, rule, errors, []);
   assert.deepEqual(errors, []);
+  // The validator must stay structural: an exam with a different choice
+  // layout than the current golden corpus still validates.
+  const otherLayoutErrors = [];
+  validateChoiceLine("13—16：A、B、C、D", 1, rule, otherLayoutErrors, []);
+  assert.deepEqual(otherLayoutErrors, []);
+  const reversedErrors = [];
+  validateChoiceLine("6—2：A、B、C", 1, rule, reversedErrors, []);
+  assert.ok(reversedErrors.length > 0, "expected rejection of a reversed range");
 });

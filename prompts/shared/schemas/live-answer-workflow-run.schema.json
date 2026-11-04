@@ -257,10 +257,6 @@
         "retainedWorkRoot": { "anyOf": [ { "type": "string" }, { "type": "null" } ] }
       }
     },
-    "error": { "anyOf": [ { "type": "string" }, { "type": "null" } ] },
-    "manifestReferenceLeak": {
-      "type": "array",
-      "items": { "type": "string" }
-    }
+    "error": { "anyOf": [ { "type": "string" }, { "type": "null" } ] }
   }
 }
