@@ -558,7 +558,8 @@ function Get-WorkflowReviewEvidence {
     else {
         $null
     }
-    $reference = if ($referenceUsed -and (Test-Path -LiteralPath $referenceReviewEvidencePath -PathType Leaf)) {
+    $referenceReviewed = $phaseStates.referenceReview.status -eq "completed"
+    $reference = if ($referenceReviewed -and (Test-Path -LiteralPath $referenceReviewEvidencePath -PathType Leaf)) {
         Get-Content -LiteralPath $referenceReviewEvidencePath -Raw | ConvertFrom-Json
     }
     else {
@@ -580,7 +581,7 @@ function Get-WorkflowReviewEvidence {
     $referenceUnresolved = if ($reference) {
         @($reference.unresolvedQuestions)
     }
-    elseif ($referenceUsed) {
+    elseif ($referenceReviewed) {
         @($answerQuestions)
     }
     else {
@@ -592,7 +593,7 @@ function Get-WorkflowReviewEvidence {
     if ($SkipVisualAudit) {
         $notices.Add("visual audit was explicitly skipped; delivery is not visual-audited")
     }
-    if (-not $referenceUsed -and $referencePath) {
+    if (-not $referenceReviewed -and $referencePath) {
         $notices.Add("authoritative reference was supplied but no reference review ran")
     }
     return [ordered]@{
@@ -1057,7 +1058,8 @@ function Write-WorkflowReceipt {
                 $semanticReviewReportPath,
                 $semanticReviewEvidencePath,
                 $(if (-not $SkipVisualAudit) { $visualAuditFindingsPath; $visualAuditMarkdownPath; $visualAuditReportPath }),
-                $(if ($referencePath) { $comparisonReportPath; $referenceReviewEvidencePath })
+                $comparisonReportPath,
+                $referenceReviewEvidencePath
             )) {
             $artifactReceipt = Get-WorkflowFileReceipt -PathValue $artifactPath
             if ($null -ne $artifactReceipt) {
@@ -1431,7 +1433,7 @@ try {
             $referenceText = ($referenceTextLayers | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join "`n`n--- reference page ---`n`n"
             Set-Content -LiteralPath $referenceTextPath -Value $referenceText -Encoding utf8 -NoNewline
         }
-        $referenceUsed = $true
+        $script:referenceUsed = $true
 
         Invoke-WorkflowPhase -Name "referenceReview" `
             -ExecuteMessage "[live-answer-workflow] review blind candidate against authoritative reference" `
