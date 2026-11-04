@@ -120,6 +120,8 @@ function Invoke-RendererSmoke {
             throw "Packaged renderer input is missing: $requiredPath"
         }
     }
+    $smokeRoot = Join-Path $testRoot "renderer-$Distribution"
+    [IO.Directory]::CreateDirectory($smokeRoot) | Out-Null
     $pwshProbe = Start-Process -FilePath $pwshPath `
         -ArgumentList @("-NoProfile", "-NonInteractive", "-Command", '$PSVersionTable.PSVersion.Major') `
         -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $smokeRoot "pwsh.stdout.log") `
@@ -130,8 +132,6 @@ function Invoke-RendererSmoke {
         throw "Bundled $Distribution PowerShell did not start or is not version 7: $pwshOutput"
     }
 
-    $smokeRoot = Join-Path $testRoot "renderer-$Distribution"
-    [IO.Directory]::CreateDirectory($smokeRoot) | Out-Null
     $markdownPath = Join-Path $smokeRoot "renderer-smoke.md"
     $pdfPath = Join-Path $smokeRoot "renderer-smoke.pdf"
     $deliveryManifestPath = Join-Path $smokeRoot "renderer-smoke.delivery-manifest.json"

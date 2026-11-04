@@ -119,12 +119,6 @@ function addRuleFinding(rule, message, errors, warnings) {
   warnings.push(message);
 }
 
-const APPROVED_CHOICE_RANGES = [
-  { start: 1, end: 5 },
-  { start: 6, end: 10 },
-  { start: 11, end: 12 }
-];
-
 export function validateChoiceLine(line, lineNumber, rule, errors, warnings) {
   const trimmed = line.trim();
   const range = trimmed.match(/^(\d+)\s*([-\u2013\u2014])\s*(\d+)\s*[:\uff1a]\s*(.*)$/u);
@@ -143,17 +137,18 @@ export function validateChoiceLine(line, lineNumber, rule, errors, warnings) {
 
   const start = Number(range[1]);
   const end = Number(range[3]);
-  const approved = APPROVED_CHOICE_RANGES.find((candidate) => candidate.start === start && candidate.end === end);
-  if (!approved) {
-    addRuleFinding(rule, `Line ${lineNumber}: unsupported grouped choice range ${start}–${end}.`, errors, warnings);
+  // Validation stays structural: which exact ranges a concrete exam uses is
+  // subject-pack data, not a renderer constant.
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end <= start) {
+    addRuleFinding(rule, `Line ${lineNumber}: invalid grouped choice range ${start}–${end}.`, errors, warnings);
     return;
   }
   const answers = [...range[4].matchAll(/[A-D](?![A-Z])/gu)].map((match) => match[0]);
-  if (answers.length !== approved.end - approved.start + 1
+  if (answers.length !== end - start + 1
       || range[4].replace(/[A-D、，,\s]/gu, "").length > 0) {
     addRuleFinding(
       rule,
-      `Line ${lineNumber}: grouped choice ${start}–${end} must contain exactly ${approved.end - approved.start + 1} A-D answers separated by 、.`,
+      `Line ${lineNumber}: grouped choice ${start}–${end} must contain exactly ${end - start + 1} A-D answers separated by 、.`,
       errors,
       warnings
     );
