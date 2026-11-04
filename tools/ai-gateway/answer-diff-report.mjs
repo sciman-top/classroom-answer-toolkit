@@ -62,9 +62,11 @@ export function buildDiffReport(beforePath, afterPath) {
     `## Unified Diff\n\n\`\`\`diff\n${diff.lines.join("\n")}\n\`\`\`\n`;
 }
 
+// The lookahead after the separator rejects decimal values such as "0.5" or
+// "10.5 m" that start a line, which otherwise register as phantom questions.
 function questionNumbers(markdown) {
   const numbers = new Set();
-  const pattern = /^\s*(?:#{1,3}\s*)?(?:第\s*)?(\d{1,3})\s*(?:题|[.．、])/gmu;
+  const pattern = /^\s*(?:#{1,3}\s*)?(?:第\s*)?(\d{1,3})\s*(?:题|[.．、])(?!\d)/gmu;
   for (const match of String(markdown ?? "").matchAll(pattern)) {
     numbers.add(Number(match[1]));
   }
@@ -73,7 +75,7 @@ function questionNumbers(markdown) {
 
 function questionBlocks(markdown) {
   const source = String(markdown ?? "").replace(/\r\n?/g, "\n");
-  const markers = [...source.matchAll(/^\s*(?:#{1,3}\s*)?(?:第\s*)?(\d{1,3})\s*(?:题|[.．、])/gmu)];
+  const markers = [...source.matchAll(/^\s*(?:#{1,3}\s*)?(?:第\s*)?(\d{1,3})\s*(?:题|[.．、])(?!\d)/gmu)];
   const blocks = new Map();
   for (const [index, marker] of markers.entries()) {
     const end = markers[index + 1]?.index ?? source.length;
@@ -120,9 +122,17 @@ export function buildQuestionEvidence({
   const missingQuestions = covered.filter((number) => !after.has(number));
   const semanticText = readOptional(semanticFindingsPath);
   const semantic = parseSemanticChoiceFindings(semanticText);
-  const priorReference = semanticEvidencePath && fs.existsSync(semanticEvidencePath)
+  // Evidence files are written flat (no "review" wrapper); the prior stage's
+  // rolling evidence carries its confirmed/unresolved sets into this stage.
+  const priorEvidence = semanticEvidencePath && fs.existsSync(semanticEvidencePath)
     ? JSON.parse(fs.readFileSync(semanticEvidencePath, "utf8"))
     : null;
+  const priorConfirmed = Array.isArray(priorEvidence?.confirmedCorrections)
+    ? priorEvidence.confirmedCorrections
+    : [];
+  const priorUnresolved = Array.isArray(priorEvidence?.unresolvedQuestions)
+    ? priorEvidence.unresolvedQuestions
+    : [];
   const visualText = readOptional(visualFindingsPath);
   const unresolved = new Set(unresolvedQuestionNumbers(readOptional(afterPath)));
 
@@ -139,8 +149,10 @@ export function buildQuestionEvidence({
   for (const number of missingQuestions) {
     unresolved.add(number);
   }
-  for (const number of priorReference?.review?.unresolvedQuestions ?? []) {
-    if (!referenceEvidencePath) {
+  // Prior unresolved questions stay carried until a reference review runs; the
+  // authoritative reference supersedes them at that stage.
+  if (!referenceEvidencePath) {
+    for (const number of priorUnresolved) {
       unresolved.add(Number(number));
     }
   }
@@ -149,8 +161,9 @@ export function buildQuestionEvidence({
     schemaVersion: "1.0",
     kind: "answer-review-evidence",
     coveredQuestions: covered,
-    confirmedCorrections: [...semantic.keys()].sort((left, right) => left - right),
-    directCorrections: correctedQuestions.filter((number) => visualFindingsPath),
+    confirmedCorrections: [...new Set([...priorConfirmed, ...semantic.keys()])]
+      .sort((left, right) => left - right),
+    directCorrections: correctedQuestions.filter((number) => visualFindingsPath || referenceEvidencePath),
     unresolvedQuestions: [...unresolved].sort((left, right) => left - right),
     missingQuestions,
     diff: lineDiff(readOptional(beforePath), readOptional(afterPath))
@@ -182,6 +195,9 @@ export function main(argv = process.argv.slice(2)) {
   const [beforePath, afterPath, reportPath] = positional.map((value) =>
     path.resolve(process.env.INIT_CWD || process.cwd(), value)
   );
+  // Reports and evidence are persisted before the coverage gate on purpose: a
+  // missing question fails the run, but the paid diff evidence must survive
+  // for diagnostics instead of being discarded with the failure.
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   writeTextFileAtomic(reportPath, buildDiffReport(beforePath, afterPath));
   if (options.evidenceOutputPath) {
