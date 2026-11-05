@@ -375,21 +375,25 @@ async function main() {
   const manifestPath = path.join(outputDir, "manifest.json");
   writeTextFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-  console.log(`Rendered ${manifest.pages.length} image(s) from ${manifest.selectedPages.length}/${manifest.pageCount} selected page(s).`);
-  console.log(`Review HTML: ${reviewHtmlPath}`);
-  console.log(`Manifest: ${manifestPath}`);
-  if (manifest.ocrStatus === "ok") {
-    console.log(`OCR: ${options.ocr}`);
-  } else if (manifest.ocrStatus === "failed") {
-    console.log("OCR: failed; page images were still generated.");
-  } else {
-    console.log("OCR: not requested.");
-  }
+  const summaryLines = [
+    `Rendered ${manifest.pages.length} image(s) from ${manifest.selectedPages.length}/${manifest.pageCount} selected page(s).`,
+    `Review HTML: ${reviewHtmlPath}`,
+    `Manifest: ${manifestPath}`,
+    manifest.ocrStatus === "ok"
+      ? `OCR: ${options.ocr}`
+      : manifest.ocrStatus === "failed"
+        ? "OCR: failed; page images were still generated."
+        : "OCR: not requested."
+  ];
 
   // Same reason as render-md-latex: under a shared host browser this client's
   // transport can keep the event loop alive after close(), so exit explicitly.
+  // The write callback flushes piped stdout (asynchronous under a pipe)
+  // before exit so the summary lines cannot be truncated.
   if (sharedBrowserWsEndpoint) {
-    process.exit(0);
+    process.stdout.write(`${summaryLines.join("\n")}\n`, () => process.exit(0));
+  } else {
+    console.log(summaryLines.join("\n"));
   }
 }
 

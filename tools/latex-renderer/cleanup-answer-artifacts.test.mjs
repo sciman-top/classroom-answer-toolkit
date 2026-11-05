@@ -44,3 +44,29 @@ test("cleanup refuses traversal through a junction and preserves external files"
     fs.rmSync(outside, { recursive: true, force: true });
   }
 });
+
+test("cleanup refuses extra paths outside the repository", () => {
+  const outsideFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "classroom-cleanup-out-")), "_tmp_outside.txt");
+  fs.writeFileSync(outsideFile, "keep");
+  try {
+    assert.throws(() => runCleanup({ keepReview: true, keepOcr: true, dryRun: false,
+      extraPaths: [outsideFile] }), /outside repository/);
+    assert.equal(fs.readFileSync(outsideFile, "utf8"), "keep");
+  } finally {
+    fs.rmSync(path.dirname(outsideFile), { recursive: true, force: true });
+  }
+});
+
+test("cleanup refuses repository paths that are not whitelisted temp names", () => {
+  // The name must satisfy isWithinRepo yet fail isAllowedExtraPath: a plain
+  // repo file must never be deletable through the extra-path seam.
+  const local = path.join(repositoryRoot, "cleanup-refusal-guard.txt");
+  fs.writeFileSync(local, "keep");
+  try {
+    assert.throws(() => runCleanup({ keepReview: true, keepOcr: true, dryRun: false,
+      extraPaths: [path.relative(repositoryRoot, local)] }), /non-temporary path/);
+    assert.equal(fs.readFileSync(local, "utf8"), "keep");
+  } finally {
+    fs.rmSync(local, { force: true });
+  }
+});

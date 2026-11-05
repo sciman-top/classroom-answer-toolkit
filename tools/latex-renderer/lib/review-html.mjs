@@ -19,7 +19,7 @@ export function writeReviewHtml({ outputDir, inputPath, manifest }) {
 
     return `<section>
   <h2>${heading}</h2>
-  <p>${page.width} x ${page.height}px · ${textLayer}${ocr}</p>
+  <p>${escapeHtml(String(page.width))} x ${escapeHtml(String(page.height))}px · ${textLayer}${ocr}</p>
   <img src="${escapeHtml(encodeURIComponent(imageName))}" alt="Page ${page.pageNumber}">
 </section>`;
   }).join("\n");
@@ -66,7 +66,7 @@ img {
 <header>
   <h1>PDF source review</h1>
   <p>${escapeHtml(inputPath)}</p>
-  <p>Renderer: ${escapeHtml(manifest.renderer)} · pages: ${manifest.selectedPages.join(", ")}</p>
+  <p>Renderer: ${escapeHtml(manifest.renderer)} · pages: ${escapeHtml(manifest.selectedPages.map(String).join(", "))}</p>
 </header>
 ${imageItems}
 </body>

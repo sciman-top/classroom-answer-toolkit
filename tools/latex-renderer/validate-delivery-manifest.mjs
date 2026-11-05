@@ -427,29 +427,12 @@ export function validateDeliveryManifest(
     if (manifest.status?.deliveryComplete === true && manifest.status?.toolchainPassed !== true) {
       errors.push("A complete delivery requires status.toolchainPassed=true.");
     }
-    const boundPaths = new Set([
-      manifest.input,
-      manifest.output,
-      manifest.snapshotPath,
-      ...(manifest.integrity?.reviewFiles ?? []).map((entry) => entry?.path),
-      ...((manifest.graphics?.items ?? []).flatMap((item) => [
-        item?.placementPath,
-        item?.previewPath
-      ]))
-    ].filter((entry) => typeof entry === "string").map((entry) =>
-      normalizePathForComparison(resolveManifestRelativePath(entry, manifestDir))
-    ));
-    for (const [index, item] of (manifest.graphics?.items ?? []).entries()) {
-      for (const field of ["placementPath", "previewPath"]) {
-        if (typeof item?.[field] !== "string" || item[field].trim().length === 0) {
-          continue;
-        }
-        const filePath = resolveManifestRelativePath(item[field], manifestDir);
-        if (!boundPaths.has(normalizePathForComparison(filePath))) {
-          errors.push(`graphics.items[${index}].${field} is not bound by delivery integrity.`);
-        }
-      }
-    }
+    // Graphics assets (placement JSON / preview SVG) are copied into the
+    // package but deliberately not bound by delivery integrity: the main
+    // chain emits no graphics items and binding them needs a schema addition
+    // to the dormant answer-graphic lane. There is intentionally no "not
+    // bound by delivery integrity" check here — it used to compare those
+    // paths against a set that already contained them and could never fire.
   }
 
   if (manifest.graphics !== undefined && !Array.isArray(manifest.graphics?.items)) {

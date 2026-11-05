@@ -366,23 +366,42 @@ function injectAnswerGraphics(html, graphics) {
 // The temp HTML lives in the output directory, so relative image URLs would resolve
 // against the wrong base when output differs from the source directory. Resolve every
 // local image against the Markdown source and fail closed when it does not exist.
+function resolveDestinationUrl(url, tail) {
+  // CommonMark angle destinations (`![alt](<path with spaces.png>)`) exceed the
+  // no-space capture above; reconstruct the full destination from the tail
+  // instead of failing on a truncated "<path" fragment.
+  if (!url.startsWith("<")) {
+    return { target: url, remainingTail: tail };
+  }
+  const closingIndex = tail.indexOf(">");
+  if (closingIndex === -1) {
+    throw new Error(`Image destination opens with "<" but never closes it: ${url}${tail}`);
+  }
+  const destination = `${url}${tail.slice(0, closingIndex + 1)}`;
+  return {
+    target: destination.slice(1, -1),
+    remainingTail: tail.slice(closingIndex + 1)
+  };
+}
+
 function resolveLocalImageRefs(markdown, sourcePath) {
   return markdown.replace(/(!\[[^\]]*\]\()([^)\s]+)([^)]*\))/g, (match, lead, url, tail) => {
     if (/^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|\/\/|#)/.test(url)) {
       return match;
     }
     const sourceDir = path.dirname(sourcePath);
-    const candidates = [path.resolve(sourceDir, url)];
+    const { target, remainingTail } = resolveDestinationUrl(url, tail);
+    const candidates = [path.resolve(sourceDir, target)];
     try {
-      candidates.push(path.resolve(sourceDir, decodeURIComponent(url)));
+      candidates.push(path.resolve(sourceDir, decodeURIComponent(target)));
     } catch {
       // Keep the raw-path candidate only.
     }
     const imagePath = candidates.find((candidate) => fs.existsSync(candidate));
     if (!imagePath) {
-      throw new Error(`Image reference not found relative to ${sourceDir}: ${url}`);
+      throw new Error(`Image reference not found relative to ${sourceDir}: ${target}`);
     }
-    return `${lead}${pathToFileURL(imagePath).href}${tail}`;
+    return `${lead}${pathToFileURL(imagePath).href}${remainingTail}`;
   });
 }
 
@@ -395,11 +414,12 @@ function resolveLocalImageDefinitions(markdown, sourcePath) {
       return match;
     }
     const sourceDir = path.dirname(sourcePath);
-    const imagePath = path.resolve(sourceDir, decodeURIComponent(url));
+    const { target, remainingTail } = resolveDestinationUrl(url, tail);
+    const imagePath = path.resolve(sourceDir, decodeURIComponent(target));
     if (!fs.existsSync(imagePath)) {
-      throw new Error(`Image reference not found relative to ${sourceDir}: ${url}`);
+      throw new Error(`Image reference not found relative to ${sourceDir}: ${target}`);
     }
-    return `${lead}${pathToFileURL(imagePath).href}${tail}`;
+    return `${lead}${pathToFileURL(imagePath).href}${remainingTail}`;
   });
 }
 
@@ -566,8 +586,12 @@ const browserPdfOutputPath = makeBrowserPdfOutputPath(outputPath);
 let browser = null;
 let committedPdf = false;
 try {
-  if (fs.existsSync(browserPdfOutputPath)) {
-    fs.unlinkSync(browserPdfOutputPath);
+  // Both temp paths carry hidden, uniquely-suffixed names no consumer reads,
+  // so a stale leftover is removed best-effort: a locked file (AV/indexer)
+  // must not abort the render before the browser even starts.
+  try {
+    removePathRecursive(browserPdfOutputPath);
+  } catch {
   }
   browser = sharedBrowserWsEndpoint
     ? await chromium.connect(sharedBrowserWsEndpoint)
@@ -636,18 +660,31 @@ try {
   if (browser) {
     await browser.close().catch(() => {});
   }
-  if (fs.existsSync(tempHtmlPath) && process.env.CLASSROOM_TOOLKIT_KEEP_RENDER_HTML !== "1") {
-    fs.unlinkSync(tempHtmlPath);
+  // Temp cleanup is best-effort for the same reason as the pre-clean above:
+  // AV/indexer locks on freshly written files must not fail an already
+  // successful render, and a cleanup error here must not mask the render's
+  // own failure when this finally runs on an error path.
+  if (process.env.CLASSROOM_TOOLKIT_KEEP_RENDER_HTML !== "1") {
+    try {
+      removePathRecursive(tempHtmlPath);
+    } catch {
+    }
   }
-  if (committedPdf && fs.existsSync(browserPdfOutputPath)) {
-    fs.unlinkSync(browserPdfOutputPath);
+  if (committedPdf) {
+    try {
+      removePathRecursive(browserPdfOutputPath);
+    } catch {
+    }
   }
 }
 
-console.log(outputPath);
 // After close() a connect()'s WebSocket transport can keep this event loop
 // alive; a shared-host step must exit explicitly or the deliver host would
 // wait on it forever. Self-launched browsers exit the normal way.
+// The explicit write callback flushes piped stdout before exit: console.log
+// to a pipe is asynchronous and a bare process.exit could truncate the path.
 if (sharedBrowserWsEndpoint) {
-  process.exit(0);
+  process.stdout.write(`${outputPath}\n`, () => process.exit(0));
+} else {
+  console.log(outputPath);
 }

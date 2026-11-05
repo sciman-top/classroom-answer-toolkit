@@ -109,7 +109,18 @@ function collectCandidates(options) {
 }
 
 function removePath(targetPath, dryRun) {
-  const stat = fs.lstatSync(targetPath);
+  // A concurrent cleanup/deliver can remove this candidate between
+  // collectCandidates and here; a vanished target is already clean, not an
+  // error that should fail the other process's successful delivery.
+  let stat;
+  try {
+    stat = fs.lstatSync(targetPath);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return { removed: false, kind: null };
+    }
+    throw error;
+  }
   const kind = stat.isDirectory() ? "dir" : "file";
   const relative = path.relative(repoRoot, targetPath);
 
@@ -118,7 +129,14 @@ function removePath(targetPath, dryRun) {
     return { removed: false, kind };
   }
 
-  removePathRecursive(targetPath);
+  try {
+    removePathRecursive(targetPath);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return { removed: false, kind: null };
+    }
+    throw error;
+  }
   console.log(`removed ${kind}: ${relative}`);
   return { removed: true, kind };
 }
@@ -137,7 +155,11 @@ export function runCleanup(options) {
   let removedDirs = 0;
 
   for (const candidate of candidates) {
-    const { kind } = removePath(candidate, options.dryRun);
+    const { kind, removed } = removePath(candidate, options.dryRun);
+    // kind is null when a concurrent process already removed the candidate.
+    if (!removed && !options.dryRun) {
+      continue;
+    }
     if (kind === "dir") {
       removedDirs += 1;
     } else {

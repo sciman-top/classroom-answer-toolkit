@@ -147,11 +147,17 @@ function main() {
     return;
   }
 
+  // Relative paths resolve against the caller's CWD (INIT_CWD under npm
+  // --prefix), matching every other renderer CLI; without this an npm-style
+  // relative call resolves against the tool directory instead.
+  const callerCwd = process.env.INIT_CWD || process.cwd();
   const result = exportAnswerDocx({
-    markdownPath: options.markdown,
-    outputPath: options.output,
+    markdownPath: path.resolve(callerCwd, options.markdown),
+    outputPath: options.output ? path.resolve(callerCwd, options.output) : undefined,
     verify: !options["no-verify"],
-    reference: options["no-reference"] ? null : (options.reference ?? DEFAULT_REFERENCE)
+    reference: options["no-reference"]
+      ? null
+      : (options.reference ? path.resolve(callerCwd, options.reference) : DEFAULT_REFERENCE)
   });
   const mathSummary = result.mathReport
     ? ` ${result.mathReport.actual}/${result.mathReport.expected} math region(s) verified as OMML.`

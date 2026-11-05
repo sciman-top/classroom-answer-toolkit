@@ -133,6 +133,42 @@ test("package-relative manifest paths are accepted (2026-08-27 portability contr
   });
 });
 
+test("delivery manifest rejects an unbound extra file inside the review package", () => {
+  withFixture(({ manifest, manifestPath }) => {
+    manifest.status.reviewArtifactReady = true;
+    const reviewRoot = path.join(path.dirname(manifestPath), "answer.review");
+    fs.mkdirSync(reviewRoot, { recursive: true });
+    const reviewFileNames = ["manifest.json", "page-001.png"];
+    fs.writeFileSync(path.join(reviewRoot, "page-001.png"), "review fixture", "utf8");
+    writeJson(path.join(reviewRoot, "manifest.json"), {
+      kind: "pdf-source-review",
+      schemaVersion: "1.0",
+      inputPath: "../answer.pdf",
+      inputSha256: fileIntegrity(manifest.output).sha256,
+      inputBytes: fs.statSync(manifest.output).size,
+      pageCount: 1,
+      selectedPages: [1],
+      pages: [{ kind: "page-tile", pageNumber: 1, imagePath: path.join(reviewRoot, "page-001.png") }],
+      ocrStatus: "not-requested"
+    });
+    manifest.review.outputDir = "answer.review";
+    manifest.review.manifestPath = "answer.review/manifest.json";
+    manifest.integrity.reviewFiles = reviewFileNames.map((name) => {
+      const filePath = path.join(reviewRoot, name);
+      return { ...fileIntegrity(filePath), path: `answer.review/${name}` };
+    });
+    // A file added to the review package after the manifest was written must
+    // fail validation: reviewFiles binds the exact packaged file set.
+    fs.writeFileSync(path.join(reviewRoot, "stray.txt"), "not bound", "utf8");
+
+    const errors = validateDeliveryManifest(manifest, manifestPath);
+    assert.ok(
+      errors.some((error) => error.includes("integrity.reviewFiles is missing current review artifact")
+        && error.includes("stray.txt")),
+      errors.join("\n"));
+  });
+});
+
 test("delivery manifest rejects output integrity drift", () => {
   withFixture(({ manifest, manifestPath, outputPath }) => {
     fs.appendFileSync(outputPath, "tampered", "utf8");

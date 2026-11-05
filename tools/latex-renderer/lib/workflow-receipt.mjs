@@ -127,7 +127,11 @@ function validateGenerationSummary(phaseName, phase, errors) {
     }
   }
 
-  if (!fs.existsSync(artifactPath) || !fs.statSync(artifactPath).isFile()) {
+  // The typeof guard is deliberate: fs.existsSync(undefined) still returns
+  // false but emits a DEP0187 deprecation warning on Node 24 and is slated to
+  // throw in a future hardening release.
+  if (typeof artifactPath !== "string"
+      || !fs.existsSync(artifactPath) || !fs.statSync(artifactPath).isFile()) {
     errors.push(`${phaseName}.artifact is missing or not a file.`);
     return null;
   }
