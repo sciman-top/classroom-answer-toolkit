@@ -8,7 +8,9 @@ _docx_render_check/
 .workbuddy-ai/
 
 # Local secrets and provider overrides
+# "*.env" also catches renamed copies like " - 副本.env" that ".env.*" misses.
 .env
+*.env
 .env.*
 !.env.example
 .npmrc
