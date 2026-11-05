@@ -15,7 +15,8 @@ export function writeDeliveryManifest({
   reviewDirectory,
   reviewManifestPath,
   reviewScale,
-  manifestPath
+  manifestPath,
+  force = false
 }) {
   return writeDeliveryManifestCore({
     inputPath: path.resolve(inputPath),
@@ -24,7 +25,8 @@ export function writeDeliveryManifest({
     reviewDir: reviewDirectory ? path.resolve(reviewDirectory) : null,
     reviewManifestPath: reviewManifestPath ? path.resolve(reviewManifestPath) : null,
     reviewScale: reviewScale ?? null,
-    manifestOutPath: path.resolve(manifestPath)
+    manifestOutPath: path.resolve(manifestPath),
+    force: force === true
   });
 }
 
@@ -39,6 +41,9 @@ function parseArgs(argv) {
       "review-scale": "reviewScale",
       out: true
     },
+    booleanFlags: {
+      force: "force"
+    },
     defaults: {
       input: null,
       output: null,
@@ -46,7 +51,8 @@ function parseArgs(argv) {
       reviewDir: null,
       reviewManifestPath: null,
       reviewScale: null,
-      out: null
+      out: null,
+      force: false
     }
   });
 }
@@ -148,13 +154,7 @@ function readReviewSourceManifest(reviewDirectory, declaredManifestPath) {
   return null;
 }
 
-function isPathWithin(directoryPath, filePath) {
-  const relative = path.relative(directoryPath, filePath);
-  return relative === ""
-    || (!path.isAbsolute(relative) && relative !== ".." && !relative.startsWith(`..${path.sep}`));
-}
-
-function copyPackageFile(sourcePath, targetPath) {
+function copyPackageFile(sourcePath, targetPath, force = false) {
   if (!fs.existsSync(sourcePath)) {
     return false;
   }
@@ -166,15 +166,19 @@ function copyPackageFile(sourcePath, targetPath) {
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
   if (fs.existsSync(targetPath)) {
     if (sha256Hex(fs.readFileSync(targetPath)) !== sha256Hex(fs.readFileSync(sourcePath))) {
-      throw new Error(`Delivery graphic resource collision with different content: ${targetPath}`);
+      // Same forced-replacement contract as the packaged input copy.
+      if (!force) {
+        throw new Error(`Delivery graphic resource collision with different content: ${targetPath}`);
+      }
+    } else {
+      return false;
     }
-  } else {
-    fs.copyFileSync(sourcePath, targetPath);
   }
+  fs.copyFileSync(sourcePath, targetPath);
   return true;
 }
 
-function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDirectory) {
+function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDirectory, force = false) {
   const source = fs.readFileSync(inputPath, "utf8");
   const sourceInputDir = path.dirname(inputPath);
   const markerPattern = /<!--\s*answer-graphic:\s*(.+?)\s*-->/g;
@@ -193,7 +197,7 @@ function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDi
     // preserve its marker path. Rewriting the same external path beside the
     // packaged Markdown would make the Markdown point to a different directory.
     const packagedPlacementPath = path.resolve(manifestDirectory, markerPath);
-    copyPackageFile(sourcePlacementPath, packagedPlacementPath);
+    copyPackageFile(sourcePlacementPath, packagedPlacementPath, force);
 
     const placement = readJsonFileIfExists(sourcePlacementPath);
     const previewPath = typeof placement?.previewPath === "string"
@@ -201,12 +205,12 @@ function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDi
       : null;
     if (previewPath) {
       const packagedPreviewPath = path.resolve(path.dirname(packagedPlacementPath), placement.previewPath);
-      copyPackageFile(previewPath, packagedPreviewPath);
+      copyPackageFile(previewPath, packagedPreviewPath, force);
     }
   }
 }
 
-function ensureInputInDeliveryPackage(inputPath, manifestDirectory, reservedPaths) {
+function ensureInputInDeliveryPackage(inputPath, manifestDirectory, reservedPaths, force = false) {
   const relative = path.relative(manifestDirectory, inputPath);
   if (!path.isAbsolute(relative) && !relative.startsWith("..")) {
     return inputPath;
@@ -220,13 +224,19 @@ function ensureInputInDeliveryPackage(inputPath, manifestDirectory, reservedPath
   }
   if (fs.existsSync(packagedPath)) {
     if (sha256Hex(fs.readFileSync(packagedPath)) !== sha256Hex(fs.readFileSync(inputPath))) {
-      throw new Error(`Delivery input copy already exists with different content: ${packagedPath}`);
+      // An intentional forced replacement of the whole delivery may refresh a
+      // stale packaged copy; without --force the collision stays fail-closed.
+      if (!force) {
+        throw new Error(`Delivery input copy already exists with different content: ${packagedPath}`);
+      }
     }
-  } else {
+  }
+  if (!fs.existsSync(packagedPath)
+      || sha256Hex(fs.readFileSync(packagedPath)) !== sha256Hex(fs.readFileSync(inputPath))) {
     fs.copyFileSync(inputPath, packagedPath);
   }
 
-  packageAnswerGraphicReferences(inputPath, packagedPath, manifestDirectory);
+  packageAnswerGraphicReferences(inputPath, packagedPath, manifestDirectory, force);
   return packagedPath;
 }
 
@@ -282,7 +292,8 @@ function writeDeliveryManifestCore({
   reviewDir,
   reviewManifestPath,
   reviewScale,
-  manifestOutPath
+  manifestOutPath,
+  force = false
 }) {
   for (const [label, filePath] of [
     ["Answer Markdown", inputPath],
@@ -415,19 +426,23 @@ function writeDeliveryManifestCore({
       if (!safeRelativeImagePath || path.isAbsolute(safeRelativeImagePath)) {
         throw new Error(`Review page image is outside its package: ${page.imagePath ?? "<missing>"}`);
       }
-      // Review page images are recorded as absolute paths on purpose: the
-      // review HTML and validators resolve them against the packaged review
-      // directory today. Moving a delivery directory to another machine
-      // therefore relocates the whole folder as one unit; the delivery
-      // manifest itself (input/output/snapshot/integrity) stays package-
-      // relative and keeps validating after an archive move.
-      page.imagePath = cachedImagePath ?? path.resolve(packagedReviewDirectory, path.basename(safeRelativeImagePath));
+      // Packaged page images are recorded relative to the packaged review
+      // directory (2026-08-27 portability contract): the review HTML and all
+      // validators resolve them against the packaged manifest's own directory,
+      // so the delivery keeps validating after the archive moves or changes
+      // machine. The physical file location (packagedReviewDirectory root) is
+      // unchanged; only the recorded string stops pinning the old absolute
+      // path.
+      page.imagePath = cachedImagePath
+        ? path.basename(cachedImagePath)
+        : path.basename(safeRelativeImagePath);
       if (page.kind === "page-tile" && (sourcePage?.textLayerPath ?? page.textLayerPath)) {
-        page.textLayerPath = fs.existsSync(path.resolve(
+        const packagedTextLayerPath = path.resolve(
           packagedReviewDirectory,
           path.basename(sourcePage?.textLayerPath ?? page.textLayerPath)
-        ))
-          ? path.resolve(packagedReviewDirectory, path.basename(sourcePage?.textLayerPath ?? page.textLayerPath))
+        );
+        page.textLayerPath = fs.existsSync(packagedTextLayerPath)
+          ? path.basename(packagedTextLayerPath)
           : null;
       }
     }
@@ -459,7 +474,7 @@ function writeDeliveryManifestCore({
     path.normalize(outputPath),
     path.normalize(snapshotPath),
     path.normalize(manifestOutPath)
-  ]));
+  ]), force);
   const answerGraphics = collectAnswerGraphicReferences(packagedInputPath)
     .map((reference) => ({
       ...reference,
@@ -542,7 +557,8 @@ function main() {
     reviewDirectory: options.reviewDir ? path.resolve(callerCwd, options.reviewDir) : null,
     reviewManifestPath: options.reviewManifestPath ? path.resolve(callerCwd, options.reviewManifestPath) : null,
     reviewScale: options.reviewScale,
-    manifestPath: manifestOutPath
+    manifestPath: manifestOutPath,
+    force: options.force === true
   });
   // The manifest is written before this schema check on purpose: a schema
   // failure still leaves the paid delivery record on disk for diagnostics,

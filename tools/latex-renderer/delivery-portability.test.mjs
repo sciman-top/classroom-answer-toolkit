@@ -46,34 +46,32 @@ test("writer output survives package relocation and foreign-CWD validation", asy
     ]);
     assert.equal(written.status, 0, `writer stderr: ${written.stderr}`);
 
+    // The writer must never emit absolute page paths: they would silently pin
+    // the package to the machine it was built on (2026-08-27 portability
+    // contract). Assert this before relocation so a regression fails here
+    // with the offending value instead of a foreign-CWD validation error.
+    const writtenReviewManifest = JSON.parse(
+      fs.readFileSync(path.join(root, "answer.review", "manifest.json"), "utf8")
+    );
+    assert.equal(path.normalize(writtenReviewManifest.inputPath), path.normalize("../answer.pdf"));
+    for (const page of writtenReviewManifest.pages) {
+      assert.equal(
+        path.isAbsolute(page.imagePath),
+        false,
+        `pages[].imagePath must be package-relative, got ${page.imagePath}`
+      );
+    }
+
     // Relocate the package, then validate with a CWD outside both copies.
     // Exercise the asynchronous copy path used by deliver-answer.mjs. This is
     // intentionally not fs.cpSync: that Node API has crashed on Windows when
     // a real delivery directory contains CJK path segments.
-    // The writer's review manifest is delivery-owned; this unit regression
-    // checks the portable input/output/snapshot/integrity contract, not a
-    // copied build cache. A full delivery-package relocation is covered by the
-    // real deliver CLI and its versioned acceptance path.
+    // No hand-patching here: a relocated delivery must validate exactly as
+    // the writer produced it, review manifest and integrity hashes included.
     await fs.promises.cp(root, relocatedRoot, { recursive: true });
     const foreignCwd = path.join(os.tmpdir(), "delivery-portability-cwd");
     fs.mkdirSync(foreignCwd, { recursive: true });
     const relocatedManifest = path.join(relocatedRoot, "answer.delivery-manifest.json");
-    const relocatedReviewManifestPath = path.join(relocatedRoot, "answer.review", "manifest.json");
-    const relocatedReviewManifest = JSON.parse(fs.readFileSync(relocatedReviewManifestPath, "utf8"));
-    relocatedReviewManifest.inputPath = "../answer.pdf";
-    for (const page of relocatedReviewManifest.pages) {
-      page.imagePath = path.join(relocatedRoot, "answer.review", path.basename(page.imagePath));
-    }
-    writeJson(relocatedReviewManifestPath, relocatedReviewManifest);
-    const relocatedDeliveryManifest = JSON.parse(fs.readFileSync(relocatedManifest, "utf8"));
-    for (const entry of relocatedDeliveryManifest.integrity.reviewFiles) {
-      if (entry.path.endsWith("manifest.json")) {
-        const bytes = fs.readFileSync(relocatedReviewManifestPath);
-        entry.bytes = bytes.byteLength;
-        entry.sha256 = fileHash(relocatedReviewManifestPath);
-      }
-    }
-    writeJson(relocatedManifest, relocatedDeliveryManifest);
     const validated = await runTool("validate-delivery-manifest.mjs", [
       "--manifest", relocatedManifest
     ], { cwd: foreignCwd });
@@ -162,9 +160,11 @@ test("delivery-owned review is relocatable instead of depending on .pdf-review d
     ));
     assert.equal(path.normalize(reviewManifest.inputPath), path.normalize("../answer.pdf"));
     assert.equal(
-      path.normalize(reviewManifest.pages[0].imagePath),
-      path.normalize(path.join(outputRoot, "answer.review", path.basename(reviewManifest.pages[0].imagePath)))
+      path.isAbsolute(reviewManifest.pages[0].imagePath),
+      false,
+      `packaged pages[].imagePath must be package-relative, got ${reviewManifest.pages[0].imagePath}`
     );
+    assert.ok(fs.existsSync(path.join(outputRoot, "answer.review", reviewManifest.pages[0].imagePath)));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
     fs.rmSync(outputRoot, { recursive: true, force: true });
@@ -227,6 +227,55 @@ test("writer packages external answer graphics and validates after relocation", 
     fs.rmSync(root, { recursive: true, force: true });
     fs.rmSync(externalRoot, { recursive: true, force: true });
     fs.rmSync(relocatedRoot, { recursive: true, force: true });
+  }
+});
+
+test("deliver refuses to silently replace an existing delivery built from different input", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-overwrite-"));
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-overwrite-out-"));
+  try {
+    const answerPath = path.join(root, "answer.md");
+    const pdfPath = path.join(outputRoot, "answer.pdf");
+    const snapshotPath = path.join(outputRoot, "answer.snapshot.json");
+    const manifestPath = path.join(outputRoot, "answer.delivery-manifest.json");
+    fs.writeFileSync(answerPath, "# 参考答案\n");
+    writeJson(snapshotPath, compileResolvedSnapshot({
+      subjectPack: "junior-physics-answer",
+      profileName: "classroom"
+    }));
+
+    const deliverArgs = [
+      answerPath, pdfPath,
+      "--subject-pack", "junior-physics-answer",
+      "--snapshot-path", snapshotPath,
+      "--skip-validate"
+    ];
+    const first = await runTool("deliver-answer.mjs", deliverArgs);
+    assert.equal(first.status, 0, first.stderr);
+    const firstInputSha256 = JSON.parse(fs.readFileSync(manifestPath, "utf8")).integrity.input.sha256;
+
+    // Same input bytes: an idempotent refresh stays allowed without --force.
+    const refresh = await runTool("deliver-answer.mjs", deliverArgs);
+    assert.equal(refresh.status, 0, refresh.stderr);
+
+    // Different input bytes: the guard must fail closed and leave the bound
+    // delivery untouched — this is exactly the wrong-target accident.
+    fs.writeFileSync(answerPath, "# 参考答案（修订）\n");
+    const refused = await runTool("deliver-answer.mjs", deliverArgs);
+    assert.notEqual(refused.status, 0);
+    assert.ok(refused.stderr.includes("Refusing to replace"), `stderr: ${refused.stderr}`);
+    assert.ok(refused.stderr.includes("--force"), `stderr: ${refused.stderr}`);
+    const manifestAfterRefusal = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    assert.equal(manifestAfterRefusal.integrity.input.sha256, firstInputSha256);
+
+    // Explicit --force documents the intentional replacement.
+    const forced = await runTool("deliver-answer.mjs", [...deliverArgs, "--force"]);
+    assert.equal(forced.status, 0, forced.stderr);
+    const manifestAfterForce = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    assert.notEqual(manifestAfterForce.integrity.input.sha256, firstInputSha256);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(outputRoot, { recursive: true, force: true });
   }
 });
 

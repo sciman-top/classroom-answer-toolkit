@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
 import { removePathRecursive } from "../safe-remove.mjs";
-import { fail, parseArgvFlags, readJsonFile, repositoryRoot as repoRoot } from "../shared.mjs";
+import { fail, parseArgvFlags, readJsonFile, readJsonFileIfExists, repositoryRoot as repoRoot, sha256File } from "../shared.mjs";
 import { resolveLocalBrowserPath } from "./lib/browser-candidates.mjs";
 import { makeRenderTempHtmlPath, makeReviewOutputDir } from "./lib/pdf-output-path.mjs";
 import { getDefaultSubjectPackName, getSnapshotActiveProfile, loadRequiredResolvedSnapshot, resolveSnapshotPath } from "./lib/runtime-config.mjs";
@@ -20,7 +20,7 @@ const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const packageName = packageJson.name ?? "classroom-toolkit-latex-renderer";
 
 const usage = `Usage:
-  npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--review-scale 2] [--skip-validate]
+  npm --prefix tools/latex-renderer run deliver -- <answer.md> [output.pdf] [--profile classroom|compact] [--snapshot-path <snapshot.json>] [--keep-review] [--review-scale 2] [--skip-validate] [--force]
 
 Examples:
   npm --prefix tools/latex-renderer run deliver -- "<答案.md>"
@@ -32,6 +32,8 @@ Behavior:
   3. Copy the review set beside the PDF as <pdf-base>.review for archival.
   4. If both steps succeed, automatically clean transient artifacts unless you keep them.
   5. If any step fails, keep all temporary artifacts for debugging.
+  An existing delivery at the target PDF is only replaced silently when the
+  input Markdown bytes are unchanged; a different input requires --force.
 `;
 
 function resolveToolScript(scriptFileName) {
@@ -50,7 +52,8 @@ function parseArgs(argv) {
     },
     booleanFlags: {
       "keep-review": "keepReview",
-      "skip-validate": "skipValidate"
+      "skip-validate": "skipValidate",
+      force: "force"
     },
     defaults: {
       profile: null,
@@ -58,6 +61,7 @@ function parseArgs(argv) {
       keepReview: false,
       reviewScale: "2",
       skipValidate: false,
+      force: false,
       subjectPack: getDefaultSubjectPackName()
     },
     help: true,
@@ -190,6 +194,29 @@ async function main() {
 
   if (!/\.pdf$/i.test(outputPath)) {
     fail(`Expected a PDF output file: ${outputPath}`);
+  }
+
+  // Fail closed before any destructive step: a delivery manifest beside the
+  // target PDF means a real delivery lives there. Re-rendering the same input
+  // bytes is an idempotent refresh and stays allowed; anything else (wrong
+  // output argument, another Markdown copied onto the same name) would
+  // silently replace the bound PDF, review set, snapshot, and manifest, so it
+  // must be confirmed with --force.
+  const existingDeliveryManifestPath = makeDeliveryManifestPath(outputPath);
+  if (!options.force && fs.existsSync(existingDeliveryManifestPath) && fs.existsSync(outputPath)) {
+    const existingManifest = readJsonFileIfExists(existingDeliveryManifestPath);
+    const existingInputSha256 = existingManifest?.integrity?.input?.sha256;
+    if (typeof existingInputSha256 !== "string"
+        || existingInputSha256 !== sha256File(inputPath)) {
+      fail(
+        `Refusing to replace the existing delivery at ${outputPath}: `
+        + (typeof existingInputSha256 === "string"
+          ? "its manifest was built from different input bytes"
+          : `its manifest at ${existingDeliveryManifestPath} has no readable input integrity`)
+        + `. Re-run with --force to replace it intentionally.`,
+        1
+      );
+    }
   }
 
   const reviewOutputDir = makeReviewOutputDir(repoRoot, outputPath);
@@ -354,7 +381,7 @@ async function main() {
       });
   writeTextFileAtomic(deliverySnapshotPath, `${JSON.stringify(deliverySnapshot, null, 2)}\n`);
   console.log(`[${packageName}] write-delivery-manifest`);
-  await runNodeScript("write-delivery-manifest.mjs", [
+  const manifestArguments = [
     "--input",
     path.relative(repoRoot, inputPath),
     "--output",
@@ -367,7 +394,13 @@ async function main() {
     path.relative(repoRoot, reviewManifestPath),
     "--review-scale",
     options.reviewScale
-  ]);
+  ];
+  // A forced replacement must also refresh the packaged input copy and any
+  // answer-graphic assets staged by the previous delivery.
+  if (options.force) {
+    manifestArguments.push("--force");
+  }
+  await runNodeScript("write-delivery-manifest.mjs", manifestArguments);
   console.log(`[${packageName}] validate-delivery-manifest`);
   // In-process validation avoids one extra Node cold start while using the
   // exact manifest and validator emitted by the renderer above.

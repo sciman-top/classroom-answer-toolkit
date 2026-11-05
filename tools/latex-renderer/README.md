@@ -59,6 +59,12 @@ The packaged `<pdf-base>.review/` directory is always retained. Use
 `--keep-review` only when you also want to retain the repository-local
 `.pdf-review/` debugging copy after a successful run.
 
+An existing delivery at the target PDF is only replaced silently when the
+input Markdown bytes are unchanged (an idempotent refresh). A different
+input — a wrong output argument, or another Markdown copied onto the same
+name — fails with a "Refusing to replace" error; re-run with `--force` to
+replace the bound PDF, review set, snapshot, and manifest intentionally.
+
 The validator still accepts legacy manifest `1.0` files. New deliveries always
 write `1.1`; changing any bound file after delivery causes validation to fail.
 
