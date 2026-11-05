@@ -400,6 +400,14 @@ public sealed class ToolchainCliBehaviorTests
                 .Should().Be(FileReceipt(candidatePath)["sha256"].ToString());
             receipt.GetProperty("resume").GetProperty("workflowReceipt").GetProperty("sha256").GetString()
                 .Should().Be(FileReceipt(failedReceiptPath)["sha256"].ToString());
+            // The copied summary must be rewritten to point at this run's
+            // artifact: a verbatim copy still carries the prior directory's
+            // outputPath and would fail the real receipt validator's
+            // summary.outputPath === phase.artifact.path rule. The fake node
+            // stubs that validator, so assert the rewrite directly.
+            using var resumedSummary = JsonDocument.Parse(File.ReadAllText(Path.Combine(resumedDirectory, "exam.blind-generation.summary.json")));
+            resumedSummary.RootElement.GetProperty("outputPath").GetString()
+                .Should().Be(Path.Combine(resumedDirectory, "exam盲答候选.md"));
         }
         finally
         {
@@ -1568,6 +1576,14 @@ public sealed class ToolchainCliBehaviorTests
                 .Should().Be(FileReceipt(candidatePath)["sha256"].ToString());
             receipt.GetProperty("resume").GetProperty("workflowReceipt").GetProperty("sha256").GetString()
                 .Should().Be(FileReceipt(failedReceiptPath)["sha256"].ToString());
+            // The copied summary must be rewritten to point at this run's
+            // artifact: a verbatim copy still carries the prior directory's
+            // outputPath and would fail the real receipt validator's
+            // summary.outputPath === phase.artifact.path rule. The fake node
+            // stubs that validator, so assert the rewrite directly.
+            using var resumedSummary = JsonDocument.Parse(File.ReadAllText(Path.Combine(resumedDirectory, "exam.blind-generation.summary.json")));
+            resumedSummary.RootElement.GetProperty("outputPath").GetString()
+                .Should().Be(Path.Combine(resumedDirectory, "exam盲答候选.md"));
         }
         finally
         {

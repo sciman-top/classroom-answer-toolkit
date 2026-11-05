@@ -118,6 +118,10 @@ function Assert-WorkflowOutputDoesNotOverwriteInput {
             $outputPath = $Outputs[$outputName]
             $resolvedInput = [IO.Path]::GetFullPath($inputPath)
             $resolvedOutput = [IO.Path]::GetFullPath($outputPath)
+            # DeliveryReview does not exist yet when this guard runs, so the
+            # directory test alone would miss it; treat that one name as a
+            # directory output by contract. Future directory outputs must be
+            # added here (or must pre-exist) to keep collision detection.
             $directoryOutput = $outputName -eq "DeliveryReview" -or (Test-Path -LiteralPath $resolvedOutput -PathType Container)
             if ([string]::Equals(
                     $resolvedInput,
@@ -497,7 +501,18 @@ function Copy-ResumePhaseArtifacts {
 
     Copy-WorkflowFileAtomic -SourcePath ([string](Get-OptionalJsonProperty $phase.artifact "path")) -DestinationPath $DestinationArtifactPath
     if ($DestinationSummaryPath) {
-        Copy-WorkflowFileAtomic -SourcePath ([string](Get-OptionalJsonProperty $phase.summary "path")) -DestinationPath $DestinationSummaryPath
+        $summarySourcePath = [string](Get-OptionalJsonProperty $phase.summary "path")
+        # The copied summary still carries the PRIOR run's absolute outputPath,
+        # and the receipt validator requires summary.outputPath to equal this
+        # run's phase artifact path — a verbatim copy would make every resumed
+        # run fail its own receipt validation after delivery succeeded. Rewrite
+        # only that pointer on this run's copy: the artifact bytes (and thus
+        # outputSha256) are unchanged, the original summary in the prior run's
+        # directory stays untouched, and the receipt's resume node keeps the
+        # provenance chain to the prior receipt.
+        $summary = Get-Content -LiteralPath $summarySourcePath -Raw | ConvertFrom-Json -AsHashtable
+        $summary["outputPath"] = [IO.Path]::GetFullPath($DestinationArtifactPath)
+        Write-JsonFileAtomic -PathValue $DestinationSummaryPath -Value $summary
     }
     $script:reusedResumePhaseNames += $PhaseName
     return $true
@@ -710,15 +725,11 @@ function Invoke-WorkflowPhase {
             throw "Workflow phase $Name baseline does not match the reviewed candidate."
         }
         $artifactReceipt = Get-WorkflowFileReceipt -PathValue $ArtifactPath
-        $summaryOutputPath = if ($resumed) {
-            $priorPhase = Get-OptionalJsonProperty $ResumeProvenance.phases $Name
-            [string](Get-OptionalJsonProperty (Get-OptionalJsonProperty $priorPhase "artifact") "path")
-        }
-        else {
-            $ArtifactPath
-        }
-        if ($summaryReceipt.outputPath -ne $summaryOutputPath) {
-            throw "Workflow phase $Name summary outputPath does not match its artifact: $summaryOutputPath"
+        # Resumed summaries are rewritten by Copy-ResumePhaseArtifacts to point
+        # at this run's artifact, so one comparison covers fresh and reused
+        # phases alike and matches the receipt validator's own rule.
+        if ($summaryReceipt.outputPath -ne $ArtifactPath) {
+            throw "Workflow phase $Name summary outputPath does not match its artifact: $ArtifactPath"
         }
         if ($summaryReceipt.outputSha256 -ne $artifactReceipt.sha256) {
             throw "Workflow phase $Name summary output SHA-256 does not match its artifact: $ArtifactPath"
@@ -888,8 +899,18 @@ $previousNoProxy = $env:NO_PROXY
 $processEgressWasSet = -not [string]::IsNullOrEmpty($env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED)
 $previousEgressValue = $env:CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED
 $referencePath = if ([string]::IsNullOrWhiteSpace($ReferencePdf)) { $null } else { Resolve-WorkflowPath $ReferencePdf }
-$referenceUsed = $false
 $resumeWorkflowReceiptPath = if ([string]::IsNullOrWhiteSpace($ResumeFromWorkflowReceipt)) { $null } else { Resolve-WorkflowPath $ResumeFromWorkflowReceipt }
+if ($resumeWorkflowReceiptPath) {
+    # A same-directory resume would delete the prior failed receipt below
+    # (it shares the run's receipt filename), destroying the very audit
+    # anchor this flow is required to preserve. The resumed run must target
+    # a different output directory.
+    $resumeReceiptDirectory = [IO.Path]::GetFullPath([IO.Path]::GetDirectoryName($resumeWorkflowReceiptPath)).TrimEnd('\', '/')
+    $outputRootFullPath = [IO.Path]::GetFullPath($outputRoot).TrimEnd('\', '/')
+    if ($resumeReceiptDirectory -eq $outputRootFullPath) {
+        throw "-ResumeFromWorkflowReceipt must point at a receipt in a different output directory; resuming in place would overwrite the prior run's receipt: $resumeWorkflowReceiptPath"
+    }
+}
 $workflowRunId = [Guid]::NewGuid().ToString("N")
 $workflowStartedAt = [DateTimeOffset]::UtcNow
 $currentPhase = $null
@@ -1448,7 +1469,6 @@ try {
             $referenceText = ($referenceTextLayers | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join "`n`n--- reference page ---`n`n"
             Set-Content -LiteralPath $referenceTextPath -Value $referenceText -Encoding utf8 -NoNewline
         }
-        $script:referenceUsed = $true
 
         Invoke-WorkflowPhase -Name "referenceReview" `
             -ExecuteMessage "[live-answer-workflow] review blind candidate against authoritative reference" `
@@ -1489,7 +1509,12 @@ try {
                 $answerPdfPath,
                 "--subject-pack", $SubjectPack,
                 "--profile", $Profile,
-                "--review-scale", $WorkflowReviewScale.ToString([Globalization.CultureInfo]::InvariantCulture)
+                "--review-scale", $WorkflowReviewScale.ToString([Globalization.CultureInfo]::InvariantCulture),
+                # A live workflow run is an explicit full regeneration with its
+                # own receipt; it may legitimately replace a previous delivery
+                # of the same output name, so the deliver CLI's overwrite guard
+                # is satisfied up front.
+                "--force"
             )
             if ($KeepReview) {
                 $deliveryArguments += "--keep-review"
