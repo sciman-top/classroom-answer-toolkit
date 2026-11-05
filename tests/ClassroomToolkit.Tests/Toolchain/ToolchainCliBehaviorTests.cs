@@ -543,6 +543,11 @@ public sealed class ToolchainCliBehaviorTests
         var packageBuilder = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), "scripts", "build-ordinary-user-package.ps1"));
         packageBuilder.Should().Contain("SignatureStatus]::NotSigned");
         packageBuilder.Should().Contain("Compatibility alias; unsigned packages are now the default.");
+        var liveWorkflow = File.ReadAllText(Path.Combine(ToolchainTestHost.FindRepoRoot(), "scripts", "run-live-answer-workflow.ps1"));
+        liveWorkflow.Should().Contain("$artifacts += ,$artifactReceipt");
+        liveWorkflow.Should().Contain("[Collections.Generic.HashSet[string]]::new()");
+        liveWorkflow.Should().Contain("return ,[ordered]@{");
+        liveWorkflow.Should().Contain("Get-ReviewIntegerList");
     }
 
     [Fact]

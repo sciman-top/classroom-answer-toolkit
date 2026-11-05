@@ -34,6 +34,7 @@ const usage = `Usage:
 
 Options:
   --config-env-file <path>  Env file to read; defaults to .env
+  --subject-pack <id>       Subject-pack runtime config declaring portable model-family IDs
   --prompt-file <path>      Full answer specification; defaults to the active junior-physics spec
   --images-dir <dir>        Directory containing ordered page PNG/JPEG/WebP images
   --source-text-file <path> Optional extracted text layer from the same source PDF
@@ -79,6 +80,7 @@ function parseArgs(argv) {
   const options = parseArgvFlags(argv, {
     stringFlags: {
       "config-env-file": "envFile",
+      "subject-pack": "subjectPack",
       "prompt-file": "promptFile",
       "images-dir": "imagesDir",
       "source-text-file": "sourceTextFile",
@@ -105,6 +107,7 @@ function parseArgs(argv) {
     },
     defaults: {
       envFile: path.join(repoRoot, ".env"),
+      subjectPack: null,
       promptFile: null,
       imagesDir: null,
       sourceTextFile: null,
@@ -352,7 +355,11 @@ export function buildAnswerRoutingSummary(result) {
 export async function main() {
   const options = parseArgs(process.argv.slice(2));
   const mode = inferAnswerMode(options);
-  const loaded = loadGatewayConfig({ envFile: options.envFile, allowMissingSecrets: false });
+  const loaded = loadGatewayConfig({
+    envFile: options.envFile,
+    subjectPack: options.subjectPack,
+    allowMissingSecrets: false
+  });
   if (loaded.validation.errors.length > 0) {
     throw new Error(loaded.validation.errors.join("; "));
   }

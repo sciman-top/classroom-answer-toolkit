@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  DEFAULT_MODEL_FAMILIES,
   DEFAULT_PRESET_SLOT_BINDINGS,
   EXECUTION_SLOT_COUNT,
   MODEL_FAMILY_PREFERENCE,
   PRESET_PROFILES,
-  QUALITY_PROFILES
+  QUALITY_PROFILES,
+  modelFamilyForName
 } from "./profile-matrix.mjs";
 import { isDirectInvocation, parseArgvFlags, readResponseTextCapped, repositoryRoot as repoRoot, summarizeProviderErrorBody } from "../shared.mjs";
 import {
@@ -18,6 +20,7 @@ import {
 const KNOWN_ENV_PREFIX = "CLASSROOM_TOOLKIT_";
 
 export { repoRoot };
+export const recoveryProbeModelFamily = "sol";
 
 const ALLOWED_AI_KINDS = new Set(["openai_compatible"]);
 const ALLOWED_TEXT_SURFACES = new Set(["responses", "chat_completions"]);
@@ -32,7 +35,7 @@ const DEFAULT_EXECUTION_SLOT_BY_ROLE = Object.freeze({
 function usage() {
   return [
     "Usage:",
-    "  npm --prefix tools/ai-gateway run validate:config -- [--config-env-file .env] [--allow-missing-secrets] [--json]",
+    "  npm --prefix tools/ai-gateway run validate:config -- [--config-env-file .env] [--subject-pack <id>] [--allow-missing-secrets] [--json]",
     "",
     "Answer generation is handled by generate:answer (answer-request.mjs)."
   ].join("\n");
@@ -42,6 +45,7 @@ export function parseArgs(argv) {
   const options = parseArgvFlags(argv, {
     stringFlags: {
       "config-env-file": "envFile",
+      "subject-pack": "subjectPack",
       provider: true,
       "timeout-ms": "timeoutMs"
     },
@@ -52,6 +56,7 @@ export function parseArgs(argv) {
     },
     defaults: {
       envFile: path.join(repoRoot, ".env"),
+      subjectPack: null,
       allowMissingSecrets: false,
       json: false,
       provider: "primary",
@@ -258,6 +263,41 @@ function normalizeSurface(value) {
   return value.trim().toLowerCase().replace(/-/g, "_");
 }
 
+export function readDeclaredModelFamilies(subjectPack) {
+  if (!subjectPack || !/^[a-z0-9][a-z0-9-]*$/u.test(subjectPack)) {
+    return null;
+  }
+  const subjectConfigPath = path.join(repoRoot, "prompts", subjectPack, "config.json");
+  if (!fs.existsSync(subjectConfigPath)) {
+    return null;
+  }
+  const config = JSON.parse(fs.readFileSync(subjectConfigPath, "utf8"));
+  const declared = config?.ai?.modelFamilies;
+  if (!declared) {
+    return null;
+  }
+  return Object.fromEntries(MODEL_FAMILY_PREFERENCE.map((family) => [family, declared[family]]));
+}
+
+function readModelFamilies(env, errors, subjectPack = "") {
+  const declared = readDeclaredModelFamilies(subjectPack);
+  const families = {};
+  for (const family of MODEL_FAMILY_PREFERENCE) {
+    const key = `CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_${family.toUpperCase()}`;
+    families[family] = get(env, key) || declared?.[family] || DEFAULT_MODEL_FAMILIES[family];
+  }
+  for (const family of MODEL_FAMILY_PREFERENCE) {
+    const model = families[family];
+    const detected = modelFamilyForName(model);
+    if (detected !== family) {
+      errors.push(
+        `CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_${family.toUpperCase()}='${model}' must identify the ${family} family`
+        + `${detected ? `, not ${detected}` : ""}.`);
+    }
+  }
+  return Object.freeze(families);
+}
+
 function presetSlotEnvKey(preset, slot) {
   return `CLASSROOM_TOOLKIT_AI_PRESET_${preset.toUpperCase()}_SLOT_${slot}`;
 }
@@ -284,7 +324,7 @@ function readPresetSlotBindings(env) {
   return { bindings: Object.freeze(bindings), explicit, errors };
 }
 
-export function normalizeConfig(env) {
+export function normalizeConfig(env, options = {}) {
   const primaryAi = readAiProvider(env, "primary", "CLASSROOM_TOOLKIT_AI_PRIMARY");
   const aiFallbacks = discoverAiFallbackIndices(env).map((index) => readAiProvider(
     env,
@@ -297,6 +337,8 @@ export function normalizeConfig(env) {
     ...aiFallbacks
   ].filter(Boolean);
   const presetSlotConfig = readPresetSlotBindings(env);
+  const modelFamilyErrors = [];
+  const modelFamilies = readModelFamilies(env, modelFamilyErrors, options.subjectPack);
 
   return {
     cloudEgressEnabled: boolValue(get(env, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED")),
@@ -311,7 +353,8 @@ export function normalizeConfig(env) {
     recoveryProbeTimeoutMs: numberOrDefault(env, "CLASSROOM_TOOLKIT_AI_RECOVERY_PROBE_TIMEOUT_MS", 10000),
     presetSlotBindings: presetSlotConfig.bindings,
     presetSlotsExplicit: presetSlotConfig.explicit,
-    presetSlotErrors: presetSlotConfig.errors,
+    presetSlotErrors: [...presetSlotConfig.errors, ...modelFamilyErrors],
+    modelFamilies,
     providers
   };
 }
@@ -391,44 +434,29 @@ export function validateConfig(config, options, parseErrors) {
   return { errors, warnings };
 }
 
-// In the implicit routing mode (no explicit preset slot bindings) the runtime
-// selects providers by exact equality with a quality profile's model AND
-// reasoning effort. A provider outside the closed model families, or whose
-// effort no profile of its family uses, can never match any profile — every
-// request would die with "No AI provider is configured" despite a green
-// validation. Mirror the runtime filter here so the gap surfaces at validate
-// time (2026-10 audit).
+// Model IDs may change per deployment, but every provider's vision model must
+// identify one of the three closed routing families and one of that family's
+// reasoning tiers. Otherwise no request can select it.
 function validateProviderRoutability(config, errors) {
-  if (config.presetSlotsExplicit === true) {
-    return;
-  }
-
-  const effortsByModel = new Map();
-  for (const profile of Object.values(QUALITY_PROFILES)) {
-    if (!effortsByModel.has(profile.model)) {
-      effortsByModel.set(profile.model, new Set());
-    }
-    effortsByModel.get(profile.model).add(profile.reasoningEffort);
-  }
-
   for (const provider of config.providers) {
     if (provider.lane !== "ai") {
       continue;
     }
     const label = `${provider.lane}.${provider.role}`;
-    const efforts = effortsByModel.get(provider.visionModel);
-    if (!efforts) {
+    const family = modelFamilyForName(provider.visionModel);
+    if (!family) {
       errors.push(
-        `${label}: vision model '${provider.visionModel}' is not one of the quality-profile models `
-        + `(${[...effortsByModel.keys()].join(", ")}); requests route by exact model match, `
-        + "so this provider can never serve any quality profile.");
+        `${label}: vision model '${provider.visionModel}' does not identify a sol, terra, or luna family; `
+        + "requests cannot route this provider.");
       continue;
     }
-    if (!efforts.has(provider.reasoningEffort)) {
+    const allowedEfforts = new Set(Object.values(QUALITY_PROFILES)
+      .filter((profile) => modelFamilyForName(profile.model) === family)
+      .map((profile) => profile.reasoningEffort));
+    if (!allowedEfforts.has(provider.reasoningEffort)) {
       errors.push(
         `${label}: REASONING_EFFORT '${provider.reasoningEffort || "(empty)"}' matches no quality profile of `
-        + `${provider.visionModel} (expected one of ${[...efforts].join(", ")}); `
-        + "requests route by exact effort match, so this provider can never serve any quality profile.");
+        + `${family} (expected one of ${[...allowedEfforts].join(", ")}).`);
     }
   }
 }
@@ -566,6 +594,7 @@ function printHumanSummary(options, config, validation) {
   console.log(`- execution slots: ${config.executionSlotCount}`);
   console.log(`- preset cooldown: ${config.presetCooldownMs}ms`);
   console.log(`- recovery probe: ${config.recoveryProbeEnabled ? "enabled" : "disabled"}, interval=${config.recoveryProbeIntervalMs}ms, failureInterval=${config.recoveryProbeFailureIntervalMs}ms, successes=${config.recoveryProbeSuccessThreshold}, jitter=${config.recoveryProbeJitterMs}ms, timeout=${config.recoveryProbeTimeoutMs}ms`);
+  console.log(`- model families: ${JSON.stringify(config.modelFamilies)}`);
   console.log(`- preset slot bindings: ${JSON.stringify(config.presetSlotBindings)}`);
   for (const provider of config.providers) {
     const summary = summarizeProvider(provider);
@@ -593,7 +622,7 @@ export function loadGatewayConfig(options = {}) {
     ...options
   };
   const { env, parseErrors } = loadEnvironment(resolvedOptions);
-  const config = normalizeConfig(env);
+  const config = normalizeConfig(env, { subjectPack: options.subjectPack });
   const validation = validateConfig(config, resolvedOptions, parseErrors);
   return { options: resolvedOptions, config, validation };
 }
@@ -822,6 +851,7 @@ export async function main() {
   if (options.json) {
     console.log(JSON.stringify({
       envFile: path.relative(repoRoot, options.envFile) || ".",
+      subjectPack: options.subjectPack ?? null,
       cloudEgressEnabled: config.cloudEgressEnabled,
       executionSlotCount: config.executionSlotCount,
       runtimeDirectory: config.runtimeDirectory || null,
@@ -832,6 +862,7 @@ export async function main() {
       recoveryProbeSuccessThreshold: config.recoveryProbeSuccessThreshold,
       recoveryProbeJitterMs: config.recoveryProbeJitterMs,
       recoveryProbeTimeoutMs: config.recoveryProbeTimeoutMs,
+      modelFamilies: config.modelFamilies,
       presetSlotBindings: config.presetSlotBindings,
       presetSlotsExplicit: config.presetSlotsExplicit,
       providers: config.providers.map(summarizeProvider),

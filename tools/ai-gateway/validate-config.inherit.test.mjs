@@ -8,6 +8,9 @@ import { loadEnvironment, normalizeConfig, parseEnvFile, validateConfig } from "
 
 const PRIMARY = {
   CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
+  CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_SOL: "gpt-6.1-sol",
+  CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_TERRA: "gpt-6.1-terra",
+  CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_LUNA: "gpt-6-luna",
   CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
   CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
   CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-5.6-sol",
@@ -88,12 +91,23 @@ test("a provider outside the closed quality-profile model families fails validat
     errors.join("\n"));
 });
 
-test("explicit preset slot bindings skip the routability check", () => {
+test("explicit preset slot bindings still reject a provider in no model family", () => {
   const config = normalizeConfig({ ...PRIMARY, ...fallbackEnv() });
   config.presetSlotsExplicit = true;
-  config.providers = config.providers.map((provider) => ({ ...provider, reasoningEffort: "" }));
+  config.providers = config.providers.map((provider) => ({ ...provider, visionModel: "my-custom-model" }));
   const { errors } = validateConfig(config, { allowMissingSecrets: true }, []);
-  assert.deepEqual(errors, []);
+  assert.ok(errors.some((error) => error.includes("my-custom-model")), errors.join("\n"));
+});
+
+test("model-family remapping rejects a family label on the wrong model", () => {
+  const config = normalizeConfig({
+    ...PRIMARY,
+    ...fallbackEnv(),
+    CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_SOL: "gpt-6-luna"
+  });
+  const { errors } = validateConfig(config, { allowMissingSecrets: true }, []);
+  assert.ok(errors.some((error) => error.includes("MODEL_FAMILY_SOL") && error.includes("luna")),
+    errors.join("\n"));
 });
 
 test("env parser strips inline comments from unquoted values only", () => {

@@ -24,6 +24,13 @@
     ],
     "cleanupAfterSuccessfulDeliver": true
   },
+  "ai": {
+    "modelFamilies": {
+      "sol": "gpt-6.1-sol",
+      "terra": "gpt-5.6-terra",
+      "luna": "gpt-6-luna"
+    }
+  },
   "profiles": {
     "default": "classroom",
     "classroom": {

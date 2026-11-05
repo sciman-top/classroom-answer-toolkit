@@ -25,6 +25,7 @@ function recoveryConfig(runtimeDirectory) {
     recoveryProbeSuccessThreshold: 2,
     recoveryProbeJitterMs: 0,
     recoveryProbeTimeoutMs: 1000,
+    modelFamilies: { sol: "gpt-5.6-sol", terra: "gpt-5.6-terra", luna: "gpt-5.6-luna" },
     providers: [{
       lane: "ai",
       role: "primary",

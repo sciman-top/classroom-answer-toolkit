@@ -144,7 +144,9 @@ function Get-WorkflowFileReceipt {
     }
 
     $item = Get-Item -LiteralPath $PathValue
-    return [ordered]@{
+    # Returning a dictionary through PowerShell's pipeline unrolls it into
+    # key/value entries under 7.6+. The unary comma keeps one scalar object.
+    return ,[ordered]@{
         path = $item.FullName
         bytes = $item.Length
         sha256 = (Get-FileHash -LiteralPath $item.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -567,6 +569,16 @@ function Get-WorkflowQuestionNumbers {
 function Get-WorkflowReviewEvidence {
     param([Parameter(Mandatory = $true)][string]$AnswerMarkdownPath)
 
+    # Force JSON arrays to materialize as arrays even when empty or scalar.
+    # Under PowerShell 7.6+, $raw.ArrayProperty and the unary array operator
+    # can otherwise yield $null for an empty JSON array.
+    function Get-ReviewIntegerList($Value) {
+        if ($null -eq $Value) {
+            return [object[]]@()
+        }
+        return [object[]]@($Value.PSObject.BaseObject)
+    }
+
     $semantic = if (Test-Path -LiteralPath $semanticReviewEvidencePath -PathType Leaf) {
         Get-Content -LiteralPath $semanticReviewEvidencePath -Raw | ConvertFrom-Json
     }
@@ -574,6 +586,10 @@ function Get-WorkflowReviewEvidence {
         $null
     }
     $referenceReviewed = $phaseStates.referenceReview.status -eq "completed"
+    $reviewEvidenceSnapshot = $null
+    if (Test-Path -LiteralPath $semanticReviewEvidencePath -PathType Leaf) {
+        $reviewEvidenceSnapshot = Get-Content -LiteralPath $semanticReviewEvidencePath -Raw
+    }
     $reference = if ($referenceReviewed -and (Test-Path -LiteralPath $referenceReviewEvidencePath -PathType Leaf)) {
         Get-Content -LiteralPath $referenceReviewEvidencePath -Raw | ConvertFrom-Json
     }
@@ -581,29 +597,40 @@ function Get-WorkflowReviewEvidence {
         $null
     }
     $answerQuestions = @(Get-WorkflowQuestionNumbers -PathValue $AnswerMarkdownPath)
-    $semanticUnresolved = if ($semantic) {
-        @($semantic.unresolvedQuestions)
+    # Pipeline output from a single JSON array can unroll to its scalar
+    # elements. Re-wrap every list before concatenation so a one-item
+    # unresolved set remains an array under PowerShell 7 7.6+.
+    $semanticUnresolved = [object[]]$(if ($semantic) {
+        $semantic.unresolvedQuestions
     }
     else {
         @()
-    }
-    $visualUnresolved = if ($SkipVisualAudit) {
+    })
+    $visualUnresolved = [object[]]$(if ($SkipVisualAudit) {
         @()
     }
     else {
-        @($answerQuestions)
-    }
-    $referenceUnresolved = if ($reference) {
-        @($reference.unresolvedQuestions)
+        $answerQuestions
+    })
+    if ($reference) {
+        $referenceUnresolved = [object[]]@(Get-ReviewIntegerList $reference.unresolvedQuestions)
     }
     elseif ($referenceReviewed) {
-        @($answerQuestions)
+        $referenceUnresolved = [object[]]@(Get-ReviewIntegerList $answerQuestions)
     }
     else {
-        @()
+        $referenceUnresolved = [object[]]@()
     }
-    $evidenceQuestions = @($semanticUnresolved + $visualUnresolved + $referenceUnresolved |
-        Sort-Object -Unique)
+    if ($reviewEvidenceSnapshot) {
+        [IO.File]::WriteAllText($semanticReviewEvidencePath, $reviewEvidenceSnapshot, [Text.UTF8Encoding]::new($false))
+    }
+    $evidenceQuestionSet = [Collections.Generic.HashSet[string]]::new()
+    foreach ($question in @($semanticUnresolved) + @($visualUnresolved) + @($referenceUnresolved)) {
+        if ($null -ne $question) {
+            $evidenceQuestionSet.Add([string]$question) | Out-Null
+        }
+    }
+    $evidenceQuestions = [object[]]@($evidenceQuestionSet | Sort-Object { [int]$_ } | ForEach-Object { [int]$_ })
     $notices = [Collections.Generic.List[string]]::new()
     if ($SkipVisualAudit) {
         $notices.Add("visual audit was explicitly skipped; delivery is not visual-audited")
@@ -613,24 +640,19 @@ function Get-WorkflowReviewEvidence {
     }
     return [ordered]@{
         semantic = [ordered]@{
-            confirmedCorrections = $(if ($semantic) { @($semantic.confirmedCorrections) } else { @() })
+            confirmedCorrections = [object[]]@(Get-ReviewIntegerList $(if ($semantic) { $semantic.confirmedCorrections } else { $null }))
             unresolvedQuestions = @($semanticUnresolved)
         }
         visual = [ordered]@{
-            directCorrections = $(if ($semantic) { @($semantic.directCorrections) } else { @() })
+            directCorrections = [object[]]@(Get-ReviewIntegerList $(if ($semantic) { $semantic.directCorrections } else { $null }))
             unresolvedQuestions = @($visualUnresolved)
         }
         reference = [ordered]@{
-            correctedQuestions = $(if ($reference) {
-                @($reference.directCorrections | Sort-Object -Unique)
-            }
-            else {
-                @()
-            })
+            correctedQuestions = [object[]]@(Get-ReviewIntegerList $(if ($reference) { $reference.directCorrections } else { $null }) | Sort-Object -Unique)
             unresolvedQuestions = @($referenceUnresolved)
         }
-        unresolvedQuestions = @($evidenceQuestions)
-        unresolvedReviewNotices = @($notices)
+        unresolvedQuestions = [object[]]@($evidenceQuestions)
+        unresolvedReviewNotices = [object[]]@($notices)
     }
 }
 
@@ -1099,7 +1121,10 @@ function Write-WorkflowReceipt {
         foreach ($artifactPath in $artifactCandidatePaths) {
             $artifactReceipt = Get-WorkflowFileReceipt -PathValue $artifactPath
             if ($null -ne $artifactReceipt) {
-                $artifacts += $artifactReceipt
+                # += binds right before the comma. Repeated file receipts are
+                # object[] values in PowerShell 7.6, so a unary comma preserves
+                # one receipt as one element instead of trying Object[] + Object[].
+                $artifacts += ,$artifactReceipt
             }
         }
     }
@@ -1217,6 +1242,7 @@ function New-AnswerRequestArguments {
 
     $arguments = @(
         "--config-env-file", $envFilePath,
+        "--subject-pack", $SubjectPack,
         "--prompt-file", $promptPath,
         "--output", $OutputPath,
         "--summary-out", $SummaryPath,

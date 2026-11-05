@@ -21,9 +21,9 @@ npm --prefix tools/ai-gateway run generate:answer -- --allow-cloud-egress `
   --quality-profile auto
 ```
 
-质量 profile 是网关唯一的模型选择接口，固定为三套、每套三档：Sol 为 `sol-high`（`gpt-5.6-sol / high`）、`sol-medium`（`gpt-5.6-sol / medium`）、`sol-low`（`gpt-5.6-sol / low`）；Terra 为 `terra-max`（`gpt-5.6-terra / max`）、`terra-xhigh`（`gpt-5.6-terra / xhigh`）、`terra-high`（`gpt-5.6-terra / high`）；Luna 为 `luna-max`（`gpt-5.6-luna / max`）、`luna-xhigh`（`gpt-5.6-luna / xhigh`）、`luna-high`（`gpt-5.6-luna / high`）。默认 `auto` 解析为 `sol-high`。`reasoning.effort` 只调节同一模型的思考预算，不替代模型选择；具体组合仍由 profile 固定。
+质量 profile 是网关唯一的模型选择接口，固定为三套、每套三档。协议标识始终为 Sol=`sol-high|sol-medium|sol-low`、Terra=`terra-max|terra-xhigh|terra-high`、Luna=`luna-max|luna-xhigh|luna-high`。实际供应商模型 ID 按以下优先级解析：`CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_SOL|TERRA|LUNA` 本机覆盖 → 当前 subject-pack `config.json` 的 `ai.modelFamilies` → 兼容默认 `gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.6-luna`。主链会向网关传递 `--subject-pack`；独立诊断命令可显式传同一参数。默认 `auto` 解析为 `sol-high`。升级供应商模型时只修改三个家庭成员别名，不改变 profile 名、槽位或回执协议。别名必须按 `gpt-<version>-<family>` 形状指向对应家庭；`reasoning.effort` 仍按原 profile 调节，不替代模型选择。
 
-每套 preset 都有自己的 5 槽绑定表。选择 `Sol-only` 后，5 个槽位只可绑定 `sol-high`、`sol-medium`、`sol-low`，并可重复；Terra-only 和 Luna-only 遵循同一不变量。这样槽位只表达当前 preset 内的并发队列，绝不把不同模型族混为同一预设。修改映射只需修改对应的 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<1..5>`，不需要复制 Cockpit endpoint 或 API key。
+每套 preset 都有自己的 5 槽绑定表。选择 `Sol-only` 后，5 个槽位只可绑定 `sol-high`、`sol-medium`、`sol-low`，并可重复；Terra-only 和 Luna-only 遵循同一不变量。这样槽位只表达当前 preset 内的并发队列，绝不把不同模型族混为同一预设。调度映射修改对应的 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<1..5>`；供应商模型升级修改对应的 `CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_<FAMILY>`，都不需要复制 endpoint 或 API key。
 
 | 执行槽位 | 对应 profile | 作用 |
 | --- | --- | --- |

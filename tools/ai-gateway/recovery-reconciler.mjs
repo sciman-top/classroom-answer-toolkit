@@ -4,7 +4,8 @@ import {
   assertLiveEgressAllowed,
   callTextProvider,
   loadGatewayConfig,
-  repoRoot
+  repoRoot,
+  recoveryProbeModelFamily
 } from "./validate-config.mjs";
 import {
   readPresetHealth,
@@ -20,7 +21,6 @@ import { providerOrder } from "./profile-matrix.mjs";
 // never complete and Sol could never auto-recover (2026-08-29 audit).
 const SOL_RECOVERY_PROFILE = Object.freeze({
   qualityProfile: "sol-recovery-probe",
-  model: "gpt-5.6-sol",
   reasoningEffort: "low"
 });
 
@@ -91,13 +91,17 @@ function uniqueProbeConnections(providers) {
 }
 
 export function solRecoveryProviders(config) {
+  const model = config.modelFamilies?.[recoveryProbeModelFamily];
+  if (!model) {
+    throw new Error("Sol recovery probe requires a configured sol model family.");
+  }
   return uniqueProbeConnections(config.providers
     .filter((provider) => provider.lane === "ai")
     .sort((left, right) => providerOrder(left.role) - providerOrder(right.role)))
     .map((provider) => ({
       ...provider,
-      textModel: SOL_RECOVERY_PROFILE.model,
-      visionModel: SOL_RECOVERY_PROFILE.model,
+      textModel: model,
+      visionModel: model,
       reasoningEffort: SOL_RECOVERY_PROFILE.reasoningEffort,
       qualityProfile: SOL_RECOVERY_PROFILE.qualityProfile
     }));

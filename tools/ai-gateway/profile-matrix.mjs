@@ -16,6 +16,15 @@ export const EXECUTION_SLOT_COUNT = 5;
 
 export const MODEL_FAMILY_PREFERENCE = Object.freeze(["sol", "terra", "luna"]);
 
+// Profile names and route tiers are stable protocol identifiers. Provider
+// model IDs are deployment details that can advance independently; tests pin
+// these defaults while external configurations may remap each family.
+export const DEFAULT_MODEL_FAMILIES = Object.freeze({
+  sol: "gpt-5.6-sol",
+  terra: "gpt-5.6-terra",
+  luna: "gpt-5.6-luna"
+});
+
 // A preset is a closed model family.  Its slots may repeat a profile for
 // parallel capacity, but can never project a model from another preset.
 export const PRESET_PROFILES = Object.freeze({
@@ -55,6 +64,14 @@ export const DEFAULT_PRESET_SLOT_BINDINGS = Object.freeze({
 
 export function presetForProfile(profile) {
   return String(profile).split("-", 1)[0];
+}
+
+export function modelFamilyForName(model) {
+  return MODEL_FAMILY_PREFERENCE.find((family) => {
+    const escapedFamily = family.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:^|[/:])gpt-[^/]*?[-:]${escapedFamily}(?:$|[/:])`, "iu")
+      .test(String(model ?? ""));
+  }) ?? null;
 }
 
 // Failover order: primary first, then fallback_N by ascending N.

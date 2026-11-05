@@ -16,6 +16,7 @@ import {
   EXECUTION_SLOT_COUNT,
   QUALITY_PROFILES,
   QUALITY_PROFILE_NAMES,
+  modelFamilyForName,
   presetForProfile,
   profileForPresetTier,
   providerOrder,
@@ -142,10 +143,11 @@ function routeConnections(config, target) {
 
 function providersForPresetProfile(config, preset, profile, target) {
   const requiredProfile = QUALITY_PROFILES[profile];
+  const model = config.modelFamilies?.[preset] ?? requiredProfile.model;
   if (config.presetSlotsExplicit !== true) {
     return config.providers
       .filter((provider) => provider.lane === "ai")
-      .filter((provider) => provider.visionModel === requiredProfile.model
+      .filter((provider) => modelFamilyForName(provider.visionModel) === preset
         && provider.reasoningEffort === requiredProfile.reasoningEffort)
       .filter((provider) => target === "all"
         || (target === "primary" && provider.role === "primary")
@@ -155,6 +157,8 @@ function providersForPresetProfile(config, preset, profile, target) {
         const executionSlots = resolveExecutionSlots(provider, preset, profile, config);
         return {
           ...provider,
+          textModel: model,
+          visionModel: model,
           qualityProfile: profile,
           preset,
           executionSlots,
@@ -167,8 +171,8 @@ function providersForPresetProfile(config, preset, profile, target) {
     const executionSlots = resolveExecutionSlots(provider, preset, profile, config);
     return {
       ...provider,
-      textModel: requiredProfile.model,
-      visionModel: requiredProfile.model,
+      textModel: model,
+      visionModel: model,
       reasoningEffort: requiredProfile.reasoningEffort,
       qualityProfile: profile,
       preset,

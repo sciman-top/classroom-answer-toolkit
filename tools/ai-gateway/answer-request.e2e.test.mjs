@@ -61,6 +61,14 @@ function providerEnv(baseUrl, roleSuffix, apiKey) {
   ]);
 }
 
+function modelFamilyEnv() {
+  return {
+    CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_SOL: "gpt-6.1-sol",
+    CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_TERRA: "gpt-6.1-terra",
+    CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_LUNA: "gpt-6-luna"
+  };
+}
+
 // normalizeConfig reads the egress switch from the same env object it parses
 // providers from, so every in-process config must carry it explicitly.
 const EGRESS_ENV = { CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true" };
@@ -95,6 +103,7 @@ test("requestAnswerWithFailover continues to fallback after a provider-local 401
     const config = normalizeConfig({
       ...EGRESS_ENV,
       CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY: workDir,
+      ...modelFamilyEnv(),
       ...providerEnv(baseUrl, "PRIMARY", "primary-key"),
       ...providerEnv(baseUrl, "FALLBACK_1", "fallback-key")
     });
@@ -123,6 +132,7 @@ test("requestAnswerWithFailover still fails closed on a generic non-retryable st
     const config = normalizeConfig({
       ...EGRESS_ENV,
       CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY: workDir,
+      ...modelFamilyEnv(),
       ...providerEnv(baseUrl, "PRIMARY", "primary-key"),
       ...providerEnv(baseUrl, "FALLBACK_1", "fallback-key")
     });
@@ -148,6 +158,7 @@ test("main() success path writes answer and schema-valid summary through a fake 
       const envLines = [
         "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true",
         `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY=${workDir}`,
+        ...Object.entries(modelFamilyEnv()).map(([key, value]) => `${key}=${value}`),
         ...Object.entries(providerEnv(baseUrl, "PRIMARY", "primary-key"))
           .map(([key, value]) => `${key}=${value}`)
       ];
@@ -204,7 +215,7 @@ test("main() success path writes answer and schema-valid summary through a fake 
       assert.deepEqual(validateValueAgainstSchema(summary, summarySchemaPath), []);
       assert.equal(summary.kind, "live-answer-generation-summary");
       assert.equal(summary.provider, "primary");
-      assert.equal(summary.model, "gpt-5.6-sol");
+      assert.equal(summary.model, "gpt-6.1-sol");
       assert.equal(summary.reasoningEffort, "high");
       assert.equal(summary.mode, "blind_generation");
       assert.equal(summary.outputSha256.length, 64);
@@ -225,6 +236,7 @@ test("main() redacts provider keys from a top-level provider error", async () =>
       const envLines = [
         "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true",
         `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY=${workDir}`,
+        ...Object.entries(modelFamilyEnv()).map(([key, value]) => `${key}=${value}`),
         ...Object.entries(providerEnv(baseUrl, "PRIMARY", primaryKey))
           .map(([key, value]) => `${key}=${value}`)
       ];

@@ -78,6 +78,22 @@
       "type": "object",
       "additionalProperties": true
     },
+    "ai": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "modelFamilies": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [ "sol", "terra", "luna" ],
+          "properties": {
+            "sol": { "type": "string", "pattern": "^gpt-[A-Za-z0-9._-]*-sol(?:$|[/:])" },
+            "terra": { "type": "string", "pattern": "^gpt-[A-Za-z0-9._-]*-terra(?:$|[/:])" },
+            "luna": { "type": "string", "pattern": "^gpt-[A-Za-z0-9._-]*-luna(?:$|[/:])" }
+          }
+        }
+      }
+    },
     "profiles": {
       "type": "object",
       "required": [

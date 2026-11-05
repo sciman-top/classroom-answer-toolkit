@@ -27,6 +27,7 @@ import {
 import { buildAnswerRoutingSummary } from "./answer-request.mjs";
 import {
   normalizeConfig,
+  readDeclaredModelFamilies,
   runInExecutionSlot,
   validateConfig
 } from "./validate-config.mjs";
@@ -212,6 +213,88 @@ test("gateway config discovers ordered AI tiers and inherits primary connection 
   assert.ok(aiProviders.every((provider) => provider.visionModel === provider.textModel));
   assert.equal(config.executionSlotCount, 5);
   assert.deepEqual(aiProviders.map(({ executionSlot }) => executionSlot), [1, 2, 3, 1, 4, 5, 1, 4, 5]);
+});
+
+test("model families keep stable routing identifiers while provider IDs change", () => {
+  const config = normalizeConfig({
+    CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-6.1-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-6.1-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "high",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_INHERIT_PRIMARY: "true",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_TEXT_MODEL: "gpt-5.6-terra",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_VISION_MODEL: "gpt-5.6-terra",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_1_REASONING_EFFORT: "medium",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_INHERIT_PRIMARY: "true",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_TEXT_MODEL: "gpt-6-luna",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_VISION_MODEL: "gpt-6-luna",
+    CLASSROOM_TOOLKIT_AI_FALLBACK_2_REASONING_EFFORT: "high",
+    CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_SOL: "gpt-6.1-sol",
+    CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_TERRA: "gpt-6.1-terra",
+    CLASSROOM_TOOLKIT_AI_MODEL_FAMILY_LUNA: "gpt-6-luna",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_1: "sol-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_2: "sol-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_3: "sol-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_4: "sol-medium",
+    CLASSROOM_TOOLKIT_AI_PRESET_SOL_SLOT_5: "sol-low",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_1: "terra-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_2: "terra-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_3: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_4: "terra-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_TERRA_SLOT_5: "terra-high",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_1: "luna-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_2: "luna-max",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_3: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_4: "luna-xhigh",
+    CLASSROOM_TOOLKIT_AI_PRESET_LUNA_SLOT_5: "luna-high"
+  });
+
+  assert.deepEqual(config.modelFamilies, {
+    sol: "gpt-6.1-sol",
+    terra: "gpt-6.1-terra",
+    luna: "gpt-6-luna"
+  });
+  const route = selectAnswerRoute(config, "blind_generation", "all", "sol-high");
+  assert.equal(route.providers[0].visionModel, "gpt-6.1-sol");
+  assert.deepEqual(route.orderedPresets, ["sol", "terra", "luna"]);
+  assert.deepEqual(
+    route.presetRoutes.map(({ preset, providers }) => ({ preset, model: providers[0]?.visionModel })),
+    [
+      { preset: "sol", model: "gpt-6.1-sol" },
+      { preset: "terra", model: "gpt-6.1-terra" },
+      { preset: "luna", model: "gpt-6-luna" }
+    ]
+  );
+});
+
+test("subject-pack model families provide portable provider IDs without local env overrides", () => {
+  const config = normalizeConfig({
+    CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED: "true",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_BASE_URL: "https://primary.example.com/v1",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_API_KEY: "primary-key",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL: "gpt-6.1-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_VISION_MODEL: "gpt-6.1-sol",
+    CLASSROOM_TOOLKIT_AI_PRIMARY_REASONING_EFFORT: "high"
+  }, { subjectPack: "junior-physics-answer" });
+
+  assert.deepEqual(config.modelFamilies, {
+    sol: "gpt-6.1-sol",
+    terra: "gpt-5.6-terra",
+    luna: "gpt-6-luna"
+  });
+  assert.deepEqual(validateConfig(config, { allowMissingSecrets: true }, []).errors, []);
+});
+
+test("every routable subject pack declares the three portable model families", () => {
+  for (const subjectPack of ["junior-physics-answer", "senior-physics-answer", "math-answer"]) {
+    assert.deepEqual(readDeclaredModelFamilies(subjectPack), {
+      sol: "gpt-6.1-sol",
+      terra: "gpt-5.6-terra",
+      luna: "gpt-6-luna"
+    });
+  }
 });
 
 test("visual findings and merge prompts separate evidence extraction from Markdown rewriting", () => {
@@ -820,6 +903,11 @@ function createConfig(surface = "responses", runtimeDirectory = "") {
   return {
     cloudEgressEnabled: true,
     runtimeDirectory: runtimeDirectory || path.join(os.tmpdir(), "classroom-answer-test-runtime", String(process.pid)),
+    modelFamilies: {
+      sol: "gpt-5.6-sol",
+      terra: "gpt-5.6-terra",
+      luna: "gpt-5.6-luna"
+    },
     providers: [
       {
         lane: "ai",
