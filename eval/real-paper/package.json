@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test validate-real-eval.test.mjs"
+    "test": "node --test validate-real-eval.test.mjs",
+    "validate": "node validate-real-eval.mjs"
   }
 }

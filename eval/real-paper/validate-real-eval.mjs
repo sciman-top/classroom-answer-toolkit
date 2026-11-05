@@ -88,8 +88,11 @@ export function validateBaselineShape(baseline) {
     }
   }
 
-  if (Object.values(baseline.stages.referenceReview.cases).some((result) => result !== "pass")) {
-    fail("referenceReview must record pass for every target question in a verified baseline.");
+  // A checked-in baseline is a verified baseline: referenceReview may not sit
+  // at "not_run" here even though the shape allows it for in-flight stages.
+  if (baseline.stages.referenceReview.status !== "evaluated"
+      || Object.values(baseline.stages.referenceReview.cases).some((result) => result !== "pass")) {
+    fail("referenceReview must be evaluated and record pass for every target question in a verified baseline.");
   }
   if (typeof baseline.teacherAccepted !== "boolean") fail("teacherAccepted must be boolean.");
   return baseline;
