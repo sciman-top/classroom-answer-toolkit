@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { buildMergedAssets, mergeProfiles, mergeRulePacks } from "./merge-rules.mjs";
+import { buildMergedAssets, compileResolvedSnapshot, mergeProfiles, mergeRulePacks } from "./merge-rules.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(toolDir, "..", "..");
@@ -124,4 +124,19 @@ test("buildMergedAssets fails closed on a dangling inherits target", () => {
   });
 
   assert.throws(() => buildFixtureAssets(), /Unknown inherits target "no-such-base"/);
+});
+
+test("compileResolvedSnapshot is deterministic across compilations", () => {
+  // snapshotId deliberately excludes generatedAt; two compilations of the
+  // same inputs must yield the same id and identical cores, otherwise a
+  // delivery manifest could bind a snapshot other than the one the gate
+  // just verified. Runs against the real prompt tree by design.
+  const first = compileResolvedSnapshot({ subjectPack: "junior-physics-answer", profileName: "classroom" });
+  const second = compileResolvedSnapshot({ subjectPack: "junior-physics-answer", profileName: "classroom" });
+  assert.equal(first.snapshotId, second.snapshotId);
+  const core = (snapshot) => {
+    const { generatedAt, ...rest } = snapshot;
+    return rest;
+  };
+  assert.deepEqual(core(first), core(second));
 });

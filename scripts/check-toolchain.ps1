@@ -24,6 +24,10 @@ function Invoke-GateStep {
 
     $stepStopwatch = [Diagnostics.Stopwatch]::StartNew()
     Write-Host ("[{0}] {1}" -f $Mode, $Name)
+    # Every current block runs a native command, which refreshes $LASTEXITCODE;
+    # a pure-PowerShell block would inherit the previous step's verdict, so
+    # reset it before the block to keep the check step-local.
+    $global:LASTEXITCODE = 0
     & $Block
     if ($LASTEXITCODE -ne 0) {
         throw $FailureMessage

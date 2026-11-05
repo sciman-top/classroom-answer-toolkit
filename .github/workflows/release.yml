@@ -81,15 +81,27 @@ jobs:
       - name: Ensure pinned Inno Setup compiler
         shell: pwsh
         run: |
+          # runtime-dependencies.json declares innoSetup.minimumVersion 6.2.0;
+          # a preinstalled older compiler must not silently win just because
+          # the candidate path exists.
+          $minimumVersion = [version]"6.2.0"
           $iscc = @(
             "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
             "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
             "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
-          if (-not $iscc) {
-            winget install --id JRSoftware.InnoSetup --exact --version 6.6.1 --silent --accept-package-agreements --accept-source-agreements
-            if ($LASTEXITCODE -ne 0) { throw "Unable to install Inno Setup 6.6.1." }
+          if ($iscc) {
+            $fileVersion = (Get-Item -LiteralPath $iscc).VersionInfo.FileVersion
+            $parsedVersion = [version]::Zero
+            $versionOk = [version]::TryParse($fileVersion, [ref]$parsedVersion) -and $parsedVersion -ge $minimumVersion
+            if ($versionOk) {
+              "Preinstalled ISCC satisfies the minimum: $iscc ($fileVersion)"
+              exit 0
+            }
+            "Preinstalled ISCC $fileVersion is below the $minimumVersion minimum; installing the pinned 6.6.1."
           }
+          winget install --id JRSoftware.InnoSetup --exact --version 6.6.1 --silent --accept-package-agreements --accept-source-agreements
+          if ($LASTEXITCODE -ne 0) { throw "Unable to install Inno Setup 6.6.1." }
 
       - name: Build unsigned stable release candidate
         shell: pwsh

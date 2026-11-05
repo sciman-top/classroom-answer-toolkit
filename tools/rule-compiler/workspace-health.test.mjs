@@ -155,6 +155,27 @@ test("a quoted key value counts as configured", () => {
   }
 });
 
+test("a quoted or commented egress value counts as enabled", () => {
+  // The gateway env parser and the workflow's PowerShell gate both accept a
+  // quoted value or a trailing comment; the health check must not disagree
+  // and claim cloud egress is disabled.
+  const quoted = alignedWorkspace();
+  writeEnvFile(quoted, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=\"true\"\n");
+  const commented = alignedWorkspace();
+  writeEnvFile(commented, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true # 课件实跑授权\n");
+  const plain = alignedWorkspace();
+  writeEnvFile(plain, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true\n");
+  try {
+    assert.equal(quoted.health().cloudEgressConfigured, true);
+    assert.equal(commented.health().cloudEgressConfigured, true);
+    assert.equal(plain.health().cloudEgressConfigured, true);
+  } finally {
+    quoted.dispose();
+    commented.dispose();
+    plain.dispose();
+  }
+});
+
 test("a missing .env file is a structural issue", () => {
   const workspace = alignedWorkspace();
   try {

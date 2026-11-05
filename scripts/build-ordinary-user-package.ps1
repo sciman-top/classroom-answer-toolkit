@@ -46,11 +46,16 @@ function Resolve-IsccPath {
         return $command.Source
     }
 
+    # Join-Path throws ParameterBindingValidationException on a null base, so
+    # empty environment variables (32-bit Windows, sanitized CI) must be
+    # filtered before building candidates, not after.
     $candidates = @(
-        (Join-Path $env:LOCALAPPDATA "Programs/Inno Setup 6/ISCC.exe"),
-        (Join-Path $env:ProgramFiles "Inno Setup 6/ISCC.exe"),
-        (Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6/ISCC.exe")
-    )
+        $env:LOCALAPPDATA,
+        $env:ProgramFiles,
+        ${env:ProgramFiles(x86)}
+    ) | Where-Object { -not [string]::IsNullOrEmpty($_) } | ForEach-Object {
+        Join-Path $_ "Inno Setup 6/ISCC.exe"
+    }
     $match = $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -First 1
     if (-not $match) {
         throw "Inno Setup 6 compiler was not found. Install JRSoftware.InnoSetup or pass -IsccPath."
@@ -249,10 +254,10 @@ try {
     }
     if (-not $pwshSource) {
         foreach ($classicRoot in @(
-                (Join-Path $env:ProgramFiles "PowerShell/7"),
-                (Join-Path ${env:ProgramFiles(x86)} "PowerShell/7")
-            )) {
-            $candidate = Join-Path $classicRoot "pwsh.exe"
+                $env:ProgramFiles,
+                ${env:ProgramFiles(x86)}
+            ) | Where-Object { -not [string]::IsNullOrEmpty($_) }) {
+            $candidate = Join-Path $classicRoot "PowerShell/7/pwsh.exe"
             if (Test-Path -LiteralPath $candidate -PathType Leaf) {
                 $pwshSource = $candidate
                 break
@@ -260,8 +265,10 @@ try {
         }
     }
     if (-not $pwshSource) {
-        $resolvedPwsh = (Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue |
-            Select-Object -First 1).Source
+        # Under Set-StrictMode an empty pipeline still yields $null; accessing
+        # .Source on it throws before the actionable error below can be raised.
+        $resolvedPwsh = Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty Source -ErrorAction SilentlyContinue
         if ($resolvedPwsh -and $resolvedPwsh -notlike "*\WindowsApps\*") {
             $pwshSource = $resolvedPwsh
         }

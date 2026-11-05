@@ -197,15 +197,31 @@ export function buildWorkspaceHealthReport({ subjectPack: requestedSubjectPack, 
   if (envSetup.fileExists && !envSetup.apiKeyConfigured) {
     setupParts.push("AI 密钥未配置：本地排版可用，真实答案生成不可用。");
   }
-  const egressEnabled = /^\s*CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED\s*=\s*(?:1|true|yes|on)\s*$/imu.test(
-    (() => {
-      try {
-        return fs.readFileSync(path.join(repositoryRoot, ".env"), "utf8");
-      } catch {
-        return "";
-      }
-    })()
-  );
+  // Mirror the gateway's env parsing (stripOptionalQuotes + inline-comment
+  // stripping in validate-config.mjs): quoted values like "true" or a value
+  // followed by a comment are accepted there and by the workflow's PowerShell
+  // gate, so the health check must not report them as disabled.
+  const egressEnabled = (() => {
+    let envText = "";
+    try {
+      envText = fs.readFileSync(path.join(repositoryRoot, ".env"), "utf8");
+    } catch {
+      return false;
+    }
+    const line = envText
+      .split(/\r?\n/u)
+      .reverse()
+      .find((candidate) => /^\s*CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED\s*=/iu.test(candidate));
+    if (!line) {
+      return false;
+    }
+    let value = line.slice(line.indexOf("=") + 1).trim();
+    value = value.replace(/\s+#.*$/u, "").trim();
+    if (value.length >= 2 && ((value[0] === "\"" && value.at(-1) === "\"") || (value[0] === "'" && value.at(-1) === "'"))) {
+      value = value.slice(1, -1);
+    }
+    return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+  })();
   if (envSetup.fileExists && !egressEnabled) {
     setupParts.push("云出网未启用：每次真实运行仍须显式授权。");
   }
