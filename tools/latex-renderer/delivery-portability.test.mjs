@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { compileResolvedSnapshot } from "../rule-compiler/merge-rules.mjs";
+import { writeDeliveryManifest } from "./write-delivery-manifest.mjs";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -276,6 +277,66 @@ test("deliver refuses to silently replace an existing delivery built from differ
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
     fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+});
+
+test("writer rejects answer-graphic markers that escape the delivery package", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-graphic-boundary-"));
+  const deliveryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-graphic-target-"));
+  try {
+    const inputPath = path.join(root, "answer.md");
+    const outputPath = path.join(deliveryRoot, "answer.pdf");
+    const snapshotPath = path.join(deliveryRoot, "answer.snapshot.json");
+    const manifestPath = path.join(deliveryRoot, "answer.delivery-manifest.json");
+    fs.writeFileSync(inputPath, "# 参考答案\n\n<!-- answer-graphic: ../outside/placement.json -->\n", "utf8");
+    fs.writeFileSync(outputPath, createSinglePagePdf(), "utf8");
+    writeJson(snapshotPath, compileResolvedSnapshot({
+      subjectPack: "junior-physics-answer",
+      profileName: "classroom"
+    }));
+
+    assert.throws(() => writeDeliveryManifest({
+      inputPath,
+      outputPath,
+      snapshotPath,
+      manifestPath,
+      force: true
+    }), /answer-graphic marker must stay inside the delivery package/);
+    assert.equal(fs.existsSync(path.join(deliveryRoot, "outside", "placement.json")), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(deliveryRoot, { recursive: true, force: true });
+  }
+});
+
+test("writer rejects answer-graphic markers targeting reserved delivery artifacts", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-graphic-reserved-"));
+  const deliveryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "delivery-graphic-target-"));
+  try {
+    const inputPath = path.join(root, "answer.md");
+    const sourcePlacementPath = path.join(root, "answer.pdf");
+    const outputPath = path.join(deliveryRoot, "answer.pdf");
+    const snapshotPath = path.join(deliveryRoot, "answer.snapshot.json");
+    const manifestPath = path.join(deliveryRoot, "answer.delivery-manifest.json");
+    fs.writeFileSync(inputPath, "# 参考答案\n\n<!-- answer-graphic: answer.pdf -->\n", "utf8");
+    fs.writeFileSync(sourcePlacementPath, "{}", "utf8");
+    fs.writeFileSync(outputPath, createSinglePagePdf(), "utf8");
+    writeJson(snapshotPath, compileResolvedSnapshot({
+      subjectPack: "junior-physics-answer",
+      profileName: "classroom"
+    }));
+
+    assert.throws(() => writeDeliveryManifest({
+      inputPath,
+      outputPath,
+      snapshotPath,
+      manifestPath,
+      force: true
+    }), /Answer graphic placement would overwrite a delivery artifact/);
+    assert.equal(fs.readFileSync(outputPath, "utf8"), createSinglePagePdf());
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(deliveryRoot, { recursive: true, force: true });
   }
 });
 

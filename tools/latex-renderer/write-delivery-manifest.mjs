@@ -135,6 +135,36 @@ function createFileIntegrity(filePath) {
   };
 }
 
+function normalizePathForComparison(filePath) {
+  const normalized = path.normalize(path.resolve(filePath));
+  return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+}
+
+function resolveContainedPackagePath(packageRoot, relativePath, label) {
+  if (typeof relativePath !== "string" || relativePath.trim().length === 0) {
+    throw new Error(`${label} must be a non-empty package-relative path.`);
+  }
+  if (path.isAbsolute(relativePath)) {
+    throw new Error(`${label} must stay inside the delivery package: ${relativePath}`);
+  }
+  const root = path.resolve(packageRoot);
+  const resolved = path.resolve(root, relativePath);
+  const relative = path.relative(root, resolved);
+  if (path.isAbsolute(relative)
+      || relative === ".."
+      || relative.startsWith(`..${path.sep}`)) {
+    throw new Error(`${label} must stay inside the delivery package: ${relativePath}`);
+  }
+  return resolved;
+}
+
+function assertNotReservedPackagePath(filePath, reservedPaths, label) {
+  const normalized = normalizePathForComparison(filePath);
+  if (reservedPaths.has(normalized)) {
+    throw new Error(`${label} would overwrite a delivery artifact: ${filePath}`);
+  }
+}
+
 function readReviewSourceManifest(reviewDirectory, declaredManifestPath) {
   if (!reviewDirectory || !declaredManifestPath) {
     return null;
@@ -159,12 +189,24 @@ function copyPackageFile(sourcePath, targetPath, force = false) {
     return false;
   }
 
-  if (!fs.statSync(sourcePath).isFile()) {
+  const sourceStat = fs.lstatSync(sourcePath);
+  if (sourceStat.isSymbolicLink() || !sourceStat.isFile()) {
     return false;
   }
 
   fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  if (fs.existsSync(targetPath)) {
+  let targetStat = null;
+  try {
+    targetStat = fs.lstatSync(targetPath);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      throw error;
+    }
+  }
+  if (targetStat) {
+    if (targetStat.isSymbolicLink() || !targetStat.isFile()) {
+      throw new Error(`Delivery graphic resource target is not a regular file: ${targetPath}`);
+    }
     if (sha256Hex(fs.readFileSync(targetPath)) !== sha256Hex(fs.readFileSync(sourcePath))) {
       // Same forced-replacement contract as the packaged input copy.
       if (!force) {
@@ -178,11 +220,12 @@ function copyPackageFile(sourcePath, targetPath, force = false) {
   return true;
 }
 
-function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDirectory, force = false) {
+function collectAnswerGraphicPackageOperations(inputPath, manifestDirectory, reservedPaths) {
   const source = fs.readFileSync(inputPath, "utf8");
   const sourceInputDir = path.dirname(inputPath);
   const markerPattern = /<!--\s*answer-graphic:\s*(.+?)\s*-->/g;
   const seen = new Set();
+  const operations = [];
   let match;
 
   while ((match = markerPattern.exec(source)) !== null) {
@@ -196,16 +239,35 @@ function packageAnswerGraphicReferences(inputPath, packagedInputPath, manifestDi
     // A newly packaged answer is already anchored at the delivery directory;
     // preserve its marker path. Rewriting the same external path beside the
     // packaged Markdown would make the Markdown point to a different directory.
-    const packagedPlacementPath = path.resolve(manifestDirectory, markerPath);
-    copyPackageFile(sourcePlacementPath, packagedPlacementPath, force);
-
+    const packagedPlacementPath = resolveContainedPackagePath(
+      manifestDirectory,
+      markerPath,
+      "answer-graphic marker"
+    );
+    assertNotReservedPackagePath(packagedPlacementPath, reservedPaths, "Answer graphic placement");
     const placement = readJsonFileIfExists(sourcePlacementPath);
     const previewPath = typeof placement?.previewPath === "string"
       ? path.resolve(path.dirname(sourcePlacementPath), placement.previewPath)
       : null;
+    let packagedPreviewPath = null;
     if (previewPath) {
-      const packagedPreviewPath = path.resolve(path.dirname(packagedPlacementPath), placement.previewPath);
-      copyPackageFile(previewPath, packagedPreviewPath, force);
+      packagedPreviewPath = resolveContainedPackagePath(
+        path.dirname(packagedPlacementPath),
+        placement.previewPath,
+        "answer-graphic preview"
+      );
+      assertNotReservedPackagePath(packagedPreviewPath, reservedPaths, "Answer graphic preview");
+    }
+    operations.push({ sourcePlacementPath, packagedPlacementPath, previewPath, packagedPreviewPath });
+  }
+  return operations;
+}
+
+function packageAnswerGraphicReferences(operations, force = false) {
+  for (const operation of operations) {
+    copyPackageFile(operation.sourcePlacementPath, operation.packagedPlacementPath, force);
+    if (operation.previewPath && operation.packagedPreviewPath) {
+      copyPackageFile(operation.previewPath, operation.packagedPreviewPath, force);
     }
   }
 }
@@ -219,9 +281,9 @@ function ensureInputInDeliveryPackage(inputPath, manifestDirectory, reservedPath
   const extension = path.extname(inputPath);
   const baseName = path.basename(inputPath, extension);
   let packagedPath = path.join(manifestDirectory, `${baseName}.delivery-input${extension}`);
-  if (reservedPaths.has(path.normalize(packagedPath))) {
-    throw new Error(`Delivery input copy would overwrite a delivery artifact: ${packagedPath}`);
-  }
+  const normalizedReservedPaths = new Set([...reservedPaths].map(normalizePathForComparison));
+  assertNotReservedPackagePath(packagedPath, normalizedReservedPaths, "Delivery input copy");
+  const graphicOperations = collectAnswerGraphicPackageOperations(inputPath, manifestDirectory, normalizedReservedPaths);
   if (fs.existsSync(packagedPath)) {
     if (sha256Hex(fs.readFileSync(packagedPath)) !== sha256Hex(fs.readFileSync(inputPath))) {
       // An intentional forced replacement of the whole delivery may refresh a
@@ -236,7 +298,7 @@ function ensureInputInDeliveryPackage(inputPath, manifestDirectory, reservedPath
     fs.copyFileSync(inputPath, packagedPath);
   }
 
-  packageAnswerGraphicReferences(inputPath, packagedPath, manifestDirectory, force);
+  packageAnswerGraphicReferences(graphicOperations, force);
   return packagedPath;
 }
 
