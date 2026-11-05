@@ -718,16 +718,16 @@ public sealed class ReleaseUpdateService : IUpdateService, IDisposable
             public IntPtr SipClientData = IntPtr.Zero;
             public uint UIChoice = 2; // WTD_UI_NONE
             // WTD_REVOKE_NONE here on purpose: online revocation is enforced
-            // via ProviderFlags (WTD_REVOCATION_CHECK_ONLINE). Setting
-            // WTD_REVOKE_WHOLECHAIN instead crashed wintrust.dll on malformed
-            // unsigned input (native AV), so do not "harden" this field.
+            // via ProviderFlags (WTD_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT).
+            // Setting WTD_REVOKE_WHOLECHAIN instead crashed wintrust.dll on
+            // malformed unsigned input (native AV), so do not "harden" this field.
             public uint RevocationChecks = 0; // WTD_REVOKE_NONE
             public uint UnionChoice = 1; // WTD_CHOICE_FILE
             public IntPtr FileInfo;
             public uint StateAction = 0;
             public IntPtr StateData = IntPtr.Zero;
             public string? UrlReference = null;
-            public uint ProviderFlags = 0x00000080; // WTD_REVOCATION_CHECK_ONLINE
+            public uint ProviderFlags = 0x00000080; // WTD_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT
             public uint UIContext = 0;
 
             public WinTrustData(WinTrustFileInfo fileInfo)

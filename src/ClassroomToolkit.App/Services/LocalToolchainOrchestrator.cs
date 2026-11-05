@@ -608,14 +608,14 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
 
         try
         {
-            var receipt = ReadLiveWorkflowReceipt(
+            var receipt = await ReadLiveWorkflowReceiptAsync(
                 receiptPath,
                 outputPath,
                 workspace.RepositoryRoot,
                 cancellationToken,
                 baseName,
                 startedAt,
-                finishedAt);
+                finishedAt).ConfigureAwait(false);
             return (execution, receipt);
         }
         catch (Exception ex) when (ex is IOException
@@ -746,7 +746,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             .Where(value => !string.IsNullOrWhiteSpace(value)));
     }
 
-    private LiveAnswerWorkflowResult ReadLiveWorkflowReceipt(
+    private async Task<LiveAnswerWorkflowResult> ReadLiveWorkflowReceiptAsync(
         string receiptPath,
         string outputDirectory,
         string repositoryRoot,
@@ -761,7 +761,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
         {
             throw new InvalidDataException("Workflow receipt validator is missing from the packaged toolchain.");
         }
-        var receiptValidation = _processRunner.RunAsync(
+        var receiptValidation = await _processRunner.RunAsync(
             ResolveNodeExecutable(repositoryRoot)
                 ?? throw new InvalidOperationException("Bundled Node.js is missing; repair the runtime before validating a workflow."),
             [
@@ -771,7 +771,7 @@ public sealed class LocalToolchainOrchestrator : IToolchainOrchestrator
             ],
             repositoryRoot,
             cancellationToken,
-            TimeSpan.FromMinutes(2)).GetAwaiter().GetResult();
+            TimeSpan.FromMinutes(2)).ConfigureAwait(false);
         if (receiptValidation.ExitCode != 0)
         {
             throw new InvalidDataException(
