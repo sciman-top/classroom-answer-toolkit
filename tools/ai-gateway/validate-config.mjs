@@ -153,12 +153,13 @@ export function loadEnvironment(options) {
   const parsed = parseEnvFile(options.envFile);
   // Egress is a config-file decision. It is the one permission that must not
   // be changed by an unrelated parent process environment (for example one
-  // left over from an earlier workflow run).
+  // left over from an earlier workflow run), so this key is excluded from the
+  // process-env merge unconditionally: a file that omits it stays fail-closed
+  // even when the parent shell still carries an exported true value.
   const env = { ...parsed.values };
-  const parsedEgress = Object.hasOwn(parsed.values, "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED");
   for (const [key, value] of Object.entries(process.env)) {
     if (isKnownEnvKey(key) && typeof value === "string"
-        && !(key === "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED" && parsedEgress)) {
+        && key !== "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED") {
       env[key] = value;
     }
   }

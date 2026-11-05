@@ -289,7 +289,14 @@ export function recordRecoveryProbeResult(config, preset, ok, now = Date.now(), 
         recoveryReady: ok && consecutiveProbeSuccesses >= settings.successThreshold,
         lastProbeAt: now,
         lastProbeSucceededAt: ok ? now : recovery.lastProbeSucceededAt,
-        nextProbeAt: now + (ok ? settings.intervalMs : settings.failureIntervalMs) + jitter
+        // Interval and jitter are validated independently, so a jitter larger
+        // than the interval could push this into the past and collapse the
+        // watch loop to its 1s floor. Jitter may delay the next probe but
+        // never pull it before one full un-jittered interval step.
+        nextProbeAt: Math.max(
+          now + (ok ? settings.intervalMs : settings.failureIntervalMs),
+          now + (ok ? settings.intervalMs : settings.failureIntervalMs) + jitter
+        )
       }
     };
   });

@@ -213,3 +213,64 @@ test("main() success path writes answer and schema-valid summary through a fake 
     fs.rmSync(workDir, { recursive: true, force: true });
   }
 });
+
+test("main() redacts provider keys from a top-level provider error", async () => {
+  const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-e2e-"));
+  const primaryKey = "primary-secret-key";
+  try {
+    await withServer((_request, response) => {
+      response.writeHead(400, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ error: { message: `provider echoed ${primaryKey}` } }));
+    }, async (baseUrl) => {
+      const envLines = [
+        "CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED=true",
+        `CLASSROOM_TOOLKIT_AI_RUNTIME_DIRECTORY=${workDir}`,
+        ...Object.entries(providerEnv(baseUrl, "PRIMARY", primaryKey))
+          .map(([key, value]) => `${key}=${value}`)
+      ];
+      const envFile = path.join(workDir, "gateway.env");
+      fs.writeFileSync(envFile, `${envLines.join("\n")}\n`);
+      const outputPath = path.join(workDir, "answer.md");
+      const imagesDir = path.join(workDir, "pages");
+      fs.mkdirSync(imagesDir);
+      fs.writeFileSync(
+        path.join(imagesDir, "page-001.png"),
+        Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64")
+      );
+
+      const result = await new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, [
+          path.join(toolDir, "answer-request.mjs"),
+          "--config-env-file", envFile,
+          "--images-dir", imagesDir,
+          "--output", outputPath,
+          "--quality-profile", "sol-high",
+          "--allow-cloud-egress",
+          "--timeout-ms", "30000"
+        ], {
+          env: { ...process.env, INIT_CWD: workDir }
+        });
+        let stderr = "";
+        const timer = setTimeout(() => {
+          child.kill();
+          reject(new Error("answer-request.mjs did not exit within 120 seconds."));
+        }, 120000);
+        child.stdout.resume();
+        child.stderr.on("data", (chunk) => {
+          stderr += chunk;
+        });
+        child.once("error", reject);
+        child.once("close", (status) => {
+          clearTimeout(timer);
+          resolve({ status, stderr });
+        });
+      });
+
+      assert.notEqual(result.status, 0);
+      assert.ok(result.stderr.includes("<redacted-key>"), result.stderr);
+      assert.equal(result.stderr.includes(primaryKey), false, result.stderr);
+    });
+  } finally {
+    fs.rmSync(workDir, { recursive: true, force: true });
+  }
+});

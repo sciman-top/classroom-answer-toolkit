@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { writeTextFileAtomic } from "../atomic-write.mjs";
-import { isDirectInvocation, parseArgvFlags, sha256File } from "../shared.mjs";
+import { isDirectInvocation, parseArgvFlags, redactSecretValues, sha256File } from "../shared.mjs";
 import { validateValueAgainstSchema } from "../rule-compiler/schema-validator.mjs";
 
 import {
@@ -300,7 +300,14 @@ function resolveImagesFromDirectory(directory) {
   if (!fs.existsSync(directory)) {
     throw new Error(`Image directory not found: ${directory}`);
   }
-  const imagePaths = fs.readdirSync(directory, { withFileTypes: true })
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+  // A symlinked page image silently shrinking the page set used to continue
+  // generation with missing exam pages; warn instead of dropping it quietly.
+  const symlinkNames = entries.filter((entry) => entry.isSymbolicLink()).map((entry) => entry.name);
+  for (const name of symlinkNames) {
+    console.warn(`[gateway] Skipping symlink entry in image directory: ${path.join(directory, name)}`);
+  }
+  const imagePaths = entries
     .filter((entry) => entry.isFile() && /\.(?:png|jpe?g|webp)$/i.test(entry.name))
     .map((entry) => path.join(directory, entry.name))
     .sort((left, right) => left.localeCompare(right, "en", { numeric: true }));
@@ -310,7 +317,9 @@ function resolveImagesFromDirectory(directory) {
   return imagePaths;
 }
 
-function redactAttempt(attempt) {
+// Secret values come from the loaded config so an endpoint echoing the
+// bearer token back in an error message cannot leak it into receipts.
+function redactAttempt(attempt, secretValues = []) {
   return {
     provider: attempt.provider,
     model: attempt.model ?? null,
@@ -326,7 +335,9 @@ function redactAttempt(attempt) {
     durationMs: attempt.durationMs ?? null,
     requestBytes: attempt.requestBytes ?? null,
     transport: attempt.transport ?? null,
-    error: attempt.error ? attempt.error.slice(0, 500) : ""
+    error: attempt.error
+      ? redactSecretValues(attempt.error.slice(0, 500), secretValues)
+      : ""
   };
 }
 
@@ -345,6 +356,11 @@ export async function main() {
   if (loaded.validation.errors.length > 0) {
     throw new Error(loaded.validation.errors.join("; "));
   }
+  // Provider error text can echo the request; every configured key value is
+  // redacted from attempt records before they reach stderr or the summary.
+  const secretValues = (Array.isArray(loaded.config?.providers) ? loaded.config.providers : [])
+    .map((provider) => provider?.apiKey)
+    .filter((value) => typeof value === "string" && value.length > 0);
   // Reject a config-file disable before prompt/image loading or any paid
   // request. process.env cannot replace that file's explicit cloud decision.
   assertLiveEgressAllowed(loaded.config, options.allowCloudEgress);
@@ -371,7 +387,8 @@ export async function main() {
   }
   const result = await requestAnswerWithFailover(loaded.config, { ...options, prompt });
   if (!result.ok) {
-    throw new Error(`${result.error}\n${JSON.stringify(result.attempts.map(redactAttempt), null, 2)}`);
+    const redactedError = redactSecretValues(result.error, secretValues);
+    throw new Error(`${redactedError}\n${JSON.stringify(result.attempts.map((attempt) => redactAttempt(attempt, secretValues)), null, 2)}`);
   }
   const baselinePath = options.candidateBaselineFile ?? options.candidateFile;
   if (result.answerMarkdown.trim() === "" || !Array.isArray(result.attempts) || result.attempts.length === 0) {
@@ -465,7 +482,7 @@ export async function main() {
       questions: semanticChoiceOverride.questions,
       overriddenModelLetters: semanticChoiceOverride.overriddenModelLetters ?? 0
     },
-    attempts: result.attempts.map(redactAttempt)
+    attempts: result.attempts.map((attempt) => redactAttempt(attempt, secretValues))
   };
   if (baselinePath && !summary.candidateBaselineSha256
       && !["blind_generation"].includes(mode)) {

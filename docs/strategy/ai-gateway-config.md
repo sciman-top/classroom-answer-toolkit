@@ -65,7 +65,7 @@ probe 只发送低推理强度（reasoning=low、512 输出 token 上限）的�
 
 fallback 档位的连接继承合同：显式设置 `INHERIT_PRIMARY=true` 才完整继承 primary 的 endpoint、key、kind 与 surface；该标志与本地自定义连接字段（BASE_URL/API_KEY/KIND/surface）并存属配置错误。只配 `BASE_URL` 而无本档 `API_KEY` 会被直接拒绝（跨网关复用 primary key）；完全省略连接字段的旧配置暂可继续工作，但产生 `connectionSource=primary` 迁移告警，应迁移到显式标志。既有本机配置若曾依赖隐式继承，请在兼容窗口内迁移。HTTP 成功只证明请求完成，不证明答案正确。运行证据至少记录 provider role、model、reasoning effort、status、prompt SHA-256、输入页数和输出 SHA-256，严禁记录 API key。
 
-`--config-env-file` 的相对路径解析基准因 CLI 而异：`validate:config` 按仓库根解析；`generate:answer` 的输入路径按 `INIT_CWD`/`process.cwd` 解析；`run-live-answer-workflow.ps1` 先按仓库根解析再以绝对路径传入。自动化示例应优先使用绝对路径。
+`--config-env-file` 的相对路径解析基准因 CLI 而异：`validate:config` 的显式相对路径按 caller CWD（`INIT_CWD`/`process.cwd`）解析，仅在省略该旗标时才锚定仓库根默认值；`generate:answer` 的输入路径按 `INIT_CWD`/`process.cwd` 解析；`run-live-answer-workflow.ps1` 先按仓库根解析再以绝对路径传入。自动化示例应优先使用绝对路径。
 
 升级既有 `.env` 时保留一个可复用的 `PRIMARY` 连接，并把 15 个 `CLASSROOM_TOOLKIT_AI_PRESET_<PRESET>_SLOT_<N>` 映射同步到 `.env.example`；不得为同一个 Cockpit endpoint 复制 8 份 API key。显式选择某个 profile 时，先使用所属 preset；只有该 preset 的连接不可用才切换完整备用 preset。旧的 `FALLBACK_1..8` 模型 role 配置仍可读取，作为旧式多连接兼容路径；槽位不再由旧的 `CLASSROOM_TOOLKIT_AI_PROFILE_*_SLOT` 表达。旧配置省略 `EXECUTION_SLOT` 时按 role 稳定推导，建议迁移为显式 5 槽 preset 映射。
 

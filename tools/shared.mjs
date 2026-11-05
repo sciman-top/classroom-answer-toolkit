@@ -64,6 +64,22 @@ function sanitizeProviderErrorText(value, maxLength = DEFAULT_PROVIDER_ERROR_LEN
 }
 
 /**
+ * Replaces every known secret value with a marker so provider echo (or any
+ * diagnostic text) can never persist a real key into receipts or summaries.
+ * Values shorter than 8 characters are ignored: redacting them would corrupt
+ * surrounding text without meaningfully protecting a secret.
+ */
+export function redactSecretValues(text, secretValues) {
+  let output = String(text ?? "");
+  for (const secret of Array.isArray(secretValues) ? secretValues : []) {
+    if (typeof secret === "string" && secret.length >= 8) {
+      output = output.split(secret).join("<redacted-key>");
+    }
+  }
+  return output;
+}
+
+/**
  * Summarizes an error response without echoing its body: only the provider's
  * own structured error text survives, and never more than `maxLength` chars.
  */

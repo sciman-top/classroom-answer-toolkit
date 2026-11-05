@@ -134,3 +134,26 @@ test("config file egress disable cannot be overridden by process environment", (
     fs.rmSync(envDir, { recursive: true, force: true });
   }
 });
+
+test("a config file without the egress key stays fail-closed against an inherited true", () => {
+  // The egress key is excluded from the process-env merge unconditionally: a
+  // hand-trimmed or pre-slot-era .env that omits it must not inherit an
+  // exported true left over from an earlier workflow run in the same shell.
+  const envDir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-env-egress-missing-"));
+  const envPath = path.join(envDir, "egress-missing.env");
+  const previous = process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED;
+  fs.writeFileSync(envPath, "CLASSROOM_TOOLKIT_AI_PRIMARY_TEXT_MODEL=gpt-5.6-sol\n", "utf8");
+
+  try {
+    process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = "true";
+    const { env } = loadEnvironment({ envFile: envPath });
+    assert.equal(env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED, undefined);
+  } finally {
+    if (previous === undefined) {
+      delete process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED;
+    } else {
+      process.env.CLASSROOM_TOOLKIT_CLOUD_EGRESS_ENABLED = previous;
+    }
+    fs.rmSync(envDir, { recursive: true, force: true });
+  }
+});
